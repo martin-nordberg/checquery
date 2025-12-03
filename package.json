@@ -1,0 +1,12 @@
+{
+  "name": "stacquer",
+  "private": true,
+  "workspaces": [
+    "client",
+    "shared",
+    "server"
+  ],
+  "trustedDependencies": [
+    "@tailwindcss/oxide"
+  ]
+}
