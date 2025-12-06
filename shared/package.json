@@ -1,5 +1,5 @@
 {
-  "name": "chequery-shared",
+  "name": "checquery-shared",
   "dependencies": {
     "hono": "4.9.9",
     "@hono/zod-validator": "0.7.3",

@@ -1,5 +1,5 @@
 {
-  "name": "stacquer",
+  "name": "checquery",
   "private": true,
   "workspaces": [
     "client",

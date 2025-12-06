@@ -6,7 +6,7 @@
   "dependencies": {
     "@hono/zod-validator": "0.7.3",
     "@paralleldrive/cuid2": "2.2.2",
-    "hono": "4.9.9",
+    "hono": "4.10.7",
     "zod": "4.1.11"
   },
   "devDependencies": {
