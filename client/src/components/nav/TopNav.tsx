@@ -4,7 +4,7 @@ function TopNav() {
     return (
         <>
             <nav class="font-bold text-xl text-blue-700 p-1">
-                <A href="/">Checquery</A>
+                <A class="hover:underline" href="/">Checquery</A>
             </nav>
         </>
     )

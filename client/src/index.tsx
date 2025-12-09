@@ -7,14 +7,18 @@ import {lazy} from "solid-js";
 import "./index.css"
 import {HomePage} from "./pages/HomePage.tsx";
 
-const AllAccountsPage = lazy(() => import("./pages/accounts/AllAccountsPage"));
+const SummaryOfAccountsPage = lazy(() => import("./pages/accounts/SummaryOfAccountsPage"));
+const EditAccountPage = lazy(() => import("./pages/accounts/./AccountPropertiesPage"));
+const AccountTransactionsPage = lazy(() => import("./pages/accounts/./AccountTransactionsPage"));
 
 const root = document.getElementById('root')
 
 render(() => (
     <Router root={App}>
         <Route path="/" component={HomePage}/>
-        <Route path="/accounts" component={AllAccountsPage}/>
+        <Route path="/accounts" component={SummaryOfAccountsPage}/>
+        <Route path="/accounts/:id/properties" component={EditAccountPage}/>
+        <Route path="/accounts/:id/transactions" component={AccountTransactionsPage}/>
     </Router>
 ), root!)
 
