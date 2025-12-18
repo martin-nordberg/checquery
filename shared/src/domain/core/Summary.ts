@@ -7,7 +7,6 @@ export const summaryRegex = /^[^\r\n]*$/
 /** Zod schema for summary validation. */
 export const summarySchema = z.string()
     .trim()
-    .min(1, "Summary must not be empty if present.")
     .max(summaryMaxLength, `Summary can be at most ${summaryMaxLength} characters.`)
     .regex(summaryRegex, "Summary must not cross multiple lines.")
 

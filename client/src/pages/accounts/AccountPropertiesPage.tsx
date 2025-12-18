@@ -3,6 +3,8 @@ import {createEffect, createResource, createSignal, Show} from "solid-js";
 import {useParams} from "@solidjs/router";
 import {accountIdSchema} from "$shared/domain/accounts/Account.ts";
 import AccountNameField from "../../components/fields/core/AccountNameField.tsx";
+import AccountSummaryField from "../../components/fields/core/AccountSummaryField.tsx";
+import AccountNumberField from "../../components/fields/core/AccountNumberField.tsx";
 
 const AccountPropertiesPage = () => {
 
@@ -29,8 +31,10 @@ const AccountPropertiesPage = () => {
                 <p>Loading ...</p>
             </Show>
             <Show when={acct()}>
-                <form class="pl-5">
+                <form class="pl-10">
                     <AccountNameField acct={acct()!}/>
+                    <AccountNumberField acct={acct()!}/>
+                    <AccountSummaryField acct={acct()!}/>
                 </form>
             </Show>
         </>

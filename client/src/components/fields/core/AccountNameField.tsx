@@ -25,11 +25,11 @@ const AccountNameField = (props: AccountNameFieldProps) => {
     }
 
     return (
-        <>
-            <label for={props.acct.id + "Name"} class="font-bold italic">Account Name:</label><br/>
-            <input id={props.acct.id + "Name"} type="text" maxlength={nameMaxLength}
+        <div>
+            <label for={props.acct.id + "Name"} class="font-bold italic text-blue-700">Account Name:</label><br/>
+            <input id={props.acct.id + "Name"} class="w-1/6" type="text" maxlength={nameMaxLength}
                    value={getName()} on:blur={changeAccountName}/>
-        </>
+        </div>
     )
 }
 

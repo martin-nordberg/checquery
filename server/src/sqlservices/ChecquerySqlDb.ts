@@ -17,16 +17,19 @@ export class ChecquerySqlDb {
 
     all(queryKey: string, sql: () => string, bindings: any) {
         let query = this.#prepareQuery(queryKey, sql)
+        console.log({queryKey, bindings})
         return query.all(bindings)
     }
 
     get(queryKey: string, sql: () => string, bindings: any) {
         let query = this.#prepareQuery(queryKey, sql)
+        console.log({queryKey, bindings})
         return query.get(bindings)
     }
 
     run(queryKey: string, sql: () => string, bindings: any): Changes {
         let query = this.#prepareQuery(queryKey, sql)
+        console.log({queryKey, bindings})
         return query.run(bindings)
     }
 
@@ -47,7 +50,9 @@ export class ChecquerySqlDb {
     #prepareQuery(queryKey: string, sql: () => string) {
         let query = this.queriesByKey.get(queryKey)
         if (!query) {
-            query = this.db.query(sql())
+            const sql0 = sql()
+            console.log({queryKey, sql:sql0})
+            query = this.db.query(sql0)
             this.queriesByKey.set(queryKey, query)
         }
         return query

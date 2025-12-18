@@ -90,23 +90,31 @@ export class AccountSqlService implements IAccountSvc {
 
     async updateAccount(accountPatch: AccountUpdate): Promise<Account|null> {
 
+        let queryKey = 'account.update'
         let sql = `UPDATE Account`
         let bindings: any = {$id: accountPatch.id}
+
         if (accountPatch.name) {
+            queryKey += '.name'
             sql += ` SET name = $name`
             bindings.$name = accountPatch.name
         }
         if (accountPatch.summary) {
+            queryKey += '.summary'
             sql += ` SET summary = $summary`
             bindings.$summary = accountPatch.summary
+        } else if (accountPatch.summary == "") {
+            queryKey += '.summary-null'
+            sql += ` SET summary = NULL`
         }
         if (accountPatch.acctNumber) {
-            sql += ` SET description = $description`
-            bindings.$description = accountPatch.acctNumber
+            queryKey += '.acctNumber'
+            sql += ` SET acctNumber = $acctNumber`
+            bindings.$acctNumber = accountPatch.acctNumber
         }
         sql += ` WHERE id = $id`
 
-        const changes = this.db.run('account.update', () => sql, bindings)
+        const changes = this.db.run(queryKey, () => sql, bindings)
 
         if (changes.changes == 0) {
             return null
