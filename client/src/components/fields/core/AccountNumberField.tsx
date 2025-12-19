@@ -26,7 +26,7 @@ const AccountAcctNumberField = (props: AccountAcctNumberFieldProps) => {
 
     return (
         <div>
-            <label for={props.acct.id + "AcctNumber"} class="font-bold italic text-blue-700">Account AcctNumber:</label><br/>
+            <label for={props.acct.id + "AcctNumber"} class="font-bold italic text-blue-700">Account Number:</label><br/>
             <input id={props.acct.id + "AcctNumber"} class="w-1/6" type="text" maxlength={acctNumberMaxLength}
                    value={getAcctNumber()} on:blur={changeAccountAcctNumber}/>
         </div>

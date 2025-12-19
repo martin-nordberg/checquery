@@ -1,4 +1,5 @@
 import {Database, Statement, type Changes} from 'bun:sqlite';
+import {acctTypeCodes, acctTypeText} from "$shared/domain/core/AcctType";
 
 
 export class ChecquerySqlDb {
@@ -10,6 +11,8 @@ export class ChecquerySqlDb {
 
     constructor() {
         this.db = new Database(':memory:')
+        this.db.exec("PRAGMA foreign_keys = ON;")
+
         this.queriesByKey = new Map()
 
         this.#initDdl()
@@ -35,16 +38,39 @@ export class ChecquerySqlDb {
 
     #initDdl() {
         let query = this.db.query(
+            `CREATE TABLE AcctType
+             (
+                 code       TEXT(30) NOT NULL,
+                 text       TEXT(100),
+                 CONSTRAINT AcctType_PK PRIMARY KEY (code)
+             );`
+        )
+        query.run()
+
+        acctTypeCodes.forEach(code => {
+            query = this.db.query(
+                `INSERT INTO AcctType (code, text) VALUES ($code, $text);`,
+
+            )
+            query.run({
+                $code: code,
+                $text: acctTypeText(code)
+            })
+        })
+
+        query = this.db.query(
             `CREATE TABLE Account
              (
                  id          TEXT(28) NOT NULL,
                  name        TEXT(100) UNIQUE NOT NULL,
                  acctNumber  TEXT(50) UNIQUE NOT NULL,
+                 acctType    TEXT(30) NOT NULL REFERENCES AcctType(code),
                  summary     TEXT(200),
                  CONSTRAINT Account_PK PRIMARY KEY (id)
              );`
         )
         query.run()
+
     }
 
     #prepareQuery(queryKey: string, sql: () => string) {

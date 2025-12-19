@@ -1,9 +1,9 @@
 import {describe, expect, it} from 'bun:test'
 import {
-    genAccountId,
     accountCreationSchema,
     accountSchema,
-    accountUpdateSchema
+    accountUpdateSchema,
+    genAccountId
 } from "../../../src/domain/accounts/Account";
 import {z} from "zod";
 
@@ -15,6 +15,7 @@ describe('Sample accounts parse correctly', () => {
                 id: id,
                 name: 'example',
                 acctNumber: '1234-4567',
+                acctType: 'CHECKING',
                 summary: "an example of an account",
             }
         )
@@ -22,6 +23,7 @@ describe('Sample accounts parse correctly', () => {
         expect(acct.id).toBe(id)
         expect(acct.name).toBe('example')
         expect(acct.acctNumber).toBe('1234-4567')
+        expect(acct.acctType).toBe('CHECKING')
         expect(acct.summary).toBe('an example of an account')
     })
 
@@ -32,12 +34,14 @@ describe('Sample accounts parse correctly', () => {
                 id: id,
                 name: 'example',
                 acctNumber: '1234-4567',
+                acctType: 'SAVINGS',
             }
         )
 
         expect(acct.id).toBe(id)
         expect(acct.name).toBe('example')
         expect(acct.acctNumber).toBe('1234-4567')
+        expect(acct.acctType).toBe('SAVINGS')
         expect(acct.summary).toBeUndefined()
     })
 
@@ -48,13 +52,14 @@ describe('Sample accounts parse correctly', () => {
                 id: id,
                 name: 'example',
                 acctNumber: '1234-4567',
+                acctType: 'RETIREMENT',
                 summary: "an example of an account"
             }
         )
         const accountJson = JSON.stringify(acct)
 
         expect(accountJson).toBe(
-            `{"id":"${id}","acctNumber":"1234-4567","name":"example","summary":"an example of an account"}`
+            `{"id":"${id}","acctNumber":"1234-4567","acctType":"RETIREMENT","name":"example","summary":"an example of an account"}`
         )
     })
 
@@ -100,6 +105,14 @@ describe('Sample accounts parse correctly', () => {
                     pattern: "^[a-zA-Z0-9-$]+$",
                     type: "string",
                 },
+                acctType: {
+                    "enum": [
+                        "CHECKING",
+                        "SAVINGS",
+                        "RETIREMENT",
+                    ],
+                    type: "string",
+                },
                 id: {
                     allOf: [
                         {
@@ -120,7 +133,6 @@ describe('Sample accounts parse correctly', () => {
                 },
                 summary: {
                     maxLength: 200,
-                    minLength: 1,
                     pattern: "^[^\\r\\n]*$",
                     type: "string",
                 },
@@ -129,6 +141,7 @@ describe('Sample accounts parse correctly', () => {
             required: [
                 "id",
                 "acctNumber",
+                "acctType",
                 "name",
             ],
             type: "object",

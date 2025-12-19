@@ -3,6 +3,7 @@ import {nameSchema} from "../core/Name";
 import {summarySchema} from "../core/Summary";
 import {createId} from "@paralleldrive/cuid2";
 import {acctNumberSchema} from "../core/AcctNumber";
+import {acctTypeSchema} from "../core/AcctType";
 
 /** Schema for an account ID. */
 export const accountIdPrefix = 'acct'
@@ -22,13 +23,16 @@ export const genAccountId: () => AccountId =
 /** Base schema for a Stacquer account's details. */
 export const accountAttributesSchema =
     z.strictObject({
-        /** The unique ID of the linked account. */
+        /** The unique ID of the account. */
         id: accountIdSchema,
 
-        /** The account number of the linked account. */
+        /** The account number of the account. */
         acctNumber: acctNumberSchema,
 
-        /** The name of the linked account. */
+        /** The account type of the account. */
+        acctType: acctTypeSchema,
+
+        /** The name of the account. */
         name: nameSchema,
 
         /* A short summary of the account. */
@@ -56,6 +60,7 @@ export const accountUpdateSchema =
     z.strictObject({
         ...accountAttributesSchema.partial({
             acctNumber: true,
+            acctType: true,
             name: true
         }).shape
     }).readonly()

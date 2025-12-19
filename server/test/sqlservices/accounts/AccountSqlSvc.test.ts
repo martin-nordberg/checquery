@@ -1,15 +1,16 @@
 import {describe, expect, it} from 'bun:test'
-import {genAccountId} from "$shared/domain/accounts/Account";
+import {type Account, genAccountId} from "$shared/domain/accounts/Account";
 import {AccountSqlService} from "../../../src/sqlservices/accounts/AccountSqlSvc";
 
 describe('Account SQL Services', () => {
     it('Should create, find, update, and delete an account', async () => {
         const svc = new AccountSqlService()
         const id = genAccountId()
-        const acct0 = {
+        const acct0 : Account = {
             id: id,
             name: "Sample",
             acctNumber: "123-456",
+            acctType: "CHECKING",
             summary: "An example account",
         }
 

@@ -5,6 +5,7 @@ import {accountIdSchema} from "$shared/domain/accounts/Account.ts";
 import AccountNameField from "../../components/fields/core/AccountNameField.tsx";
 import AccountSummaryField from "../../components/fields/core/AccountSummaryField.tsx";
 import AccountNumberField from "../../components/fields/core/AccountNumberField.tsx";
+import AccountAcctTypeField from "../../components/fields/core/AccountTypeField.tsx";
 
 const AccountPropertiesPage = () => {
 
@@ -34,6 +35,7 @@ const AccountPropertiesPage = () => {
                 <form class="pl-10">
                     <AccountNameField acct={acct()!}/>
                     <AccountNumberField acct={acct()!}/>
+                    <AccountAcctTypeField acct={acct()!}/>
                     <AccountSummaryField acct={acct()!}/>
                 </form>
             </Show>

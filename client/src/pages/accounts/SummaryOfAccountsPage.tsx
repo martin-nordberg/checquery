@@ -1,6 +1,7 @@
 import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
 import {createResource, For, Show} from "solid-js";
 import {A} from "@solidjs/router";
+import {acctTypeText} from "$shared/domain/core/AcctType.ts";
 
 const SummaryOfAccountsPage = () => {
 
@@ -22,7 +23,7 @@ const SummaryOfAccountsPage = () => {
                             <li class="flex m-2 p-1 pl-3 w-200">
                                 <div class="flex-10 border-solid border-gray-300 border-2 rounded-lg bg-gray-50">
                                     <A href={"/accounts/" + acct.id + "/transactions"}>
-                                        <h3 class="font-bold text-blue-700">{acct.name}</h3>
+                                        <h3 class="font-bold text-blue-700">{acct.name} ({acctTypeText(acct.acctType)})</h3>
                                         <div class="pl-5">
                                             {acct.acctNumber} <br/>
                                             {acct.summary}

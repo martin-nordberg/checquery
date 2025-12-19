@@ -17,18 +17,21 @@ export class AccountSqlService implements IAccountSvc {
             id: genAccountId(),
             name: "Account 1",
             acctNumber: "123-1111",
+            acctType: 'CHECKING',
             summary: "The first account in the list"
         })
         this.createAccount({
             id: genAccountId(),
             name: "Account 2",
             acctNumber: "123-2222",
+            acctType: 'SAVINGS',
             summary: "The second account in the list"
         })
         this.createAccount({
             id: genAccountId(),
             name: "Account 3",
             acctNumber: "123-3333",
+            acctType: 'RETIREMENT',
             summary: "The third account in the list"
         })
     }
@@ -37,12 +40,13 @@ export class AccountSqlService implements IAccountSvc {
         this.db.run(
             'account.create',
             () =>
-                `INSERT INTO Account (id, name, acctNumber, summary)
-                 VALUES ($id, $name, $acctNumber, $summary);`,
+                `INSERT INTO Account (id, name, acctNumber, acctType, summary)
+                 VALUES ($id, $name, $acctNumber, $acctType, $summary);`,
             {
                 $id: account.id,
                 $name: account.name,
                 $acctNumber: account.acctNumber,
+                $acctType: account.acctType,
                 $summary: account.summary ?? null,
             }
         )
@@ -111,6 +115,11 @@ export class AccountSqlService implements IAccountSvc {
             queryKey += '.acctNumber'
             sql += ` SET acctNumber = $acctNumber`
             bindings.$acctNumber = accountPatch.acctNumber
+        }
+        if (accountPatch.acctType) {
+            queryKey += '.acctType'
+            sql += ` SET acctType = $acctType`
+            bindings.$acctType = accountPatch.acctType
         }
         sql += ` WHERE id = $id`
 
