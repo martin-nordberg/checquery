@@ -4,8 +4,8 @@ import {
     accountSchema, type AccountUpdate, genAccountId,
 } from "$shared/domain/accounts/Account";
 import {type IAccountSvc} from "$shared/services/accounts/IAccountSvc";
-import {ChecquerySqlDb} from "../ChecquerySqlDb";
-import {dropNullFields} from "$shared/util/dropNullFields";
+import {ChecquerySqlDb} from "../../sqldb/ChecquerySqlDb";
+import {migration001} from "../../sqldb/migrations/migration.001";
 
 
 export class AccountSqlService implements IAccountSvc {
@@ -13,6 +13,8 @@ export class AccountSqlService implements IAccountSvc {
     readonly db = new ChecquerySqlDb()
 
     constructor() {
+        this.db.migrate([migration001])
+
         this.createAccount({
             id: genAccountId(),
             name: "Account 1",
@@ -64,32 +66,27 @@ export class AccountSqlService implements IAccountSvc {
     }
 
     async findAccountById(accountId: AccountId): Promise<Account | null> {
-        const rec = this.db.get(
+        return this.db.findOne(
             'account.findById',
             () =>
                 `SELECT *
                  FROM Account
                  WHERE id = $id`,
-            {$id: accountId}
+            {$id: accountId},
+            accountSchema
         )
-        return rec == null ? null : accountSchema.parse(dropNullFields(rec))
     }
 
     async findAccountsAll(): Promise<Account[]> {
-        const recs = this.db.all(
+        return this.db.findMany(
             'account.findAccountsAll',
             () =>
                 `SELECT *
                  FROM Account
                  ORDER BY name, id`,
-            {}
+            {},
+            accountSchema
         )
-
-        const result: Account[] = []
-        for (let rec of recs) {
-            result.push(accountSchema.parse(dropNullFields(rec)))
-        }
-        return result
     }
 
     async updateAccount(accountPatch: AccountUpdate): Promise<Account|null> {
