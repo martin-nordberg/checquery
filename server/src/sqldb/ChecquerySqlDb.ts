@@ -1,7 +1,5 @@
 import {Database, Statement, type Changes} from 'bun:sqlite';
-import type {z, ZodReadonly} from "zod";
-import type {SomeType} from "zod/v4/core";
-import {dropNullFields} from "$shared/util/dropNullFields";
+import type {z, ZodReadonly, ZodType} from "zod";
 
 /**
  * Wrapper around Bun's SQLite API.
@@ -27,7 +25,7 @@ export class ChecquerySqlDb {
     }
 
     /** Finds one record and parses it with the given Zod schema. */
-    findOne<T extends SomeType>(queryKey: string, sql: () => string, bindings: any, schema: ZodReadonly<T>) {
+    findOne<T extends ZodType>(queryKey: string, sql: () => string, bindings: any, schema: ZodReadonly<T>) {
         let query = this.#prepareQuery(queryKey, sql)
         console.log({queryKey, bindings})
         const rec = query.get(bindings)
@@ -35,7 +33,7 @@ export class ChecquerySqlDb {
     }
 
     /** Finds many records and parses them with the given Zod schema. */
-    findMany<T extends SomeType>(queryKey: string, sql: () => string, bindings: any, schema: ZodReadonly<T>) {
+    findMany<T extends ZodType>(queryKey: string, sql: () => string, bindings: any, schema: ZodReadonly<T>) {
         let query = this.#prepareQuery(queryKey, sql)
         console.log({queryKey, bindings})
         const recs = query.all(bindings)
@@ -84,3 +82,11 @@ export class ChecquerySqlDb {
 
 }
 
+/** Removes all null fields from an object, leaving them undefined instead. */
+const dropNullFields = (rec: any) => {
+    if (rec == null) {
+        return null
+    }
+
+    return Object.fromEntries(Object.entries(rec).filter(([_, v]) => (typeof v !== 'undefined') && (v !== null)))
+}
