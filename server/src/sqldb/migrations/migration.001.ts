@@ -1,5 +1,6 @@
-import {type AcctTypeStr, acctTypeText} from "$shared/domain/core/AcctType";
+import {type AcctTypeStr, acctTypeText} from "$shared/domain/accounts/AcctType";
 import type {ChecquerySqlDb} from "../ChecquerySqlDb";
+import {type TxnStatusStr, txnStatusText} from "$shared/domain/transactions/TxnStatus";
 
 
 export function migration001(db: ChecquerySqlDb) {
@@ -8,15 +9,15 @@ export function migration001(db: ChecquerySqlDb) {
     db.exec(
         `CREATE TABLE AcctType
          (
-             code TEXT(30) NOT NULL,
+             code TEXT(10) NOT NULL,
              text TEXT(100),
              CONSTRAINT AcctType_PK PRIMARY KEY (code)
          );`,
         {}
     )
 
-    // Account Type reference data (as of migration #1)
-    const acctTypes: AcctTypeStr[] = ['CHECKING', 'SAVINGS', 'RETIREMENT']
+    // Account Type - Reference Data
+    const acctTypes: AcctTypeStr[] = ['ASSET', 'LIABILITY', 'EQUITY', 'EXPENSE', 'INCOME']
     acctTypes.forEach(code =>
         db.exec(
             `INSERT INTO AcctType (code, text)
@@ -36,11 +37,69 @@ export function migration001(db: ChecquerySqlDb) {
         `CREATE TABLE Account
          (
              id         TEXT(28) NOT NULL,
-             name       TEXT(100) UNIQUE NOT NULL,
-             acctNumber TEXT(50) UNIQUE NOT NULL,
-             acctType   TEXT(30) NOT NULL REFERENCES AcctType(code),
+             acctType   TEXT(10) NOT NULL REFERENCES AcctType(code),
+             acctNumber TEXT(50) UNIQUE,
+             name       TEXT(200) UNIQUE NOT NULL,
              summary    TEXT(200),
              CONSTRAINT Account_PK PRIMARY KEY (id)
+         );`,
+        {}
+    )
+
+    // Transaction Status
+    db.exec(
+        `CREATE TABLE TxnStatus
+         (
+             code TEXT(10) NOT NULL,
+             text TEXT(1),
+             CONSTRAINT TxnStatus_PK PRIMARY KEY (code)
+         );`,
+        {}
+    )
+
+    // Transaction Status - Reference Data
+    const txnStatuses: TxnStatusStr[] = ['UNMARKED', 'FORECAST', 'RECONCILED']
+    txnStatuses.forEach(code =>
+        db.exec(
+            `INSERT INTO TxnStatus (code, text)
+             VALUES ($code, $text)
+             ON CONFLICT(code)
+             DO UPDATE SET
+                text = excluded.text;`,
+            {
+                $code: code,
+                $text: txnStatusText(code)
+            }
+        )
+    )
+
+    // Transaction
+    db.exec(
+        `CREATE TABLE Transaxtion
+         (
+             id           TEXT(28) NOT NULL,
+             date         TEXT(10) NOT NULL,
+             code         TEXT(100),
+             payee        TEXT(200),
+             description  TEXT(200),
+             comment      TEXT(200),
+             CONSTRAINT Transaxtion_PK PRIMARY KEY (id)
+         );`,
+        {}
+    )
+
+    // Entry
+    db.exec(
+        `CREATE TABLE Entry
+         (
+             txnId        TEXT(28) NOT NULL REFERENCES Transaxtion(id),
+             entrySeq     INTEGER NOT NULL,
+             account      TEXT(200) NOT NULL REFERENCES Account(id),
+             status       TEXT(10) NOT NULL REFERENCES TxnStatus(code),
+             debitCents   INTEGER NOT NULL,
+             creditCents  INTEGER NOT NULL,
+             comment      TEXT(200),
+             CONSTRAINT Post_PK PRIMARY KEY (txnId, entrySeq)
          );`,
         {}
     )

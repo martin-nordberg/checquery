@@ -1,6 +1,6 @@
 import type {Account} from "$shared/domain/accounts/Account.ts";
 import {accountClientSvc} from "../../../clients/accounts/AccountClientSvc.ts";
-import {acctTypeCodes, acctTypeSchema, acctTypeText} from "$shared/domain/core/AcctType.ts";
+import {acctTypeCodes, acctTypeSchema, acctTypeText} from "$shared/domain/accounts/AcctType.ts";
 import {createEffect, createSignal, For} from "solid-js";
 
 type AccountAcctTypeFieldProps = {

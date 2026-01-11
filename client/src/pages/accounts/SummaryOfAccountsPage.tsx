@@ -1,7 +1,7 @@
 import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
 import {createResource, For, Show} from "solid-js";
 import {A} from "@solidjs/router";
-import {acctTypeText} from "$shared/domain/core/AcctType.ts";
+import {acctTypeText} from "$shared/domain/accounts/AcctType.ts";
 
 const SummaryOfAccountsPage = () => {
 

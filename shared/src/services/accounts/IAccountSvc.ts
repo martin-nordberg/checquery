@@ -1,4 +1,5 @@
-import {type Account, type AccountCreation, type AccountId, type AccountUpdate} from "../../domain/accounts/Account";
+import {type Account, type AccountCreation, type AccountUpdate} from "../../domain/accounts/Account";
+import {type AcctId} from "../../domain/accounts/AcctId";
 
 
 export interface IAccountSvc {
@@ -7,10 +8,10 @@ export interface IAccountSvc {
     createAccount(account: AccountCreation): Promise<void>
 
     /** Deletes a given account. */
-    deleteAccount(accountId: AccountId): Promise<void>
+    deleteAccount(accountId: AcctId): Promise<void>
 
     /** Finds the account with given unique ID */
-    findAccountById(accountId: AccountId): Promise<Account | null>
+    findAccountById(accountId: AcctId): Promise<Account | null>
 
     /** Finds the entire list of accounts */
     findAccountsAll(): Promise<Account[]>

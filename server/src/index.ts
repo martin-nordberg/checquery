@@ -2,6 +2,11 @@ import {Hono} from 'hono'
 import {cors} from 'hono/cors'
 import {accountRoutes} from "$shared/routes/accounts/AccountRoutes";
 import {AccountSqlService} from "./sqlservices/accounts/AccountSqlSvc";
+import {loadAccounts} from "./eventsources/AcctEvents";
+import {ChecquerySqlDb} from "./sqldb/ChecquerySqlDb";
+import {migration001} from "./sqldb/migrations/migration.001";
+import {TransactionSqlService} from "./sqlservices/transactions/TransactionSqlSvc";
+import {loadTransactions} from "./eventsources/TxnEvents";
 
 const app = new Hono()
 
@@ -9,8 +14,14 @@ app.use('*', cors({
     origin: ['http://localhost:3000', 'http://10.0.0.3:3000']
 }));
 
-// const packageService = new PackageSqlService();
-// await readYamlToCommands(packageService, (_) => {})
+const db = new ChecquerySqlDb()
+db.migrate([migration001])
+
+const acctSvc = new AccountSqlService(db)
+const txnSvc = new TransactionSqlService(db)
+
+await loadAccounts(acctSvc)
+await loadTransactions(txnSvc)
 
 const routes =
     app
@@ -28,7 +39,7 @@ const routes =
             })
         })
 
-        .route('/accounts', accountRoutes(new AccountSqlService()))
+        .route('/accounts', accountRoutes(acctSvc))
 
 export type AppType = typeof routes
 

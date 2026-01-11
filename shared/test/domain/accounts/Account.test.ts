@@ -2,20 +2,20 @@ import {describe, expect, it} from 'bun:test'
 import {
     accountCreationSchema,
     accountSchema,
-    accountUpdateSchema,
-    genAccountId
+    accountUpdateSchema
 } from "../../../src/domain/accounts/Account";
 import {z} from "zod";
+import {genAcctId} from "../../../src/domain/accounts/AcctId";
 
 describe('Sample accounts parse correctly', () => {
     it('Should parse without error', () => {
-        const id = genAccountId()
+        const id = genAcctId()
         const acct = accountSchema.parse(
             {
                 id: id,
                 name: 'example',
                 acctNumber: '1234-4567',
-                acctType: 'CHECKING',
+                acctType: 'ASSET',
                 summary: "an example of an account",
             }
         )
@@ -23,48 +23,48 @@ describe('Sample accounts parse correctly', () => {
         expect(acct.id).toBe(id)
         expect(acct.name).toBe('example')
         expect(acct.acctNumber).toBe('1234-4567')
-        expect(acct.acctType).toBe('CHECKING')
+        expect(acct.acctType).toBe('ASSET')
         expect(acct.summary).toBe('an example of an account')
     })
 
     it('Should parse without error when optional fields are absent', () => {
-        const id = genAccountId()
+        const id = genAcctId()
         const acct = accountCreationSchema.parse(
             {
                 id: id,
                 name: 'example',
                 acctNumber: '1234-4567',
-                acctType: 'SAVINGS',
+                acctType: 'ASSET',
             }
         )
 
         expect(acct.id).toBe(id)
         expect(acct.name).toBe('example')
         expect(acct.acctNumber).toBe('1234-4567')
-        expect(acct.acctType).toBe('SAVINGS')
+        expect(acct.acctType).toBe('ASSET')
         expect(acct.summary).toBeUndefined()
     })
 
     it('Should convert to JSON', () => {
-        const id = genAccountId()
+        const id = genAcctId()
         const acct = accountCreationSchema.parse(
             {
                 id: id,
                 name: 'example',
                 acctNumber: '1234-4567',
-                acctType: 'RETIREMENT',
+                acctType: 'LIABILITY',
                 summary: "an example of an account"
             }
         )
         const accountJson = JSON.stringify(acct)
 
         expect(accountJson).toBe(
-            `{"id":"${id}","acctNumber":"1234-4567","acctType":"RETIREMENT","name":"example","summary":"an example of an account"}`
+            `{"id":"${id}","acctNumber":"1234-4567","acctType":"LIABILITY","name":"example","summary":"an example of an account"}`
         )
     })
 
     it('Should parse without error for a name change', () => {
-        const id = genAccountId()
+        const id = genAcctId()
         const acct = accountUpdateSchema.parse(
             {
                 id: id,
@@ -79,7 +79,7 @@ describe('Sample accounts parse correctly', () => {
     })
 
     it('Should parse without error for a summary change', () => {
-        const id = genAccountId()
+        const id = genAcctId()
         const acct = accountUpdateSchema.parse(
             {
                 id: id,
@@ -107,9 +107,11 @@ describe('Sample accounts parse correctly', () => {
                 },
                 acctType: {
                     "enum": [
-                        "CHECKING",
-                        "SAVINGS",
-                        "RETIREMENT",
+                        "ASSET",
+                        "LIABILITY",
+                        "EQUITY",
+                        "EXPENSE",
+                        "INCOME",
                     ],
                     type: "string",
                 },
@@ -140,7 +142,6 @@ describe('Sample accounts parse correctly', () => {
             readOnly: true,
             required: [
                 "id",
-                "acctNumber",
                 "acctType",
                 "name",
             ],

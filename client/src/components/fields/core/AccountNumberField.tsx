@@ -1,6 +1,6 @@
 import type {Account} from "$shared/domain/accounts/Account.ts";
 import {accountClientSvc} from "../../../clients/accounts/AccountClientSvc.ts";
-import {acctNumberMaxLength, acctNumberSchema} from "$shared/domain/core/AcctNumber.ts";
+import {acctNumberMaxLength, acctNumberSchema} from "$shared/domain/accounts/AcctNumber.ts";
 import {createEffect, createSignal} from "solid-js";
 
 type AccountAcctNumberFieldProps = {
@@ -28,7 +28,7 @@ const AccountAcctNumberField = (props: AccountAcctNumberFieldProps) => {
         <div>
             <label for={props.acct.id + "AcctNumber"} class="font-bold italic text-blue-700">Account Number:</label><br/>
             <input id={props.acct.id + "AcctNumber"} class="w-1/6" type="text" maxlength={acctNumberMaxLength}
-                   value={getAcctNumber()} on:blur={changeAccountAcctNumber}/>
+                   value={getAcctNumber()??""} on:blur={changeAccountAcctNumber}/>
         </div>
     )
 }

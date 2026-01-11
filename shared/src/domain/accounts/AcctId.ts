@@ -1,0 +1,18 @@
+import {z} from "zod";
+import {createId} from "@paralleldrive/cuid2";
+
+/** Schema for an account ID. */
+export const acctIdPrefix = 'acct'
+export const acctIdSchema =
+    z.cuid2({message: `Account ID must be a string in CUID2 format with prefix '${acctIdPrefix}'.`})
+        .trim()
+        .startsWith(acctIdPrefix)
+        .brand('Account')
+export type AcctId = z.infer<typeof acctIdSchema>
+
+
+/** Generates a new ID for an account. */
+export const genAcctId: () => AcctId =
+    () => acctIdSchema.parse(acctIdPrefix + createId())
+
+

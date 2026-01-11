@@ -1,7 +1,7 @@
 import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
 import {createEffect, createResource, createSignal, Show} from "solid-js";
 import {useParams} from "@solidjs/router";
-import {accountIdSchema} from "$shared/domain/accounts/Account.ts";
+import {acctIdSchema} from "$shared/domain/accounts/AcctId.ts";
 
 const AccountTransactionsPage = () => {
 
@@ -9,7 +9,7 @@ const AccountTransactionsPage = () => {
 
     const params = useParams()
 
-    const parseAcctId = () => accountIdSchema.parse(params['id'])
+    const parseAcctId = () => acctIdSchema.parse(params['id'])
 
     const [acctId, setAcctId] = createSignal(parseAcctId())
 

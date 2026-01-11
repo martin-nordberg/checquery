@@ -1,6 +1,12 @@
 import {Database, Statement, type Changes} from 'bun:sqlite';
 import type {z, ZodReadonly, ZodType} from "zod";
 
+export type SqlWithBindings = {
+    key: string,
+    sql: () => string,
+    bindings: any
+}
+
 /**
  * Wrapper around Bun's SQLite API.
  */
@@ -60,6 +66,28 @@ export class ChecquerySqlDb {
         const txn = this.db.transaction( () =>
             query.run(bindings)
         )
+        try {
+            return txn()
+        } catch (error) {
+            console.error("Transaction failed.", {error})
+            throw error
+        }
+    }
+
+    /** Executes multiple SQL queries in a single transaction. */
+    runMultiple(queries: SqlWithBindings[]): void {
+        const txn = this.db.transaction( () => {
+            for( let {key, sql, bindings} of queries) {
+                let query = this.#prepareQuery(key, sql)
+                console.log({key, bindings})
+                const changes = query.run(bindings)
+
+                if (changes.changes == 0) {
+                    throw new Error("Query had no effect.")
+                }
+            }
+        })
+
         try {
             return txn()
         } catch (error) {

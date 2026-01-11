@@ -1,41 +1,20 @@
 import {
     type Account, type AccountCreation,
-    type AccountId,
-    accountSchema, type AccountUpdate, genAccountId,
+    accountSchema, type AccountUpdate,
 } from "$shared/domain/accounts/Account";
 import {type IAccountSvc} from "$shared/services/accounts/IAccountSvc";
+import { $ } from "bun";
 import {ChecquerySqlDb} from "../../sqldb/ChecquerySqlDb";
-import {migration001} from "../../sqldb/migrations/migration.001";
+import {acctTypeFromName} from "$shared/domain/accounts/AcctType";
+import {type AcctId, genAcctId} from "$shared/domain/accounts/AcctId";
 
 
 export class AccountSqlService implements IAccountSvc {
 
     readonly db = new ChecquerySqlDb()
 
-    constructor() {
-        this.db.migrate([migration001])
-
-        this.createAccount({
-            id: genAccountId(),
-            name: "Account 1",
-            acctNumber: "123-1111",
-            acctType: 'CHECKING',
-            summary: "The first account in the list"
-        })
-        this.createAccount({
-            id: genAccountId(),
-            name: "Account 2",
-            acctNumber: "123-2222",
-            acctType: 'SAVINGS',
-            summary: "The second account in the list"
-        })
-        this.createAccount({
-            id: genAccountId(),
-            name: "Account 3",
-            acctNumber: "123-3333",
-            acctType: 'RETIREMENT',
-            summary: "The third account in the list"
-        })
+    constructor(db: ChecquerySqlDb) {
+        this.db = db
     }
 
     async createAccount(account: AccountCreation): Promise<void> {
@@ -54,7 +33,7 @@ export class AccountSqlService implements IAccountSvc {
         )
     }
 
-    async deleteAccount(accountId:AccountId): Promise<void> {
+    async deleteAccount(accountId:AcctId): Promise<void> {
         this.db.run(
             'account.delete',
             () =>
@@ -65,7 +44,7 @@ export class AccountSqlService implements IAccountSvc {
         )
     }
 
-    async findAccountById(accountId: AccountId): Promise<Account | null> {
+    async findAccountById(accountId: AcctId): Promise<Account | null> {
         return this.db.findOne(
             'account.findById',
             () =>
@@ -83,10 +62,27 @@ export class AccountSqlService implements IAccountSvc {
             () =>
                 `SELECT *
                  FROM Account
-                 ORDER BY name, id`,
+                 ORDER BY name`,
             {},
             accountSchema
         )
+    }
+
+    async load() {
+        $.env({ LEDGER_FILE: "C:\\Data\\Documents\\checquery\\data\\2026.journal" })
+
+        const accountNames =
+            $`C:\\Users\\marti\\AppData\\Local\\Microsoft\\WinGet\\Links\\hledger.exe accounts`.lines()
+
+        for await (let accountName of accountNames) {
+            if (accountName.indexOf(':') > 0) {
+                await this.createAccount({
+                    id: genAcctId(),
+                    name: accountName,
+                    acctType: acctTypeFromName(accountName)
+                })
+            }
+        }
     }
 
     async updateAccount(accountPatch: AccountUpdate): Promise<Account|null> {

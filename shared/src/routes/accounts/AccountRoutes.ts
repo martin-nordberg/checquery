@@ -2,13 +2,13 @@ import {Hono} from 'hono'
 import {
     type AccountCreation,
     accountCreationSchema,
-    accountIdSchema,
     type AccountUpdate,
     accountUpdateSchema
 } from "../../domain/accounts/Account";
 import {zxValidator} from "../validation/zxvalidator";
 import {z} from "zod";
 import {type IAccountSvc} from "../../services/accounts/IAccountSvc";
+import {acctIdSchema} from "../../domain/accounts/AcctId";
 
 /** REST routes for accounts. */
 export const accountRoutes = (accountService: IAccountSvc) => {
@@ -30,7 +30,7 @@ export const accountRoutes = (accountService: IAccountSvc) => {
         )
         .get(
             '/:id',
-            zxValidator('param', z.object({id: accountIdSchema})),
+            zxValidator('param', z.object({id: acctIdSchema})),
             async (c) => {
                 const {id} = c.req.valid('param')
                 return c.json(await accountService.findAccountById(id))
@@ -38,15 +38,16 @@ export const accountRoutes = (accountService: IAccountSvc) => {
         )
         .delete(
             '/:id',
-            zxValidator('param', z.object({id: accountIdSchema})),
+            zxValidator('param', z.object({id: acctIdSchema})),
             async (c) => {
-                const {id} = c.req.valid('param');
-                return c.json(await accountService.deleteAccount(id))
+                const {id} = c.req.valid('param')
+                await accountService.deleteAccount(id)
+                return c.body(null, 204)
             }
         )
         .patch(
             '/:id',
-            zxValidator('param', z.object({id: accountIdSchema})),
+            zxValidator('param', z.object({id: acctIdSchema})),
             zxValidator('json', accountUpdateSchema),
             async (c) => {
                 // const {id} = c.req.valid('param')
