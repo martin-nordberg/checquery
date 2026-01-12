@@ -19,7 +19,7 @@ export const loadTransactions = async (txnSvc: ITransactionSvc)=> {
     for (const directive of directives) {
         switch (directive.action) {
             case 'create':
-                await txnSvc.createTransaction(transactionCreationSchema.parse(directive.payload))
+                await txnSvc.createTransaction(transactionCreationSchema.parse(directive.payload, { reportInput: true }))
                 break
         }
     }

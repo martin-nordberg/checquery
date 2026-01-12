@@ -1,7 +1,7 @@
 import {z} from "zod";
 import {nameSchema} from "../core/Name";
 import {txnStatusSchema} from "./TxnStatus";
-import {currencyAmtSchema} from "../core/CurrencyAmt";
+import {currencyAmtSchema, toCents} from "../core/CurrencyAmt";
 
 /** Base schema for a Stacquer entry's details. */
 export const entryAttributesSchema =
@@ -16,7 +16,7 @@ export const entryAttributesSchema =
         debit: currencyAmtSchema,
 
         /** The status of the entry. */
-        status: txnStatusSchema.default('UNMARKED'),
+        status: txnStatusSchema.optional(),
 
         /** The comment for the entry. */
         comment: z.string().optional(),
@@ -57,3 +57,13 @@ export const entryUpdateSchema =
 export type EntryUpdate = z.infer<typeof entryUpdateSchema>
 
 
+export const entriesSchema = z.array(entrySchema).min(2)
+.refine((entries => {
+    let totalDr = 0
+    let totalCr = 0
+    for (let entry of entries) {
+        totalDr += toCents(entry.debit)
+        totalCr += toCents(entry.credit)
+    }
+    return totalDr == totalCr
+}), {error: `Total debits for all entries must match total credits.`})

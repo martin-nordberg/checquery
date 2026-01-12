@@ -49,7 +49,7 @@ export class TransactionSqlService implements ITransactionSvc {
                     $txnId: transaction.id,
                     $entrySeq: entrySeq,
                     $account: entry.account,
-                    $status: entry.status,
+                    $status: entry.status ?? transaction.status ?? 'UNMARKED',
                     $debit: toCents(entry.debit),
                     $credit: toCents(entry.credit),
                     $comment: entry.comment,

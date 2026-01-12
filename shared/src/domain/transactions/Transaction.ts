@@ -1,7 +1,8 @@
 import {z} from "zod";
 import {summarySchema} from "../core/Summary";
-import {entrySchema} from "./Entry";
+import {entriesSchema} from "./Entry";
 import {txnIdSchema} from "./TxnId";
+import {txnStatusSchema} from "./TxnStatus";
 
 /** Base schema for a Stacquer transaction's details. */
 export const transactionAttributesSchema =
@@ -11,6 +12,9 @@ export const transactionAttributesSchema =
 
         /** The date of the transaction. */
         date: z.string(),  // TODO: YYYY-MM-DD
+
+        /** The transaction status for all entries. */
+        status: txnStatusSchema.optional(),
 
         /* The check number or similar code. */
         code: z.string().optional(),
@@ -22,7 +26,7 @@ export const transactionAttributesSchema =
         description: summarySchema.optional(),
 
         /** The two or more entries in the transaction. */
-        entries: z.array(entrySchema).min(2)
+        entries: entriesSchema
     })
 
 
