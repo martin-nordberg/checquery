@@ -7,6 +7,8 @@ import {ChecquerySqlDb} from "./sqldb/ChecquerySqlDb";
 import {migration001} from "./sqldb/migrations/migration.001";
 import {TransactionSqlService} from "./sqlservices/transactions/TransactionSqlSvc";
 import {loadTransactions} from "./eventsources/TxnEvents";
+import {BalanceSheetSqlService} from "./sqlservices/balancesheet/BalanceSheetSqlSvc";
+import {balanceSheetRoutes} from "$shared/routes/balancesheet/BalanceSheetRoutes";
 
 const app = new Hono()
 
@@ -19,9 +21,12 @@ db.migrate([migration001])
 
 const acctSvc = new AccountSqlService(db)
 const txnSvc = new TransactionSqlService(db)
+const bsSvc = new BalanceSheetSqlService(db)
 
 await loadAccounts(acctSvc)
 await loadTransactions(txnSvc)
+
+console.log(await bsSvc.findBalanceSheet('2026-01-11'))
 
 const routes =
     app
@@ -40,6 +45,7 @@ const routes =
         })
 
         .route('/accounts', accountRoutes(acctSvc))
+        .route('/balancesheet', balanceSheetRoutes(bsSvc))
 
 export type AppType = typeof routes
 

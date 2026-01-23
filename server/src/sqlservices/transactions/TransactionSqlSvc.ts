@@ -41,7 +41,7 @@ export class TransactionSqlService implements ITransactionSvc {
             sqlQueries.push({
                 key: 'entry.create',
                 sql: () =>
-                    `INSERT INTO Entry (txnId, entrySeq, account, status, debitCents, creditCents, comment)
+                    `INSERT INTO Entry (txnId, entrySeq, accountId, status, debitCents, creditCents, comment)
                      SELECT $txnId, $entrySeq, Account.id, $status, $debit, $credit, $comment
                      FROM Account
                      WHERE name = $account;`,

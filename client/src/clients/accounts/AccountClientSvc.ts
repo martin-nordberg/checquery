@@ -3,10 +3,10 @@ import {type AccountRoutes} from "$shared/routes/accounts/AccountRoutes.ts";
 import type {
     IAccountSvc
 } from "$shared/services/accounts/IAccountSvc.ts";
-import type {Account, AccountCreation, AccountId, AccountUpdate} from "$shared/domain/accounts/Account";
+import type {Account, AccountCreation, AccountUpdate} from "$shared/domain/accounts/Account";
 import {HTTPException} from "hono/http-exception";
-
-const webAppHost = "http://localhost:3001"
+import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
+import {webAppHost} from "../config.ts";
 
 const client = hc<AccountRoutes>(`${webAppHost}`)
 
@@ -25,7 +25,7 @@ export class AccountClientSvc implements IAccountSvc {
         throw new HTTPException(404)
     }
 
-    async deleteAccount(accountId: AccountId): Promise<void> {
+    async deleteAccount(accountId: AcctId): Promise<void> {
         console.log("deleteAccount", accountId)
         const res = await client.accounts[':id'].$delete({param: {id: accountId}})
 
@@ -38,7 +38,7 @@ export class AccountClientSvc implements IAccountSvc {
         throw new HTTPException(404)
     }
 
-    async findAccountById(accountId: AccountId): Promise<Account | null> {
+    async findAccountById(accountId: AcctId): Promise<Account | null> {
         console.log("findAccountById", accountId)
         const res = await client.accounts[':id'].$get({param: {id: accountId}})
 

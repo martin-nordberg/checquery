@@ -3,6 +3,7 @@ import {summarySchema} from "../core/Summary";
 import {entriesSchema} from "./Entry";
 import {txnIdSchema} from "./TxnId";
 import {txnStatusSchema} from "./TxnStatus";
+import {isoDateSchema} from "../core/IsoDate";
 
 /** Base schema for a Stacquer transaction's details. */
 export const transactionAttributesSchema =
@@ -11,7 +12,7 @@ export const transactionAttributesSchema =
         id: txnIdSchema,
 
         /** The date of the transaction. */
-        date: z.string(),  // TODO: YYYY-MM-DD
+        date: isoDateSchema,
 
         /** The transaction status for all entries. */
         status: txnStatusSchema.optional(),

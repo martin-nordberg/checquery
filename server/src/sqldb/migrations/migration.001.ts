@@ -94,7 +94,7 @@ export function migration001(db: ChecquerySqlDb) {
          (
              txnId        TEXT(28) NOT NULL REFERENCES Transaxtion(id),
              entrySeq     INTEGER NOT NULL,
-             account      TEXT(200) NOT NULL REFERENCES Account(id),
+             accountId    TEXT(200) NOT NULL REFERENCES Account(id),
              status       TEXT(10) NOT NULL REFERENCES TxnStatus(code),
              debitCents   INTEGER NOT NULL,
              creditCents  INTEGER NOT NULL,
