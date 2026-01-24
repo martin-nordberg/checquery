@@ -1,17 +1,39 @@
 import TopNav from "../../components/nav/TopNav.tsx";
 import BalanceSheet from "../../components/balancesheet/BalanceSheet.tsx";
 import Breadcrumb from "../../components/nav/Breadcrumb.tsx";
+import {useParams} from "@solidjs/router";
+import {createEffect, createSignal} from "solid-js";
+import {isoDateSchema, isoDateToday} from "$shared/domain/core/IsoDate.ts";
+import HoverableDropDown from "../../components/nav/HoverableDropDown.tsx";
 
 const BalanceSheetPage = () => {
+
+    const params = useParams()
+
+    const parseEndingDate = () => isoDateSchema.parse(params['endingDate'] ?? isoDateToday)
+    const [endingDate, setEndingDate] = createSignal(parseEndingDate())
+
+    createEffect(() => {
+        setEndingDate(parseEndingDate())
+    })
+
+    const options = {
+        "2026-01-01": "../2026-01-01",
+        "2026-01-07": "../2026-01-07",
+        "2026-01-15": "../2026-01-15",
+        "2026-01-24": "../2026-01-24",
+    }
 
     return (
         <>
             <TopNav>
                 <Breadcrumb>Balance Sheet</Breadcrumb>
-                <Breadcrumb>2026-01-24</Breadcrumb>
+                <Breadcrumb>
+                    <HoverableDropDown selectedOption={endingDate()} options={options}/>
+                </Breadcrumb>
             </TopNav>
             <main class="p-2">
-                <BalanceSheet endingDate="2026-01-24"/>
+                <BalanceSheet endingDate={endingDate()}/>
             </main>
         </>
     )

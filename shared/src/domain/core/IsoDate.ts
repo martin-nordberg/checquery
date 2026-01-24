@@ -14,4 +14,6 @@ export const isoDateSchema =
 export type IsoDate = z.infer<typeof isoDateSchema>
 
 
+export const isoDateToday = "2026-01-24"
+
 // TODO: to/fromDate

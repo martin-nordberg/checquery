@@ -2,7 +2,7 @@ import type {JSXElement} from "solid-js";
 
 
 type BreadcrumbProps = {
-    children?: JSXElement;
+    children?: JSXElement
 }
 
 const Breadcrumb = (props: BreadcrumbProps) => {
