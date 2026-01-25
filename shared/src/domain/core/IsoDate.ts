@@ -13,7 +13,7 @@ export const isoDateSchema =
 
 export type IsoDate = z.infer<typeof isoDateSchema>
 
-
-export const isoDateToday = "2026-01-24"
+// TODO: need local time zone date
+export const isoDateToday = new Date().toISOString().split('T')[0]
 
 // TODO: to/fromDate

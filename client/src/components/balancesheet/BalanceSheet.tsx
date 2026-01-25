@@ -1,5 +1,6 @@
 import {createResource, For, Show} from "solid-js";
 import {balanceSheetClientSvc} from "../../clients/balancesheet/BalanceSheetClientSvc.ts";
+import type {IsoDate} from "$shared/domain/core/IsoDate.ts";
 
 type BalanceSheetProps = {
     endingDate: string,
@@ -7,7 +8,14 @@ type BalanceSheetProps = {
 
 const BalanceSheet = (props: BalanceSheetProps) => {
 
-    const [balanceSheet] = createResource(() => balanceSheetClientSvc.findBalanceSheet(props.endingDate));
+    const fetchBalanceSheet = async (endingDate: IsoDate) => {
+        if (!endingDate) {
+            return null
+        }
+        return balanceSheetClientSvc.findBalanceSheet(endingDate)
+    }
+
+    const [balanceSheet] = createResource(() => props.endingDate, fetchBalanceSheet)
 
     return (
         <>

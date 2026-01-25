@@ -1,7 +1,6 @@
 import {A} from "@solidjs/router";
 import {createEffect, createSignal, For} from "solid-js";
 
-
 type HoverableDropDownProps = {
     options: Record<string, string>
     selectedOption: string,
