@@ -1,9 +1,9 @@
 import {type AcctTypeStr, acctTypeText} from "$shared/domain/accounts/AcctType";
-import type {ChecquerySqlDb} from "../ChecquerySqlDb";
+import type {ChecquerySqlDb} from "./ChecquerySqlDb";
 import {type TxnStatusStr, txnStatusText} from "$shared/domain/transactions/TxnStatus";
 
 
-export function migration001(db: ChecquerySqlDb) {
+export function runChecqueryDdl(db: ChecquerySqlDb) {
 
     // Account Type
     db.exec(
@@ -46,6 +46,18 @@ export function migration001(db: ChecquerySqlDb) {
         {}
     )
 
+    // Organization
+    db.exec(
+        `CREATE TABLE Organization
+         (
+             id          TEXT(27) NOT NULL,
+             name        TEXT(200) UNIQUE NOT NULL,
+             description TEXT(200),
+             CONSTRAINT Organization_PK PRIMARY KEY (id)
+         );`,
+        {}
+    )
+
     // Transaction Status
     db.exec(
         `CREATE TABLE TxnStatus
@@ -77,12 +89,12 @@ export function migration001(db: ChecquerySqlDb) {
     db.exec(
         `CREATE TABLE Transaxtion
          (
-             id           TEXT(28) NOT NULL,
-             date         TEXT(10) NOT NULL,
-             code         TEXT(100),
-             payee        TEXT(200),
-             description  TEXT(200),
-             comment      TEXT(200),
+             id             TEXT(27) NOT NULL,
+             date           TEXT(10) NOT NULL,
+             code           TEXT(100),
+             organizationId TEXT(27) REFERENCES Organization(id),
+             description    TEXT(200),
+             comment        TEXT(200),
              CONSTRAINT Transaxtion_PK PRIMARY KEY (id)
          );`,
         {}
@@ -92,14 +104,15 @@ export function migration001(db: ChecquerySqlDb) {
     db.exec(
         `CREATE TABLE Entry
          (
-             txnId        TEXT(28) NOT NULL REFERENCES Transaxtion(id),
+             txnId        TEXT(27) NOT NULL REFERENCES Transaxtion(id),
              entrySeq     INTEGER NOT NULL,
              accountId    TEXT(200) NOT NULL REFERENCES Account(id),
              status       TEXT(10) NOT NULL REFERENCES TxnStatus(code),
              debitCents   INTEGER NOT NULL,
              creditCents  INTEGER NOT NULL,
              comment      TEXT(200),
-             CONSTRAINT Post_PK PRIMARY KEY (txnId, entrySeq)
+             CONSTRAINT Post_PK PRIMARY KEY (txnId, entrySeq),
+             UNIQUE (txnId, entrySeq)
          );`,
         {}
     )

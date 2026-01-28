@@ -51,14 +51,6 @@ export class ChecquerySqlDb {
         return result
     }
 
-    /** Runs a sequence of data migrations. */
-    migrate(migrations: ((db: ChecquerySqlDb) => void)[]) {
-        // TODO: skip already completed steps
-        migrations.forEach(migrate => {
-            migrate(this)
-        })
-    }
-
     /** Executes a SQL query that does not return record results. */
     run(queryKey: string, sql: () => string, bindings: any): Changes {
         let query = this.#prepareQuery(queryKey, sql)

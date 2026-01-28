@@ -3,10 +3,8 @@ import {
     accountSchema, type AccountUpdate,
 } from "$shared/domain/accounts/Account";
 import {type IAccountSvc} from "$shared/services/accounts/IAccountSvc";
-import { $ } from "bun";
 import {ChecquerySqlDb} from "../../sqldb/ChecquerySqlDb";
-import {acctTypeFromName} from "$shared/domain/accounts/AcctType";
-import {type AcctId, genAcctId} from "$shared/domain/accounts/AcctId";
+import {type AcctId} from "$shared/domain/accounts/AcctId";
 
 
 export class AccountSqlService implements IAccountSvc {
@@ -66,23 +64,6 @@ export class AccountSqlService implements IAccountSvc {
             {},
             accountSchema
         )
-    }
-
-    async load() {
-        $.env({ LEDGER_FILE: "C:\\Data\\Documents\\checquery\\data\\2026.journal" })
-
-        const accountNames =
-            $`C:\\Users\\marti\\AppData\\Local\\Microsoft\\WinGet\\Links\\hledger.exe accounts`.lines()
-
-        for await (let accountName of accountNames) {
-            if (accountName.indexOf(':') > 0) {
-                await this.createAccount({
-                    id: genAcctId(),
-                    name: accountName,
-                    acctType: acctTypeFromName(accountName)
-                })
-            }
-        }
     }
 
     async updateAccount(accountPatch: AccountUpdate): Promise<Account|null> {

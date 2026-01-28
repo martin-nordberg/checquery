@@ -4,6 +4,7 @@ import {entriesSchema} from "./Entry";
 import {txnIdSchema} from "./TxnId";
 import {txnStatusSchema} from "./TxnStatus";
 import {isoDateSchema} from "../core/IsoDate";
+import {nameSchema} from "../core/Name";
 
 /** Base schema for a Stacquer transaction's details. */
 export const transactionAttributesSchema =
@@ -20,8 +21,8 @@ export const transactionAttributesSchema =
         /* The check number or similar code. */
         code: z.string().optional(),
 
-        /** The name of the payee.  TODO: list of payees */
-        payee: summarySchema.optional(),
+        /** The name of the organization that is the payee or payor. */
+        organization: nameSchema.optional(),
 
         /** A description of the transaction. */
         description: summarySchema.optional(),
@@ -51,9 +52,6 @@ export const transactionUpdateSchema =
     z.strictObject({
         ...transactionAttributesSchema.partial({
             date: true,
-            code: true,
-            payee: true,
-            description: true,
         }).shape
     }).readonly()
 

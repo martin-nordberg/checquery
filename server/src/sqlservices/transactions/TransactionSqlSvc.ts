@@ -22,19 +22,36 @@ export class TransactionSqlService implements ITransactionSvc {
 
         const sqlQueries: SqlWithBindings[] = []
 
-        sqlQueries.push({
-            key: 'transaction.create',
-            sql: () =>
-                `INSERT INTO Transaxtion (id, date, code, payee, description)
-                 VALUES ($id, $date, $code, $payee, $description);`,
-            bindings: {
-                $id: transaction.id,
-                $date: transaction.date,
-                $code: transaction.code,
-                $payee: transaction.payee,
-                $description: transaction.description,
-            }
-        })
+        if (transaction.organization) {
+            sqlQueries.push({
+                key: 'transaction.create.withorg',
+                sql: () =>
+                    `INSERT INTO Transaxtion (id, date, code, organizationId, description)
+                     SELECT $id, $date, $code, Organization.id, $description
+                     FROM Organization
+                     WHERE name = $organization;`,
+                bindings: {
+                    $id: transaction.id,
+                    $date: transaction.date,
+                    $code: transaction.code,
+                    $organization: transaction.organization,
+                    $description: transaction.description,
+                }
+            })
+        } else {
+            sqlQueries.push({
+                key: 'transaction.create.withoutorg',
+                sql: () =>
+                    `INSERT INTO Transaxtion (id, date, code, description)
+                     VALUES ($id, $date, $code, $description)`,
+                bindings: {
+                    $id: transaction.id,
+                    $date: transaction.date,
+                    $code: transaction.code,
+                    $description: transaction.description,
+                }
+            })
+        }
 
         let entrySeq = 1
         for (let entry of transaction.entries) {

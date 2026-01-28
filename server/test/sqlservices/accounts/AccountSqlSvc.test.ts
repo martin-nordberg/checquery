@@ -3,12 +3,12 @@ import {type Account} from "$shared/domain/accounts/Account";
 import {AccountSqlService} from "../../../src/sqlservices/accounts/AccountSqlSvc";
 import {genAcctId} from "$shared/domain/accounts/AcctId";
 import {ChecquerySqlDb} from "../../../src/sqldb/ChecquerySqlDb";
-import {migration001} from "../../../src/sqldb/migrations/migration.001";
+import {runChecqueryDdl} from "../../../src/sqldb/checqueryDdl";
 
 describe('Account SQL Services', () => {
     it('Should create, find, update, and delete an account', async () => {
         const db = new ChecquerySqlDb()
-        db.migrate([migration001])
+        runChecqueryDdl(db)
         const svc = new AccountSqlService(db)
         const id = genAcctId()
         const acct0 : Account = {

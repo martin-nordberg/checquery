@@ -4,11 +4,13 @@ import {accountRoutes} from "$shared/routes/accounts/AccountRoutes";
 import {AccountSqlService} from "./sqlservices/accounts/AccountSqlSvc";
 import {loadAccounts} from "./eventsources/AcctEvents";
 import {ChecquerySqlDb} from "./sqldb/ChecquerySqlDb";
-import {migration001} from "./sqldb/migrations/migration.001";
+import {runChecqueryDdl} from "./sqldb/checqueryDdl";
 import {TransactionSqlService} from "./sqlservices/transactions/TransactionSqlSvc";
 import {loadTransactions} from "./eventsources/TxnEvents";
 import {BalanceSheetSqlService} from "./sqlservices/balancesheet/BalanceSheetSqlSvc";
 import {balanceSheetRoutes} from "$shared/routes/balancesheet/BalanceSheetRoutes";
+import {OrganizationSqlService} from "./sqlservices/organizations/OrganizationSqlSvc";
+import {loadOrganizations} from "./eventsources/OrgEvents";
 
 const app = new Hono()
 
@@ -17,12 +19,14 @@ app.use('*', cors({
 }));
 
 const db = new ChecquerySqlDb()
-db.migrate([migration001])
+runChecqueryDdl(db)
 
+const orgSvc = new OrganizationSqlService(db)
 const acctSvc = new AccountSqlService(db)
 const txnSvc = new TransactionSqlService(db)
 const bsSvc = new BalanceSheetSqlService(db)
 
+await loadOrganizations(orgSvc)
 await loadAccounts(acctSvc)
 await loadTransactions(txnSvc)
 
