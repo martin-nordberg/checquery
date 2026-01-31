@@ -3,10 +3,15 @@ import {CurrencyAmt, currencyAmtSchema, fromCents, toCents} from "../../../src/d
 
 const check = (amt: CurrencyAmt) => {
     currencyAmtSchema.parse(amt)
-    expect(amt).toEqual(fromCents(toCents(amt)))
+    const cents = toCents(amt)
+    expect(amt).toEqual(fromCents(cents))
+
+    if (cents > 0) {
+        check('(' + amt + ')')
+    }
 }
 
-describe('Currency amounts should convert to and from cents', () => {
+describe('Currency Amounts', () => {
 
     it('Should convert without error', () => {
         const amt: CurrencyAmt = "$1,234.00"

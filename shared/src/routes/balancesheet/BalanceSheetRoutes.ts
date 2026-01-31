@@ -1,7 +1,7 @@
 import {Hono} from 'hono'
 import {zxValidator} from "../validation/zxvalidator";
 import {z} from "zod";
-import {IBalanceSheetSvc} from "../../services/balancesheet/IBalanceSheetSvc";
+import {type IBalanceSheetSvc} from "../../services/balancesheet/IBalanceSheetSvc";
 import {isoDateSchema} from "../../domain/core/IsoDate";
 
 /** REST routes for balance sheets. */

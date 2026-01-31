@@ -3,7 +3,7 @@ import {z} from "zod";
 /** Schema for a Checquery date. */
 export const isoDateLength = 10;
 
-export const isoDateRegex = /^\d\d\d\d-\d\d-\d\d$/
+export const isoDateRegex = /^20\d\d-((0\d)|(10)|(11)|(12))-((0\d)|(1\d)|(2\d)|(30)|(31))$/
 
 export const isoDateSchema =
     z.string()

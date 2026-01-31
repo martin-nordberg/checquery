@@ -7,6 +7,7 @@ import {lazy} from "solid-js";
 import "./index.css"
 import {HomePage} from "./pages/HomePage.tsx";
 import {isoDateToday} from "$shared/domain/core/IsoDate.ts";
+import IncomeStatementPage from "./pages/incomestatement/IncomeStatementPage.tsx";
 
 const SummaryOfAccountsPage = lazy(() => import("./pages/accounts/SummaryOfAccountsPage"));
 const EditAccountPage = lazy(() => import("./pages/accounts/AccountPropertiesPage"));
@@ -23,6 +24,8 @@ render(() => (
         <Route path="/accounts/:id/transactions" component={AccountTransactionsPage}/>
         <Route path="/balancesheet" component={() =><Navigate href={"./" + isoDateToday} />}/>
         <Route path="/balancesheet/:endingDate" component={BalanceSheetPage}/>
+        <Route path="/incomestatement" component={() =><Navigate href={"./" + "2026-01"} />}/>
+        <Route path="/incomestatement/:period" component={IncomeStatementPage}/>
     </Router>
 ), root!)
 

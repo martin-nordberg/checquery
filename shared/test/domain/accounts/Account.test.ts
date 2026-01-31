@@ -7,7 +7,7 @@ import {
 import {z} from "zod";
 import {genAcctId} from "../../../src/domain/accounts/AcctId";
 
-describe('Sample accounts parse correctly', () => {
+describe('Sample Accounts', () => {
     it('Should parse without error', () => {
         const id = genAcctId()
         const acct = accountSchema.parse(

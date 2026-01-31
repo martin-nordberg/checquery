@@ -11,6 +11,8 @@ import {BalanceSheetSqlService} from "./sqlservices/balancesheet/BalanceSheetSql
 import {balanceSheetRoutes} from "$shared/routes/balancesheet/BalanceSheetRoutes";
 import {OrganizationSqlService} from "./sqlservices/organizations/OrganizationSqlSvc";
 import {loadOrganizations} from "./eventsources/OrgEvents";
+import {IncomeStatementSqlService} from "./sqlservices/incomestatement/IncomeStatementSqlSvc";
+import {incomeStatementRoutes} from "$shared/routes/incomestatement/IncomeStatementRoutes";
 
 const app = new Hono()
 
@@ -25,12 +27,14 @@ const orgSvc = new OrganizationSqlService(db)
 const acctSvc = new AccountSqlService(db)
 const txnSvc = new TransactionSqlService(db)
 const bsSvc = new BalanceSheetSqlService(db)
+const isSvc = new IncomeStatementSqlService(db)
 
 await loadOrganizations(orgSvc)
 await loadAccounts(acctSvc)
 await loadTransactions(txnSvc)
 
 console.log(await bsSvc.findBalanceSheet('2026-01-11'))
+console.log(await isSvc.findIncomeStatement('2026-01-01', '2026-01-31'))
 
 const routes =
     app
@@ -50,6 +54,7 @@ const routes =
 
         .route('/accounts', accountRoutes(acctSvc))
         .route('/balancesheet', balanceSheetRoutes(bsSvc))
+        .route('/incomestatement', incomeStatementRoutes(isSvc))
 
 export type AppType = typeof routes
 

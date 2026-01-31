@@ -1,13 +1,13 @@
 import {z} from "zod";
 import {ChecquerySqlDb} from "../../sqldb/ChecquerySqlDb";
-import type {IBalanceSheetSvc} from "$shared/services/balancesheet/IBalanceSheetSvc";
-import type {BalanceSheet, BalSheetLineItem} from "$shared/domain/balancesheet/BalanceSheet";
+import type {IIncomeStatementSvc} from "$shared/services/incomestatement/IIncomeStatementSvc";
+import type {IncomeStatement, IncStmtLineItem} from "$shared/domain/incomestatement/IncomeStatement";
 import {fromCents} from "$shared/domain/core/CurrencyAmt";
 import {acctIdSchema} from "$shared/domain/accounts/AcctId";
 import type {IsoDate} from "$shared/domain/core/IsoDate";
 
 
-export class BalanceSheetSqlService implements IBalanceSheetSvc {
+export class IncomeStatementSqlService implements IIncomeStatementSvc {
 
     readonly db = new ChecquerySqlDb()
 
@@ -15,9 +15,9 @@ export class BalanceSheetSqlService implements IBalanceSheetSvc {
         this.db = db
     }
 
-    async findBalanceSheet(endingDate: IsoDate): Promise<BalanceSheet> {
+    async findIncomeStatement(startDate: IsoDate, endDate: IsoDate): Promise<IncomeStatement> {
         const sqlLineItems = this.db.findMany(
-            'balancesheet.findBalanceSheet',
+            'incomestatement.findIncomeStatement',
             () =>
                 `SELECT Account.id         as acctId,
                         Account.acctType   as acctType,
@@ -27,12 +27,14 @@ export class BalanceSheetSqlService implements IBalanceSheetSvc {
                  FROM Account
                           LEFT OUTER JOIN Entry ON Account.id = Entry.accountId
                           LEFT OUTER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
-                 WHERE Account.acctType IN ('ASSET', 'LIABILITY', 'EQUITY')
-                   AND (Transaxtion.date <= $endingDate OR Transaxtion.date IS NULL)
+                 WHERE Account.acctType IN ('INCOME', 'EXPENSE')
+                   AND (Transaxtion.date >= $startDate)
+                   AND (Transaxtion.date <= $endDate)
                  GROUP BY Account.name
                  ORDER BY Account.name`,
             {
-                $endingDate: endingDate
+                $startDate: startDate,
+                $endDate: endDate,
             },
             z.strictObject({
                 acctId: z.string(),
@@ -43,49 +45,39 @@ export class BalanceSheetSqlService implements IBalanceSheetSvc {
             }).readonly()
         )
 
-        let assetLineItems: BalSheetLineItem[] = []
-        let liabilityLineItems: BalSheetLineItem[] = []
-        let equityLineItems: BalSheetLineItem[] = []
-        let totalAssets = 0
-        let totalLiabilities = 0
-        let totalEquity = 0
+        let expenseLineItems: IncStmtLineItem[] = []
+        let incomeLineItems: IncStmtLineItem[] = []
+        let totalExpenses = 0
+        let totalIncome = 0
         for (const sqlLineItem of sqlLineItems) {
             switch (sqlLineItem.acctType) {
-                case 'ASSET':
-                    assetLineItems.push({
+                case 'EXPENSE':
+                    expenseLineItems.push({
                         acctId: acctIdSchema.parse(sqlLineItem.acctId),
                         description: sqlLineItem.description,
                         amount: fromCents(sqlLineItem.totalDr - sqlLineItem.totalCr),
                     })
-                    totalAssets += sqlLineItem.totalDr - sqlLineItem.totalCr
+                    totalExpenses += sqlLineItem.totalDr - sqlLineItem.totalCr
                     break
-                case 'LIABILITY':
-                    liabilityLineItems.push({
+                case 'INCOME':
+                    incomeLineItems.push({
                         acctId: acctIdSchema.parse(sqlLineItem.acctId),
                         description: sqlLineItem.description,
                         amount: fromCents(sqlLineItem.totalCr - sqlLineItem.totalDr),
                     })
-                    totalLiabilities += sqlLineItem.totalCr - sqlLineItem.totalDr
-                    break
-                case 'EQUITY':
-                    equityLineItems.push({
-                        acctId: acctIdSchema.parse(sqlLineItem.acctId),
-                        description: sqlLineItem.description,
-                        amount: fromCents(sqlLineItem.totalCr - sqlLineItem.totalDr),
-                    })
-                    totalEquity += sqlLineItem.totalCr - sqlLineItem.totalDr
+                    totalIncome += sqlLineItem.totalCr - sqlLineItem.totalDr
                     break
             }
         }
 
         return {
-            date: endingDate,
-            assetLineItems,
-            liabilityLineItems,
-            equityLineItems,
-            totalAssets: fromCents(totalAssets),
-            totalLiabilities: fromCents(totalLiabilities),
-            totalEquity: fromCents(totalEquity),
+            startDate,
+            endDate,
+            expenseLineItems,
+            incomeLineItems,
+            totalExpenses: fromCents(totalExpenses),
+            totalIncome: fromCents(totalIncome),
+            netIncome: fromCents(totalIncome - totalExpenses),
         }
     }
 

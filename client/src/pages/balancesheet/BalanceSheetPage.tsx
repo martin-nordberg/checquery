@@ -17,7 +17,12 @@ const BalanceSheetPage = () => {
         setEndingDate(parseEndingDate())
     })
 
-    const options = {
+    const stmtOptions = {
+        "Balance Sheet": ".",
+        "Income Statement": `../../incomestatement/${endingDate().substring(0, 7)}`
+    }
+
+    const dateOptions = {
         "2025-12-31": "../2025-12-31",
         "2026-01-07": "../2026-01-07",
         "2026-01-15": "../2026-01-15",
@@ -27,9 +32,11 @@ const BalanceSheetPage = () => {
     return (
         <>
             <TopNav>
-                <Breadcrumb>Balance Sheet</Breadcrumb>
                 <Breadcrumb>
-                    <HoverableDropDown selectedOption={endingDate()} options={options}/>
+                    <HoverableDropDown options={stmtOptions} selectedOption={"Balance Sheet"}/>
+                </Breadcrumb>
+                <Breadcrumb>
+                    <HoverableDropDown selectedOption={endingDate()} options={dateOptions}/>
                 </Breadcrumb>
             </TopNav>
             <main class="p-2">

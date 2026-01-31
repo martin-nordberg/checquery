@@ -13,6 +13,11 @@ export const HomePage = () => {
                         </A>
                     </li>
                     <li>
+                        <A class="hover:underline" href="./incomestatement">
+                            Income Statement
+                        </A>
+                    </li>
+                    <li>
                         <A class="hover:underline" href="./accounts">
                             Summary of Accounts
                         </A>

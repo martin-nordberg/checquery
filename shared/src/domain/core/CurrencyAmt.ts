@@ -3,7 +3,7 @@ import {z} from "zod";
 /** Schema for a Checquery currency amount. */
 export const currencyAmtMaxLength = 20;
 
-export const currencyAmtRegex = /^\$\d{1,3}(,\d{3})*\.\d{2}$/
+export const currencyAmtRegex = /^((\$\d{1,3}(,\d{3})*\.\d{2})|(\(\$\d{1,3}(,\d{3})*\.\d{2}\)))$/
 
 export const currencyAmtSchema =
     z.string()
@@ -15,12 +15,18 @@ export const currencyAmtSchema =
 export type CurrencyAmt = z.infer<typeof currencyAmtSchema>
 
 
-export const toCents = (currencyAmt: CurrencyAmt) => {
+export const toCents = (currencyAmt: CurrencyAmt): number => {
+    if (currencyAmt.startsWith('(') && currencyAmt.endsWith(')')) {
+        return -toCents(currencyAmt.substring(1,currencyAmt.length - 1))
+    }
     const centsStr = currencyAmt.replace(/[$,.]/g, '')
     return parseInt(centsStr, 10)
 }
 
 export const fromCents = (cents: number): CurrencyAmt => {
+    if (cents < 0) {
+        return "(" + fromCents(-cents) + ")"
+    }
     let centsStr = cents.toString(10)
 
     if (cents < 10) {
