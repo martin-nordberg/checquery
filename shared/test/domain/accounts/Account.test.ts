@@ -150,3 +150,210 @@ describe('Sample Accounts', () => {
     })
 
 })
+
+describe('Invalid Accounts', () => {
+    describe('invalid id', () => {
+        it('rejects missing id', () => {
+            expect(() => accountSchema.parse({
+                name: 'example',
+                acctType: 'ASSET'
+            })).toThrow()
+        })
+
+        it('rejects invalid id format', () => {
+            expect(() => accountSchema.parse({
+                id: 'not-a-cuid2',
+                name: 'example',
+                acctType: 'ASSET'
+            })).toThrow()
+        })
+
+        it('rejects id with wrong prefix', () => {
+            expect(() => accountSchema.parse({
+                id: 'orgabcdefghij1234567890',
+                name: 'example',
+                acctType: 'ASSET'
+            })).toThrow()
+        })
+    })
+
+    describe('invalid name', () => {
+        it('rejects missing name', () => {
+            expect(() => accountSchema.parse({
+                id: genAcctId(),
+                acctType: 'ASSET'
+            })).toThrow()
+        })
+
+        it('rejects empty name', () => {
+            expect(() => accountSchema.parse({
+                id: genAcctId(),
+                name: '',
+                acctType: 'ASSET'
+            })).toThrow()
+        })
+
+        it('rejects whitespace-only name', () => {
+            expect(() => accountSchema.parse({
+                id: genAcctId(),
+                name: '   ',
+                acctType: 'ASSET'
+            })).toThrow()
+        })
+
+        it('rejects name exceeding max length', () => {
+            expect(() => accountSchema.parse({
+                id: genAcctId(),
+                name: 'x'.repeat(201),
+                acctType: 'ASSET'
+            })).toThrow()
+        })
+
+        it('rejects name with newlines', () => {
+            expect(() => accountSchema.parse({
+                id: genAcctId(),
+                name: 'Line one\nLine two',
+                acctType: 'ASSET'
+            })).toThrow()
+        })
+
+        it('rejects name with carriage return', () => {
+            expect(() => accountSchema.parse({
+                id: genAcctId(),
+                name: 'Line one\rLine two',
+                acctType: 'ASSET'
+            })).toThrow()
+        })
+    })
+
+    describe('invalid acctType', () => {
+        it('rejects missing acctType', () => {
+            expect(() => accountSchema.parse({
+                id: genAcctId(),
+                name: 'example'
+            })).toThrow()
+        })
+
+        it('rejects invalid acctType value', () => {
+            expect(() => accountSchema.parse({
+                id: genAcctId(),
+                name: 'example',
+                acctType: 'INVALID'
+            })).toThrow()
+        })
+
+        it('rejects lowercase acctType', () => {
+            expect(() => accountSchema.parse({
+                id: genAcctId(),
+                name: 'example',
+                acctType: 'asset'
+            })).toThrow()
+        })
+    })
+
+    describe('invalid acctNumber', () => {
+        it('rejects empty acctNumber', () => {
+            expect(() => accountSchema.parse({
+                id: genAcctId(),
+                name: 'example',
+                acctType: 'ASSET',
+                acctNumber: ''
+            })).toThrow()
+        })
+
+        it('rejects acctNumber with invalid characters', () => {
+            expect(() => accountSchema.parse({
+                id: genAcctId(),
+                name: 'example',
+                acctType: 'ASSET',
+                acctNumber: '1234#5678'
+            })).toThrow()
+        })
+
+        it('rejects acctNumber with spaces', () => {
+            expect(() => accountSchema.parse({
+                id: genAcctId(),
+                name: 'example',
+                acctType: 'ASSET',
+                acctNumber: '1234 5678'
+            })).toThrow()
+        })
+
+        it('rejects acctNumber exceeding max length', () => {
+            expect(() => accountSchema.parse({
+                id: genAcctId(),
+                name: 'example',
+                acctType: 'ASSET',
+                acctNumber: 'x'.repeat(51)
+            })).toThrow()
+        })
+    })
+
+    describe('invalid summary', () => {
+        it('rejects summary exceeding max length', () => {
+            expect(() => accountSchema.parse({
+                id: genAcctId(),
+                name: 'example',
+                acctType: 'ASSET',
+                summary: 'x'.repeat(201)
+            })).toThrow()
+        })
+
+        it('rejects summary with newlines', () => {
+            expect(() => accountSchema.parse({
+                id: genAcctId(),
+                name: 'example',
+                acctType: 'ASSET',
+                summary: 'Line one\nLine two'
+            })).toThrow()
+        })
+    })
+
+    describe('unknown properties', () => {
+        it('rejects unknown properties', () => {
+            expect(() => accountSchema.parse({
+                id: genAcctId(),
+                name: 'example',
+                acctType: 'ASSET',
+                unknownField: 'should fail'
+            })).toThrow()
+        })
+    })
+
+    describe('accountUpdateSchema invalid inputs', () => {
+        it('rejects missing id', () => {
+            expect(() => accountUpdateSchema.parse({
+                name: 'Updated Name'
+            })).toThrow()
+        })
+
+        it('rejects empty name when provided', () => {
+            expect(() => accountUpdateSchema.parse({
+                id: genAcctId(),
+                name: ''
+            })).toThrow()
+        })
+
+        it('rejects invalid acctType when provided', () => {
+            expect(() => accountUpdateSchema.parse({
+                id: genAcctId(),
+                acctType: 'INVALID'
+            })).toThrow()
+        })
+    })
+
+    describe('accountCreationSchema invalid inputs', () => {
+        it('rejects missing required fields', () => {
+            expect(() => accountCreationSchema.parse({
+                id: genAcctId()
+            })).toThrow()
+        })
+
+        it('rejects missing id', () => {
+            expect(() => accountCreationSchema.parse({
+                name: 'example',
+                acctType: 'ASSET'
+            })).toThrow()
+        })
+    })
+})

@@ -39,3 +39,133 @@ describe('ISO Dates', () => {
     })
 
 })
+
+describe('Invalid ISO Dates', () => {
+    describe('invalid length', () => {
+        it('rejects too short', () => {
+            expect(() => isoDateSchema.parse('2026-01-1')).toThrow()
+        })
+
+        it('rejects too long', () => {
+            expect(() => isoDateSchema.parse('2026-01-011')).toThrow()
+        })
+
+        it('rejects empty string', () => {
+            expect(() => isoDateSchema.parse('')).toThrow()
+        })
+    })
+
+    describe('invalid year', () => {
+        it('rejects year before 2000', () => {
+            expect(() => isoDateSchema.parse('1999-01-15')).toThrow()
+        })
+
+        it('rejects 1900s year', () => {
+            expect(() => isoDateSchema.parse('1926-01-15')).toThrow()
+        })
+
+        it('rejects non-numeric year', () => {
+            expect(() => isoDateSchema.parse('20XX-01-15')).toThrow()
+        })
+
+        it('rejects partial year', () => {
+            expect(() => isoDateSchema.parse('202-01-15')).toThrow()
+        })
+    })
+
+    describe('invalid month', () => {
+        it('rejects month 00', () => {
+            expect(() => isoDateSchema.parse('2026-00-15')).toThrow()
+        })
+
+        it('rejects month 13', () => {
+            expect(() => isoDateSchema.parse('2026-13-15')).toThrow()
+        })
+
+        it('rejects single digit month', () => {
+            expect(() => isoDateSchema.parse('2026-1-15')).toThrow()
+        })
+
+        it('rejects month with letters', () => {
+            expect(() => isoDateSchema.parse('2026-0A-15')).toThrow()
+        })
+
+        it('rejects month name', () => {
+            expect(() => isoDateSchema.parse('2026-Jan-15')).toThrow()
+        })
+    })
+
+    describe('invalid day', () => {
+        it('rejects day 00', () => {
+            expect(() => isoDateSchema.parse('2026-01-00')).toThrow()
+        })
+
+        it('rejects day 32', () => {
+            expect(() => isoDateSchema.parse('2026-01-32')).toThrow()
+        })
+
+        it('rejects single digit day', () => {
+            expect(() => isoDateSchema.parse('2026-01-1')).toThrow()
+        })
+
+        it('rejects day with letters', () => {
+            expect(() => isoDateSchema.parse('2026-01-0A')).toThrow()
+        })
+
+        it('rejects day 40', () => {
+            expect(() => isoDateSchema.parse('2026-01-40')).toThrow()
+        })
+    })
+
+    describe('invalid separator', () => {
+        it('rejects slash separator', () => {
+            expect(() => isoDateSchema.parse('2026/01/15')).toThrow()
+        })
+
+        it('rejects space separator', () => {
+            expect(() => isoDateSchema.parse('2026 01 15')).toThrow()
+        })
+
+        it('rejects no separator', () => {
+            expect(() => isoDateSchema.parse('20260115')).toThrow()
+        })
+
+        it('rejects dot separator', () => {
+            expect(() => isoDateSchema.parse('2026.01.15')).toThrow()
+        })
+
+        it('rejects mixed separators', () => {
+            expect(() => isoDateSchema.parse('2026-01/15')).toThrow()
+        })
+    })
+
+    describe('invalid format', () => {
+        it('rejects day-month-year order', () => {
+            expect(() => isoDateSchema.parse('15-01-2026')).toThrow()
+        })
+
+        it('rejects month-day-year order', () => {
+            expect(() => isoDateSchema.parse('01-15-2026')).toThrow()
+        })
+
+        it('rejects extra characters at start', () => {
+            expect(() => isoDateSchema.parse('x2026-01-15')).toThrow()
+        })
+
+        it('rejects extra characters at end', () => {
+            expect(() => isoDateSchema.parse('2026-01-15x')).toThrow()
+        })
+
+        it('rejects timestamp format', () => {
+            expect(() => isoDateSchema.parse('2026-01-15T00:00:00')).toThrow()
+        })
+
+        it('accepts and trims whitespace around valid date', () => {
+            expect(isoDateSchema.parse(' 2026-01-15 ')).toBe('2026-01-15')
+        })
+
+        it('rejects internal whitespace', () => {
+            expect(() => isoDateSchema.parse('2026- 01-15')).toThrow()
+        })
+    })
+})

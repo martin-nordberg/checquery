@@ -4,7 +4,7 @@ import {type IsoDate} from "./IsoDate";
 /** Schema for a Checquery period (month or quarter). */
 export const periodLength = 7;
 
-export const periodRegex = /^20\d\d-((Q1)|(Q2)|(Q3)|(Q4)|(0\d)|(10)|(11)|(12))$/
+export const periodRegex = /^20\d\d-((Q1)|(Q2)|(Q3)|(Q4)|(0[1-9])|(10)|(11)|(12))$/
 
 export const periodSchema =
     z.string()
