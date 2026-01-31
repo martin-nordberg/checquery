@@ -13,6 +13,7 @@ const SummaryOfAccountsPage = lazy(() => import("./pages/accounts/SummaryOfAccou
 const EditAccountPage = lazy(() => import("./pages/accounts/AccountPropertiesPage"));
 const AccountTransactionsPage = lazy(() => import("./pages/accounts/AccountTransactionsPage"));
 const BalanceSheetPage = lazy(() => import("./pages/balancesheet/BalanceSheetPage"));
+const RegisterPage = lazy(() => import("./pages/register/RegisterPage"));
 
 const root = document.getElementById('root')
 
@@ -26,6 +27,7 @@ render(() => (
         <Route path="/balancesheet/:endingDate" component={BalanceSheetPage}/>
         <Route path="/incomestatement" component={() =><Navigate href={"./" + "2026-01"} />}/>
         <Route path="/incomestatement/:period" component={IncomeStatementPage}/>
+        <Route path="/register/:accountId" component={RegisterPage}/>
     </Router>
 ), root!)
 

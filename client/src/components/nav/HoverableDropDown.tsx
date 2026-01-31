@@ -23,11 +23,11 @@ const HoverableDropDown = (props: HoverableDropDownProps) => {
             <div class="inline-flex items-center">
                 <span class="mr-1">{getSelectedOption()}</span>
             </div>
-            <ul class="absolute hidden text-gray-700 text-base pt-1 group-hover/main:block">
+            <ul class="absolute hidden text-gray-700 text-base pt-1 group-hover/main:block min-w-max max-h-64 overflow-y-auto">
                 <For each={getOtherOptions()}>
                     {(key) => (
                         <li>
-                            <A class="bg-gray-100 hover:bg-gray-200 py-2 px-2 block whitespace-no-wrap"
+                            <A class="bg-gray-100 hover:bg-gray-200 py-2 px-4 block whitespace-nowrap"
                                href={props.options[key] ?? "."}>{key}</A>
                         </li>
                     )}

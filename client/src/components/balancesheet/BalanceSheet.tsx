@@ -1,9 +1,22 @@
 import {createResource, For, Show} from "solid-js";
+import {A} from "@solidjs/router";
 import {balanceSheetClientSvc} from "../../clients/balancesheet/BalanceSheetClientSvc.ts";
 import type {IsoDate} from "$shared/domain/core/IsoDate.ts";
+import type {BalSheetLineItem} from "$shared/domain/balancesheet/BalanceSheet.ts";
 
 type BalanceSheetProps = {
     endingDate: string,
+}
+
+const AccountName = (props: {lineItem: BalSheetLineItem}) => {
+    const displayName = () => props.lineItem.description.replaceAll(':', ' : ')
+    return (
+        <Show when={props.lineItem.acctId} fallback={<>{displayName()}</>}>
+            <A href={`/register/${props.lineItem.acctId}`} class="hover:text-blue-600 hover:underline">
+                {displayName()}
+            </A>
+        </Show>
+    )
 }
 
 const BalanceSheet = (props: BalanceSheetProps) => {
@@ -34,7 +47,7 @@ const BalanceSheet = (props: BalanceSheetProps) => {
                                         {(lineItem, _) => (
                                             <tr class="hover:bg-gray-50">
                                                 <td class="px-6 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                    {lineItem.description.replaceAll(':', ' : ')}
+                                                    <AccountName lineItem={lineItem}/>
                                                 </td>
                                                 <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-500 text-right">
                                                     {lineItem.amount}
@@ -63,7 +76,7 @@ const BalanceSheet = (props: BalanceSheetProps) => {
                                         {(lineItem, _) => (
                                             <tr class="hover:bg-gray-50">
                                                 <td class="px-6 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                    {lineItem.description.replaceAll(':', ' : ')}
+                                                    <AccountName lineItem={lineItem}/>
                                                 </td>
                                                 <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-500 text-right">
                                                     {lineItem.amount}
@@ -89,7 +102,7 @@ const BalanceSheet = (props: BalanceSheetProps) => {
                                         {(lineItem, _) => (
                                             <tr class="hover:bg-gray-50">
                                                 <td class="px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                    {lineItem.description.replaceAll(':', ' : ')}
+                                                    <AccountName lineItem={lineItem}/>
                                                 </td>
                                                 <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
                                                     {lineItem.amount}
