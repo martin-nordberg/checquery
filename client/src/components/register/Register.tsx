@@ -70,20 +70,21 @@ const Register = (props: RegisterProps) => {
                 <p class="text-red-600">Error loading register.</p>
             </Show>
             <Show when={register()}>
-                <div class="mb-4">
-                    <button
-                        onClick={handleAddNew}
-                        disabled={isAddingNew()}
-                        class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 text-sm"
-                    >
-                        + Add Transaction
-                    </button>
-                </div>
                 <div class="bg-white shadow-lg rounded-lg overflow-hidden">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-2 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-10">
+                                <th class="px-2 py-3 text-center w-10">
+                                    <button
+                                        onClick={handleAddNew}
+                                        disabled={isAddingNew()}
+                                        class="text-green-600 hover:text-green-800 hover:bg-gray-200 rounded p-1 cursor-pointer disabled:opacity-50"
+                                        title="Add transaction"
+                                    >
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                        </svg>
+                                    </button>
                                 </th>
                                 <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                                     Date

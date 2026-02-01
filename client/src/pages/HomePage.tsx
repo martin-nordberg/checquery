@@ -18,6 +18,11 @@ export const HomePage = () => {
                         </A>
                     </li>
                     <li>
+                        <A class="hover:underline" href="/register/accttruistchecking0000000000">
+                            Register (Checking)
+                        </A>
+                    </li>
+                    <li>
                         <A class="hover:underline" href="./accounts">
                             Summary of Accounts
                         </A>

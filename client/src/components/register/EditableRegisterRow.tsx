@@ -1,8 +1,9 @@
-import {createSignal, createEffect, Show, For} from "solid-js";
+import {createSignal, createEffect, createMemo, Show, For} from "solid-js";
 import type {RegisterLineItem, RegisterEntry, RegisterTransaction} from "$shared/domain/register/Register.ts";
 import type {CurrencyAmt} from "$shared/domain/core/CurrencyAmt.ts";
 import type {IsoDate} from "$shared/domain/core/IsoDate.ts";
 import type {AcctTypeStr} from "$shared/domain/accounts/AcctType.ts";
+import {fromCents} from "$shared/domain/core/CurrencyAmt.ts";
 import {registerClientSvc} from "../../clients/register/RegisterClientSvc.ts";
 import EditableDateField from "./fields/EditableDateField.tsx";
 import EditableTextField from "./fields/EditableTextField.tsx";
@@ -31,6 +32,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
     const [editEntries, setEditEntries] = createSignal<RegisterEntry[]>([])
     const [isSaving, setIsSaving] = createSignal(false)
     const [error, setError] = createSignal<string | null>(null)
+    let editRowRef: HTMLTableRowElement | undefined
 
     // Load full transaction when entering edit mode
     createEffect(async () => {
@@ -42,9 +44,47 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                 setEditCode(txn.code)
                 setEditOrganization(txn.organization)
                 setEditDescription(txn.description)
-                setEditEntries(txn.entries)
+                // Reorder entries so current account is first
+                const currentAccountEntry = txn.entries.find(e => e.account === props.currentAccountName)
+                const otherEntries = txn.entries.filter(e => e.account !== props.currentAccountName)
+                if (currentAccountEntry) {
+                    setEditEntries([currentAccountEntry, ...otherEntries])
+                } else {
+                    setEditEntries(txn.entries)
+                }
             }
         }
+    })
+
+    // Scroll edit row into view when it appears
+    createEffect(() => {
+        if (props.isEditing && transaction() && editRowRef) {
+            editRowRef.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+        }
+    })
+
+    // Compute the balancing entry for the current account (first entry)
+    const balancedEntries = createMemo(() => {
+        const entries = editEntries()
+        if (entries.length < 2) return entries
+
+        // Sum debits and credits from entries after the first one
+        let totalDebit = 0
+        let totalCredit = 0
+        for (let i = 1; i < entries.length; i++) {
+            totalDebit += parseAmount(entries[i]!.debit)
+            totalCredit += parseAmount(entries[i]!.credit)
+        }
+
+        // The first entry needs to balance the transaction
+        const diff = totalDebit - totalCredit
+        const firstEntry: RegisterEntry = {
+            ...entries[0]!,
+            debit: diff < 0 ? fromCents(-diff) : '$0.00' as CurrencyAmt,
+            credit: diff > 0 ? fromCents(diff) : '$0.00' as CurrencyAmt,
+        }
+
+        return [firstEntry, ...entries.slice(1)]
     })
 
     const handleCancel = () => {
@@ -58,19 +98,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
         setIsSaving(true)
 
         try {
-            // Validate entries balance
-            const entries = editEntries()
-            let totalDebit = 0
-            let totalCredit = 0
-            for (const entry of entries) {
-                totalDebit += parseAmount(entry.debit)
-                totalCredit += parseAmount(entry.credit)
-            }
-            if (totalDebit !== totalCredit) {
-                setError(`Debits ($${(totalDebit/100).toFixed(2)}) must equal credits ($${(totalCredit/100).toFixed(2)})`)
-                setIsSaving(false)
-                return
-            }
+            const entries = balancedEntries()
 
             // Validate at least 2 entries
             if (entries.length < 2) {
@@ -86,6 +114,14 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                     setIsSaving(false)
                     return
                 }
+            }
+
+            // Validate the first entry has a non-zero amount
+            const firstEntry = entries[0]!
+            if (firstEntry.debit === '$0.00' && firstEntry.credit === '$0.00') {
+                setError("Transaction must have a non-zero amount")
+                setIsSaving(false)
+                return
             }
 
             await registerClientSvc.updateTransaction({
@@ -157,7 +193,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
             <td class="px-2 py-2 whitespace-nowrap text-sm text-center">
                 <button
                     onClick={props.onStartEdit}
-                    class="text-blue-600 hover:text-blue-800"
+                    class="text-blue-600 hover:text-blue-800 hover:bg-gray-200 rounded p-1 cursor-pointer"
                     title="Edit transaction"
                 >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -199,8 +235,19 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
     // Edit mode expanded row
     const EditRow = () => (
         <>
-            <tr class="bg-blue-50">
-                <td class="px-2 py-2" colspan="9">
+            <tr ref={editRowRef} class="bg-blue-50">
+                <td class="px-2 py-2 align-top">
+                    <button
+                        onClick={handleCancel}
+                        class="text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded p-1 cursor-pointer"
+                        title="Cancel"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </td>
+                <td class="px-2 py-2" colspan="8">
                     <div class="space-y-3 p-2">
                         <div class="grid grid-cols-6 gap-3">
                             <div>
@@ -236,30 +283,24 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                         </div>
 
                         <div>
-                            <div class="flex justify-between items-center mb-2">
+                            <div class="mb-2">
                                 <label class="text-xs font-medium text-gray-500">Entries</label>
-                                <button
-                                    type="button"
-                                    onClick={addEntry}
-                                    class="text-xs text-blue-600 hover:text-blue-800"
-                                >
-                                    + Add Entry
-                                </button>
                             </div>
                             <div class="bg-white border border-gray-200 rounded p-2">
                                 <div class="flex items-center gap-2 py-1 text-xs font-medium text-gray-500 border-b">
                                     <div class="flex-1">Account</div>
-                                    <div class="w-28 text-right">{props.headings.debit}</div>
-                                    <div class="w-28 text-right">{props.headings.credit}</div>
+                                    <div class="w-28 text-right pr-2">Debit</div>
+                                    <div class="w-28 text-right pr-2">Credit</div>
                                     <div class="w-6"></div>
                                 </div>
-                                <For each={editEntries()}>
+                                <For each={balancedEntries()}>
                                     {(entry, index) => (
                                         <EditableSplitEntry
                                             entry={entry}
                                             onUpdate={(updated) => updateEntry(index(), updated)}
                                             onRemove={() => removeEntry(index())}
-                                            canRemove={editEntries().length > 2}
+                                            canRemove={editEntries().length > 2 && index() > 0}
+                                            isPrimary={index() === 0}
                                         />
                                     )}
                                 </For>
@@ -271,9 +312,9 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                         </Show>
 
                         <RegisterActionButtons
-                            onCancel={handleCancel}
                             onSave={handleSave}
                             onDelete={handleDelete}
+                            onAddEntry={addEntry}
                             isSaving={isSaving()}
                         />
                     </div>

@@ -9,6 +9,7 @@ type EditableSplitEntryProps = {
     onUpdate: (entry: RegisterEntry) => void,
     onRemove: () => void,
     canRemove: boolean,
+    isPrimary?: boolean,
 }
 
 const EditableSplitEntry = (props: EditableSplitEntryProps) => {
@@ -37,24 +38,46 @@ const EditableSplitEntry = (props: EditableSplitEntryProps) => {
     }
 
     return (
-        <div class="flex items-center gap-2 py-1">
+        <div class={`flex items-center gap-2 py-1 ${props.isPrimary ? 'bg-gray-50' : ''}`}>
             <div class="flex-1">
-                <EditableCategoryField
-                    value={props.entry.account}
-                    onChange={handleAccountChange}
-                />
+                <Show when={props.isPrimary} fallback={
+                    <EditableCategoryField
+                        value={props.entry.account}
+                        onChange={handleAccountChange}
+                    />
+                }>
+                    <div class="px-2 py-1 text-sm text-gray-700 bg-gray-100 rounded border border-gray-200">
+                        {props.entry.account.replaceAll(':', ' : ')}
+                    </div>
+                </Show>
             </div>
-            <div class="w-28">
-                <EditableAmountField
-                    value={props.entry.debit}
-                    onChange={handleDebitChange}
-                />
+            <div class="w-28 flex justify-end">
+                <Show when={props.isPrimary} fallback={
+                    <EditableAmountField
+                        value={props.entry.debit}
+                        onChange={handleDebitChange}
+                    />
+                }>
+                    <div class="px-2 py-1 text-sm text-gray-700 text-right w-24">
+                        <Show when={props.entry.debit !== '$0.00'}>
+                            {props.entry.debit}
+                        </Show>
+                    </div>
+                </Show>
             </div>
-            <div class="w-28">
-                <EditableAmountField
-                    value={props.entry.credit}
-                    onChange={handleCreditChange}
-                />
+            <div class="w-28 flex justify-end">
+                <Show when={props.isPrimary} fallback={
+                    <EditableAmountField
+                        value={props.entry.credit}
+                        onChange={handleCreditChange}
+                    />
+                }>
+                    <div class="px-2 py-1 text-sm text-gray-700 text-right w-24">
+                        <Show when={props.entry.credit !== '$0.00'}>
+                            {props.entry.credit}
+                        </Show>
+                    </div>
+                </Show>
             </div>
             <Show when={props.canRemove}>
                 <button

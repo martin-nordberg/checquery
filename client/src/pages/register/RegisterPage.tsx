@@ -2,10 +2,11 @@ import TopNav from "../../components/nav/TopNav.tsx";
 import Breadcrumb from "../../components/nav/Breadcrumb.tsx";
 import HoverableDropDown from "../../components/nav/HoverableDropDown.tsx";
 import Register from "../../components/register/Register.tsx";
-import {A, useParams} from "@solidjs/router";
+import {useParams} from "@solidjs/router";
 import {createMemo, createResource, Show} from "solid-js";
 import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
 import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
+import {isoDateToday} from "$shared/domain/core/IsoDate.ts";
 
 const RegisterPage = () => {
 
@@ -30,11 +31,17 @@ const RegisterPage = () => {
         return options
     })
 
+    const stmtOptions = {
+        "Register": ".",
+        "Balance Sheet": `/balancesheet/${isoDateToday}`,
+        "Income Statement": `/incomestatement/${isoDateToday.substring(0, 7)}`,
+    }
+
     return (
         <>
             <TopNav>
                 <Breadcrumb>
-                    <A href="/balancesheet">Balance Sheet</A>
+                    <HoverableDropDown options={stmtOptions} selectedOption="Register" />
                 </Breadcrumb>
                 <Breadcrumb>
                     <Show when={account()} fallback="Loading...">
