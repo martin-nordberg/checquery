@@ -58,3 +58,12 @@ export const transactionUpdateSchema =
 export type TransactionUpdate = z.infer<typeof transactionUpdateSchema>
 
 
+/** Sub-schema for transaction before it has entries added. */
+export const transactionStandAloneSchema =
+    z.strictObject({
+        ...transactionAttributesSchema.partial({
+            entries: true,
+        }).shape
+    }).readonly()
+
+export type TransactionStandAlone = z.infer<typeof transactionStandAloneSchema>

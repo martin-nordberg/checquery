@@ -5,9 +5,13 @@ import {
     type Transaction,
     type TransactionCreation,
     transactionSchema,
+    transactionStandAloneSchema,
     type TransactionUpdate
 } from "$shared/domain/transactions/Transaction";
-import {toCents} from "$shared/domain/core/CurrencyAmt";
+import {fromCents, toCents} from "$shared/domain/core/CurrencyAmt";
+import z from "zod";
+import {txnStatusSchema} from "$shared/domain/transactions/TxnStatus";
+import {summarySchema} from "$shared/domain/core/Summary";
 
 
 export class TransactionSqlService implements ITransactionSvc {
@@ -91,15 +95,56 @@ export class TransactionSqlService implements ITransactionSvc {
     }
 
     async findTransactionById(transactionId: TxnId): Promise<Transaction | null> {
-        return this.db.findOne(
+        const txn = this.db.findOne(
             'transaction.findById',
             () =>
-                `SELECT *
+                `SELECT Transaxtion.id, date, code, Organization.name as organization, Transaxtion.description, comment
                  FROM Transaxtion
-                 WHERE id = $id`,
+                 LEFT OUTER JOIN Organization ON Transaxtion.organizationId = Organization.id
+                 WHERE Transaxtion.id = $id`,
             {$id: transactionId},
-            transactionSchema
+            transactionStandAloneSchema
         )
+
+        if (!txn) {
+            return null
+        }
+
+        const entryRecords = this.db.findMany(
+            'entry.findByTxnId',
+            () =>
+                `SELECT Account.name as account,
+                        debitCents,
+                        creditCents,
+                        status,
+                        comment 
+                 FROM Entry
+                 JOIN Account ON Entry.accountId = Account.id
+                 WHERE txnId = $id`,
+            {$id: transactionId},
+            z.strictObject({
+                account: z.string(),
+                debitCents: z.int(),
+                creditCents: z.int(),
+                status: txnStatusSchema,
+                comment: summarySchema.optional()
+            }).readonly()
+        )
+
+        const entries = entryRecords.map(e => {
+            return {
+                account: e.account,
+                debit: fromCents(e.debitCents),
+                credit: fromCents(e.creditCents),
+                status: e.status,
+                comment: e.comment
+            }
+        })
+
+        return {
+            ...txn,
+            entries
+        }
     }
 
     async findTransactionsAll(): Promise<Transaction[]> {
@@ -115,41 +160,83 @@ export class TransactionSqlService implements ITransactionSvc {
     }
 
     async updateTransaction(transactionPatch: TransactionUpdate): Promise<Transaction | null> {
+        const sqlQueries: SqlWithBindings[] = []
 
-        // let queryKey = 'account.update'
-        // let sql = `UPDATE Account`
-        // let bindings: any = {$id: accountPatch.id}
-        //
-        // if (accountPatch.name) {
-        //     queryKey += '.name'
-        //     sql += ` SET name = $name`
-        //     bindings.$name = accountPatch.name
-        // }
-        // if (accountPatch.summary) {
-        //     queryKey += '.summary'
-        //     sql += ` SET summary = $summary`
-        //     bindings.$summary = accountPatch.summary
-        // } else if (accountPatch.summary == "") {
-        //     queryKey += '.summary-null'
-        //     sql += ` SET summary = NULL`
-        // }
-        // if (accountPatch.acctNumber) {
-        //     queryKey += '.acctNumber'
-        //     sql += ` SET acctNumber = $acctNumber`
-        //     bindings.$acctNumber = accountPatch.acctNumber
-        // }
-        // if (accountPatch.acctType) {
-        //     queryKey += '.acctType'
-        //     sql += ` SET acctType = $acctType`
-        //     bindings.$acctType = accountPatch.acctType
-        // }
-        // sql += ` WHERE id = $id`
-        //
-        // const changes = this.db.run(queryKey, () => sql, bindings)
-        //
-        // if (changes.changes == 0) {
-        //     return null
-        // }
+        // Build SET clause for transaction update
+        const setClauses: string[] = []
+        const bindings: Record<string, unknown> = { $id: transactionPatch.id }
+
+        if (transactionPatch.date !== undefined) {
+            setClauses.push('date = $date')
+            bindings['$date'] = transactionPatch.date
+        }
+        if (transactionPatch.code !== undefined) {
+            setClauses.push('code = $code')
+            bindings['$code'] = transactionPatch.code || null
+        }
+        if (transactionPatch.description !== undefined) {
+            setClauses.push('description = $description')
+            bindings['$description'] = transactionPatch.description || null
+        }
+        if (transactionPatch.organization !== undefined) {
+            if (transactionPatch.organization) {
+                // Update with organization lookup
+                sqlQueries.push({
+                    key: 'transaction.update.org',
+                    sql: () =>
+                        `UPDATE Transaxtion
+                         SET organizationId = (SELECT id FROM Organization WHERE name = $organization)
+                         WHERE id = $id`,
+                    bindings: { $id: transactionPatch.id, $organization: transactionPatch.organization }
+                })
+            } else {
+                setClauses.push('organizationId = NULL')
+            }
+        }
+
+        // Update transaction main fields if any
+        if (setClauses.length > 0) {
+            sqlQueries.push({
+                key: 'transaction.update.fields',
+                sql: () => `UPDATE Transaxtion SET ${setClauses.join(', ')} WHERE id = $id`,
+                bindings
+            })
+        }
+
+        // Delete existing entries and recreate if entries provided
+        if (transactionPatch.entries !== undefined) {
+            sqlQueries.push({
+                key: 'transaction.update.deleteEntries',
+                sql: () => `DELETE FROM Entry WHERE txnId = $id`,
+                bindings: { $id: transactionPatch.id }
+            })
+
+            let entrySeq = 1
+            for (const entry of transactionPatch.entries) {
+                sqlQueries.push({
+                    key: 'entry.create',
+                    sql: () =>
+                        `INSERT INTO Entry (txnId, entrySeq, accountId, status, debitCents, creditCents, comment)
+                         SELECT $txnId, $entrySeq, Account.id, $status, $debit, $credit, $comment
+                         FROM Account
+                         WHERE name = $account;`,
+                    bindings: {
+                        $txnId: transactionPatch.id,
+                        $entrySeq: entrySeq,
+                        $account: entry.account,
+                        $status: entry.status ?? transactionPatch.status ?? 'UNMARKED',
+                        $debit: toCents(entry.debit),
+                        $credit: toCents(entry.credit),
+                        $comment: entry.comment,
+                    }
+                })
+                entrySeq += 1
+            }
+        }
+
+        if (sqlQueries.length > 0) {
+            this.db.runMultiple(sqlQueries)
+        }
 
         return this.findTransactionById(transactionPatch.id)
     }

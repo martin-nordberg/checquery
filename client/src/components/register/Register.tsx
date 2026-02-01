@@ -1,7 +1,10 @@
-import {createMemo, createResource, For, Show} from "solid-js";
+import {createMemo, createResource, createSignal, For, Show} from "solid-js";
 import {registerClientSvc} from "../../clients/register/RegisterClientSvc.ts";
 import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
 import type {AcctTypeStr} from "$shared/domain/accounts/AcctType.ts";
+import type {TxnId} from "$shared/domain/transactions/TxnId.ts";
+import EditableRegisterRow from "./EditableRegisterRow.tsx";
+import NewTransactionRow from "./NewTransactionRow.tsx";
 
 type RegisterProps = {
     accountId: AcctId,
@@ -20,12 +23,43 @@ const getColumnHeadings = (accountType: AcctTypeStr) => {
 
 const Register = (props: RegisterProps) => {
 
-    const [register] = createResource(() => props.accountId, (id) => registerClientSvc.findRegister(id))
+    const [register, {refetch}] = createResource(() => props.accountId, (id) => registerClientSvc.findRegister(id))
+    const [editingTxnId, setEditingTxnId] = createSignal<TxnId | null>(null)
+    const [isAddingNew, setIsAddingNew] = createSignal(false)
 
     const headings = createMemo(() => {
         const acctType = register()?.accountType
         return acctType ? getColumnHeadings(acctType) : {debit: 'Debit', credit: 'Credit'}
     })
+
+    const handleStartEdit = (txnId: TxnId) => {
+        setIsAddingNew(false)
+        setEditingTxnId(txnId)
+    }
+
+    const handleCancelEdit = () => {
+        setEditingTxnId(null)
+    }
+
+    const handleSaved = () => {
+        setEditingTxnId(null)
+        setIsAddingNew(false)
+        refetch()
+    }
+
+    const handleDeleted = () => {
+        setEditingTxnId(null)
+        refetch()
+    }
+
+    const handleAddNew = () => {
+        setEditingTxnId(null)
+        setIsAddingNew(true)
+    }
+
+    const handleCancelNew = () => {
+        setIsAddingNew(false)
+    }
 
     return (
         <>
@@ -36,10 +70,21 @@ const Register = (props: RegisterProps) => {
                 <p class="text-red-600">Error loading register.</p>
             </Show>
             <Show when={register()}>
+                <div class="mb-4">
+                    <button
+                        onClick={handleAddNew}
+                        disabled={isAddingNew()}
+                        class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 text-sm"
+                    >
+                        + Add Transaction
+                    </button>
+                </div>
                 <div class="bg-white shadow-lg rounded-lg overflow-hidden">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
+                                <th class="px-2 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-10">
+                                </th>
                                 <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                                     Date
                                 </th>
@@ -67,43 +112,32 @@ const Register = (props: RegisterProps) => {
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
+                            <Show when={isAddingNew()}>
+                                <NewTransactionRow
+                                    currentAccountName={register()!.accountName}
+                                    onCancel={handleCancelNew}
+                                    onSaved={handleSaved}
+                                    headings={headings()}
+                                />
+                            </Show>
                             <For each={register()?.lineItems}>
                                 {(lineItem) => (
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                                            {lineItem.date}
-                                        </td>
-                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
-                                            {lineItem.code ?? ''}
-                                        </td>
-                                        <td class="px-4 py-2 text-sm text-gray-900">
-                                            {lineItem.organization ?? ''}
-                                        </td>
-                                        <td class="px-4 py-2 text-sm text-gray-500">
-                                            {lineItem.description ?? ''}
-                                        </td>
-                                        <td class="px-4 py-2 text-sm text-gray-500">
-                                            {lineItem.offsetAccount.replaceAll(':', ' : ')}
-                                        </td>
-                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
-                                            <Show when={lineItem.debit !== '$0.00'}>
-                                                {lineItem.debit}
-                                            </Show>
-                                        </td>
-                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
-                                            <Show when={lineItem.credit !== '$0.00'}>
-                                                {lineItem.credit}
-                                            </Show>
-                                        </td>
-                                        <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
-                                            {lineItem.balance}
-                                        </td>
-                                    </tr>
+                                    <EditableRegisterRow
+                                        lineItem={lineItem}
+                                        currentAccountName={register()!.accountName}
+                                        accountType={register()!.accountType}
+                                        isEditing={editingTxnId() === lineItem.txnId}
+                                        onStartEdit={() => handleStartEdit(lineItem.txnId)}
+                                        onCancelEdit={handleCancelEdit}
+                                        onSaved={handleSaved}
+                                        onDeleted={handleDeleted}
+                                        headings={headings()}
+                                    />
                                 )}
                             </For>
                         </tbody>
                     </table>
-                    <Show when={register()?.lineItems.length === 0}>
+                    <Show when={register()?.lineItems.length === 0 && !isAddingNew()}>
                         <p class="p-4 text-gray-500 text-center">No transactions found for this account.</p>
                     </Show>
                 </div>

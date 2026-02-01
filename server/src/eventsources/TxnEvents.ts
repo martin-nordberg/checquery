@@ -1,5 +1,6 @@
 import type {ITransactionSvc} from "$shared/services/transactions/ITransactionSvc";
-import {transactionCreationSchema} from "$shared/domain/transactions/Transaction";
+import {transactionCreationSchema, transactionUpdateSchema} from "$shared/domain/transactions/Transaction";
+import {txnIdSchema} from "$shared/domain/transactions/TxnId";
 
 /** The file containing transaction directives. TODO: make configurable */
 const transactionsFile = "C:\\Data\\Documents\\checquery\\data\\transactions.yaml"
@@ -20,6 +21,12 @@ export const loadTransactions = async (txnSvc: ITransactionSvc)=> {
         switch (directive.action) {
             case 'create':
                 await txnSvc.createTransaction(transactionCreationSchema.parse(directive.payload, { reportInput: true }))
+                break
+            case 'update':
+                await txnSvc.updateTransaction(transactionUpdateSchema.parse(directive.payload, { reportInput: true }))
+                break
+            case 'delete':
+                await txnSvc.deleteTransaction(txnIdSchema.parse(directive.payload.id, { reportInput: true }))
                 break
         }
     }

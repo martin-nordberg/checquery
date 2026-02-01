@@ -15,6 +15,7 @@ import {IncomeStatementSqlService} from "./sqlservices/incomestatement/IncomeSta
 import {incomeStatementRoutes} from "$shared/routes/incomestatement/IncomeStatementRoutes";
 import {RegisterSqlService} from "./sqlservices/register/RegisterSqlSvc";
 import {registerRoutes} from "$shared/routes/register/RegisterRoutes";
+import {organizationRoutes} from "$shared/routes/organizations/OrganizationRoutes";
 
 const app = new Hono()
 
@@ -59,6 +60,7 @@ const routes =
         .route('/balancesheet', balanceSheetRoutes(bsSvc))
         .route('/incomestatement', incomeStatementRoutes(isSvc))
         .route('/register', registerRoutes(regSvc))
+        .route('/organizations', organizationRoutes(orgSvc))
 
 export type AppType = typeof routes
 
