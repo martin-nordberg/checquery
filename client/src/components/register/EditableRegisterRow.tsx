@@ -23,7 +23,6 @@ type EditableRegisterRowProps = {
     onSaved: () => void,
     onDeleted: () => void,
     onDirtyChange: (isDirty: boolean) => void,
-    headings: {debit: string, credit: string},
 }
 
 const EditableRegisterRow = (props: EditableRegisterRowProps) => {
@@ -279,13 +278,11 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                 <Show when={props.lineItem.debit !== '$0.00'}>
                     {props.lineItem.debit}
                 </Show>
-            </td>
-            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
                 <Show when={props.lineItem.credit !== '$0.00'}>
-                    {props.lineItem.credit}
+                    <span class="text-red-600">-{props.lineItem.credit}</span>
                 </Show>
             </td>
-            <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
+            <td class={`px-4 py-2 whitespace-nowrap text-sm font-medium text-right ${props.accountType === 'LIABILITY' ? 'text-red-600' : 'text-gray-900'}`}>
                 {props.lineItem.balance}
             </td>
         </tr>
@@ -318,7 +315,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                         </svg>
                     </button>
                 </td>
-                <td class="px-2 py-2" colspan="8">
+                <td class="px-2 py-2" colspan="7">
                     <div class="space-y-3 p-2">
                         <div class="grid grid-cols-6 gap-3">
                             <div>
@@ -399,7 +396,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
         <Show when={props.isEditing} fallback={<DisplayRow />}>
             <Show when={transaction()} fallback={
                 <tr class="bg-blue-50">
-                    <td colspan="9" class="px-4 py-4 text-center text-gray-500">Loading...</td>
+                    <td colspan="8" class="px-4 py-4 text-center text-gray-500">Loading...</td>
                 </tr>
             }>
                 <EditRow />

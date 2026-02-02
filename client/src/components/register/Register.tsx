@@ -1,7 +1,6 @@
-import {createMemo, createResource, createSignal, For, Show} from "solid-js";
+import {createResource, createSignal, For, Show} from "solid-js";
 import {registerClientSvc} from "../../clients/register/RegisterClientSvc.ts";
 import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
-import type {AcctTypeStr} from "$shared/domain/accounts/AcctType.ts";
 import type {TxnId} from "$shared/domain/transactions/TxnId.ts";
 import EditableRegisterRow from "./EditableRegisterRow.tsx";
 import NewTransactionRow from "./NewTransactionRow.tsx";
@@ -10,28 +9,12 @@ type RegisterProps = {
     accountId: AcctId,
 }
 
-const getColumnHeadings = (accountType: AcctTypeStr) => {
-    switch (accountType) {
-        case 'ASSET':
-            return {debit: 'Inflow', credit: 'Outflow'}
-        case 'LIABILITY':
-            return {debit: 'Payment', credit: 'Expense'}
-        default:
-            return {debit: 'Debit', credit: 'Credit'}
-    }
-}
-
 const Register = (props: RegisterProps) => {
 
     const [register, {refetch}] = createResource(() => props.accountId, (id) => registerClientSvc.findRegister(id))
     const [editingTxnId, setEditingTxnId] = createSignal<TxnId | null>(null)
     const [isAddingNew, setIsAddingNew] = createSignal(false)
     const [isDirty, setIsDirty] = createSignal(false)
-
-    const headings = createMemo(() => {
-        const acctType = register()?.accountType
-        return acctType ? getColumnHeadings(acctType) : {debit: 'Debit', credit: 'Credit'}
-    })
 
     const handleStartEdit = (txnId: TxnId) => {
         if (isDirty()) return // Don't allow switching if dirty
@@ -83,7 +66,7 @@ const Register = (props: RegisterProps) => {
             <Show when={register()}>
                 <div class="bg-white shadow-lg rounded-lg overflow-hidden">
                     <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                        <thead class="bg-blue-100">
                             <tr>
                                 <th class="px-2 py-3 text-center w-10">
                                     <button
@@ -113,10 +96,7 @@ const Register = (props: RegisterProps) => {
                                     Category
                                 </th>
                                 <th class="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    {headings().debit}
-                                </th>
-                                <th class="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    {headings().credit}
+                                    Amount
                                 </th>
                                 <th class="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
                                     Balance
@@ -130,7 +110,6 @@ const Register = (props: RegisterProps) => {
                                     onCancel={handleCancelNew}
                                     onSaved={handleSaved}
                                     onDirtyChange={handleDirtyChange}
-                                    headings={headings()}
                                 />
                             </Show>
                             <For each={register()?.lineItems}>
@@ -146,7 +125,6 @@ const Register = (props: RegisterProps) => {
                                         onSaved={handleSaved}
                                         onDeleted={handleDeleted}
                                         onDirtyChange={handleDirtyChange}
-                                        headings={headings()}
                                     />
                                 )}
                             </For>

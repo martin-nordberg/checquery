@@ -18,7 +18,6 @@ type NewTransactionRowProps = {
     onCancel: () => void,
     onSaved: () => void,
     onDirtyChange: (isDirty: boolean) => void,
-    headings: {debit: string, credit: string},
 }
 
 const NewTransactionRow = (props: NewTransactionRowProps) => {
@@ -199,7 +198,7 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
                     </svg>
                 </button>
             </td>
-            <td class="px-2 py-2" colspan="8">
+            <td class="px-2 py-2" colspan="7">
                 <div class="space-y-3 p-2">
                     <div class="text-sm font-medium text-green-700 mb-2">New Transaction</div>
                     <div class="grid grid-cols-6 gap-3">
