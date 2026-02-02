@@ -6,6 +6,7 @@ type RegisterActionButtonsProps = {
     onAddEntry: () => void,
     isSaving?: boolean,
     isNew?: boolean,
+    isDirty?: boolean,
 }
 
 const RegisterActionButtons = (props: RegisterActionButtonsProps) => {
@@ -14,7 +15,7 @@ const RegisterActionButtons = (props: RegisterActionButtonsProps) => {
             <button
                 type="button"
                 onClick={props.onSave}
-                disabled={props.isSaving}
+                disabled={props.isSaving || !props.isDirty}
                 class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1"
             >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

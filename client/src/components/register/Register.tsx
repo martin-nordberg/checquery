@@ -26,6 +26,7 @@ const Register = (props: RegisterProps) => {
     const [register, {refetch}] = createResource(() => props.accountId, (id) => registerClientSvc.findRegister(id))
     const [editingTxnId, setEditingTxnId] = createSignal<TxnId | null>(null)
     const [isAddingNew, setIsAddingNew] = createSignal(false)
+    const [isDirty, setIsDirty] = createSignal(false)
 
     const headings = createMemo(() => {
         const acctType = register()?.accountType
@@ -33,32 +34,42 @@ const Register = (props: RegisterProps) => {
     })
 
     const handleStartEdit = (txnId: TxnId) => {
+        if (isDirty()) return // Don't allow switching if dirty
         setIsAddingNew(false)
         setEditingTxnId(txnId)
     }
 
     const handleCancelEdit = () => {
         setEditingTxnId(null)
+        setIsDirty(false)
     }
 
     const handleSaved = () => {
         setEditingTxnId(null)
         setIsAddingNew(false)
+        setIsDirty(false)
         refetch()
     }
 
     const handleDeleted = () => {
         setEditingTxnId(null)
+        setIsDirty(false)
         refetch()
     }
 
     const handleAddNew = () => {
+        if (isDirty()) return // Don't allow if dirty
         setEditingTxnId(null)
         setIsAddingNew(true)
     }
 
     const handleCancelNew = () => {
         setIsAddingNew(false)
+        setIsDirty(false)
+    }
+
+    const handleDirtyChange = (dirty: boolean) => {
+        setIsDirty(dirty)
     }
 
     return (
@@ -77,8 +88,8 @@ const Register = (props: RegisterProps) => {
                                 <th class="px-2 py-3 text-center w-10">
                                     <button
                                         onClick={handleAddNew}
-                                        disabled={isAddingNew()}
-                                        class="text-green-600 hover:text-green-800 hover:bg-gray-200 rounded p-1 cursor-pointer disabled:opacity-50"
+                                        disabled={isAddingNew() || isDirty()}
+                                        class="text-green-600 hover:text-green-800 hover:bg-gray-200 rounded p-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                         title="Add transaction"
                                     >
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -118,6 +129,7 @@ const Register = (props: RegisterProps) => {
                                     currentAccountName={register()!.accountName}
                                     onCancel={handleCancelNew}
                                     onSaved={handleSaved}
+                                    onDirtyChange={handleDirtyChange}
                                     headings={headings()}
                                 />
                             </Show>
@@ -128,10 +140,12 @@ const Register = (props: RegisterProps) => {
                                         currentAccountName={register()!.accountName}
                                         accountType={register()!.accountType}
                                         isEditing={editingTxnId() === lineItem.txnId}
+                                        editDisabled={isDirty() || isAddingNew()}
                                         onStartEdit={() => handleStartEdit(lineItem.txnId)}
                                         onCancelEdit={handleCancelEdit}
                                         onSaved={handleSaved}
                                         onDeleted={handleDeleted}
+                                        onDirtyChange={handleDirtyChange}
                                         headings={headings()}
                                     />
                                 )}

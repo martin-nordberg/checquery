@@ -19,7 +19,13 @@ const AutocompleteField = (props: AutocompleteFieldProps) => {
     const [filteredOptions, setFilteredOptions] = createSignal<AutocompleteOption[]>([])
 
     createEffect(() => {
-        setInputValue(props.value ?? '')
+        const newValue = props.value ?? ''
+        // Find the matching option to display its label instead of raw value
+        const matchingOption = props.options.find(opt => opt.value === newValue)
+        const displayValue = matchingOption?.label ?? newValue
+        if (displayValue !== inputValue()) {
+            setInputValue(displayValue)
+        }
     })
 
     const filterOptions = (query: string) => {
@@ -54,7 +60,7 @@ const AutocompleteField = (props: AutocompleteFieldProps) => {
     }
 
     const selectOption = (option: AutocompleteOption) => {
-        setInputValue(option.value)
+        setInputValue(option.label)
         props.onChange(option.value)
         setIsOpen(false)
     }

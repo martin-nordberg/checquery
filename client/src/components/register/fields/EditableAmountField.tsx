@@ -9,34 +9,35 @@ type EditableAmountFieldProps = {
 }
 
 const EditableAmountField = (props: EditableAmountFieldProps) => {
-    // Store the raw input value for editing
-    const [rawValue, setRawValue] = createSignal('')
     const [error, setError] = createSignal<string | null>(null)
 
-    // Convert currency format to a plain number for editing
     const toPlainNumber = (amt: CurrencyAmt): string => {
         if (amt === '$0.00') return ''
         const cents = toCents(amt)
         return (cents / 100).toFixed(2)
     }
 
+    const [rawValue, setRawValue] = createSignal(toPlainNumber(props.value))
+
+    // Sync from props when value changes
     createEffect(() => {
         setRawValue(toPlainNumber(props.value))
     })
 
-    const handleChange = (e: Event) => {
+    const handleInput = (e: Event) => {
         const target = e.target as HTMLInputElement
-        const value = target.value
-        setRawValue(value)
+        setRawValue(target.value)
+    }
 
-        // Allow empty value
+    const handleBlur = () => {
+        const value = rawValue()
+
         if (!value || value === '') {
             setError(null)
-            props.onChange('$0.00')
+            props.onChange('$0.00' as CurrencyAmt)
             return
         }
 
-        // Parse as number and convert to currency format
         const parsed = parseFloat(value)
         if (isNaN(parsed)) {
             setError("Invalid number")
@@ -50,6 +51,7 @@ const EditableAmountField = (props: EditableAmountFieldProps) => {
         if (result.success) {
             setError(null)
             props.onChange(result.data)
+            setRawValue((cents / 100).toFixed(2))
         } else {
             setError(result.error.issues[0]?.message ?? "Invalid amount")
         }
@@ -58,11 +60,11 @@ const EditableAmountField = (props: EditableAmountFieldProps) => {
     return (
         <div class="flex flex-col">
             <input
-                type="number"
-                step="0.01"
-                min="0"
+                type="text"
+                inputMode="decimal"
                 value={rawValue()}
-                onInput={handleChange}
+                onInput={handleInput}
+                onBlur={handleBlur}
                 disabled={props.disabled}
                 class={`px-2 py-1 border rounded text-sm text-right w-24 ${error() ? 'border-red-500' : 'border-gray-300'} ${props.disabled ? 'bg-gray-100' : 'bg-white'}`}
             />

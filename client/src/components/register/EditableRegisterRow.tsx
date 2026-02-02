@@ -1,4 +1,5 @@
-import {createSignal, createEffect, createMemo, Show, For} from "solid-js";
+import {createSignal, createEffect, createMemo, Show, Index} from "solid-js";
+import ConfirmDialog from "../common/ConfirmDialog.tsx";
 import type {RegisterLineItem, RegisterEntry, RegisterTransaction} from "$shared/domain/register/Register.ts";
 import type {CurrencyAmt} from "$shared/domain/core/CurrencyAmt.ts";
 import type {IsoDate} from "$shared/domain/core/IsoDate.ts";
@@ -16,10 +17,12 @@ type EditableRegisterRowProps = {
     currentAccountName: string,
     accountType: AcctTypeStr,
     isEditing: boolean,
+    editDisabled: boolean,
     onStartEdit: () => void,
     onCancelEdit: () => void,
     onSaved: () => void,
     onDeleted: () => void,
+    onDirtyChange: (isDirty: boolean) => void,
     headings: {debit: string, credit: string},
 }
 
@@ -32,7 +35,39 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
     const [editEntries, setEditEntries] = createSignal<RegisterEntry[]>([])
     const [isSaving, setIsSaving] = createSignal(false)
     const [error, setError] = createSignal<string | null>(null)
+    const [showAbandonConfirm, setShowAbandonConfirm] = createSignal(false)
+    const [showDeleteConfirm, setShowDeleteConfirm] = createSignal(false)
     let editRowRef: HTMLTableRowElement | undefined
+
+    // Store initial values for dirty checking
+    const [initialDate, setInitialDate] = createSignal<IsoDate | null>(null)
+    const [initialCode, setInitialCode] = createSignal<string | undefined>(undefined)
+    const [initialOrganization, setInitialOrganization] = createSignal<string | undefined>(undefined)
+    const [initialDescription, setInitialDescription] = createSignal<string | undefined>(undefined)
+    const [initialEntries, setInitialEntries] = createSignal<RegisterEntry[]>([])
+
+    // Compute dirty state
+    const isDirty = createMemo(() => {
+        if (!transaction()) return false
+        if (editDate() !== initialDate()) return true
+        if (editCode() !== initialCode()) return true
+        if (editOrganization() !== initialOrganization()) return true
+        if (editDescription() !== initialDescription()) return true
+        const current = editEntries()
+        const initial = initialEntries()
+        if (current.length !== initial.length) return true
+        for (let i = 0; i < current.length; i++) {
+            if (current[i]!.account !== initial[i]!.account) return true
+            if (current[i]!.debit !== initial[i]!.debit) return true
+            if (current[i]!.credit !== initial[i]!.credit) return true
+        }
+        return false
+    })
+
+    // Report dirty state changes to parent
+    createEffect(() => {
+        props.onDirtyChange(isDirty())
+    })
 
     // Load full transaction when entering edit mode
     createEffect(async () => {
@@ -47,11 +82,16 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                 // Reorder entries so current account is first
                 const currentAccountEntry = txn.entries.find(e => e.account === props.currentAccountName)
                 const otherEntries = txn.entries.filter(e => e.account !== props.currentAccountName)
-                if (currentAccountEntry) {
-                    setEditEntries([currentAccountEntry, ...otherEntries])
-                } else {
-                    setEditEntries(txn.entries)
-                }
+                const reorderedEntries = currentAccountEntry
+                    ? [currentAccountEntry, ...otherEntries]
+                    : txn.entries
+                setEditEntries(reorderedEntries)
+                // Store initial values
+                setInitialDate(txn.date)
+                setInitialCode(txn.code)
+                setInitialOrganization(txn.organization)
+                setInitialDescription(txn.description)
+                setInitialEntries(reorderedEntries.map(e => ({...e})))
             }
         }
     })
@@ -59,7 +99,14 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
     // Scroll edit row into view when it appears
     createEffect(() => {
         if (props.isEditing && transaction() && editRowRef) {
-            editRowRef.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+            setTimeout(() => {
+                if (!editRowRef) return
+                const rect = editRowRef.getBoundingClientRect()
+                const isBottomVisible = rect.bottom <= window.innerHeight
+                if (!isBottomVisible) {
+                    editRowRef.scrollIntoView({ behavior: 'smooth', block: 'end' })
+                }
+            }, 50)
         }
     })
 
@@ -88,8 +135,18 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
     })
 
     const handleCancel = () => {
+        if (isDirty()) {
+            setShowAbandonConfirm(true)
+            return
+        }
+        doCancel()
+    }
+
+    const doCancel = () => {
+        setShowAbandonConfirm(false)
         setTransaction(null)
         setError(null)
+        props.onDirtyChange(false)
         props.onCancelEdit()
     }
 
@@ -142,11 +199,12 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
         }
     }
 
-    const handleDelete = async () => {
-        if (!confirm('Are you sure you want to delete this transaction?')) {
-            return
-        }
+    const handleDelete = () => {
+        setShowDeleteConfirm(true)
+    }
 
+    const doDelete = async () => {
+        setShowDeleteConfirm(false)
         setIsSaving(true)
         try {
             await registerClientSvc.deleteTransaction(props.lineItem.txnId)
@@ -193,7 +251,8 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
             <td class="px-2 py-2 whitespace-nowrap text-sm text-center">
                 <button
                     onClick={props.onStartEdit}
-                    class="text-blue-600 hover:text-blue-800 hover:bg-gray-200 rounded p-1 cursor-pointer"
+                    disabled={props.editDisabled}
+                    class="text-blue-600 hover:text-blue-800 hover:bg-gray-200 rounded p-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Edit transaction"
                 >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -235,6 +294,18 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
     // Edit mode expanded row
     const EditRow = () => (
         <>
+            <ConfirmDialog
+                isOpen={showAbandonConfirm()}
+                message="You have unsaved changes. Abandon them?"
+                onYes={doCancel}
+                onNo={() => setShowAbandonConfirm(false)}
+            />
+            <ConfirmDialog
+                isOpen={showDeleteConfirm()}
+                message="Are you sure you want to delete this transaction?"
+                onYes={doDelete}
+                onNo={() => setShowDeleteConfirm(false)}
+            />
             <tr ref={editRowRef} class="bg-blue-50">
                 <td class="px-2 py-2 align-top">
                     <button
@@ -293,17 +364,17 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                                     <div class="w-28 text-right pr-2">Credit</div>
                                     <div class="w-6"></div>
                                 </div>
-                                <For each={balancedEntries()}>
+                                <Index each={balancedEntries()}>
                                     {(entry, index) => (
                                         <EditableSplitEntry
-                                            entry={entry}
-                                            onUpdate={(updated) => updateEntry(index(), updated)}
-                                            onRemove={() => removeEntry(index())}
-                                            canRemove={editEntries().length > 2 && index() > 0}
-                                            isPrimary={index() === 0}
+                                            entry={entry()}
+                                            onUpdate={(updated) => updateEntry(index, updated)}
+                                            onRemove={() => removeEntry(index)}
+                                            canRemove={editEntries().length > 2 && index > 0}
+                                            isPrimary={index === 0}
                                         />
                                     )}
-                                </For>
+                                </Index>
                             </div>
                         </div>
 
@@ -316,6 +387,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                             onDelete={handleDelete}
                             onAddEntry={addEntry}
                             isSaving={isSaving()}
+                            isDirty={isDirty()}
                         />
                     </div>
                 </td>

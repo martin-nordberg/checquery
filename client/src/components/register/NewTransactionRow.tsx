@@ -1,4 +1,5 @@
-import {createSignal, createMemo, Show, For} from "solid-js";
+import {createSignal, createMemo, createEffect, Show, Index} from "solid-js";
+import ConfirmDialog from "../common/ConfirmDialog.tsx";
 import type {RegisterEntry} from "$shared/domain/register/Register.ts";
 import type {CurrencyAmt} from "$shared/domain/core/CurrencyAmt.ts";
 import {fromCents} from "$shared/domain/core/CurrencyAmt.ts";
@@ -16,6 +17,7 @@ type NewTransactionRowProps = {
     currentAccountName: string,
     onCancel: () => void,
     onSaved: () => void,
+    onDirtyChange: (isDirty: boolean) => void,
     headings: {debit: string, credit: string},
 }
 
@@ -38,6 +40,44 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
     ])
     const [isSaving, setIsSaving] = createSignal(false)
     const [error, setError] = createSignal<string | null>(null)
+    const [showAbandonConfirm, setShowAbandonConfirm] = createSignal(false)
+
+    // Compute dirty state - for new transaction, dirty if any field changed from default
+    const isDirty = createMemo(() => {
+        if (editCode() !== undefined) return true
+        if (editOrganization() !== undefined) return true
+        if (editDescription() !== undefined) return true
+        const entries = editEntries()
+        // Check if second entry has any non-default values
+        if (entries.length > 1) {
+            const second = entries[1]!
+            if (second.account !== '') return true
+            if (second.debit !== '$0.00') return true
+            if (second.credit !== '$0.00') return true
+        }
+        // Check if there are more than 2 entries
+        if (entries.length > 2) return true
+        return false
+    })
+
+    // Report dirty state changes to parent
+    createEffect(() => {
+        props.onDirtyChange(isDirty())
+    })
+
+    const handleCancel = () => {
+        if (isDirty()) {
+            setShowAbandonConfirm(true)
+            return
+        }
+        doCancel()
+    }
+
+    const doCancel = () => {
+        setShowAbandonConfirm(false)
+        props.onDirtyChange(false)
+        props.onCancel()
+    }
 
     const parseAmount = (amt: CurrencyAmt): number => {
         if (amt === '$0.00') return 0
@@ -140,10 +180,17 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
     }
 
     return (
+        <>
+        <ConfirmDialog
+            isOpen={showAbandonConfirm()}
+            message="You have unsaved changes. Abandon them?"
+            onYes={doCancel}
+            onNo={() => setShowAbandonConfirm(false)}
+        />
         <tr class="bg-green-50">
             <td class="px-2 py-2 align-top">
                 <button
-                    onClick={props.onCancel}
+                    onClick={handleCancel}
                     class="text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded p-1 cursor-pointer"
                     title="Cancel"
                 >
@@ -199,17 +246,17 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
                                 <div class="w-28 text-right pr-2">Credit</div>
                                 <div class="w-6"></div>
                             </div>
-                            <For each={balancedEntries()}>
+                            <Index each={balancedEntries()}>
                                 {(entry, index) => (
                                     <EditableSplitEntry
-                                        entry={entry}
-                                        onUpdate={(updated) => updateEntry(index(), updated)}
-                                        onRemove={() => removeEntry(index())}
-                                        canRemove={editEntries().length > 2 && index() > 0}
-                                        isPrimary={index() === 0}
+                                        entry={entry()}
+                                        onUpdate={(updated) => updateEntry(index, updated)}
+                                        onRemove={() => removeEntry(index)}
+                                        canRemove={editEntries().length > 2 && index > 0}
+                                        isPrimary={index === 0}
                                     />
                                 )}
-                            </For>
+                            </Index>
                         </div>
                     </div>
 
@@ -222,10 +269,12 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
                         onAddEntry={addEntry}
                         isSaving={isSaving()}
                         isNew={true}
+                        isDirty={isDirty()}
                     />
                 </div>
             </td>
         </tr>
+        </>
     )
 }
 

@@ -14,6 +14,9 @@ type EditableSplitEntryProps = {
 
 const EditableSplitEntry = (props: EditableSplitEntryProps) => {
 
+    const hasDebit = () => props.entry.debit !== '$0.00'
+    const hasCredit = () => props.entry.credit !== '$0.00'
+
     const handleAccountChange = (account: string | undefined) => {
         props.onUpdate({
             ...props.entry,
@@ -56,6 +59,7 @@ const EditableSplitEntry = (props: EditableSplitEntryProps) => {
                     <EditableAmountField
                         value={props.entry.debit}
                         onChange={handleDebitChange}
+                        disabled={hasCredit()}
                     />
                 }>
                     <div class="px-2 py-1 text-sm text-gray-700 text-right w-24">
@@ -70,6 +74,7 @@ const EditableSplitEntry = (props: EditableSplitEntryProps) => {
                     <EditableAmountField
                         value={props.entry.credit}
                         onChange={handleCreditChange}
+                        disabled={hasDebit()}
                     />
                 }>
                     <div class="px-2 py-1 text-sm text-gray-700 text-right w-24">
