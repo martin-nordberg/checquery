@@ -5,7 +5,7 @@ import {txnIdSchema, type TxnId} from "../transactions/TxnId";
 import {type AcctTypeStr} from "../accounts/AcctType";
 import {z} from "zod";
 import {nameSchema} from "../core/Name";
-import {summarySchema} from "../core/Summary";
+import {descriptionSchema} from "../core/Description";
 
 /** A single line item in an account register. */
 export type RegisterLineItem = {
@@ -109,7 +109,7 @@ export const registerUpdateSchema = z.strictObject({
     code: z.string().nullish(),
     status: txnStatusSchema.nullish(),
     vendor: nameSchema.nullish(),
-    description: summarySchema.nullish(),
+    description: descriptionSchema.nullish(),
     entries: z.array(registerEntrySchema).min(2).optional(),
 }).readonly()
 
@@ -122,7 +122,7 @@ export const registerCreateSchema = z.strictObject({
     code: z.string().nullish(),
     status: txnStatusSchema.nullish(),
     vendor: nameSchema.nullish(),
-    description: summarySchema.nullish(),
+    description: descriptionSchema.nullish(),
     entries: z.array(registerEntrySchema).min(2),
 }).readonly()
 

@@ -11,7 +11,7 @@ import {
 import {fromCents, toCents} from "$shared/domain/core/CurrencyAmt";
 import z from "zod";
 import {txnStatusSchema} from "$shared/domain/transactions/TxnStatus";
-import {summarySchema} from "$shared/domain/core/Summary";
+import {descriptionSchema} from "$shared/domain/core/Description";
 
 
 export class TransactionSqlService implements ITransactionSvc {
@@ -127,7 +127,7 @@ export class TransactionSqlService implements ITransactionSvc {
                 debitCents: z.int(),
                 creditCents: z.int(),
                 status: txnStatusSchema,
-                comment: summarySchema.optional()
+                comment: descriptionSchema.optional()
             }).readonly()
         )
 

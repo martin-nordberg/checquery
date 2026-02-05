@@ -16,7 +16,7 @@ describe('Sample Accounts', () => {
                 name: 'example',
                 acctNumber: '1234-4567',
                 acctType: 'ASSET',
-                summary: "an example of an account",
+                description: "an example of an account",
             }
         )
 
@@ -24,7 +24,7 @@ describe('Sample Accounts', () => {
         expect(acct.name).toBe('example')
         expect(acct.acctNumber).toBe('1234-4567')
         expect(acct.acctType).toBe('ASSET')
-        expect(acct.summary).toBe('an example of an account')
+        expect(acct.description).toBe('an example of an account')
     })
 
     it('Should parse without error when optional fields are absent', () => {
@@ -42,7 +42,7 @@ describe('Sample Accounts', () => {
         expect(acct.name).toBe('example')
         expect(acct.acctNumber).toBe('1234-4567')
         expect(acct.acctType).toBe('ASSET')
-        expect(acct.summary).toBeUndefined()
+        expect(acct.description).toBeUndefined()
     })
 
     it('Should convert to JSON', () => {
@@ -53,13 +53,13 @@ describe('Sample Accounts', () => {
                 name: 'example',
                 acctNumber: '1234-4567',
                 acctType: 'LIABILITY',
-                summary: "an example of an account"
+                description: "an example of an account"
             }
         )
         const accountJson = JSON.stringify(acct)
 
         expect(accountJson).toBe(
-            `{"id":"${id}","acctNumber":"1234-4567","acctType":"LIABILITY","name":"example","summary":"an example of an account"}`
+            `{"id":"${id}","acctNumber":"1234-4567","acctType":"LIABILITY","name":"example","description":"an example of an account"}`
         )
     })
 
@@ -75,22 +75,22 @@ describe('Sample Accounts', () => {
         expect(acct.id).toBe(id)
         expect(acct.name).toBe('example')
         expect(acct.acctNumber).toBeUndefined()
-        expect(acct.summary).toBeUndefined()
+        expect(acct.description).toBeUndefined()
     })
 
-    it('Should parse without error for a summary change', () => {
+    it('Should parse without error for a description change', () => {
         const id = genAcctId()
         const acct = accountUpdateSchema.parse(
             {
                 id: id,
-                summary: 'Revised summary',
+                description: 'Revised summary',
             }
         )
 
         expect(acct.id).toBe(id)
         expect(acct.name).toBeUndefined()
         expect(acct.acctNumber).toBeUndefined()
-        expect(acct.summary).toBe("Revised summary")
+        expect(acct.description).toBe("Revised summary")
     })
 
     it('Should generate JSON schema', () => {
@@ -133,7 +133,7 @@ describe('Sample Accounts', () => {
                     pattern: "^[^\\r\\n]*$",
                     type: "string",
                 },
-                summary: {
+                description: {
                     maxLength: 200,
                     pattern: "^[^\\r\\n]*$",
                     type: "string",
@@ -289,22 +289,22 @@ describe('Invalid Accounts', () => {
         })
     })
 
-    describe('invalid summary', () => {
-        it('rejects summary exceeding max length', () => {
+    describe('invalid description', () => {
+        it('rejects description exceeding max length', () => {
             expect(() => accountSchema.parse({
                 id: genAcctId(),
                 name: 'example',
                 acctType: 'ASSET',
-                summary: 'x'.repeat(201)
+                description: 'x'.repeat(201)
             })).toThrow()
         })
 
-        it('rejects summary with newlines', () => {
+        it('rejects description with newlines', () => {
             expect(() => accountSchema.parse({
                 id: genAcctId(),
                 name: 'example',
                 acctType: 'ASSET',
-                summary: 'Line one\nLine two'
+                description: 'Line one\nLine two'
             })).toThrow()
         })
     })

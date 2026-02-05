@@ -19,14 +19,14 @@ export class AccountSqlService implements IAccountSvc {
         this.db.run(
             'account.create',
             () =>
-                `INSERT INTO Account (id, name, acctNumber, acctType, summary)
-                 VALUES ($id, $name, $acctNumber, $acctType, $summary);`,
+                `INSERT INTO Account (id, name, acctNumber, acctType, description)
+                 VALUES ($id, $name, $acctNumber, $acctType, $description);`,
             {
                 $id: account.id,
                 $name: account.name,
                 $acctNumber: account.acctNumber,
                 $acctType: account.acctType,
-                $summary: account.summary ?? null,
+                $description: account.description ?? null,
             }
         )
     }
@@ -77,13 +77,13 @@ export class AccountSqlService implements IAccountSvc {
             sql += ` SET name = $name`
             bindings.$name = accountPatch.name
         }
-        if (accountPatch.summary) {
-            queryKey += '.summary'
-            sql += ` SET summary = $summary`
-            bindings.$summary = accountPatch.summary
-        } else if (accountPatch.summary == "") {
-            queryKey += '.summary-null'
-            sql += ` SET summary = NULL`
+        if (accountPatch.description) {
+            queryKey += '.description'
+            sql += ` SET description = $description`
+            bindings.$description = accountPatch.description
+        } else if (accountPatch.description == "") {
+            queryKey += '.description-null'
+            sql += ` SET description = NULL`
         }
         if (accountPatch.acctNumber) {
             queryKey += '.acctNumber'

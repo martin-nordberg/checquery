@@ -82,6 +82,10 @@ YAML files contain action directives (e.g., `{action: 'create', payload: {...}}`
 
 Custom Zod validator at `shared/src/routes/validation/zxvalidator.ts` bridges Hono middleware and Zod schemas.
 
+## Workflow
+
+- **Never offer to commit changes.** The user reviews and commits all changes externally in SourceTree.
+
 ## Code Style
 
 - **Always use block statements with braces for `if` statements.** Never use single-line `if` statements without braces (e.g., `if (x) return` or `if (x) y = z`). Always wrap the body in `{ }`, even for one-liners.

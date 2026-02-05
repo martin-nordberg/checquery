@@ -16,7 +16,7 @@ describe('Account SQL Services', () => {
             name: "Sample",
             acctNumber: "123-456",
             acctType: "ASSET",
-            summary: "An example account",
+            description: "An example account",
         }
 
         await svc.createAccount(acct0)

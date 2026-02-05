@@ -1,7 +1,7 @@
 import {z} from "zod";
 import {nameSchema} from "../core/Name";
 import {vndrIdSchema} from "./VndrId";
-import {summarySchema} from "../core/Summary";
+import {descriptionSchema} from "../core/Description";
 
 /** Coerces SQLite integers (0/1) and missing values to boolean, defaulting to true. */
 const booleanDefaultTrue = z.preprocess(
@@ -27,7 +27,7 @@ export const vendorAttributesSchema =
         name: nameSchema,
 
         /* A short description of the vendor. */
-        description: summarySchema.optional(),
+        description: descriptionSchema.optional(),
 
         /** The default account name for transactions with this vendor. */
         defaultAccount: nameSchema.optional(),

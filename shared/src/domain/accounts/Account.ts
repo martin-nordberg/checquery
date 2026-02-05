@@ -1,6 +1,6 @@
 import {z} from "zod";
 import {nameSchema} from "../core/Name";
-import {summarySchema} from "../core/Summary";
+import {descriptionSchema} from "../core/Description";
 import {acctNumberSchema} from "./AcctNumber";
 import {acctTypeSchema} from "./AcctType";
 import {acctIdSchema} from "./AcctId";
@@ -20,8 +20,8 @@ export const accountAttributesSchema =
         /** The name of the account. */
         name: nameSchema,
 
-        /* A short summary of the account. */
-        summary: summarySchema.optional(),
+        /* A short description of the account. */
+        description: descriptionSchema.optional(),
     })
 
 

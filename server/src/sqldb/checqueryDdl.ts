@@ -40,7 +40,7 @@ export function runChecqueryDdl(db: ChecquerySqlDb) {
              acctType   TEXT(10) NOT NULL REFERENCES AcctType(code),
              acctNumber TEXT(50) UNIQUE,
              name       TEXT(200) UNIQUE NOT NULL,
-             summary    TEXT(200),
+             description TEXT(200),
              CONSTRAINT Account_PK PRIMARY KEY (id)
          );`,
         {}

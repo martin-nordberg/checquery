@@ -1,5 +1,5 @@
 import {z} from "zod";
-import {summarySchema} from "../core/Summary";
+import {descriptionSchema} from "../core/Description";
 import {entriesSchema} from "./Entry";
 import {txnIdSchema} from "./TxnId";
 import {txnStatusSchema} from "./TxnStatus";
@@ -25,7 +25,7 @@ export const transactionAttributesSchema =
         vendor: nameSchema.optional(),
 
         /** A description of the transaction. */
-        description: summarySchema.optional(),
+        description: descriptionSchema.optional(),
 
         /** The two or more entries in the transaction. */
         entries: entriesSchema
