@@ -31,9 +31,15 @@ const NewVendorRow = (props: NewVendorRowProps) => {
 
     // Compute dirty state - for new vendor, dirty if any field has been set
     const isDirty = createMemo(() => {
-        if (editName() !== undefined && editName() !== '') return true
-        if (editDefaultAccount() !== undefined && editDefaultAccount() !== '') return true
-        if (editDescription() !== undefined && editDescription() !== '') return true
+        if (editName() !== undefined && editName() !== '') {
+            return true
+        }
+        if (editDefaultAccount() !== undefined && editDefaultAccount() !== '') {
+            return true
+        }
+        if (editDescription() !== undefined && editDescription() !== '') {
+            return true
+        }
         return false
     })
 

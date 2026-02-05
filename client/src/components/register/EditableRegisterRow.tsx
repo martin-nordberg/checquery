@@ -47,18 +47,36 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
 
     // Compute dirty state
     const isDirty = createMemo(() => {
-        if (!transaction()) return false
-        if (editDate() !== initialDate()) return true
-        if (editCode() !== initialCode()) return true
-        if (editVendor() !== initialVendor()) return true
-        if (editDescription() !== initialDescription()) return true
+        if (!transaction()) {
+            return false
+        }
+        if (editDate() !== initialDate()) {
+            return true
+        }
+        if (editCode() !== initialCode()) {
+            return true
+        }
+        if (editVendor() !== initialVendor()) {
+            return true
+        }
+        if (editDescription() !== initialDescription()) {
+            return true
+        }
         const current = editEntries()
         const initial = initialEntries()
-        if (current.length !== initial.length) return true
+        if (current.length !== initial.length) {
+            return true
+        }
         for (let i = 0; i < current.length; i++) {
-            if (current[i]!.account !== initial[i]!.account) return true
-            if (current[i]!.debit !== initial[i]!.debit) return true
-            if (current[i]!.credit !== initial[i]!.credit) return true
+            if (current[i]!.account !== initial[i]!.account) {
+                return true
+            }
+            if (current[i]!.debit !== initial[i]!.debit) {
+                return true
+            }
+            if (current[i]!.credit !== initial[i]!.credit) {
+                return true
+            }
         }
         return false
     })
@@ -99,7 +117,9 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
     createEffect(() => {
         if (props.isEditing && transaction() && editRowRef) {
             setTimeout(() => {
-                if (!editRowRef) return
+                if (!editRowRef) {
+                    return
+                }
                 const rect = editRowRef.getBoundingClientRect()
                 const isBottomVisible = rect.bottom <= window.innerHeight
                 if (!isBottomVisible) {
@@ -112,7 +132,9 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
     // Compute the balancing entry for the current account (first entry)
     const balancedEntries = createMemo(() => {
         const entries = editEntries()
-        if (entries.length < 2) return entries
+        if (entries.length < 2) {
+            return entries
+        }
 
         // Sum debits and credits from entries after the first one
         let totalDebit = 0
@@ -237,10 +259,14 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
     }
 
     const parseAmount = (amt: CurrencyAmt): number => {
-        if (amt === '$0.00') return 0
+        if (amt === '$0.00') {
+            return 0
+        }
         const str = amt.replace(/[$,()]/g, '')
         const val = parseFloat(str) * 100
-        if (amt.startsWith('(')) return -Math.round(val)
+        if (amt.startsWith('(')) {
+            return -Math.round(val)
+        }
         return Math.round(val)
     }
 

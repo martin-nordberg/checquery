@@ -17,7 +17,9 @@ const Register = (props: RegisterProps) => {
     const [isDirty, setIsDirty] = createSignal(false)
 
     const handleStartEdit = (txnId: TxnId) => {
-        if (isDirty()) return // Don't allow switching if dirty
+        if (isDirty()) {
+            return // Don't allow switching if dirty
+        }
         setIsAddingNew(false)
         setEditingTxnId(txnId)
     }
@@ -41,7 +43,9 @@ const Register = (props: RegisterProps) => {
     }
 
     const handleAddNew = () => {
-        if (isDirty()) return // Don't allow if dirty
+        if (isDirty()) {
+            return // Don't allow if dirty
+        }
         setEditingTxnId(null)
         setIsAddingNew(true)
     }

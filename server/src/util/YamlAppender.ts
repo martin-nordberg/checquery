@@ -24,11 +24,21 @@ const formatDirective = (directive: YamlDirective): string => {
     const payload = directive.payload
 
     // Add simple fields
-    if (payload['id']) lines.push(`    id: ${payload['id']}`)
-    if (payload['date']) lines.push(`    date: ${payload['date']}`)
-    if (payload['code']) lines.push(`    code: ${payload['code']}`)
-    if (payload['description']) lines.push(`    description: ${payload['description']}`)
-    if (payload['vendor']) lines.push(`    vendor: ${payload['vendor']}`)
+    if (payload['id']) {
+        lines.push(`    id: ${payload['id']}`)
+    }
+    if (payload['date']) {
+        lines.push(`    date: ${payload['date']}`)
+    }
+    if (payload['code']) {
+        lines.push(`    code: ${payload['code']}`)
+    }
+    if (payload['description']) {
+        lines.push(`    description: ${payload['description']}`)
+    }
+    if (payload['vendor']) {
+        lines.push(`    vendor: ${payload['vendor']}`)
+    }
     if (payload['status'] && payload['status'] !== 'UNMARKED') {
         lines.push(`    status: '${payload['status']}'`)
     }

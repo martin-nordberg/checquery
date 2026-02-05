@@ -12,7 +12,9 @@ const VendorList = () => {
     const [isDirty, setIsDirty] = createSignal(false)
 
     const handleStartEdit = (vendorId: VndrId) => {
-        if (isDirty()) return // Don't allow switching if dirty
+        if (isDirty()) {
+            return // Don't allow switching if dirty
+        }
         setIsAddingNew(false)
         setEditingVendorId(vendorId)
     }
@@ -36,7 +38,9 @@ const VendorList = () => {
     }
 
     const handleAddNew = () => {
-        if (isDirty()) return // Don't allow if dirty
+        if (isDirty()) {
+            return // Don't allow if dirty
+        }
         setEditingVendorId(null)
         setIsAddingNew(true)
     }

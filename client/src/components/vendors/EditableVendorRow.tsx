@@ -46,9 +46,15 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
 
     // Compute dirty state
     const isDirty = createMemo(() => {
-        if (!props.isEditing) return false
-        if (editDescription() !== initialDescription()) return true
-        if (editDefaultAccount() !== initialDefaultAccount()) return true
+        if (!props.isEditing) {
+            return false
+        }
+        if (editDescription() !== initialDescription()) {
+            return true
+        }
+        if (editDefaultAccount() !== initialDefaultAccount()) {
+            return true
+        }
         return false
     })
 

@@ -12,7 +12,9 @@ const EditableAmountField = (props: EditableAmountFieldProps) => {
     const [error, setError] = createSignal<string | null>(null)
 
     const toPlainNumber = (amt: CurrencyAmt): string => {
-        if (amt === '$0.00') return ''
+        if (amt === '$0.00') {
+            return ''
+        }
         const cents = toCents(amt)
         return (cents / 100).toFixed(2)
     }

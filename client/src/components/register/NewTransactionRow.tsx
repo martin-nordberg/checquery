@@ -48,19 +48,27 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
     // Auto-populate offset account from vendor's default account
     createEffect(() => {
         const vendorName = editVendor()
-        if (!vendorName) return
+        if (!vendorName) {
+            return
+        }
 
         const entries = editEntries()
         // Only auto-populate if there's exactly one offset entry (2 total entries)
-        if (entries.length !== 2) return
+        if (entries.length !== 2) {
+            return
+        }
 
         const offsetEntry = entries[1]!
         // Only auto-populate if amount hasn't been entered yet
-        if (offsetEntry.debit !== '$0.00' || offsetEntry.credit !== '$0.00') return
+        if (offsetEntry.debit !== '$0.00' || offsetEntry.credit !== '$0.00') {
+            return
+        }
 
         // Find the vendor and get its default account
         const vendor = vendors()?.find(v => v.name === vendorName)
-        if (!vendor?.defaultAccount) return
+        if (!vendor?.defaultAccount) {
+            return
+        }
 
         // Only update if account is empty or we're changing vendors
         if (offsetEntry.account === '' || offsetEntry.account !== vendor.defaultAccount) {
@@ -76,19 +84,33 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
 
     // Compute dirty state - for new transaction, dirty if any field changed from default
     const isDirty = createMemo(() => {
-        if (editCode() !== undefined) return true
-        if (editVendor() !== undefined) return true
-        if (editDescription() !== undefined) return true
+        if (editCode() !== undefined) {
+            return true
+        }
+        if (editVendor() !== undefined) {
+            return true
+        }
+        if (editDescription() !== undefined) {
+            return true
+        }
         const entries = editEntries()
         // Check if second entry has any non-default values
         if (entries.length > 1) {
             const second = entries[1]!
-            if (second.account !== '') return true
-            if (second.debit !== '$0.00') return true
-            if (second.credit !== '$0.00') return true
+            if (second.account !== '') {
+                return true
+            }
+            if (second.debit !== '$0.00') {
+                return true
+            }
+            if (second.credit !== '$0.00') {
+                return true
+            }
         }
         // Check if there are more than 2 entries
-        if (entries.length > 2) return true
+        if (entries.length > 2) {
+            return true
+        }
         return false
     })
 
@@ -112,17 +134,23 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
     }
 
     const parseAmount = (amt: CurrencyAmt): number => {
-        if (amt === '$0.00') return 0
+        if (amt === '$0.00') {
+            return 0
+        }
         const str = amt.replace(/[$,()]/g, '')
         const val = parseFloat(str) * 100
-        if (amt.startsWith('(')) return -Math.round(val)
+        if (amt.startsWith('(')) {
+            return -Math.round(val)
+        }
         return Math.round(val)
     }
 
     // Compute the balancing entry for the current account (first entry)
     const balancedEntries = createMemo(() => {
         const entries = editEntries()
-        if (entries.length < 2) return entries
+        if (entries.length < 2) {
+            return entries
+        }
 
         // Sum debits and credits from entries after the first one
         let totalDebit = 0

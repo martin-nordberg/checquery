@@ -212,17 +212,33 @@ export class RegisterSqlService implements IRegisterSvc {
     async updateTransaction(update: RegisterUpdate): Promise<RegisterTransaction | null> {
         // Build the payload for YAML
         const payload: Record<string, unknown> = { id: update.id }
-        if (update.date !== undefined) payload['date'] = update.date
-        if (update.code !== undefined) payload['code'] = update.code
-        if (update.description !== undefined) payload['description'] = update.description
-        if (update.vendor !== undefined) payload['vendor'] = update.vendor
-        if (update.status !== undefined && update.status !== 'UNMARKED') payload['status'] = update.status
+        if (update.date !== undefined) {
+            payload['date'] = update.date
+        }
+        if (update.code !== undefined) {
+            payload['code'] = update.code
+        }
+        if (update.description !== undefined) {
+            payload['description'] = update.description
+        }
+        if (update.vendor !== undefined) {
+            payload['vendor'] = update.vendor
+        }
+        if (update.status !== undefined && update.status !== 'UNMARKED') {
+            payload['status'] = update.status
+        }
         if (update.entries !== undefined) {
             payload['entries'] = update.entries.map(e => {
                 const entry: Record<string, string> = { account: e.account }
-                if (e.debit && e.debit !== '$0.00') entry['debit'] = e.debit
-                if (e.credit && e.credit !== '$0.00') entry['credit'] = e.credit
-                if (e.status && e.status !== 'UNMARKED') entry['status'] = e.status
+                if (e.debit && e.debit !== '$0.00') {
+                    entry['debit'] = e.debit
+                }
+                if (e.credit && e.credit !== '$0.00') {
+                    entry['credit'] = e.credit
+                }
+                if (e.status && e.status !== 'UNMARKED') {
+                    entry['status'] = e.status
+                }
                 return entry
             })
         }
@@ -310,15 +326,29 @@ export class RegisterSqlService implements IRegisterSvc {
             id: create.id,
             date: create.date,
         }
-        if (create.code) payload['code'] = create.code
-        if (create.description) payload['description'] = create.description
-        if (create.vendor) payload['vendor'] = create.vendor
-        if (create.status && create.status !== 'UNMARKED') payload['status'] = create.status
+        if (create.code) {
+            payload['code'] = create.code
+        }
+        if (create.description) {
+            payload['description'] = create.description
+        }
+        if (create.vendor) {
+            payload['vendor'] = create.vendor
+        }
+        if (create.status && create.status !== 'UNMARKED') {
+            payload['status'] = create.status
+        }
         payload['entries'] = create.entries.map(e => {
             const entry: Record<string, string> = { account: e.account }
-            if (e.debit && e.debit !== '$0.00') entry['debit'] = e.debit
-            if (e.credit && e.credit !== '$0.00') entry['credit'] = e.credit
-            if (e.status && e.status !== 'UNMARKED') entry['status'] = e.status
+            if (e.debit && e.debit !== '$0.00') {
+                entry['debit'] = e.debit
+            }
+            if (e.credit && e.credit !== '$0.00') {
+                entry['credit'] = e.credit
+            }
+            if (e.status && e.status !== 'UNMARKED') {
+                entry['status'] = e.status
+            }
             return entry
         })
 

@@ -17,10 +17,18 @@ const formatVendorDirective = (directive: VendorYamlDirective): string => {
     const payload = directive.payload
 
     // Add fields
-    if (payload['id']) lines.push(`    id: ${payload['id']}`)
-    if (payload['name']) lines.push(`    name: ${payload['name']}`)
-    if (payload['description']) lines.push(`    description: ${payload['description']}`)
-    if (payload['defaultAccount']) lines.push(`    defaultAccount: ${payload['defaultAccount']}`)
+    if (payload['id']) {
+        lines.push(`    id: ${payload['id']}`)
+    }
+    if (payload['name']) {
+        lines.push(`    name: ${payload['name']}`)
+    }
+    if (payload['description']) {
+        lines.push(`    description: ${payload['description']}`)
+    }
+    if (payload['defaultAccount']) {
+        lines.push(`    defaultAccount: ${payload['defaultAccount']}`)
+    }
 
     return lines.join('\n')
 }
