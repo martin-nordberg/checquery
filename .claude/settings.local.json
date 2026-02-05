@@ -6,7 +6,10 @@
       "Bash(bun run tsc:*)",
       "Bash(tsc:*)",
       "Bash(bun test:*)",
-      "Bash(timeout 5 bun run dev:*)"
+      "Bash(timeout 5 bun run dev:*)",
+      "Bash(npx tsc:*)",
+      "Bash(bun run:*)",
+      "Bash(bun x tsc:*)"
     ]
   }
 }

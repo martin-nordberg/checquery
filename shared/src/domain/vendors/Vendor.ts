@@ -14,6 +14,9 @@ export const vendorAttributesSchema =
 
         /* A short description of the vendor. */
         description: summarySchema.optional(),
+
+        /** The default account name for transactions with this vendor. */
+        defaultAccount: nameSchema.optional(),
     })
 
 

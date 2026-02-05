@@ -2,7 +2,9 @@ import {createSignal, createEffect, createMemo, Show, createResource} from "soli
 import ConfirmDialog from "../common/ConfirmDialog.tsx";
 import type {Vendor} from "$shared/domain/vendors/Vendor.ts";
 import {vendorClientSvc} from "../../clients/vendors/VendorClientSvc.ts";
+import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
 import EditableTextField from "../register/fields/EditableTextField.tsx";
+import AutocompleteField from "../register/fields/AutocompleteField.tsx";
 
 type EditableVendorRowProps = {
     vendor: Vendor,
@@ -17,6 +19,7 @@ type EditableVendorRowProps = {
 
 const EditableVendorRow = (props: EditableVendorRowProps) => {
     const [editDescription, setEditDescription] = createSignal<string | undefined>(props.vendor.description)
+    const [editDefaultAccount, setEditDefaultAccount] = createSignal<string | undefined>(props.vendor.defaultAccount)
     const [isSaving, setIsSaving] = createSignal(false)
     const [error, setError] = createSignal<string | null>(null)
     const [showAbandonConfirm, setShowAbandonConfirm] = createSignal(false)
@@ -28,13 +31,25 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
         (id) => id ? vendorClientSvc.isVendorInUse(id) : false
     )
 
+    // Load expense and income accounts for default account selector
+    const [accounts] = createResource(() => accountClientSvc.findAccountsAll())
+    const expenseIncomeAccounts = createMemo(() => {
+        const all = accounts() ?? []
+        return all
+            .filter(a => a.acctType === 'EXPENSE' || a.acctType === 'INCOME')
+            .map(a => ({value: a.name, label: a.name.replaceAll(':', ' : ')}))
+    })
+
     // Store initial values for dirty checking
     const [initialDescription, setInitialDescription] = createSignal<string | undefined>(props.vendor.description)
+    const [initialDefaultAccount, setInitialDefaultAccount] = createSignal<string | undefined>(props.vendor.defaultAccount)
 
     // Compute dirty state
     const isDirty = createMemo(() => {
         if (!props.isEditing) return false
-        return editDescription() !== initialDescription()
+        if (editDescription() !== initialDescription()) return true
+        if (editDefaultAccount() !== initialDefaultAccount()) return true
+        return false
     })
 
     // Report dirty state changes to parent
@@ -47,6 +62,8 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
         if (props.isEditing) {
             setEditDescription(props.vendor.description)
             setInitialDescription(props.vendor.description)
+            setEditDefaultAccount(props.vendor.defaultAccount)
+            setInitialDefaultAccount(props.vendor.defaultAccount)
             setError(null)
         }
     })
@@ -74,6 +91,7 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
             await vendorClientSvc.updateVendor({
                 id: props.vendor.id,
                 description: editDescription() ?? undefined,
+                defaultAccount: editDefaultAccount() ?? undefined,
             })
 
             props.onSaved()
@@ -124,6 +142,9 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
                 {props.vendor.name}
             </td>
             <td class="px-4 py-2 text-sm text-gray-500">
+                {props.vendor.defaultAccount?.replaceAll(':', ' : ') ?? ''}
+            </td>
+            <td class="px-4 py-2 text-sm text-gray-500">
                 {props.vendor.description ?? ''}
             </td>
         </tr>
@@ -156,14 +177,23 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
                         </svg>
                     </button>
                 </td>
-                <td class="px-2 py-2" colspan="2">
+                <td class="px-2 py-2" colspan="3">
                     <div class="space-y-3 p-2">
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid grid-cols-3 gap-3">
                             <div>
                                 <label class="block text-xs font-medium text-gray-500 mb-1">Name</label>
                                 <div class="px-2 py-1 bg-gray-100 rounded text-sm text-gray-700">
                                     {props.vendor.name}
                                 </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-1">Default Account</label>
+                                <AutocompleteField
+                                    value={editDefaultAccount()}
+                                    options={expenseIncomeAccounts()}
+                                    onChange={setEditDefaultAccount}
+                                    placeholder="Select account..."
+                                />
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-gray-500 mb-1">Description</label>

@@ -79,6 +79,9 @@ const VendorList = () => {
                                     Name
                                 </th>
                                 <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                    Default Account
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                                     Description
                                 </th>
                             </tr>

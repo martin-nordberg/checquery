@@ -1,4 +1,4 @@
-import {createSignal, createMemo, createEffect, Show, Index} from "solid-js";
+import {createSignal, createMemo, createEffect, createResource, Show, Index} from "solid-js";
 import ConfirmDialog from "../common/ConfirmDialog.tsx";
 import type {RegisterEntry} from "$shared/domain/register/Register.ts";
 import type {CurrencyAmt} from "$shared/domain/core/CurrencyAmt.ts";
@@ -7,6 +7,7 @@ import type {IsoDate} from "$shared/domain/core/IsoDate.ts";
 import {isoDateToday} from "$shared/domain/core/IsoDate.ts";
 import {genTxnId} from "$shared/domain/transactions/TxnId.ts";
 import {registerClientSvc} from "../../clients/register/RegisterClientSvc.ts";
+import {vendorClientSvc} from "../../clients/vendors/VendorClientSvc.ts";
 import EditableDateField from "./fields/EditableDateField.tsx";
 import EditableTextField from "./fields/EditableTextField.tsx";
 import EditableVendorField from "./fields/EditableVendorField.tsx";
@@ -40,6 +41,38 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
     const [isSaving, setIsSaving] = createSignal(false)
     const [error, setError] = createSignal<string | null>(null)
     const [showAbandonConfirm, setShowAbandonConfirm] = createSignal(false)
+
+    // Load vendors for default account auto-population
+    const [vendors] = createResource(() => vendorClientSvc.findVendorsAll())
+
+    // Auto-populate offset account from vendor's default account
+    createEffect(() => {
+        const vendorName = editVendor()
+        if (!vendorName) return
+
+        const entries = editEntries()
+        // Only auto-populate if there's exactly one offset entry (2 total entries)
+        if (entries.length !== 2) return
+
+        const offsetEntry = entries[1]!
+        // Only auto-populate if amount hasn't been entered yet
+        if (offsetEntry.debit !== '$0.00' || offsetEntry.credit !== '$0.00') return
+
+        // Find the vendor and get its default account
+        const vendor = vendors()?.find(v => v.name === vendorName)
+        if (!vendor?.defaultAccount) return
+
+        // Only update if account is empty or we're changing vendors
+        if (offsetEntry.account === '' || offsetEntry.account !== vendor.defaultAccount) {
+            setEditEntries([
+                entries[0]!,
+                {
+                    ...offsetEntry,
+                    account: vendor.defaultAccount,
+                }
+            ])
+        }
+    })
 
     // Compute dirty state - for new transaction, dirty if any field changed from default
     const isDirty = createMemo(() => {

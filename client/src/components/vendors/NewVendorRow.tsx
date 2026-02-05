@@ -1,8 +1,10 @@
-import {createSignal, createMemo, createEffect, Show} from "solid-js";
+import {createSignal, createMemo, createEffect, createResource, Show} from "solid-js";
 import ConfirmDialog from "../common/ConfirmDialog.tsx";
 import {vendorClientSvc} from "../../clients/vendors/VendorClientSvc.ts";
+import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
 import {genVndrId} from "$shared/domain/vendors/VndrId.ts";
 import EditableTextField from "../register/fields/EditableTextField.tsx";
+import AutocompleteField from "../register/fields/AutocompleteField.tsx";
 
 type NewVendorRowProps = {
     onCancel: () => void,
@@ -12,14 +14,25 @@ type NewVendorRowProps = {
 
 const NewVendorRow = (props: NewVendorRowProps) => {
     const [editName, setEditName] = createSignal<string | undefined>(undefined)
+    const [editDefaultAccount, setEditDefaultAccount] = createSignal<string | undefined>(undefined)
     const [editDescription, setEditDescription] = createSignal<string | undefined>(undefined)
     const [isSaving, setIsSaving] = createSignal(false)
     const [error, setError] = createSignal<string | null>(null)
     const [showAbandonConfirm, setShowAbandonConfirm] = createSignal(false)
 
+    // Load expense and income accounts for default account selector
+    const [accounts] = createResource(() => accountClientSvc.findAccountsAll())
+    const expenseIncomeAccounts = createMemo(() => {
+        const all = accounts() ?? []
+        return all
+            .filter(a => a.acctType === 'EXPENSE' || a.acctType === 'INCOME')
+            .map(a => ({value: a.name, label: a.name.replaceAll(':', ' : ')}))
+    })
+
     // Compute dirty state - for new vendor, dirty if any field has been set
     const isDirty = createMemo(() => {
         if (editName() !== undefined && editName() !== '') return true
+        if (editDefaultAccount() !== undefined && editDefaultAccount() !== '') return true
         if (editDescription() !== undefined && editDescription() !== '') return true
         return false
     })
@@ -60,6 +73,7 @@ const NewVendorRow = (props: NewVendorRowProps) => {
                 id: genVndrId(),
                 name: name,
                 description: editDescription()?.trim() || undefined,
+                defaultAccount: editDefaultAccount()?.trim() || undefined,
             })
 
             props.onSaved()
@@ -90,16 +104,25 @@ const NewVendorRow = (props: NewVendorRowProps) => {
                     </svg>
                 </button>
             </td>
-            <td class="px-2 py-2" colspan="2">
+            <td class="px-2 py-2" colspan="3">
                 <div class="space-y-3 p-2">
                     <div class="text-sm font-medium text-green-700 mb-2">New Vendor</div>
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-3 gap-3">
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Name *</label>
                             <EditableTextField
                                 value={editName()}
                                 onChange={setEditName}
                                 placeholder="Vendor name..."
+                            />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Default Account</label>
+                            <AutocompleteField
+                                value={editDefaultAccount()}
+                                options={expenseIncomeAccounts()}
+                                onChange={setEditDefaultAccount}
+                                placeholder="Select account..."
                             />
                         </div>
                         <div>

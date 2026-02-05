@@ -50,9 +50,10 @@ export function runChecqueryDdl(db: ChecquerySqlDb) {
     db.exec(
         `CREATE TABLE Vendor
          (
-             id          TEXT(27) NOT NULL,
-             name        TEXT(200) UNIQUE NOT NULL,
-             description TEXT(200),
+             id             TEXT(27) NOT NULL,
+             name           TEXT(200) UNIQUE NOT NULL,
+             description    TEXT(200),
+             defaultAccount TEXT(200),
              CONSTRAINT Vendor_PK PRIMARY KEY (id)
          );`,
         {}

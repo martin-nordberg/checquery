@@ -26,18 +26,20 @@ export class VendorSqlService implements IVendorSvc {
                 id: vendor.id,
                 name: vendor.name,
                 description: vendor.description,
+                defaultAccount: vendor.defaultAccount,
             }))
         }
 
         this.db.run(
             'vendor.create',
             () =>
-                `INSERT INTO Vendor (id, name, description)
-                 VALUES ($id, $name, $description);`,
+                `INSERT INTO Vendor (id, name, description, defaultAccount)
+                 VALUES ($id, $name, $description, $defaultAccount);`,
             {
                 $id: vendor.id,
                 $name: vendor.name,
                 $description: vendor.description ?? null,
+                $defaultAccount: vendor.defaultAccount ?? null,
             }
         )
     }
@@ -83,29 +85,33 @@ export class VendorSqlService implements IVendorSvc {
             await appendVendorDirective(createVendorUpdateDirective({
                 id: vendorPatch.id,
                 description: vendorPatch.description,
+                defaultAccount: vendorPatch.defaultAccount,
             }))
         }
 
-        let queryKey = 'vendor.update'
-        let sql = `UPDATE Vendor`
+        const setClauses: string[] = []
         let bindings: any = {$id: vendorPatch.id}
 
-        if (vendorPatch.name) {
-            queryKey += '.name'
-            sql += ` SET name = $name`
+        if (vendorPatch.name !== undefined) {
+            setClauses.push('name = $name')
             bindings.$name = vendorPatch.name
         }
-        if (vendorPatch.description) {
-            queryKey += '.description'
-            sql += ` SET description = $description`
-            bindings.$description = vendorPatch.description
-        } else if (vendorPatch.description == "") {
-            queryKey += '.description-null'
-            sql += ` SET description = NULL`
+        if (vendorPatch.description !== undefined) {
+            setClauses.push('description = $description')
+            bindings.$description = vendorPatch.description || null
         }
-        sql += ` WHERE id = $id`
+        if (vendorPatch.defaultAccount !== undefined) {
+            setClauses.push('defaultAccount = $defaultAccount')
+            bindings.$defaultAccount = vendorPatch.defaultAccount || null
+        }
 
-        const changes = this.db.run(queryKey, () => sql, bindings)
+        if (setClauses.length === 0) {
+            return this.findVendorById(vendorPatch.id)
+        }
+
+        const sql = `UPDATE Vendor SET ${setClauses.join(', ')} WHERE id = $id`
+
+        const changes = this.db.run('vendor.update', () => sql, bindings)
 
         if (changes.changes == 0) {
             return null
