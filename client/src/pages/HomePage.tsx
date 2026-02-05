@@ -27,6 +27,11 @@ export const HomePage = () => {
                             Summary of Accounts
                         </A>
                     </li>
+                    <li>
+                        <A class="hover:underline" href="./vendors">
+                            Vendors
+                        </A>
+                    </li>
                 </ul>
             </main>
         </>

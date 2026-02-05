@@ -34,7 +34,8 @@ const RegisterPage = () => {
     const stmtOptions = {
         "Register": ".",
         "Balance Sheet": `/balancesheet/${isoDateToday}`,
-        "Income Statement": `/incomestatement/${isoDateToday.substring(0, 7)}`,
+        "Income Statement": `/incomestatement/${isoDateToday?.substring(0, 7)}`,
+        "Vendors": "/vendors",
     }
 
     return (

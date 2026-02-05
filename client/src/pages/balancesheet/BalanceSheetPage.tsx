@@ -21,6 +21,7 @@ const BalanceSheetPage = () => {
         "Balance Sheet": ".",
         "Income Statement": `../../incomestatement/${endingDate().substring(0, 7)}`,
         "Register": "/register/accttruistchecking0000000000",
+        "Vendors": "/vendors",
     }
 
     const dateOptions = {

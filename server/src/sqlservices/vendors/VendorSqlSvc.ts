@@ -5,17 +5,30 @@ import {
 import {type IVendorSvc} from "$shared/services/vendors/IVendorSvc";
 import {ChecquerySqlDb} from "../../sqldb/ChecquerySqlDb";
 import {type VndrId} from "$shared/domain/vendors/VndrId";
+import {z} from "zod";
+import {appendVendorDirective, createVendorCreateDirective, createVendorUpdateDirective} from "../../util/VendorYamlAppender";
 
 
 export class VendorSqlService implements IVendorSvc {
 
     readonly db = new ChecquerySqlDb()
+    readonly persistToYaml: boolean
 
-    constructor(db: ChecquerySqlDb) {
+    constructor(db: ChecquerySqlDb, persistToYaml: boolean = false) {
         this.db = db
+        this.persistToYaml = persistToYaml
     }
 
     async createVendor(vendor: VendorCreation): Promise<void> {
+        // Persist to YAML if enabled
+        if (this.persistToYaml) {
+            await appendVendorDirective(createVendorCreateDirective({
+                id: vendor.id,
+                name: vendor.name,
+                description: vendor.description,
+            }))
+        }
+
         this.db.run(
             'vendor.create',
             () =>
@@ -29,7 +42,7 @@ export class VendorSqlService implements IVendorSvc {
         )
     }
 
-    async deleteVendor(vendorId:VndrId): Promise<void> {
+    async deleteVendor(vendorId: VndrId): Promise<void> {
         this.db.run(
             'vendor.delete',
             () =>
@@ -64,7 +77,14 @@ export class VendorSqlService implements IVendorSvc {
         )
     }
 
-    async updateVendor(vendorPatch: VendorUpdate): Promise<Vendor|null> {
+    async updateVendor(vendorPatch: VendorUpdate): Promise<Vendor | null> {
+        // Persist to YAML if enabled
+        if (this.persistToYaml) {
+            await appendVendorDirective(createVendorUpdateDirective({
+                id: vendorPatch.id,
+                description: vendorPatch.description,
+            }))
+        }
 
         let queryKey = 'vendor.update'
         let sql = `UPDATE Vendor`
@@ -92,6 +112,19 @@ export class VendorSqlService implements IVendorSvc {
         }
 
         return this.findVendorById(vendorPatch.id)
+    }
+
+    async isVendorInUse(vendorId: VndrId): Promise<boolean> {
+        const result = this.db.findOne(
+            'vendor.isInUse',
+            () =>
+                `SELECT COUNT(*) as count
+                 FROM Transaxtion
+                 WHERE vendorId = $id`,
+            {$id: vendorId},
+            z.object({count: z.number()}).readonly()
+        )
+        return result !== null && result.count > 0
     }
 
 }

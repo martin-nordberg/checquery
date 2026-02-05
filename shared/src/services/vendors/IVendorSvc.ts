@@ -19,4 +19,7 @@ export interface IVendorSvc {
     /** Updates a vendor's attributes. */
     updateVendor(vendorPatch: VendorUpdate): Promise<Vendor | null>
 
+    /** Checks if a vendor is used in any transaction. */
+    isVendorInUse(vendorId: VndrId): Promise<boolean>
+
 }

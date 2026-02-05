@@ -26,14 +26,17 @@ app.use('*', cors({
 const db = new ChecquerySqlDb()
 runChecqueryDdl(db)
 
-const vndrSvc = new VendorSqlService(db)
+// Services for loading from YAML (no persistence to avoid duplicates)
+const vndrLoaderSvc = new VendorSqlService(db, false)
+// Services for API (with persistence to YAML)
+const vndrSvc = new VendorSqlService(db, true)
 const acctSvc = new AccountSqlService(db)
 const txnSvc = new TransactionSqlService(db)
 const bsSvc = new BalanceSheetSqlService(db)
 const isSvc = new IncomeStatementSqlService(db)
 const regSvc = new RegisterSqlService(db)
 
-await loadVendors(vndrSvc)
+await loadVendors(vndrLoaderSvc)
 await loadAccounts(acctSvc)
 await loadTransactions(txnSvc)
 
