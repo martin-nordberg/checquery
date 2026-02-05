@@ -9,13 +9,13 @@ import {TransactionSqlService} from "./sqlservices/transactions/TransactionSqlSv
 import {loadTransactions} from "./eventsources/TxnEvents";
 import {BalanceSheetSqlService} from "./sqlservices/balancesheet/BalanceSheetSqlSvc";
 import {balanceSheetRoutes} from "$shared/routes/balancesheet/BalanceSheetRoutes";
-import {OrganizationSqlService} from "./sqlservices/organizations/OrganizationSqlSvc";
-import {loadOrganizations} from "./eventsources/OrgEvents";
+import {VendorSqlService} from "./sqlservices/vendors/VendorSqlSvc";
+import {loadVendors} from "./eventsources/VendorEvents";
 import {IncomeStatementSqlService} from "./sqlservices/incomestatement/IncomeStatementSqlSvc";
 import {incomeStatementRoutes} from "$shared/routes/incomestatement/IncomeStatementRoutes";
 import {RegisterSqlService} from "./sqlservices/register/RegisterSqlSvc";
 import {registerRoutes} from "$shared/routes/register/RegisterRoutes";
-import {organizationRoutes} from "$shared/routes/organizations/OrganizationRoutes";
+import {vendorRoutes} from "$shared/routes/vendors/VendorRoutes";
 
 const app = new Hono()
 
@@ -26,14 +26,14 @@ app.use('*', cors({
 const db = new ChecquerySqlDb()
 runChecqueryDdl(db)
 
-const orgSvc = new OrganizationSqlService(db)
+const vndrSvc = new VendorSqlService(db)
 const acctSvc = new AccountSqlService(db)
 const txnSvc = new TransactionSqlService(db)
 const bsSvc = new BalanceSheetSqlService(db)
 const isSvc = new IncomeStatementSqlService(db)
 const regSvc = new RegisterSqlService(db)
 
-await loadOrganizations(orgSvc)
+await loadVendors(vndrSvc)
 await loadAccounts(acctSvc)
 await loadTransactions(txnSvc)
 
@@ -60,7 +60,7 @@ const routes =
         .route('/balancesheet', balanceSheetRoutes(bsSvc))
         .route('/incomestatement', incomeStatementRoutes(isSvc))
         .route('/register', registerRoutes(regSvc))
-        .route('/organizations', organizationRoutes(orgSvc))
+        .route('/vendors', vendorRoutes(vndrSvc))
 
 export type AppType = typeof routes
 

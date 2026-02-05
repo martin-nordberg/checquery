@@ -8,7 +8,7 @@ import {fromCents} from "$shared/domain/core/CurrencyAmt.ts";
 import {registerClientSvc} from "../../clients/register/RegisterClientSvc.ts";
 import EditableDateField from "./fields/EditableDateField.tsx";
 import EditableTextField from "./fields/EditableTextField.tsx";
-import EditableOrganizationField from "./fields/EditableOrganizationField.tsx";
+import EditableVendorField from "./fields/EditableVendorField.tsx";
 import EditableSplitEntry from "./EditableSplitEntry.tsx";
 import RegisterActionButtons from "./RegisterActionButtons.tsx";
 
@@ -29,7 +29,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
     const [transaction, setTransaction] = createSignal<RegisterTransaction | null>(null)
     const [editDate, setEditDate] = createSignal<IsoDate>(props.lineItem.date)
     const [editCode, setEditCode] = createSignal<string | undefined>(props.lineItem.code)
-    const [editOrganization, setEditOrganization] = createSignal<string | undefined>(props.lineItem.organization)
+    const [editVendor, setEditVendor] = createSignal<string | undefined>(props.lineItem.vendor)
     const [editDescription, setEditDescription] = createSignal<string | undefined>(props.lineItem.description)
     const [editEntries, setEditEntries] = createSignal<RegisterEntry[]>([])
     const [isSaving, setIsSaving] = createSignal(false)
@@ -41,7 +41,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
     // Store initial values for dirty checking
     const [initialDate, setInitialDate] = createSignal<IsoDate | null>(null)
     const [initialCode, setInitialCode] = createSignal<string | undefined>(undefined)
-    const [initialOrganization, setInitialOrganization] = createSignal<string | undefined>(undefined)
+    const [initialVendor, setInitialVendor] = createSignal<string | undefined>(undefined)
     const [initialDescription, setInitialDescription] = createSignal<string | undefined>(undefined)
     const [initialEntries, setInitialEntries] = createSignal<RegisterEntry[]>([])
 
@@ -50,7 +50,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
         if (!transaction()) return false
         if (editDate() !== initialDate()) return true
         if (editCode() !== initialCode()) return true
-        if (editOrganization() !== initialOrganization()) return true
+        if (editVendor() !== initialVendor()) return true
         if (editDescription() !== initialDescription()) return true
         const current = editEntries()
         const initial = initialEntries()
@@ -76,7 +76,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                 setTransaction(txn)
                 setEditDate(txn.date)
                 setEditCode(txn.code)
-                setEditOrganization(txn.organization)
+                setEditVendor(txn.vendor)
                 setEditDescription(txn.description)
                 // Reorder entries so current account is first
                 const currentAccountEntry = txn.entries.find(e => e.account === props.currentAccountName)
@@ -88,7 +88,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                 // Store initial values
                 setInitialDate(txn.date)
                 setInitialCode(txn.code)
-                setInitialOrganization(txn.organization)
+                setInitialVendor(txn.vendor)
                 setInitialDescription(txn.description)
                 setInitialEntries(reorderedEntries.map(e => ({...e})))
             }
@@ -184,7 +184,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                 id: props.lineItem.txnId,
                 date: editDate(),
                 code: editCode(),
-                organization: editOrganization(),
+                vendor: editVendor(),
                 description: editDescription(),
                 entries: entries,
             })
@@ -266,7 +266,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                 {props.lineItem.code ?? ''}
             </td>
             <td class="px-4 py-2 text-sm text-gray-900">
-                {props.lineItem.organization ?? ''}
+                {props.lineItem.vendor ?? ''}
             </td>
             <td class="px-4 py-2 text-sm text-gray-500">
                 {props.lineItem.description ?? ''}
@@ -334,10 +334,10 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                                 />
                             </div>
                             <div class="col-span-2">
-                                <label class="block text-xs font-medium text-gray-500 mb-1">Payee</label>
-                                <EditableOrganizationField
-                                    value={editOrganization()}
-                                    onChange={setEditOrganization}
+                                <label class="block text-xs font-medium text-gray-500 mb-1">Vendor</label>
+                                <EditableVendorField
+                                    value={editVendor()}
+                                    onChange={setEditVendor}
                                 />
                             </div>
                             <div class="col-span-2">

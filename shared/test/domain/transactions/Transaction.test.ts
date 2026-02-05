@@ -31,7 +31,7 @@ describe('transactionSchema', () => {
                 date: '2026-01-15',
                 status: 'RECONCILED',
                 code: '1234',
-                organization: 'Acme Corp',
+                vendor: 'Acme Corp',
                 description: 'Monthly payment',
                 entries: validEntries
             })
@@ -39,7 +39,7 @@ describe('transactionSchema', () => {
             expect(txn.id).toBe(id)
             expect(txn.status).toBe('RECONCILED')
             expect(txn.code).toBe('1234')
-            expect(txn.organization).toBe('Acme Corp')
+            expect(txn.vendor).toBe('Acme Corp')
             expect(txn.description).toBe('Monthly payment')
         })
 
@@ -174,30 +174,30 @@ describe('transactionSchema', () => {
         })
     })
 
-    describe('invalid organization', () => {
-        it('rejects empty organization', () => {
+    describe('invalid vendor', () => {
+        it('rejects empty vendor', () => {
             expect(() => transactionSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
-                organization: '',
+                vendor: '',
                 entries: validEntries
             })).toThrow()
         })
 
-        it('rejects organization with newlines', () => {
+        it('rejects vendor with newlines', () => {
             expect(() => transactionSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
-                organization: 'Acme\nCorp',
+                vendor: 'Acme\nCorp',
                 entries: validEntries
             })).toThrow()
         })
 
-        it('rejects organization exceeding max length', () => {
+        it('rejects vendor exceeding max length', () => {
             expect(() => transactionSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
-                organization: 'x'.repeat(201),
+                vendor: 'x'.repeat(201),
                 entries: validEntries
             })).toThrow()
         })

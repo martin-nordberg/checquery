@@ -9,7 +9,7 @@ import {genTxnId} from "$shared/domain/transactions/TxnId.ts";
 import {registerClientSvc} from "../../clients/register/RegisterClientSvc.ts";
 import EditableDateField from "./fields/EditableDateField.tsx";
 import EditableTextField from "./fields/EditableTextField.tsx";
-import EditableOrganizationField from "./fields/EditableOrganizationField.tsx";
+import EditableVendorField from "./fields/EditableVendorField.tsx";
 import EditableSplitEntry from "./EditableSplitEntry.tsx";
 import RegisterActionButtons from "./RegisterActionButtons.tsx";
 
@@ -23,7 +23,7 @@ type NewTransactionRowProps = {
 const NewTransactionRow = (props: NewTransactionRowProps) => {
     const [editDate, setEditDate] = createSignal<IsoDate>(isoDateToday as IsoDate)
     const [editCode, setEditCode] = createSignal<string | undefined>(undefined)
-    const [editOrganization, setEditOrganization] = createSignal<string | undefined>(undefined)
+    const [editVendor, setEditVendor] = createSignal<string | undefined>(undefined)
     const [editDescription, setEditDescription] = createSignal<string | undefined>(undefined)
     const [editEntries, setEditEntries] = createSignal<RegisterEntry[]>([
         {
@@ -44,7 +44,7 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
     // Compute dirty state - for new transaction, dirty if any field changed from default
     const isDirty = createMemo(() => {
         if (editCode() !== undefined) return true
-        if (editOrganization() !== undefined) return true
+        if (editVendor() !== undefined) return true
         if (editDescription() !== undefined) return true
         const entries = editEntries()
         // Check if second entry has any non-default values
@@ -145,7 +145,7 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
                 id: genTxnId(),
                 date: editDate(),
                 code: editCode(),
-                organization: editOrganization(),
+                vendor: editVendor(),
                 description: editDescription(),
                 entries: entries,
             })
@@ -218,10 +218,10 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
                             />
                         </div>
                         <div class="col-span-2">
-                            <label class="block text-xs font-medium text-gray-500 mb-1">Payee</label>
-                            <EditableOrganizationField
-                                value={editOrganization()}
-                                onChange={setEditOrganization}
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Vendor</label>
+                            <EditableVendorField
+                                value={editVendor()}
+                                onChange={setEditVendor}
                             />
                         </div>
                         <div class="col-span-2">

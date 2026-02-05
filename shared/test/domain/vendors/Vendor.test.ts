@@ -1,36 +1,36 @@
 import {describe, expect, it} from 'bun:test'
 import {
-    organizationSchema,
-    organizationCreationSchema,
-    organizationUpdateSchema,
-    type Organization,
-    type OrganizationCreation,
-    type OrganizationUpdate
-} from '../../../src/domain/organizations/Organization'
-import {genOrgId} from '../../../src/domain/organizations/OrgId'
+    vendorSchema,
+    vendorCreationSchema,
+    vendorUpdateSchema,
+    type Vendor,
+    type VendorCreation,
+    type VendorUpdate
+} from '../../../src/domain/vendors/Vendor'
+import {genVndrId} from '../../../src/domain/vendors/VndrId'
 
-describe('organizationSchema', () => {
-    it('parses a valid organization', () => {
+describe('vendorSchema', () => {
+    it('parses a valid vendor', () => {
         const input = {
-            id: genOrgId(),
+            id: genVndrId(),
             name: 'Acme Corporation',
             description: 'A fictional company'
         }
 
-        const result = organizationSchema.parse(input)
+        const result = vendorSchema.parse(input)
 
         expect(result.id).toBe(input.id)
         expect(result.name).toBe(input.name)
         expect(result.description).toBe(input.description)
     })
 
-    it('parses organization without optional description', () => {
+    it('parses vendor without optional description', () => {
         const input = {
-            id: genOrgId(),
+            id: genVndrId(),
             name: 'Acme Corporation'
         }
 
-        const result = organizationSchema.parse(input)
+        const result = vendorSchema.parse(input)
 
         expect(result.id).toBe(input.id)
         expect(result.name).toBe(input.name)
@@ -39,109 +39,109 @@ describe('organizationSchema', () => {
 
     it('trims whitespace from name', () => {
         const input = {
-            id: genOrgId(),
+            id: genVndrId(),
             name: '  Acme Corporation  '
         }
 
-        const result = organizationSchema.parse(input)
+        const result = vendorSchema.parse(input)
 
         expect(result.name).toBe('Acme Corporation')
     })
 
     it('rejects empty name', () => {
         const input = {
-            id: genOrgId(),
+            id: genVndrId(),
             name: ''
         }
 
-        expect(() => organizationSchema.parse(input)).toThrow()
+        expect(() => vendorSchema.parse(input)).toThrow()
     })
 
     it('rejects name with only whitespace', () => {
         const input = {
-            id: genOrgId(),
+            id: genVndrId(),
             name: '   '
         }
 
-        expect(() => organizationSchema.parse(input)).toThrow()
+        expect(() => vendorSchema.parse(input)).toThrow()
     })
 
     it('rejects name exceeding max length', () => {
         const input = {
-            id: genOrgId(),
+            id: genVndrId(),
             name: 'x'.repeat(201)
         }
 
-        expect(() => organizationSchema.parse(input)).toThrow()
+        expect(() => vendorSchema.parse(input)).toThrow()
     })
 
     it('rejects name with newlines', () => {
         const input = {
-            id: genOrgId(),
+            id: genVndrId(),
             name: 'Acme\nCorporation'
         }
 
-        expect(() => organizationSchema.parse(input)).toThrow()
+        expect(() => vendorSchema.parse(input)).toThrow()
     })
 
-    it('rejects invalid org id format', () => {
+    it('rejects invalid vendor id format', () => {
         const input = {
             id: 'invalid-id',
             name: 'Acme Corporation'
         }
 
-        expect(() => organizationSchema.parse(input)).toThrow()
+        expect(() => vendorSchema.parse(input)).toThrow()
     })
 
-    it('rejects org id without correct prefix', () => {
+    it('rejects vendor id without correct prefix', () => {
         const input = {
             id: 'acctabcdefghij1234567890',
             name: 'Acme Corporation'
         }
 
-        expect(() => organizationSchema.parse(input)).toThrow()
+        expect(() => vendorSchema.parse(input)).toThrow()
     })
 
     it('rejects description exceeding max length', () => {
         const input = {
-            id: genOrgId(),
+            id: genVndrId(),
             name: 'Acme Corporation',
             description: 'x'.repeat(201)
         }
 
-        expect(() => organizationSchema.parse(input)).toThrow()
+        expect(() => vendorSchema.parse(input)).toThrow()
     })
 
     it('rejects description with newlines', () => {
         const input = {
-            id: genOrgId(),
+            id: genVndrId(),
             name: 'Acme Corporation',
             description: 'Line one\nLine two'
         }
 
-        expect(() => organizationSchema.parse(input)).toThrow()
+        expect(() => vendorSchema.parse(input)).toThrow()
     })
 
     it('rejects unknown properties', () => {
         const input = {
-            id: genOrgId(),
+            id: genVndrId(),
             name: 'Acme Corporation',
             unknownField: 'should fail'
         }
 
-        expect(() => organizationSchema.parse(input)).toThrow()
+        expect(() => vendorSchema.parse(input)).toThrow()
     })
 })
 
-describe('organizationCreationSchema', () => {
+describe('vendorCreationSchema', () => {
     it('parses valid creation input', () => {
         const input = {
-            id: genOrgId(),
-            name: 'New Organization',
+            id: genVndrId(),
+            name: 'New Vendor',
             description: 'Created for testing'
         }
 
-        const result = organizationCreationSchema.parse(input)
+        const result = vendorCreationSchema.parse(input)
 
         expect(result.id).toBe(input.id)
         expect(result.name).toBe(input.name)
@@ -150,30 +150,30 @@ describe('organizationCreationSchema', () => {
 
     it('requires id field', () => {
         const input = {
-            name: 'New Organization'
+            name: 'New Vendor'
         }
 
-        expect(() => organizationCreationSchema.parse(input)).toThrow()
+        expect(() => vendorCreationSchema.parse(input)).toThrow()
     })
 
     it('requires name field', () => {
         const input = {
-            id: genOrgId()
+            id: genVndrId()
         }
 
-        expect(() => organizationCreationSchema.parse(input)).toThrow()
+        expect(() => vendorCreationSchema.parse(input)).toThrow()
     })
 })
 
-describe('organizationUpdateSchema', () => {
+describe('vendorUpdateSchema', () => {
     it('parses update with all fields', () => {
         const input = {
-            id: genOrgId(),
+            id: genVndrId(),
             name: 'Updated Name',
             description: 'Updated description'
         }
 
-        const result = organizationUpdateSchema.parse(input)
+        const result = vendorUpdateSchema.parse(input)
 
         expect(result.id).toBe(input.id)
         expect(result.name).toBe(input.name)
@@ -182,11 +182,11 @@ describe('organizationUpdateSchema', () => {
 
     it('allows update without name (name is optional in updates)', () => {
         const input = {
-            id: genOrgId(),
+            id: genVndrId(),
             description: 'Updated description only'
         }
 
-        const result = organizationUpdateSchema.parse(input)
+        const result = vendorUpdateSchema.parse(input)
 
         expect(result.id).toBe(input.id)
         expect(result.name).toBeUndefined()
@@ -198,15 +198,15 @@ describe('organizationUpdateSchema', () => {
             name: 'Updated Name'
         }
 
-        expect(() => organizationUpdateSchema.parse(input)).toThrow()
+        expect(() => vendorUpdateSchema.parse(input)).toThrow()
     })
 
     it('validates name when provided', () => {
         const input = {
-            id: genOrgId(),
+            id: genVndrId(),
             name: ''
         }
 
-        expect(() => organizationUpdateSchema.parse(input)).toThrow()
+        expect(() => vendorUpdateSchema.parse(input)).toThrow()
     })
 })

@@ -21,8 +21,8 @@ export type RegisterLineItem = {
     /** The status of the entry. */
     status?: TxnStatusStr | undefined,
 
-    /** The organization (payee/payor). */
-    organization?: string|undefined,
+    /** The vendor (payee/payor). */
+    vendor?: string|undefined,
 
     /** The description of the transaction. */
     description?: string|undefined,
@@ -84,8 +84,8 @@ export type RegisterTransaction = {
     /** The status of the transaction. */
     status?: TxnStatusStr | undefined,
 
-    /** The organization (payee/payor). */
-    organization?: string | undefined,
+    /** The vendor (payee/payor). */
+    vendor?: string | undefined,
 
     /** The description of the transaction. */
     description?: string | undefined,
@@ -108,7 +108,7 @@ export const registerUpdateSchema = z.strictObject({
     date: isoDateSchema.optional(),
     code: z.string().nullish(),
     status: txnStatusSchema.nullish(),
-    organization: nameSchema.nullish(),
+    vendor: nameSchema.nullish(),
     description: summarySchema.nullish(),
     entries: z.array(registerEntrySchema).min(2).optional(),
 }).readonly()
@@ -121,7 +121,7 @@ export const registerCreateSchema = z.strictObject({
     date: isoDateSchema,
     code: z.string().nullish(),
     status: txnStatusSchema.nullish(),
-    organization: nameSchema.nullish(),
+    vendor: nameSchema.nullish(),
     description: summarySchema.nullish(),
     entries: z.array(registerEntrySchema).min(2),
 }).readonly()

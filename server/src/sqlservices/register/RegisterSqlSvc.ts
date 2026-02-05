@@ -49,13 +49,13 @@ export class RegisterSqlService implements IRegisterSvc {
                     Transaxtion.date as date,
                     Transaxtion.code as code,
                     Entry.status as status,
-                    Organization.name as organization,
+                    Vendor.name as vendor,
                     Transaxtion.description as description,
                     Entry.debitCents as debitCents,
                     Entry.creditCents as creditCents
                  FROM Entry
                     INNER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
-                    LEFT OUTER JOIN Organization ON Transaxtion.organizationId = Organization.id
+                    LEFT OUTER JOIN Vendor ON Transaxtion.vendorId = Vendor.id
                  WHERE Entry.accountId = $accountId
                  ORDER BY Transaxtion.date ASC, Transaxtion.ROWID ASC`,
             {$accountId: accountId},
@@ -64,7 +64,7 @@ export class RegisterSqlService implements IRegisterSvc {
                 date: z.string(),
                 code: z.string().optional(),
                 status: z.string().optional(),
-                organization: z.string().optional(),
+                vendor: z.string().optional(),
                 description: z.string().optional(),
                 debitCents: z.int(),
                 creditCents: z.int()
@@ -124,7 +124,7 @@ export class RegisterSqlService implements IRegisterSvc {
                 date: sqlItem.date,
                 code: sqlItem.code,
                 status: sqlItem.status ? txnStatusSchema.parse(sqlItem.status) : 'UNMARKED',
-                organization: sqlItem.organization,
+                vendor: sqlItem.vendor,
                 description: sqlItem.description,
                 offsetAccount,
                 debit: fromCents(sqlItem.debitCents),
@@ -154,9 +154,9 @@ export class RegisterSqlService implements IRegisterSvc {
                     Transaxtion.date as date,
                     Transaxtion.code as code,
                     Transaxtion.description as description,
-                    Organization.name as organization
+                    Vendor.name as vendor
                  FROM Transaxtion
-                    LEFT OUTER JOIN Organization ON Transaxtion.organizationId = Organization.id
+                    LEFT OUTER JOIN Vendor ON Transaxtion.vendorId = Vendor.id
                  WHERE Transaxtion.id = $txnId`,
             {$txnId: txnId},
             z.strictObject({
@@ -164,7 +164,7 @@ export class RegisterSqlService implements IRegisterSvc {
                 date: z.string(),
                 code: z.string().nullish(),
                 description: z.string().nullish(),
-                organization: z.string().nullish(),
+                vendor: z.string().nullish(),
             }).readonly()
         )
 
@@ -199,7 +199,7 @@ export class RegisterSqlService implements IRegisterSvc {
             date: txnRow.date,
             code: txnRow.code ?? undefined,
             description: txnRow.description ?? undefined,
-            organization: txnRow.organization ?? undefined,
+            vendor: txnRow.vendor ?? undefined,
             entries: entries.map(e => ({
                 account: e.account,
                 debit: fromCents(e.debitCents),
@@ -215,7 +215,7 @@ export class RegisterSqlService implements IRegisterSvc {
         if (update.date !== undefined) payload['date'] = update.date
         if (update.code !== undefined) payload['code'] = update.code
         if (update.description !== undefined) payload['description'] = update.description
-        if (update.organization !== undefined) payload['organization'] = update.organization
+        if (update.vendor !== undefined) payload['vendor'] = update.vendor
         if (update.status !== undefined && update.status !== 'UNMARKED') payload['status'] = update.status
         if (update.entries !== undefined) {
             payload['entries'] = update.entries.map(e => {
@@ -248,18 +248,18 @@ export class RegisterSqlService implements IRegisterSvc {
             bindings['$description'] = update.description || null
         }
 
-        if (update.organization !== undefined) {
-            if (update.organization) {
+        if (update.vendor !== undefined) {
+            if (update.vendor) {
                 this.db.run(
-                    'register.update.org',
+                    'register.update.vendor',
                     () =>
                         `UPDATE Transaxtion
-                         SET organizationId = (SELECT id FROM Organization WHERE name = $organization)
+                         SET vendorId = (SELECT id FROM Vendor WHERE name = $vendor)
                          WHERE id = $id`,
-                    { $id: update.id, $organization: update.organization }
+                    { $id: update.id, $vendor: update.vendor }
                 )
             } else {
-                setClauses.push('organizationId = NULL')
+                setClauses.push('vendorId = NULL')
             }
         }
 
@@ -312,7 +312,7 @@ export class RegisterSqlService implements IRegisterSvc {
         }
         if (create.code) payload['code'] = create.code
         if (create.description) payload['description'] = create.description
-        if (create.organization) payload['organization'] = create.organization
+        if (create.vendor) payload['vendor'] = create.vendor
         if (create.status && create.status !== 'UNMARKED') payload['status'] = create.status
         payload['entries'] = create.entries.map(e => {
             const entry: Record<string, string> = { account: e.account }
@@ -325,25 +325,25 @@ export class RegisterSqlService implements IRegisterSvc {
         await appendYamlDirective(transactionsFile, createCreateDirective(payload))
 
         // Insert into in-memory database
-        if (create.organization) {
+        if (create.vendor) {
             this.db.run(
-                'register.create.withorg',
+                'register.create.withvendor',
                 () =>
-                    `INSERT INTO Transaxtion (id, date, code, organizationId, description)
-                     SELECT $id, $date, $code, Organization.id, $description
-                     FROM Organization
-                     WHERE name = $organization`,
+                    `INSERT INTO Transaxtion (id, date, code, vendorId, description)
+                     SELECT $id, $date, $code, Vendor.id, $description
+                     FROM Vendor
+                     WHERE name = $vendor`,
                 {
                     $id: create.id,
                     $date: create.date,
                     $code: create.code ?? null,
-                    $organization: create.organization,
+                    $vendor: create.vendor,
                     $description: create.description ?? null,
                 }
             )
         } else {
             this.db.run(
-                'register.create.withoutorg',
+                'register.create.withoutvendor',
                 () =>
                     `INSERT INTO Transaxtion (id, date, code, description)
                      VALUES ($id, $date, $code, $description)`,

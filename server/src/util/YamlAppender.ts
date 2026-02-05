@@ -28,7 +28,7 @@ const formatDirective = (directive: YamlDirective): string => {
     if (payload['date']) lines.push(`    date: ${payload['date']}`)
     if (payload['code']) lines.push(`    code: ${payload['code']}`)
     if (payload['description']) lines.push(`    description: ${payload['description']}`)
-    if (payload['organization']) lines.push(`    organization: ${payload['organization']}`)
+    if (payload['vendor']) lines.push(`    vendor: ${payload['vendor']}`)
     if (payload['status'] && payload['status'] !== 'UNMARKED') {
         lines.push(`    status: '${payload['status']}'`)
     }

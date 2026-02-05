@@ -46,14 +46,14 @@ export function runChecqueryDdl(db: ChecquerySqlDb) {
         {}
     )
 
-    // Organization
+    // Vendor
     db.exec(
-        `CREATE TABLE Organization
+        `CREATE TABLE Vendor
          (
              id          TEXT(27) NOT NULL,
              name        TEXT(200) UNIQUE NOT NULL,
              description TEXT(200),
-             CONSTRAINT Organization_PK PRIMARY KEY (id)
+             CONSTRAINT Vendor_PK PRIMARY KEY (id)
          );`,
         {}
     )
@@ -92,7 +92,7 @@ export function runChecqueryDdl(db: ChecquerySqlDb) {
              id             TEXT(27) NOT NULL,
              date           TEXT(10) NOT NULL,
              code           TEXT(100),
-             organizationId TEXT(27) REFERENCES Organization(id),
+             vendorId       TEXT(27) REFERENCES Vendor(id),
              description    TEXT(200),
              comment        TEXT(200),
              CONSTRAINT Transaxtion_PK PRIMARY KEY (id)

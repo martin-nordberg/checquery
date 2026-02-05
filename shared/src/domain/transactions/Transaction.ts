@@ -21,8 +21,8 @@ export const transactionAttributesSchema =
         /* The check number or similar code. */
         code: z.string().optional(),
 
-        /** The name of the organization that is the payee or payor. */
-        organization: nameSchema.optional(),
+        /** The name of the vendor (payee or payor). */
+        vendor: nameSchema.optional(),
 
         /** A description of the transaction. */
         description: summarySchema.optional(),

@@ -26,25 +26,25 @@ export class TransactionSqlService implements ITransactionSvc {
 
         const sqlQueries: SqlWithBindings[] = []
 
-        if (transaction.organization) {
+        if (transaction.vendor) {
             sqlQueries.push({
-                key: 'transaction.create.withorg',
+                key: 'transaction.create.withvendor',
                 sql: () =>
-                    `INSERT INTO Transaxtion (id, date, code, organizationId, description)
-                     SELECT $id, $date, $code, Organization.id, $description
-                     FROM Organization
-                     WHERE name = $organization;`,
+                    `INSERT INTO Transaxtion (id, date, code, vendorId, description)
+                     SELECT $id, $date, $code, Vendor.id, $description
+                     FROM Vendor
+                     WHERE name = $vendor;`,
                 bindings: {
                     $id: transaction.id,
                     $date: transaction.date,
                     $code: transaction.code,
-                    $organization: transaction.organization,
+                    $vendor: transaction.vendor,
                     $description: transaction.description,
                 }
             })
         } else {
             sqlQueries.push({
-                key: 'transaction.create.withoutorg',
+                key: 'transaction.create.withoutvendor',
                 sql: () =>
                     `INSERT INTO Transaxtion (id, date, code, description)
                      VALUES ($id, $date, $code, $description)`,
@@ -98,9 +98,9 @@ export class TransactionSqlService implements ITransactionSvc {
         const txn = this.db.findOne(
             'transaction.findById',
             () =>
-                `SELECT Transaxtion.id, date, code, Organization.name as organization, Transaxtion.description, comment
+                `SELECT Transaxtion.id, date, code, Vendor.name as vendor, Transaxtion.description, comment
                  FROM Transaxtion
-                 LEFT OUTER JOIN Organization ON Transaxtion.organizationId = Organization.id
+                 LEFT OUTER JOIN Vendor ON Transaxtion.vendorId = Vendor.id
                  WHERE Transaxtion.id = $id`,
             {$id: transactionId},
             transactionStandAloneSchema
@@ -178,19 +178,19 @@ export class TransactionSqlService implements ITransactionSvc {
             setClauses.push('description = $description')
             bindings['$description'] = transactionPatch.description || null
         }
-        if (transactionPatch.organization !== undefined) {
-            if (transactionPatch.organization) {
-                // Update with organization lookup
+        if (transactionPatch.vendor !== undefined) {
+            if (transactionPatch.vendor) {
+                // Update with vendor lookup
                 sqlQueries.push({
-                    key: 'transaction.update.org',
+                    key: 'transaction.update.vendor',
                     sql: () =>
                         `UPDATE Transaxtion
-                         SET organizationId = (SELECT id FROM Organization WHERE name = $organization)
+                         SET vendorId = (SELECT id FROM Vendor WHERE name = $vendor)
                          WHERE id = $id`,
-                    bindings: { $id: transactionPatch.id, $organization: transactionPatch.organization }
+                    bindings: { $id: transactionPatch.id, $vendor: transactionPatch.vendor }
                 })
             } else {
-                setClauses.push('organizationId = NULL')
+                setClauses.push('vendorId = NULL')
             }
         }
 

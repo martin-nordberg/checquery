@@ -87,7 +87,7 @@ const Register = (props: RegisterProps) => {
                                     Number
                                 </th>
                                 <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    Payee
+                                    Vendor
                                 </th>
                                 <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                                     Description

@@ -3,7 +3,10 @@
     "allow": [
       "Bash(bunx tsc:*)",
       "Bash(bun run build)",
-      "Bash(bun run tsc:*)"
+      "Bash(bun run tsc:*)",
+      "Bash(tsc:*)",
+      "Bash(bun test:*)",
+      "Bash(timeout 5 bun run dev:*)"
     ]
   }
 }
