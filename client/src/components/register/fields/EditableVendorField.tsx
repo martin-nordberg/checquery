@@ -13,10 +13,12 @@ const EditableVendorField = (props: EditableVendorFieldProps) => {
 
     const options = () => {
         const vndrs = vendors() ?? []
-        return vndrs.map(vndr => ({
-            value: vndr.name,
-            label: vndr.name,
-        }))
+        return vndrs
+            .filter(vndr => vndr.isActive)
+            .map(vndr => ({
+                value: vndr.name,
+                label: vndr.name,
+            }))
     }
 
     return (

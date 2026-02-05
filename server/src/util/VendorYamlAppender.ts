@@ -29,6 +29,9 @@ const formatVendorDirective = (directive: VendorYamlDirective): string => {
     if (payload['defaultAccount']) {
         lines.push(`    defaultAccount: ${payload['defaultAccount']}`)
     }
+    if (payload['isActive'] !== undefined) {
+        lines.push(`    isActive: ${payload['isActive']}`)
+    }
 
     return lines.join('\n')
 }

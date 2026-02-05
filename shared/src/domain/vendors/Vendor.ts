@@ -3,6 +3,20 @@ import {nameSchema} from "../core/Name";
 import {vndrIdSchema} from "./VndrId";
 import {summarySchema} from "../core/Summary";
 
+/** Coerces SQLite integers (0/1) and missing values to boolean, defaulting to true. */
+const booleanDefaultTrue = z.preprocess(
+    (val) => {
+        if (val === undefined || val === null) {
+            return true
+        }
+        if (typeof val === 'number') {
+            return val !== 0
+        }
+        return val
+    },
+    z.boolean()
+)
+
 /** Base schema for a Checquery vendor's details. */
 export const vendorAttributesSchema =
     z.strictObject({
@@ -17,6 +31,9 @@ export const vendorAttributesSchema =
 
         /** The default account name for transactions with this vendor. */
         defaultAccount: nameSchema.optional(),
+
+        /** Whether the vendor is active. Defaults to true. */
+        isActive: booleanDefaultTrue.default(true),
     })
 
 
@@ -39,7 +56,8 @@ export type VendorCreation = z.infer<typeof vendorCreationSchema>
 export const vendorUpdateSchema =
     z.strictObject({
         ...vendorAttributesSchema.partial({
-            name: true
+            name: true,
+            isActive: true,
         }).shape
     }).readonly()
 

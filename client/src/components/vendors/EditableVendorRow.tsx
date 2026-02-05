@@ -129,6 +129,36 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
         }
     }
 
+    const handleDeactivate = async () => {
+        setIsSaving(true)
+        try {
+            await vendorClientSvc.updateVendor({
+                id: props.vendor.id,
+                isActive: false,
+            })
+            props.onSaved()
+        } catch (e) {
+            setError(e instanceof Error ? e.message : 'Failed to deactivate')
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
+    const handleReactivate = async () => {
+        setIsSaving(true)
+        try {
+            await vendorClientSvc.updateVendor({
+                id: props.vendor.id,
+                isActive: true,
+            })
+            props.onSaved()
+        } catch (e) {
+            setError(e instanceof Error ? e.message : 'Failed to reactivate')
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
     // Display mode row
     const DisplayRow = () => (
         <tr class="hover:bg-gray-50">
@@ -152,6 +182,11 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
             </td>
             <td class="px-4 py-2 text-sm text-gray-500">
                 {props.vendor.description ?? ''}
+            </td>
+            <td class="px-4 py-2 text-sm">
+                <span class={props.vendor.isActive ? 'text-green-600' : 'text-gray-400'}>
+                    {props.vendor.isActive ? 'Active' : 'Inactive'}
+                </span>
             </td>
         </tr>
     )
@@ -183,7 +218,7 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
                         </svg>
                     </button>
                 </td>
-                <td class="px-2 py-2" colspan="3">
+                <td class="px-2 py-2" colspan="4">
                     <div class="space-y-3 p-2">
                         <div class="grid grid-cols-3 gap-3">
                             <div>
@@ -232,10 +267,23 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
                                     Delete
                                 </button>
                             </Show>
-                            <Show when={isInUse()}>
-                                <span class="px-3 py-1 text-gray-400 text-sm" title="Vendor is used in transactions">
-                                    (Used in transactions)
-                                </span>
+                            <Show when={isInUse() && props.vendor.isActive}>
+                                <button
+                                    onClick={handleDeactivate}
+                                    disabled={isSaving()}
+                                    class="px-3 py-1 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Deactivate
+                                </button>
+                            </Show>
+                            <Show when={isInUse() && !props.vendor.isActive}>
+                                <button
+                                    onClick={handleReactivate}
+                                    disabled={isSaving()}
+                                    class="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Reactivate
+                                </button>
                             </Show>
                         </div>
                     </div>

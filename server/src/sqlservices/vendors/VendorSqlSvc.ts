@@ -27,19 +27,21 @@ export class VendorSqlService implements IVendorSvc {
                 name: vendor.name,
                 description: vendor.description,
                 defaultAccount: vendor.defaultAccount,
+                isActive: vendor.isActive,
             }))
         }
 
         this.db.run(
             'vendor.create',
             () =>
-                `INSERT INTO Vendor (id, name, description, defaultAccount)
-                 VALUES ($id, $name, $description, $defaultAccount);`,
+                `INSERT INTO Vendor (id, name, description, defaultAccount, isActive)
+                 VALUES ($id, $name, $description, $defaultAccount, $isActive);`,
             {
                 $id: vendor.id,
                 $name: vendor.name,
                 $description: vendor.description ?? null,
                 $defaultAccount: vendor.defaultAccount ?? null,
+                $isActive: vendor.isActive ? 1 : 0,
             }
         )
     }
@@ -86,6 +88,7 @@ export class VendorSqlService implements IVendorSvc {
                 id: vendorPatch.id,
                 description: vendorPatch.description,
                 defaultAccount: vendorPatch.defaultAccount,
+                isActive: vendorPatch.isActive,
             }))
         }
 
@@ -103,6 +106,10 @@ export class VendorSqlService implements IVendorSvc {
         if (vendorPatch.defaultAccount !== undefined) {
             setClauses.push('defaultAccount = $defaultAccount')
             bindings.$defaultAccount = vendorPatch.defaultAccount || null
+        }
+        if (vendorPatch.isActive !== undefined) {
+            setClauses.push('isActive = $isActive')
+            bindings.$isActive = vendorPatch.isActive ? 1 : 0
         }
 
         if (setClauses.length === 0) {

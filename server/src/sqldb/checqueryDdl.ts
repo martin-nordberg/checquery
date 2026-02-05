@@ -54,6 +54,7 @@ export function runChecqueryDdl(db: ChecquerySqlDb) {
              name           TEXT(200) UNIQUE NOT NULL,
              description    TEXT(200),
              defaultAccount TEXT(200),
+             isActive       INTEGER NOT NULL DEFAULT 1,
              CONSTRAINT Vendor_PK PRIMARY KEY (id)
          );`,
         {}
