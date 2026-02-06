@@ -6,7 +6,7 @@ import {useParams} from "@solidjs/router";
 import {createMemo, createResource, Show} from "solid-js";
 import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
 import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
-import {isoDateToday} from "$shared/domain/core/IsoDate.ts";
+import {stmtNavOptions} from "../../nav/stmtNavOptions.ts";
 
 const RegisterPage = () => {
 
@@ -31,12 +31,7 @@ const RegisterPage = () => {
         return options
     })
 
-    const stmtOptions = {
-        "Register": ".",
-        "Balance Sheet": `/balancesheet/${isoDateToday}`,
-        "Income Statement": `/incomestatement/${isoDateToday?.substring(0, 7)}`,
-        "Vendors": "/vendors",
-    }
+    const stmtOptions = stmtNavOptions("Register")
 
     return (
         <>

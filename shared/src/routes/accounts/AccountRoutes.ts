@@ -29,30 +29,42 @@ export const accountRoutes = (accountService: IAccountSvc) => {
             }
         )
         .get(
-            '/:id',
-            zxValidator('param', z.object({id: acctIdSchema})),
+            '/:accountId',
+            zxValidator('param', z.object({accountId: acctIdSchema})),
             async (c) => {
-                const {id} = c.req.valid('param')
-                return c.json(await accountService.findAccountById(id))
+                const {accountId} = c.req.valid('param')
+                return c.json(await accountService.findAccountById(accountId))
+            }
+        )
+        .get(
+            '/:accountId/in-use',
+            zxValidator('param', z.object({accountId: acctIdSchema})),
+            async (c) => {
+                const {accountId} = c.req.valid('param')
+                return c.json({inUse: await accountService.isAccountInUse(accountId)})
             }
         )
         .delete(
-            '/:id',
-            zxValidator('param', z.object({id: acctIdSchema})),
+            '/:accountId',
+            zxValidator('param', z.object({accountId: acctIdSchema})),
             async (c) => {
-                const {id} = c.req.valid('param')
-                await accountService.deleteAccount(id)
+                const {accountId} = c.req.valid('param')
+                const inUse = await accountService.isAccountInUse(accountId)
+                if (inUse) {
+                    return c.json({error: 'Account is used in transactions and cannot be deleted'}, 409)
+                }
+                await accountService.deleteAccount(accountId)
                 return c.body(null, 204)
             }
         )
         .patch(
-            '/:id',
-            zxValidator('param', z.object({id: acctIdSchema})),
+            '/:accountId',
+            zxValidator('param', z.object({accountId: acctIdSchema})),
             zxValidator('json', accountUpdateSchema),
             async (c) => {
-                // const {id} = c.req.valid('param')
+                const {accountId} = c.req.valid('param')
                 const account: AccountUpdate = c.req.valid('json')
-                return c.json(await accountService.updateAccount(account))
+                return c.json(await accountService.updateAccount({...account, id: accountId}))
             }
         )
 }

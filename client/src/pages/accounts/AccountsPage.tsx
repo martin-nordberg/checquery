@@ -1,25 +1,25 @@
 import TopNav from "../../components/nav/TopNav.tsx";
 import Breadcrumb from "../../components/nav/Breadcrumb.tsx";
 import HoverableDropDown from "../../components/nav/HoverableDropDown.tsx";
-import VendorList from "../../components/vendors/VendorList.tsx";
+import AccountList from "../../components/accounts/AccountList.tsx";
 import {stmtNavOptions} from "../../nav/stmtNavOptions.ts";
 
-const VendorsPage = () => {
+const AccountsPage = () => {
 
-    const stmtOptions = stmtNavOptions("Vendors")
+    const stmtOptions = stmtNavOptions("Accounts")
 
     return (
         <>
             <TopNav>
                 <Breadcrumb>
-                    <HoverableDropDown options={stmtOptions} selectedOption="Vendors" />
+                    <HoverableDropDown options={stmtOptions} selectedOption="Accounts" />
                 </Breadcrumb>
             </TopNav>
             <main class="p-4">
-                <VendorList />
+                <AccountList />
             </main>
         </>
     )
 }
 
-export default VendorsPage
+export default AccountsPage

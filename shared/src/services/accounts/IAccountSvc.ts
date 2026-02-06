@@ -19,4 +19,7 @@ export interface IAccountSvc {
     /** Updates an account's attributes. */
     updateAccount(accountPatch: AccountUpdate): Promise<Account | null>
 
+    /** Checks if an account is used in any transaction entry. */
+    isAccountInUse(accountId: AcctId): Promise<boolean>
+
 }

@@ -12,6 +12,7 @@ import IncomeStatementPage from "./pages/incomestatement/IncomeStatementPage.tsx
 const BalanceSheetPage = lazy(() => import("./pages/balancesheet/BalanceSheetPage"));
 const RegisterPage = lazy(() => import("./pages/register/RegisterPage"));
 const VendorsPage = lazy(() => import("./pages/vendors/VendorsPage"));
+const AccountsPage = lazy(() => import("./pages/accounts/AccountsPage"));
 
 const root = document.getElementById('root')
 
@@ -24,6 +25,7 @@ render(() => (
         <Route path="/incomestatement/:period" component={IncomeStatementPage}/>
         <Route path="/register/:accountId" component={RegisterPage}/>
         <Route path="/vendors" component={VendorsPage}/>
+        <Route path="/accounts" component={AccountsPage}/>
     </Router>
 ), root!)
 

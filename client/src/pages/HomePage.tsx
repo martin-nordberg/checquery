@@ -8,6 +8,11 @@ export const HomePage = () => {
             <main class="p-2">
                 <ul>
                     <li>
+                        <A class="hover:underline" href="./accounts">
+                            Accounts
+                        </A>
+                    </li>
+                    <li>
                         <A class="hover:underline" href="./balancesheet">
                             Balance Sheet
                         </A>

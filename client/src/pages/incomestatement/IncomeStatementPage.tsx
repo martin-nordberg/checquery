@@ -5,6 +5,7 @@ import {useParams} from "@solidjs/router";
 import {createEffect, createSignal} from "solid-js";
 import HoverableDropDown from "../../components/nav/HoverableDropDown.tsx";
 import {getEndDate, periodSchema} from "$shared/domain/core/Period.ts";
+import {stmtNavOptions} from "../../nav/stmtNavOptions.ts";
 
 const IncomeStatementPage = () => {
 
@@ -17,12 +18,9 @@ const IncomeStatementPage = () => {
         setPeriod(parsePeriod())
     })
 
-    const stmtOptions = {
-        "Income Statement": ".",
-        "Balance Sheet": `../../balancesheet/${getEndDate(period())}`,
-        "Register": "/register/accttruistchecking0000000000",
-        "Vendors": "/vendors",
-    }
+    const stmtOptions = stmtNavOptions("Income Statement", {
+        "Balance Sheet": `/balancesheet/${getEndDate(period())}`,
+    })
 
     const periodOptions = {
         "2026-01": "../2026-01",

@@ -5,17 +5,32 @@ import {
 import {type IAccountSvc} from "$shared/services/accounts/IAccountSvc";
 import {ChecquerySqlDb} from "../../sqldb/ChecquerySqlDb";
 import {type AcctId} from "$shared/domain/accounts/AcctId";
+import {z} from "zod";
+import {appendAccountDirective, createAccountCreateDirective, createAccountDeleteDirective, createAccountUpdateDirective} from "../../util/AccountYamlAppender";
 
 
 export class AccountSqlService implements IAccountSvc {
 
     readonly db = new ChecquerySqlDb()
+    readonly persistToYaml: boolean
 
-    constructor(db: ChecquerySqlDb) {
+    constructor(db: ChecquerySqlDb, persistToYaml: boolean = false) {
         this.db = db
+        this.persistToYaml = persistToYaml
     }
 
     async createAccount(account: AccountCreation): Promise<void> {
+        // Persist to YAML if enabled
+        if (this.persistToYaml) {
+            await appendAccountDirective(createAccountCreateDirective({
+                id: account.id,
+                name: account.name,
+                acctType: account.acctType,
+                acctNumber: account.acctNumber,
+                description: account.description,
+            }))
+        }
+
         this.db.run(
             'account.create',
             () =>
@@ -32,6 +47,13 @@ export class AccountSqlService implements IAccountSvc {
     }
 
     async deleteAccount(accountId:AcctId): Promise<void> {
+        // Persist to YAML if enabled
+        if (this.persistToYaml) {
+            await appendAccountDirective(createAccountDeleteDirective({
+                id: accountId,
+            }))
+        }
+
         this.db.run(
             'account.delete',
             () =>
@@ -67,43 +89,61 @@ export class AccountSqlService implements IAccountSvc {
     }
 
     async updateAccount(accountPatch: AccountUpdate): Promise<Account|null> {
+        // Persist to YAML if enabled
+        if (this.persistToYaml) {
+            await appendAccountDirective(createAccountUpdateDirective({
+                id: accountPatch.id,
+                acctNumber: accountPatch.acctNumber,
+                description: accountPatch.description,
+            }))
+        }
 
-        let queryKey = 'account.update'
-        let sql = `UPDATE Account`
+        const setClauses: string[] = []
         let bindings: any = {$id: accountPatch.id}
 
-        if (accountPatch.name) {
-            queryKey += '.name'
-            sql += ` SET name = $name`
+        if (accountPatch.name !== undefined) {
+            setClauses.push('name = $name')
             bindings.$name = accountPatch.name
         }
-        if (accountPatch.description) {
-            queryKey += '.description'
-            sql += ` SET description = $description`
-            bindings.$description = accountPatch.description
-        } else if (accountPatch.description == "") {
-            queryKey += '.description-null'
-            sql += ` SET description = NULL`
+        if (accountPatch.description !== undefined) {
+            setClauses.push('description = $description')
+            bindings.$description = accountPatch.description || null
         }
-        if (accountPatch.acctNumber) {
-            queryKey += '.acctNumber'
-            sql += ` SET acctNumber = $acctNumber`
-            bindings.$acctNumber = accountPatch.acctNumber
+        if (accountPatch.acctNumber !== undefined) {
+            setClauses.push('acctNumber = $acctNumber')
+            bindings.$acctNumber = accountPatch.acctNumber || null
         }
-        if (accountPatch.acctType) {
-            queryKey += '.acctType'
-            sql += ` SET acctType = $acctType`
+        if (accountPatch.acctType !== undefined) {
+            setClauses.push('acctType = $acctType')
             bindings.$acctType = accountPatch.acctType
         }
-        sql += ` WHERE id = $id`
 
-        const changes = this.db.run(queryKey, () => sql, bindings)
+        if (setClauses.length === 0) {
+            return this.findAccountById(accountPatch.id)
+        }
+
+        const sql = `UPDATE Account SET ${setClauses.join(', ')} WHERE id = $id`
+
+        const changes = this.db.run('account.update', () => sql, bindings)
 
         if (changes.changes == 0) {
             return null
         }
 
         return this.findAccountById(accountPatch.id)
+    }
+
+    async isAccountInUse(accountId: AcctId): Promise<boolean> {
+        const result = this.db.findOne(
+            'account.isInUse',
+            () =>
+                `SELECT COUNT(*) as count
+                 FROM Entry
+                 WHERE accountId = $id`,
+            {$id: accountId},
+            z.object({count: z.number()}).readonly()
+        )
+        return result !== null && result.count > 0
     }
 
 }

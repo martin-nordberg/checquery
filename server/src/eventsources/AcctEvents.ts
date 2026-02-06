@@ -1,5 +1,6 @@
 import type {IAccountSvc} from "$shared/services/accounts/IAccountSvc";
-import {accountCreationSchema} from "$shared/domain/accounts/Account";
+import {accountCreationSchema, accountUpdateSchema} from "$shared/domain/accounts/Account";
+import {acctIdSchema} from "$shared/domain/accounts/AcctId";
 
 /** The file containing account directives. TODO: make configurable */
 const accountsFile = "C:\\Data\\Documents\\checquery\\data\\accounts.yaml"
@@ -20,6 +21,12 @@ export const loadAccounts = async (acctSvc: IAccountSvc)=> {
         switch (directive.action) {
             case 'create':
                 await acctSvc.createAccount(accountCreationSchema.parse(directive.payload))
+                break
+            case 'update':
+                await acctSvc.updateAccount(accountUpdateSchema.parse(directive.payload))
+                break
+            case 'delete':
+                await acctSvc.deleteAccount(acctIdSchema.parse(directive.payload.id))
                 break
         }
     }
