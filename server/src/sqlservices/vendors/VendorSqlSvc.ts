@@ -6,7 +6,7 @@ import {type IVendorSvc} from "$shared/services/vendors/IVendorSvc";
 import {ChecquerySqlDb} from "../../sqldb/ChecquerySqlDb";
 import {type VndrId} from "$shared/domain/vendors/VndrId";
 import {z} from "zod";
-import {appendVendorDirective, createVendorCreateDirective, createVendorUpdateDirective} from "../../util/VendorYamlAppender";
+import {appendDirective, createVendorCreateDirective, createVendorUpdateDirective} from "../../util/ChecqueryYamlAppender";
 
 
 export class VendorSqlService implements IVendorSvc {
@@ -22,7 +22,7 @@ export class VendorSqlService implements IVendorSvc {
     async createVendor(vendor: VendorCreation): Promise<void> {
         // Persist to YAML if enabled
         if (this.persistToYaml) {
-            await appendVendorDirective(createVendorCreateDirective({
+            await appendDirective(createVendorCreateDirective({
                 id: vendor.id,
                 name: vendor.name,
                 description: vendor.description,
@@ -84,7 +84,7 @@ export class VendorSqlService implements IVendorSvc {
     async updateVendor(vendorPatch: VendorUpdate): Promise<Vendor | null> {
         // Persist to YAML if enabled
         if (this.persistToYaml) {
-            await appendVendorDirective(createVendorUpdateDirective({
+            await appendDirective(createVendorUpdateDirective({
                 id: vendorPatch.id,
                 description: vendorPatch.description,
                 defaultAccount: vendorPatch.defaultAccount,

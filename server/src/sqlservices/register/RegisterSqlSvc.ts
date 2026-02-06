@@ -7,9 +7,7 @@ import type {AcctId} from "$shared/domain/accounts/AcctId";
 import {txnIdSchema, type TxnId} from "$shared/domain/transactions/TxnId";
 import {txnStatusSchema} from "$shared/domain/transactions/TxnStatus";
 import {acctTypeSchema} from "$shared/domain/accounts/AcctType";
-import {appendYamlDirective, createCreateDirective, createDeleteDirective, createUpdateDirective} from "../../util/YamlAppender";
-
-const transactionsFile = "C:\\Data\\Documents\\checquery\\data\\transactions.yaml";
+import {appendDirective, createTransactionCreateDirective, createTransactionDeleteDirective, createTransactionUpdateDirective} from "../../util/ChecqueryYamlAppender";
 
 
 export class RegisterSqlService implements IRegisterSvc {
@@ -244,7 +242,7 @@ export class RegisterSqlService implements IRegisterSvc {
         }
 
         // Append to YAML file
-        await appendYamlDirective(transactionsFile, createUpdateDirective(payload))
+        await appendDirective(createTransactionUpdateDirective(payload))
 
         // Apply to in-memory database via TransactionSqlService logic
         // For now, we replicate the update logic here
@@ -352,7 +350,7 @@ export class RegisterSqlService implements IRegisterSvc {
             return entry
         })
 
-        await appendYamlDirective(transactionsFile, createCreateDirective(payload))
+        await appendDirective(createTransactionCreateDirective(payload))
 
         // Insert into in-memory database
         if (create.vendor) {
@@ -410,7 +408,7 @@ export class RegisterSqlService implements IRegisterSvc {
 
     async deleteTransaction(txnId: TxnId): Promise<void> {
         // Append to YAML file
-        await appendYamlDirective(transactionsFile, createDeleteDirective(txnId))
+        await appendDirective(createTransactionDeleteDirective(txnId))
 
         // Delete from in-memory database (entries are deleted via CASCADE or we delete manually)
         this.db.run(

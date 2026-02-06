@@ -2,20 +2,18 @@ import {Hono} from 'hono'
 import {cors} from 'hono/cors'
 import {accountRoutes} from "$shared/routes/accounts/AccountRoutes";
 import {AccountSqlService} from "./sqlservices/accounts/AccountSqlSvc";
-import {loadAccounts} from "./eventsources/AcctEvents";
 import {ChecquerySqlDb} from "./sqldb/ChecquerySqlDb";
 import {runChecqueryDdl} from "./sqldb/checqueryDdl";
 import {TransactionSqlService} from "./sqlservices/transactions/TransactionSqlSvc";
-import {loadTransactions} from "./eventsources/TxnEvents";
 import {BalanceSheetSqlService} from "./sqlservices/balancesheet/BalanceSheetSqlSvc";
 import {balanceSheetRoutes} from "$shared/routes/balancesheet/BalanceSheetRoutes";
 import {VendorSqlService} from "./sqlservices/vendors/VendorSqlSvc";
-import {loadVendors} from "./eventsources/VendorEvents";
 import {IncomeStatementSqlService} from "./sqlservices/incomestatement/IncomeStatementSqlSvc";
 import {incomeStatementRoutes} from "$shared/routes/incomestatement/IncomeStatementRoutes";
 import {RegisterSqlService} from "./sqlservices/register/RegisterSqlSvc";
 import {registerRoutes} from "$shared/routes/register/RegisterRoutes";
 import {vendorRoutes} from "$shared/routes/vendors/VendorRoutes";
+import {loadChecqueryLog} from "./eventsources/ChecqueryEvents";
 
 const app = new Hono()
 
@@ -37,9 +35,11 @@ const bsSvc = new BalanceSheetSqlService(db)
 const isSvc = new IncomeStatementSqlService(db)
 const regSvc = new RegisterSqlService(db)
 
-await loadVendors(vndrLoaderSvc)
-await loadAccounts(acctLoaderSvc)
-await loadTransactions(txnSvc)
+await loadChecqueryLog({
+    acctSvc: acctLoaderSvc,
+    txnSvc: txnSvc,
+    vendorSvc: vndrLoaderSvc
+})
 
 console.log(await bsSvc.findBalanceSheet('2026-01-11'))
 console.log(await isSvc.findIncomeStatement('2026-01-01', '2026-01-31'))
