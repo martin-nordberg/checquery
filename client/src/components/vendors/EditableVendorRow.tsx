@@ -18,6 +18,7 @@ type EditableVendorRowProps = {
 }
 
 const EditableVendorRow = (props: EditableVendorRowProps) => {
+    const [editName, setEditName] = createSignal<string>(props.vendor.name)
     const [editDescription, setEditDescription] = createSignal<string | undefined>(props.vendor.description)
     const [editDefaultAccount, setEditDefaultAccount] = createSignal<string | undefined>(props.vendor.defaultAccount)
     const [isSaving, setIsSaving] = createSignal(false)
@@ -41,6 +42,7 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
     })
 
     // Store initial values for dirty checking
+    const [initialName, setInitialName] = createSignal<string>(props.vendor.name)
     const [initialDescription, setInitialDescription] = createSignal<string | undefined>(props.vendor.description)
     const [initialDefaultAccount, setInitialDefaultAccount] = createSignal<string | undefined>(props.vendor.defaultAccount)
 
@@ -48,6 +50,9 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
     const isDirty = createMemo(() => {
         if (!props.isEditing) {
             return false
+        }
+        if (editName() !== initialName()) {
+            return true
         }
         if (editDescription() !== initialDescription()) {
             return true
@@ -66,6 +71,8 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
     // Reset edit state when entering edit mode
     createEffect(() => {
         if (props.isEditing) {
+            setEditName(props.vendor.name)
+            setInitialName(props.vendor.name)
             setEditDescription(props.vendor.description)
             setInitialDescription(props.vendor.description)
             setEditDefaultAccount(props.vendor.defaultAccount)
@@ -96,6 +103,7 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
         try {
             await vendorClientSvc.updateVendor({
                 id: props.vendor.id,
+                name: editName(),
                 description: editDescription() ?? undefined,
                 defaultAccount: editDefaultAccount() ?? undefined,
             })
@@ -223,9 +231,11 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
                         <div class="grid grid-cols-3 gap-3">
                             <div>
                                 <label class="block text-xs font-medium text-gray-500 mb-1">Name</label>
-                                <div class="px-2 py-1 bg-gray-100 rounded text-sm text-gray-700">
-                                    {props.vendor.name}
-                                </div>
+                                <EditableTextField
+                                    value={editName()}
+                                    onChange={setEditName}
+                                    placeholder="Vendor name..."
+                                />
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-gray-500 mb-1">Default Account</label>

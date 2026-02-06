@@ -86,6 +86,7 @@ export class VendorSqlService implements IVendorSvc {
         if (this.persistToYaml) {
             await appendDirective(createVendorUpdateDirective({
                 id: vendorPatch.id,
+                name: vendorPatch.name,
                 description: vendorPatch.description,
                 defaultAccount: vendorPatch.defaultAccount,
                 isActive: vendorPatch.isActive,

@@ -197,17 +197,11 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
                         <div class="grid grid-cols-4 gap-3">
                             <div>
                                 <label class="block text-xs font-medium text-gray-500 mb-1">Name</label>
-                                <Show when={!isInUse.loading && isInUse() === false} fallback={
-                                    <div class="px-2 py-1 bg-gray-100 rounded text-sm text-gray-700">
-                                        {props.account.name.replaceAll(':', ' : ')}
-                                    </div>
-                                }>
-                                    <EditableTextField
-                                        value={editName()}
-                                        onChange={setEditName}
-                                        placeholder="Account name..."
-                                    />
-                                </Show>
+                                <EditableTextField
+                                    value={editName()}
+                                    onChange={setEditName}
+                                    placeholder="Account name..."
+                                />
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-gray-500 mb-1">Account Type</label>

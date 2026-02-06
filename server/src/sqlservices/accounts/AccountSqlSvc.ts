@@ -93,6 +93,7 @@ export class AccountSqlService implements IAccountSvc {
         if (this.persistToYaml) {
             await appendDirective(createAccountUpdateDirective({
                 id: accountPatch.id,
+                name: accountPatch.name,
                 acctNumber: accountPatch.acctNumber,
                 description: accountPatch.description,
             }))
