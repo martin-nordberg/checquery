@@ -1,5 +1,5 @@
 export type VendorYamlDirective = {
-    action: 'create' | 'update'
+    action: 'create-vendor' | 'update-vendor'
     payload: Record<string, unknown>
 }
 
@@ -53,7 +53,7 @@ export const appendVendorDirective = async (directive: VendorYamlDirective): Pro
  * Creates an update directive for a vendor.
  */
 export const createVendorUpdateDirective = (payload: Record<string, unknown>): VendorYamlDirective => ({
-    action: 'update',
+    action: 'update-vendor',
     payload
 })
 
@@ -61,6 +61,6 @@ export const createVendorUpdateDirective = (payload: Record<string, unknown>): V
  * Creates a create directive for a vendor.
  */
 export const createVendorCreateDirective = (payload: Record<string, unknown>): VendorYamlDirective => ({
-    action: 'create',
+    action: 'create-vendor',
     payload
 })

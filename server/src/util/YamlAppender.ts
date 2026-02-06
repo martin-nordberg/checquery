@@ -1,5 +1,5 @@
 export type YamlDirective = {
-    action: 'create' | 'update' | 'delete'
+    action: 'create-transaction' | 'update-transaction' | 'delete-transaction'
     payload: Record<string, unknown>
 }
 
@@ -85,7 +85,7 @@ export const appendYamlDirective = async (filePath: string, directive: YamlDirec
  * Creates an update directive for a transaction.
  */
 export const createUpdateDirective = (payload: Record<string, unknown>): YamlDirective => ({
-    action: 'update',
+    action: 'update-transaction',
     payload
 })
 
@@ -93,7 +93,7 @@ export const createUpdateDirective = (payload: Record<string, unknown>): YamlDir
  * Creates a delete directive for a transaction.
  */
 export const createDeleteDirective = (id: string): YamlDirective => ({
-    action: 'delete',
+    action: 'delete-transaction',
     payload: { id }
 })
 
@@ -101,6 +101,6 @@ export const createDeleteDirective = (id: string): YamlDirective => ({
  * Creates a create directive for a transaction.
  */
 export const createCreateDirective = (payload: Record<string, unknown>): YamlDirective => ({
-    action: 'create',
+    action: 'create-transaction',
     payload
 })

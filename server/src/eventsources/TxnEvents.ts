@@ -19,13 +19,13 @@ export const loadTransactions = async (txnSvc: ITransactionSvc)=> {
     // Handle each directive in order.
     for (const directive of directives) {
         switch (directive.action) {
-            case 'create':
+            case 'create-transaction':
                 await txnSvc.createTransaction(transactionCreationSchema.parse(directive.payload, { reportInput: true }))
                 break
-            case 'update':
+            case 'update-transaction':
                 await txnSvc.updateTransaction(transactionUpdateSchema.parse(directive.payload, { reportInput: true }))
                 break
-            case 'delete':
+            case 'delete-transaction':
                 await txnSvc.deleteTransaction(txnIdSchema.parse(directive.payload.id, { reportInput: true }))
                 break
         }

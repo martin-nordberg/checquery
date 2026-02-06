@@ -19,13 +19,13 @@ export const loadAccounts = async (acctSvc: IAccountSvc)=> {
     // Handle each directive in order.
     for (const directive of directives) {
         switch (directive.action) {
-            case 'create':
+            case 'create-account':
                 await acctSvc.createAccount(accountCreationSchema.parse(directive.payload))
                 break
-            case 'update':
+            case 'update-account':
                 await acctSvc.updateAccount(accountUpdateSchema.parse(directive.payload))
                 break
-            case 'delete':
+            case 'delete-account':
                 await acctSvc.deleteAccount(acctIdSchema.parse(directive.payload.id))
                 break
         }

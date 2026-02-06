@@ -1,5 +1,5 @@
 export type AccountYamlDirective = {
-    action: 'create' | 'update' | 'delete'
+    action: 'create-account' | 'update-account' | 'delete-account'
     payload: Record<string, unknown>
 }
 
@@ -72,7 +72,7 @@ export const appendAccountDirective = async (directive: AccountYamlDirective): P
  * Creates an update directive for an account.
  */
 export const createAccountUpdateDirective = (payload: Record<string, unknown>): AccountYamlDirective => ({
-    action: 'update',
+    action: 'update-account',
     payload
 })
 
@@ -80,7 +80,7 @@ export const createAccountUpdateDirective = (payload: Record<string, unknown>): 
  * Creates a create directive for an account.
  */
 export const createAccountCreateDirective = (payload: Record<string, unknown>): AccountYamlDirective => ({
-    action: 'create',
+    action: 'create-account',
     payload
 })
 
@@ -88,6 +88,6 @@ export const createAccountCreateDirective = (payload: Record<string, unknown>): 
  * Creates a delete directive for an account.
  */
 export const createAccountDeleteDirective = (payload: Record<string, unknown>): AccountYamlDirective => ({
-    action: 'delete',
+    action: 'delete-account',
     payload
 })

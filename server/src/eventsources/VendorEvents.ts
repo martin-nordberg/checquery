@@ -18,10 +18,10 @@ export const loadVendors = async (vendorSvc: IVendorSvc) => {
     // Handle each directive in order.
     for (const directive of directives) {
         switch (directive.action) {
-            case 'create':
+            case 'create-vendor':
                 await vendorSvc.createVendor(vendorCreationSchema.parse(directive.payload))
                 break
-            case 'update':
+            case 'update-vendor':
                 await vendorSvc.updateVendor(vendorUpdateSchema.parse(directive.payload))
                 break
         }
