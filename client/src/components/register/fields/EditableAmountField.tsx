@@ -63,7 +63,7 @@ const EditableAmountField = (props: EditableAmountFieldProps) => {
     return (
         <div class="flex flex-col">
             <input
-                ref={props.inputRef}
+                ref={(el) => props.inputRef?.(el)}
                 type="text"
                 inputMode="decimal"
                 value={rawValue()}

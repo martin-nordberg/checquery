@@ -111,7 +111,7 @@ const AutocompleteField = (props: AutocompleteFieldProps) => {
     return (
         <div class="relative">
             <input
-                ref={props.inputRef}
+                ref={(el) => props.inputRef?.(el)}
                 type="text"
                 value={inputValue()}
                 onInput={handleInput}

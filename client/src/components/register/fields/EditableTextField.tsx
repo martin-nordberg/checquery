@@ -23,7 +23,7 @@ const EditableTextField = (props: EditableTextFieldProps) => {
 
     return (
         <input
-            ref={props.ref}
+            ref={(el) => props.ref?.(el)}
             type="text"
             value={localValue()}
             onInput={handleChange}
