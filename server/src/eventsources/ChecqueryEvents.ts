@@ -6,6 +6,7 @@ import {acctIdSchema} from "$shared/domain/accounts/AcctId";
 import {transactionCreationSchema, transactionUpdateSchema} from "$shared/domain/transactions/Transaction";
 import {txnIdSchema} from "$shared/domain/transactions/TxnId";
 import {vendorCreationSchema, vendorUpdateSchema} from "$shared/domain/vendors/Vendor";
+import {vndrIdSchema} from "$shared/domain/vendors/VndrId";
 
 /** The file containing all directives. TODO: make configurable */
 const checqueryLogFile = "C:\\Data\\Documents\\checquery\\data\\checquery-log.yaml"
@@ -47,6 +48,9 @@ export const loadChecqueryLog = async (services: ChecqueryServices) => {
                 break
             case 'update-vendor':
                 await services.vendorSvc.updateVendor(vendorUpdateSchema.parse(directive.payload))
+                break
+            case 'delete-vendor':
+                await services.vendorSvc.deleteVendor(vndrIdSchema.parse(directive.payload.id))
                 break
 
             // Transaction actions

@@ -7,10 +7,13 @@ import MessageDialog from "../../components/common/MessageDialog.tsx";
 import SearchField from "../../components/common/SearchField.tsx";
 import {stmtNavOptions} from "../../nav/stmtNavOptions.ts";
 
+export type StatusFilter = "active" | "inactive" | "both"
+
 const VendorsPage = () => {
 
     const stmtOptions = stmtNavOptions("Vendors")
     const [showNotFound, setShowNotFound] = createSignal(false)
+    const [statusFilter, setStatusFilter] = createSignal<StatusFilter>("active")
     const [searchText, setSearchText] = createSignal<string | undefined>(undefined)
     const [searchStartIndex, setSearchStartIndex] = createSignal(0)
     const [lastSearchText, setLastSearchText] = createSignal<string | undefined>(undefined)
@@ -50,13 +53,45 @@ const VendorsPage = () => {
                         <HoverableDropDown options={stmtOptions} selectedOption="Vendors" />
                     </Breadcrumb>
                 </TopNav>
-                <SearchField
-                    placeholder="Search vendors..."
-                    onSearch={handleSearch}
-                />
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-3">
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input
+                                type="radio"
+                                name="statusFilter"
+                                checked={statusFilter() === "active"}
+                                onChange={() => setStatusFilter("active")}
+                            />
+                            <span class="text-sm">Active</span>
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input
+                                type="radio"
+                                name="statusFilter"
+                                checked={statusFilter() === "inactive"}
+                                onChange={() => setStatusFilter("inactive")}
+                            />
+                            <span class="text-sm">Inactive</span>
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input
+                                type="radio"
+                                name="statusFilter"
+                                checked={statusFilter() === "both"}
+                                onChange={() => setStatusFilter("both")}
+                            />
+                            <span class="text-sm">Both</span>
+                        </label>
+                    </div>
+                    <SearchField
+                        placeholder="Search vendors..."
+                        onSearch={handleSearch}
+                    />
+                </div>
             </div>
             <main class="flex-1 min-h-0 p-4 flex flex-col">
                 <VendorList
+                    statusFilter={statusFilter()}
                     searchText={searchText()}
                     searchStartIndex={searchStartIndex()}
                     onSearchComplete={handleSearchComplete}

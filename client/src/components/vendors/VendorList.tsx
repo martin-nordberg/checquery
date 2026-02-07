@@ -1,10 +1,12 @@
-import {createResource, createSignal, createEffect, For, Show} from "solid-js";
+import {createResource, createSignal, createEffect, createMemo, For, Show} from "solid-js";
 import {vendorClientSvc} from "../../clients/vendors/VendorClientSvc.ts";
 import type {VndrId} from "$shared/domain/vendors/VndrId.ts";
 import EditableVendorRow, {type VendorField} from "./EditableVendorRow.tsx";
 import NewVendorRow from "./NewVendorRow.tsx";
+import type {StatusFilter} from "../../pages/vendors/VendorsPage.tsx";
 
 type VendorListProps = {
+    statusFilter: StatusFilter,
     searchText?: string | undefined,
     searchStartIndex?: number | undefined,
     onSearchComplete?: ((found: boolean, foundIndex: number) => void) | undefined,
@@ -12,7 +14,23 @@ type VendorListProps = {
 
 const VendorList = (props: VendorListProps) => {
 
-    const [vendors, {refetch}] = createResource(() => vendorClientSvc.findVendorsAll())
+    const [allVendors, {refetch}] = createResource(() => vendorClientSvc.findVendorsAll())
+
+    const vendors = createMemo(() => {
+        const all = allVendors()
+        if (!all) {
+            return undefined
+        }
+        switch (props.statusFilter) {
+            case "active":
+                return all.filter(v => v.isActive)
+            case "inactive":
+                return all.filter(v => !v.isActive)
+            case "both":
+                return all
+        }
+    })
+
     const [editingVendorId, setEditingVendorId] = createSignal<VndrId | null>(null)
     const [focusField, setFocusField] = createSignal<VendorField | undefined>(undefined)
     const [isAddingNew, setIsAddingNew] = createSignal(false)
@@ -116,10 +134,10 @@ const VendorList = (props: VendorListProps) => {
 
     return (
         <div class="flex-1 min-h-0 flex flex-col">
-            <Show when={vendors.loading}>
+            <Show when={allVendors.loading}>
                 <p>Loading...</p>
             </Show>
-            <Show when={vendors.error}>
+            <Show when={allVendors.error}>
                 <p class="text-red-600">Error loading vendors.</p>
             </Show>
             <Show when={vendors()}>

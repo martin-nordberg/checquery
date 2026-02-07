@@ -6,7 +6,7 @@ import {type IVendorSvc} from "$shared/services/vendors/IVendorSvc";
 import {ChecquerySqlDb} from "../../sqldb/ChecquerySqlDb";
 import {type VndrId} from "$shared/domain/vendors/VndrId";
 import {z} from "zod";
-import {appendDirective, createVendorCreateDirective, createVendorUpdateDirective} from "../../util/ChecqueryYamlAppender";
+import {appendDirective, createVendorCreateDirective, createVendorDeleteDirective, createVendorUpdateDirective} from "../../util/ChecqueryYamlAppender";
 
 
 export class VendorSqlService implements IVendorSvc {
@@ -47,6 +47,11 @@ export class VendorSqlService implements IVendorSvc {
     }
 
     async deleteVendor(vendorId: VndrId): Promise<void> {
+        // Persist to YAML if enabled
+        if (this.persistToYaml) {
+            await appendDirective(createVendorDeleteDirective(vendorId))
+        }
+
         this.db.run(
             'vendor.delete',
             () =>

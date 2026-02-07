@@ -39,7 +39,7 @@ const IncomeStatementPage = () => {
                     <HoverableDropDown selectedOption={period()} options={periodOptions}/>
                 </Breadcrumb>
             </TopNav>
-            <main class="p-2">
+            <main class="p-1">
                 <IncomeStatement period={period()}/>
             </main>
         </>

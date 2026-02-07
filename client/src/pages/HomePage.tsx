@@ -5,7 +5,7 @@ export const HomePage = () => {
     return (
         <>
             <TopNav/>
-            <main class="p-2">
+            <main class="p-1">
                 <ul>
                     <li>
                         <A class="hover:underline" href="./accounts">

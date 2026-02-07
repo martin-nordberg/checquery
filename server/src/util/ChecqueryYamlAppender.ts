@@ -1,6 +1,6 @@
 export type DirectiveAction =
     | 'create-account' | 'update-account' | 'delete-account'
-    | 'create-vendor' | 'update-vendor'
+    | 'create-vendor' | 'update-vendor' | 'delete-vendor'
     | 'create-transaction' | 'update-transaction' | 'delete-transaction'
 
 export type ChecqueryDirective = {
@@ -67,7 +67,7 @@ const formatDirective = (directive: ChecqueryDirective): string => {
         }
     }
     // Vendor directives
-    else if (action === 'create-vendor' || action === 'update-vendor') {
+    else if (action === 'create-vendor' || action === 'update-vendor' || action === 'delete-vendor') {
         if (payload['id']) {
             lines.push(`    id: ${payload['id']}`)
         }
@@ -168,6 +168,11 @@ export const createVendorCreateDirective = (payload: Record<string, unknown>): C
 export const createVendorUpdateDirective = (payload: Record<string, unknown>): ChecqueryDirective => ({
     action: 'update-vendor',
     payload
+})
+
+export const createVendorDeleteDirective = (id: string): ChecqueryDirective => ({
+    action: 'delete-vendor',
+    payload: { id }
 })
 
 // Transaction directive factories

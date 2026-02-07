@@ -56,7 +56,7 @@ const BalanceSheetPage = () => {
                     <HoverableDropDown selectedOption={endingDate()} options={dateOptions}/>
                 </Breadcrumb>
             </TopNav>
-            <main class="p-2">
+            <main class="p-1">
                 <BalanceSheet endingDate={endingDate()}/>
             </main>
         </>
