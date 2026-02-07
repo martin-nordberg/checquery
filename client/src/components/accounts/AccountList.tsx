@@ -108,7 +108,7 @@ const AccountList = (props: AccountListProps) => {
     }
 
     return (
-        <>
+        <div class="flex-1 min-h-0 flex flex-col">
             <Show when={accounts.loading}>
                 <p>Loading...</p>
             </Show>
@@ -116,9 +116,9 @@ const AccountList = (props: AccountListProps) => {
                 <p class="text-red-600">Error loading accounts.</p>
             </Show>
             <Show when={accounts()}>
-                <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+                <div class="bg-white shadow-lg rounded-lg overflow-auto flex-1">
                     <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-blue-100">
+                        <thead class="bg-blue-100 sticky top-0 z-10">
                             <tr>
                                 <th class="px-2 py-3 text-center w-10">
                                     <button
@@ -176,7 +176,7 @@ const AccountList = (props: AccountListProps) => {
                     </Show>
                 </div>
             </Show>
-        </>
+        </div>
     )
 }
 

@@ -26,13 +26,13 @@ const VendorsPage = () => {
     }
 
     return (
-        <>
+        <div class="h-screen flex flex-col">
             <MessageDialog
                 isOpen={showNotFound()}
                 message="No vendors found."
                 onClose={() => setShowNotFound(false)}
             />
-            <div class="flex items-center justify-between pr-4">
+            <div class="flex-none flex items-center justify-between pr-4 bg-white">
                 <TopNav>
                     <Breadcrumb>
                         <HoverableDropDown options={stmtOptions} selectedOption="Vendors" />
@@ -43,13 +43,13 @@ const VendorsPage = () => {
                     onSearch={handleSearch}
                 />
             </div>
-            <main class="p-4">
+            <main class="flex-1 min-h-0 p-4 flex flex-col">
                 <VendorList
                     searchText={searchText()}
                     onSearchComplete={handleSearchComplete}
                 />
             </main>
-        </>
+        </div>
     )
 }
 

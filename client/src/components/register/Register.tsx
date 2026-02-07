@@ -140,7 +140,7 @@ const Register = (props: RegisterProps) => {
     }
 
     return (
-        <>
+        <div class="flex-1 min-h-0 flex flex-col">
             <Show when={register.loading}>
                 <p>Loading...</p>
             </Show>
@@ -148,9 +148,9 @@ const Register = (props: RegisterProps) => {
                 <p class="text-red-600">Error loading register.</p>
             </Show>
             <Show when={register()}>
-                <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+                <div class="bg-white shadow-lg rounded-lg overflow-auto flex-1">
                     <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-blue-100">
+                        <thead class="bg-blue-100 sticky top-0 z-10">
                             <tr>
                                 <th class="px-2 py-3 text-center w-10">
                                     <button
@@ -221,7 +221,7 @@ const Register = (props: RegisterProps) => {
                     </Show>
                 </div>
             </Show>
-        </>
+        </div>
     )
 }
 
