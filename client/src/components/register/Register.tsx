@@ -8,7 +8,8 @@ import NewTransactionRow from "./NewTransactionRow.tsx";
 type RegisterProps = {
     accountId: AcctId,
     searchText?: string | undefined,
-    onSearchComplete?: ((found: boolean) => void) | undefined,
+    searchStartIndex?: number | undefined,
+    onSearchComplete?: ((found: boolean, foundIndex: number) => void) | undefined,
 }
 
 const Register = (props: RegisterProps) => {
@@ -28,36 +29,46 @@ const Register = (props: RegisterProps) => {
         }
 
         const reg = register()
-        if (!reg) {
-            props.onSearchComplete?.(false)
+        if (!reg || reg.lineItems.length === 0) {
+            props.onSearchComplete?.(false, -1)
             return
         }
 
         const lowerSearch = searchText.toLowerCase()
+        const lineItems = reg.lineItems
+        const startIndex = props.searchStartIndex ?? 0
+        const len = lineItems.length
 
-        for (const lineItem of reg.lineItems) {
+        // Search with wrap-around
+        for (let i = 0; i < len; i++) {
+            const index = (startIndex + i) % len
+            const lineItem = lineItems[index]!
+
             // Check code (transaction number)
             if (lineItem.code?.toLowerCase().includes(lowerSearch)) {
                 setFocusField('code')
+                setFocusEntryIndex(undefined)
                 setEditingTxnId(lineItem.txnId)
                 setIsAddingNew(false)
-                props.onSearchComplete?.(true)
+                props.onSearchComplete?.(true, index)
                 return
             }
             // Check vendor
             if (lineItem.vendor?.toLowerCase().includes(lowerSearch)) {
                 setFocusField('vendor')
+                setFocusEntryIndex(undefined)
                 setEditingTxnId(lineItem.txnId)
                 setIsAddingNew(false)
-                props.onSearchComplete?.(true)
+                props.onSearchComplete?.(true, index)
                 return
             }
             // Check description
             if (lineItem.description?.toLowerCase().includes(lowerSearch)) {
                 setFocusField('description')
+                setFocusEntryIndex(undefined)
                 setEditingTxnId(lineItem.txnId)
                 setIsAddingNew(false)
-                props.onSearchComplete?.(true)
+                props.onSearchComplete?.(true, index)
                 return
             }
             // Check offset account (category) - this is entry index 1 after reordering
@@ -66,7 +77,7 @@ const Register = (props: RegisterProps) => {
                 setFocusEntryIndex(1)
                 setEditingTxnId(lineItem.txnId)
                 setIsAddingNew(false)
-                props.onSearchComplete?.(true)
+                props.onSearchComplete?.(true, index)
                 return
             }
             // Check debit amount - entry 1's debit field (primary entry is read-only)
@@ -75,7 +86,7 @@ const Register = (props: RegisterProps) => {
                 setFocusEntryIndex(1)
                 setEditingTxnId(lineItem.txnId)
                 setIsAddingNew(false)
-                props.onSearchComplete?.(true)
+                props.onSearchComplete?.(true, index)
                 return
             }
             // Check credit amount - entry 1's credit field (primary entry is read-only)
@@ -84,12 +95,12 @@ const Register = (props: RegisterProps) => {
                 setFocusEntryIndex(1)
                 setEditingTxnId(lineItem.txnId)
                 setIsAddingNew(false)
-                props.onSearchComplete?.(true)
+                props.onSearchComplete?.(true, index)
                 return
             }
         }
 
-        props.onSearchComplete?.(false)
+        props.onSearchComplete?.(false, -1)
     })
 
     const handleStartEdit = (txnId: TxnId) => {

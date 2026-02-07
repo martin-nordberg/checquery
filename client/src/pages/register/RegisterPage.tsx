@@ -36,14 +36,26 @@ const RegisterPage = () => {
     const stmtOptions = stmtNavOptions("Register")
     const [showNotFound, setShowNotFound] = createSignal(false)
     const [searchText, setSearchText] = createSignal<string | undefined>(undefined)
+    const [searchStartIndex, setSearchStartIndex] = createSignal(0)
+    const [lastSearchText, setLastSearchText] = createSignal<string | undefined>(undefined)
+    const [lastFoundIndex, setLastFoundIndex] = createSignal(-1)
 
     const handleSearch = (text: string) => {
+        // If same search text, continue from last found position
+        const startFrom = (text === lastSearchText() && lastFoundIndex() >= 0)
+            ? lastFoundIndex() + 1
+            : 0
+        setSearchStartIndex(startFrom)
+        setLastSearchText(text)
         setSearchText(text)
     }
 
-    const handleSearchComplete = (found: boolean) => {
-        if (!found) {
+    const handleSearchComplete = (found: boolean, foundIndex: number) => {
+        if (found) {
+            setLastFoundIndex(foundIndex)
+        } else {
             setShowNotFound(true)
+            setLastFoundIndex(-1)
         }
         // Reset searchText so subsequent searches work
         setSearchText(undefined)
@@ -79,6 +91,7 @@ const RegisterPage = () => {
                 <Register
                     accountId={accountId()}
                     searchText={searchText()}
+                    searchStartIndex={searchStartIndex()}
                     onSearchComplete={handleSearchComplete}
                 />
             </main>

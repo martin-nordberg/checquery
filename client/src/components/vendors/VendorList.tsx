@@ -6,7 +6,8 @@ import NewVendorRow from "./NewVendorRow.tsx";
 
 type VendorListProps = {
     searchText?: string | undefined,
-    onSearchComplete?: ((found: boolean) => void) | undefined,
+    searchStartIndex?: number | undefined,
+    onSearchComplete?: ((found: boolean, foundIndex: number) => void) | undefined,
 }
 
 const VendorList = (props: VendorListProps) => {
@@ -25,20 +26,26 @@ const VendorList = (props: VendorListProps) => {
         }
 
         const vendorList = vendors()
-        if (!vendorList) {
-            props.onSearchComplete?.(false)
+        if (!vendorList || vendorList.length === 0) {
+            props.onSearchComplete?.(false, -1)
             return
         }
 
         const lowerSearch = searchText.toLowerCase()
+        const startIndex = props.searchStartIndex ?? 0
+        const len = vendorList.length
 
-        for (const vendor of vendorList) {
+        // Search with wrap-around
+        for (let i = 0; i < len; i++) {
+            const index = (startIndex + i) % len
+            const vendor = vendorList[index]!
+
             // Check name
             if (vendor.name.toLowerCase().includes(lowerSearch)) {
                 setFocusField('name')
                 setEditingVendorId(vendor.id)
                 setIsAddingNew(false)
-                props.onSearchComplete?.(true)
+                props.onSearchComplete?.(true, index)
                 return
             }
             // Check default account
@@ -46,7 +53,7 @@ const VendorList = (props: VendorListProps) => {
                 setFocusField('defaultAccount')
                 setEditingVendorId(vendor.id)
                 setIsAddingNew(false)
-                props.onSearchComplete?.(true)
+                props.onSearchComplete?.(true, index)
                 return
             }
             // Check description
@@ -54,12 +61,12 @@ const VendorList = (props: VendorListProps) => {
                 setFocusField('description')
                 setEditingVendorId(vendor.id)
                 setIsAddingNew(false)
-                props.onSearchComplete?.(true)
+                props.onSearchComplete?.(true, index)
                 return
             }
         }
 
-        props.onSearchComplete?.(false)
+        props.onSearchComplete?.(false, -1)
     })
 
     const handleStartEdit = (vendorId: VndrId) => {

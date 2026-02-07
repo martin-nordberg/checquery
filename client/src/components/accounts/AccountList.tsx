@@ -6,7 +6,8 @@ import NewAccountRow from "./NewAccountRow.tsx";
 
 type AccountListProps = {
     searchText?: string | undefined,
-    onSearchComplete?: ((found: boolean) => void) | undefined,
+    searchStartIndex?: number | undefined,
+    onSearchComplete?: ((found: boolean, foundIndex: number) => void) | undefined,
 }
 
 const AccountList = (props: AccountListProps) => {
@@ -25,20 +26,26 @@ const AccountList = (props: AccountListProps) => {
         }
 
         const accountList = accounts()
-        if (!accountList) {
-            props.onSearchComplete?.(false)
+        if (!accountList || accountList.length === 0) {
+            props.onSearchComplete?.(false, -1)
             return
         }
 
         const lowerSearch = searchText.toLowerCase()
+        const startIndex = props.searchStartIndex ?? 0
+        const len = accountList.length
 
-        for (const account of accountList) {
+        // Search with wrap-around
+        for (let i = 0; i < len; i++) {
+            const index = (startIndex + i) % len
+            const account = accountList[index]!
+
             // Check name
             if (account.name.toLowerCase().includes(lowerSearch)) {
                 setFocusField('name')
                 setEditingAccountId(account.id)
                 setIsAddingNew(false)
-                props.onSearchComplete?.(true)
+                props.onSearchComplete?.(true, index)
                 return
             }
             // Check account number
@@ -46,7 +53,7 @@ const AccountList = (props: AccountListProps) => {
                 setFocusField('acctNumber')
                 setEditingAccountId(account.id)
                 setIsAddingNew(false)
-                props.onSearchComplete?.(true)
+                props.onSearchComplete?.(true, index)
                 return
             }
             // Check description
@@ -54,12 +61,12 @@ const AccountList = (props: AccountListProps) => {
                 setFocusField('description')
                 setEditingAccountId(account.id)
                 setIsAddingNew(false)
-                props.onSearchComplete?.(true)
+                props.onSearchComplete?.(true, index)
                 return
             }
         }
 
-        props.onSearchComplete?.(false)
+        props.onSearchComplete?.(false, -1)
     })
 
     const handleStartEdit = (accountId: AcctId) => {
