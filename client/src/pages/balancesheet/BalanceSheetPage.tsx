@@ -3,9 +3,31 @@ import BalanceSheet from "../../components/balancesheet/BalanceSheet.tsx";
 import Breadcrumb from "../../components/nav/Breadcrumb.tsx";
 import {useParams} from "@solidjs/router";
 import {createEffect, createSignal} from "solid-js";
-import {isoDateSchema, isoDateToday} from "$shared/domain/core/IsoDate.ts";
+import {type IsoDate, isoDateSchema, isoDateToday} from "$shared/domain/core/IsoDate.ts";
 import HoverableDropDown from "../../components/nav/HoverableDropDown.tsx";
 import {stmtNavOptions} from "../../nav/stmtNavOptions.ts";
+
+const generateDateOptions = (): Record<string, string> => {
+    const options: Record<string, string> = {}
+    const today = new Date()
+
+    // Today's date
+    const todayIso = today.toISOString().substring(0, 10) as IsoDate
+    options[todayIso] = `../${todayIso}`
+
+    // Last day of each of the previous 12 months
+    for (let i = 0; i < 12; i++) {
+        // Day 0 of month M gives the last day of month M-1
+        // Date constructor handles negative months by rolling back the year
+        const lastDay = new Date(today.getFullYear(), today.getMonth() - i, 0)
+        const isoDate = lastDay.toISOString().substring(0, 10) as IsoDate
+        if (!(isoDate in options)) {
+            options[isoDate] = `../${isoDate}`
+        }
+    }
+
+    return options
+}
 
 const BalanceSheetPage = () => {
 
@@ -22,12 +44,7 @@ const BalanceSheetPage = () => {
         "Income Statement": `/incomestatement/${endingDate().substring(0, 7)}`,
     })
 
-    const dateOptions = {
-        "2025-12-31": "../2025-12-31",
-        "2026-01-07": "../2026-01-07",
-        "2026-01-15": "../2026-01-15",
-        "2026-01-24": "../2026-01-24",
-    }
+    const dateOptions = generateDateOptions()
 
     return (
         <>
