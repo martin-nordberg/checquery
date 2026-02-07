@@ -1,4 +1,4 @@
-import {createSignal, createEffect, createMemo, Show, Index} from "solid-js";
+import {createSignal, createEffect, createMemo, Show, Index, onCleanup} from "solid-js";
 import ConfirmDialog from "../common/ConfirmDialog.tsx";
 import type {RegisterLineItem, RegisterEntry, RegisterTransaction} from "$shared/domain/register/Register.ts";
 import type {CurrencyAmt} from "$shared/domain/core/CurrencyAmt.ts";
@@ -219,6 +219,20 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
         props.onCancelEdit()
     }
 
+    // Handle ESC key to close edit mode
+    createEffect(() => {
+        if (props.isEditing) {
+            const handleKeyDown = (e: KeyboardEvent) => {
+                if (e.key === 'Escape') {
+                    e.preventDefault()
+                    handleCancel()
+                }
+            }
+            window.addEventListener('keydown', handleKeyDown)
+            onCleanup(() => window.removeEventListener('keydown', handleKeyDown))
+        }
+    })
+
     const handleSave = async () => {
         setError(null)
         setIsSaving(true)
@@ -339,14 +353,14 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
             <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
                 {props.lineItem.code ?? ''}
             </td>
+            <td class="px-4 py-2 text-sm text-gray-500">
+                {props.lineItem.offsetAccount.replaceAll(':', ' : ')}
+            </td>
             <td class="px-4 py-2 text-sm text-gray-900">
                 {props.lineItem.vendor ?? ''}
             </td>
             <td class="px-4 py-2 text-sm text-gray-500">
                 {props.lineItem.description ?? ''}
-            </td>
-            <td class="px-4 py-2 text-sm text-gray-500">
-                {props.lineItem.offsetAccount.replaceAll(':', ' : ')}
             </td>
             <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
                 <Show when={props.lineItem.debit !== '$0.00'}>

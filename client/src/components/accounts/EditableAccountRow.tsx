@@ -1,4 +1,4 @@
-import {createSignal, createEffect, createMemo, Show, createResource, For} from "solid-js";
+import {createSignal, createEffect, createMemo, Show, createResource, For, onCleanup} from "solid-js";
 import ConfirmDialog from "../common/ConfirmDialog.tsx";
 import type {Account} from "$shared/domain/accounts/Account.ts";
 import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
@@ -126,6 +126,20 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
         props.onDirtyChange(false)
         props.onCancelEdit()
     }
+
+    // Handle ESC key to close edit mode
+    createEffect(() => {
+        if (props.isEditing) {
+            const handleKeyDown = (e: KeyboardEvent) => {
+                if (e.key === 'Escape') {
+                    e.preventDefault()
+                    handleCancel()
+                }
+            }
+            window.addEventListener('keydown', handleKeyDown)
+            onCleanup(() => window.removeEventListener('keydown', handleKeyDown))
+        }
+    })
 
     const handleSave = async () => {
         setError(null)

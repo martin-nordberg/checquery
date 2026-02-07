@@ -182,13 +182,13 @@ const Register = (props: RegisterProps) => {
                                     Number
                                 </th>
                                 <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                    Category
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                                     Vendor
                                 </th>
                                 <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                                     Description
-                                </th>
-                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    Category
                                 </th>
                                 <th class="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
                                     Amount

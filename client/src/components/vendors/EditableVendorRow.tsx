@@ -1,4 +1,4 @@
-import {createSignal, createEffect, createMemo, Show, createResource} from "solid-js";
+import {createSignal, createEffect, createMemo, Show, createResource, onCleanup} from "solid-js";
 import ConfirmDialog from "../common/ConfirmDialog.tsx";
 import type {Vendor} from "$shared/domain/vendors/Vendor.ts";
 import {vendorClientSvc} from "../../clients/vendors/VendorClientSvc.ts";
@@ -129,6 +129,20 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
         props.onDirtyChange(false)
         props.onCancelEdit()
     }
+
+    // Handle ESC key to close edit mode
+    createEffect(() => {
+        if (props.isEditing) {
+            const handleKeyDown = (e: KeyboardEvent) => {
+                if (e.key === 'Escape') {
+                    e.preventDefault()
+                    handleCancel()
+                }
+            }
+            window.addEventListener('keydown', handleKeyDown)
+            onCleanup(() => window.removeEventListener('keydown', handleKeyDown))
+        }
+    })
 
     const handleSave = async () => {
         setError(null)
