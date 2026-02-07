@@ -6,10 +6,13 @@ import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
 import EditableTextField from "../register/fields/EditableTextField.tsx";
 import AutocompleteField from "../register/fields/AutocompleteField.tsx";
 
+export type VendorField = 'name' | 'defaultAccount' | 'description'
+
 type EditableVendorRowProps = {
     vendor: Vendor,
     isEditing: boolean,
     editDisabled: boolean,
+    focusField?: VendorField | undefined,
     onStartEdit: () => void,
     onCancelEdit: () => void,
     onSaved: () => void,
@@ -25,6 +28,12 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
     const [error, setError] = createSignal<string | null>(null)
     const [showAbandonConfirm, setShowAbandonConfirm] = createSignal(false)
     const [showDeleteConfirm, setShowDeleteConfirm] = createSignal(false)
+
+    // Refs for field focusing
+    let nameRef: HTMLInputElement | undefined
+    let defaultAccountRef: HTMLInputElement | undefined
+    let descriptionRef: HTMLInputElement | undefined
+    let rowRef: HTMLTableRowElement | undefined
 
     // Check if vendor is in use (for delete button)
     const [isInUse] = createResource(
@@ -78,6 +87,31 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
             setEditDefaultAccount(props.vendor.defaultAccount)
             setInitialDefaultAccount(props.vendor.defaultAccount)
             setError(null)
+
+            // Focus the specified field after a short delay to allow DOM to update
+            if (props.focusField) {
+                setTimeout(() => {
+                    let fieldRef: HTMLInputElement | undefined
+                    switch (props.focusField) {
+                        case 'name':
+                            fieldRef = nameRef
+                            break
+                        case 'defaultAccount':
+                            fieldRef = defaultAccountRef
+                            break
+                        case 'description':
+                            fieldRef = descriptionRef
+                            break
+                    }
+                    if (fieldRef) {
+                        fieldRef.focus()
+                        fieldRef.select()
+                    }
+                    if (rowRef) {
+                        rowRef.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                    }
+                }, 50)
+            }
         }
     })
 
@@ -214,7 +248,7 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
                 onYes={doDelete}
                 onNo={() => setShowDeleteConfirm(false)}
             />
-            <tr class="bg-blue-50">
+            <tr ref={rowRef} class="bg-blue-50">
                 <td class="px-2 py-2 align-top">
                     <button
                         onClick={handleCancel}
@@ -232,6 +266,7 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
                             <div>
                                 <label class="block text-xs font-medium text-gray-500 mb-1">Name</label>
                                 <EditableTextField
+                                    ref={(el) => nameRef = el}
                                     value={editName()}
                                     onChange={setEditName}
                                     placeholder="Vendor name..."
@@ -240,6 +275,7 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
                             <div>
                                 <label class="block text-xs font-medium text-gray-500 mb-1">Default Account</label>
                                 <AutocompleteField
+                                    inputRef={(el) => defaultAccountRef = el}
                                     value={editDefaultAccount()}
                                     options={expenseIncomeAccounts()}
                                     onChange={setEditDefaultAccount}
@@ -249,6 +285,7 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
                             <div>
                                 <label class="block text-xs font-medium text-gray-500 mb-1">Description</label>
                                 <EditableTextField
+                                    ref={(el) => descriptionRef = el}
                                     value={editDescription()}
                                     onChange={setEditDescription}
                                     placeholder="Description..."

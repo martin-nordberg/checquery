@@ -1,26 +1,79 @@
-import {createResource, createSignal, For, Show} from "solid-js";
+import {createResource, createSignal, createEffect, For, Show} from "solid-js";
 import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
 import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
-import EditableAccountRow from "./EditableAccountRow.tsx";
+import EditableAccountRow, {type AccountField} from "./EditableAccountRow.tsx";
 import NewAccountRow from "./NewAccountRow.tsx";
 
-const AccountList = () => {
+type AccountListProps = {
+    searchText?: string | undefined,
+    onSearchComplete?: ((found: boolean) => void) | undefined,
+}
+
+const AccountList = (props: AccountListProps) => {
 
     const [accounts, {refetch}] = createResource(() => accountClientSvc.findAccountsAll())
     const [editingAccountId, setEditingAccountId] = createSignal<AcctId | null>(null)
+    const [focusField, setFocusField] = createSignal<AccountField | undefined>(undefined)
     const [isAddingNew, setIsAddingNew] = createSignal(false)
     const [isDirty, setIsDirty] = createSignal(false)
+
+    // Handle search when searchText prop changes
+    createEffect(() => {
+        const searchText = props.searchText
+        if (!searchText) {
+            return
+        }
+
+        const accountList = accounts()
+        if (!accountList) {
+            props.onSearchComplete?.(false)
+            return
+        }
+
+        const lowerSearch = searchText.toLowerCase()
+
+        for (const account of accountList) {
+            // Check name
+            if (account.name.toLowerCase().includes(lowerSearch)) {
+                setFocusField('name')
+                setEditingAccountId(account.id)
+                setIsAddingNew(false)
+                props.onSearchComplete?.(true)
+                return
+            }
+            // Check account number
+            if (account.acctNumber?.toLowerCase().includes(lowerSearch)) {
+                setFocusField('acctNumber')
+                setEditingAccountId(account.id)
+                setIsAddingNew(false)
+                props.onSearchComplete?.(true)
+                return
+            }
+            // Check description
+            if (account.description?.toLowerCase().includes(lowerSearch)) {
+                setFocusField('description')
+                setEditingAccountId(account.id)
+                setIsAddingNew(false)
+                props.onSearchComplete?.(true)
+                return
+            }
+        }
+
+        props.onSearchComplete?.(false)
+    })
 
     const handleStartEdit = (accountId: AcctId) => {
         if (isDirty()) {
             return // Don't allow switching if dirty
         }
         setIsAddingNew(false)
+        setFocusField(undefined)
         setEditingAccountId(accountId)
     }
 
     const handleCancelEdit = () => {
         setEditingAccountId(null)
+        setFocusField(undefined)
         setIsDirty(false)
     }
 
@@ -107,6 +160,7 @@ const AccountList = () => {
                                         account={account}
                                         isEditing={editingAccountId() === account.id}
                                         editDisabled={isDirty() || isAddingNew()}
+                                        focusField={editingAccountId() === account.id ? focusField() : undefined}
                                         onStartEdit={() => handleStartEdit(account.id)}
                                         onCancelEdit={handleCancelEdit}
                                         onSaved={handleSaved}

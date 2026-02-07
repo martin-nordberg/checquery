@@ -11,6 +11,7 @@ type AutocompleteFieldProps = {
     onChange: (value: string | undefined) => void,
     placeholder?: string | undefined,
     disabled?: boolean | undefined,
+    inputRef?: ((el: HTMLInputElement) => void) | undefined,
 }
 
 const AutocompleteField = (props: AutocompleteFieldProps) => {
@@ -110,6 +111,7 @@ const AutocompleteField = (props: AutocompleteFieldProps) => {
     return (
         <div class="relative">
             <input
+                ref={props.inputRef}
                 type="text"
                 value={inputValue()}
                 onInput={handleInput}

@@ -6,6 +6,7 @@ type EditableVendorFieldProps = {
     value: string | undefined,
     onChange: (value: string | undefined) => void,
     disabled?: boolean,
+    inputRef?: ((el: HTMLInputElement) => void) | undefined,
 }
 
 const EditableVendorField = (props: EditableVendorFieldProps) => {
@@ -23,6 +24,7 @@ const EditableVendorField = (props: EditableVendorFieldProps) => {
 
     return (
         <AutocompleteField
+            inputRef={props.inputRef}
             value={props.value}
             options={options()}
             onChange={props.onChange}

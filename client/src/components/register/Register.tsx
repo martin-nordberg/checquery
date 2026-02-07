@@ -1,31 +1,111 @@
-import {createResource, createSignal, For, Show} from "solid-js";
+import {createResource, createSignal, createEffect, For, Show} from "solid-js";
 import {registerClientSvc} from "../../clients/register/RegisterClientSvc.ts";
 import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
 import type {TxnId} from "$shared/domain/transactions/TxnId.ts";
-import EditableRegisterRow from "./EditableRegisterRow.tsx";
+import EditableRegisterRow, {type RegisterField} from "./EditableRegisterRow.tsx";
 import NewTransactionRow from "./NewTransactionRow.tsx";
 
 type RegisterProps = {
     accountId: AcctId,
+    searchText?: string | undefined,
+    onSearchComplete?: ((found: boolean) => void) | undefined,
 }
 
 const Register = (props: RegisterProps) => {
 
     const [register, {refetch}] = createResource(() => props.accountId, (id) => registerClientSvc.findRegister(id))
     const [editingTxnId, setEditingTxnId] = createSignal<TxnId | null>(null)
+    const [focusField, setFocusField] = createSignal<RegisterField | undefined>(undefined)
+    const [focusEntryIndex, setFocusEntryIndex] = createSignal<number | undefined>(undefined)
     const [isAddingNew, setIsAddingNew] = createSignal(false)
     const [isDirty, setIsDirty] = createSignal(false)
+
+    // Handle search when searchText prop changes
+    createEffect(() => {
+        const searchText = props.searchText
+        if (!searchText) {
+            return
+        }
+
+        const reg = register()
+        if (!reg) {
+            props.onSearchComplete?.(false)
+            return
+        }
+
+        const lowerSearch = searchText.toLowerCase()
+
+        for (const lineItem of reg.lineItems) {
+            // Check code (transaction number)
+            if (lineItem.code?.toLowerCase().includes(lowerSearch)) {
+                setFocusField('code')
+                setEditingTxnId(lineItem.txnId)
+                setIsAddingNew(false)
+                props.onSearchComplete?.(true)
+                return
+            }
+            // Check vendor
+            if (lineItem.vendor?.toLowerCase().includes(lowerSearch)) {
+                setFocusField('vendor')
+                setEditingTxnId(lineItem.txnId)
+                setIsAddingNew(false)
+                props.onSearchComplete?.(true)
+                return
+            }
+            // Check description
+            if (lineItem.description?.toLowerCase().includes(lowerSearch)) {
+                setFocusField('description')
+                setEditingTxnId(lineItem.txnId)
+                setIsAddingNew(false)
+                props.onSearchComplete?.(true)
+                return
+            }
+            // Check offset account (category) - this is entry index 1 after reordering
+            if (lineItem.offsetAccount.toLowerCase().includes(lowerSearch)) {
+                setFocusField('entryAccount')
+                setFocusEntryIndex(1)
+                setEditingTxnId(lineItem.txnId)
+                setIsAddingNew(false)
+                props.onSearchComplete?.(true)
+                return
+            }
+            // Check debit amount - entry 1's debit field (primary entry is read-only)
+            if (lineItem.debit !== '$0.00' && lineItem.debit.toLowerCase().includes(lowerSearch)) {
+                setFocusField('entryCredit')
+                setFocusEntryIndex(1)
+                setEditingTxnId(lineItem.txnId)
+                setIsAddingNew(false)
+                props.onSearchComplete?.(true)
+                return
+            }
+            // Check credit amount - entry 1's credit field (primary entry is read-only)
+            if (lineItem.credit !== '$0.00' && lineItem.credit.toLowerCase().includes(lowerSearch)) {
+                setFocusField('entryDebit')
+                setFocusEntryIndex(1)
+                setEditingTxnId(lineItem.txnId)
+                setIsAddingNew(false)
+                props.onSearchComplete?.(true)
+                return
+            }
+        }
+
+        props.onSearchComplete?.(false)
+    })
 
     const handleStartEdit = (txnId: TxnId) => {
         if (isDirty()) {
             return // Don't allow switching if dirty
         }
         setIsAddingNew(false)
+        setFocusField(undefined)
+        setFocusEntryIndex(undefined)
         setEditingTxnId(txnId)
     }
 
     const handleCancelEdit = () => {
         setEditingTxnId(null)
+        setFocusField(undefined)
+        setFocusEntryIndex(undefined)
         setIsDirty(false)
     }
 
@@ -124,6 +204,8 @@ const Register = (props: RegisterProps) => {
                                         accountType={register()!.accountType}
                                         isEditing={editingTxnId() === lineItem.txnId}
                                         editDisabled={isDirty() || isAddingNew()}
+                                        focusField={editingTxnId() === lineItem.txnId ? focusField() : undefined}
+                                        focusEntryIndex={editingTxnId() === lineItem.txnId ? focusEntryIndex() : undefined}
                                         onStartEdit={() => handleStartEdit(lineItem.txnId)}
                                         onCancelEdit={handleCancelEdit}
                                         onSaved={handleSaved}

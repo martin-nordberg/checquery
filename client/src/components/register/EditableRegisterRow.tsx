@@ -12,12 +12,16 @@ import EditableVendorField from "./fields/EditableVendorField.tsx";
 import EditableSplitEntry from "./EditableSplitEntry.tsx";
 import RegisterActionButtons from "./RegisterActionButtons.tsx";
 
+export type RegisterField = 'code' | 'vendor' | 'description' | 'entryAccount' | 'entryDebit' | 'entryCredit'
+
 type EditableRegisterRowProps = {
     lineItem: RegisterLineItem,
     currentAccountName: string,
     accountType: AcctTypeStr,
     isEditing: boolean,
     editDisabled: boolean,
+    focusField?: RegisterField | undefined,
+    focusEntryIndex?: number | undefined,
     onStartEdit: () => void,
     onCancelEdit: () => void,
     onSaved: () => void,
@@ -37,6 +41,12 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
     const [showAbandonConfirm, setShowAbandonConfirm] = createSignal(false)
     const [showDeleteConfirm, setShowDeleteConfirm] = createSignal(false)
     let editRowRef: HTMLTableRowElement | undefined
+    let codeRef: HTMLInputElement | undefined
+    let vendorRef: HTMLInputElement | undefined
+    let descriptionRef: HTMLInputElement | undefined
+    const entryAccountRefs: Record<number, HTMLInputElement> = {}
+    const entryDebitRefs: Record<number, HTMLInputElement> = {}
+    const entryCreditRefs: Record<number, HTMLInputElement> = {}
 
     // Store initial values for dirty checking
     const [initialDate, setInitialDate] = createSignal<IsoDate | null>(null)
@@ -113,19 +123,57 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
         }
     })
 
-    // Scroll edit row into view when it appears
+    // Scroll edit row into view and focus field when it appears
     createEffect(() => {
         if (props.isEditing && transaction() && editRowRef) {
-            setTimeout(() => {
+            const focusField = props.focusField
+            const entryIdx = props.focusEntryIndex ?? 1
+
+            const attemptFocus = (attempts: number) => {
                 if (!editRowRef) {
                     return
                 }
+                // Focus the specified field if any
+                if (focusField) {
+                    let fieldRef: HTMLInputElement | undefined
+                    switch (focusField) {
+                        case 'code':
+                            fieldRef = codeRef
+                            break
+                        case 'vendor':
+                            fieldRef = vendorRef
+                            break
+                        case 'description':
+                            fieldRef = descriptionRef
+                            break
+                        case 'entryAccount':
+                            fieldRef = entryAccountRefs[entryIdx]
+                            break
+                        case 'entryDebit':
+                            fieldRef = entryDebitRefs[entryIdx]
+                            break
+                        case 'entryCredit':
+                            fieldRef = entryCreditRefs[entryIdx]
+                            break
+                    }
+                    if (fieldRef) {
+                        fieldRef.focus()
+                        fieldRef.select()
+                    } else if (attempts < 5) {
+                        // Entry refs may not be set yet, retry
+                        setTimeout(() => attemptFocus(attempts + 1), 50)
+                        return
+                    }
+                }
+                // Scroll into view
                 const rect = editRowRef.getBoundingClientRect()
                 const isBottomVisible = rect.bottom <= window.innerHeight
                 if (!isBottomVisible) {
                     editRowRef.scrollIntoView({ behavior: 'smooth', block: 'end' })
                 }
-            }, 50)
+            }
+
+            setTimeout(() => attemptFocus(0), 50)
         }
     })
 
@@ -354,6 +402,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                             <div>
                                 <label class="block text-xs font-medium text-gray-500 mb-1">Number</label>
                                 <EditableTextField
+                                    ref={(el) => codeRef = el}
                                     value={editCode()}
                                     onChange={setEditCode}
                                     placeholder="Check #"
@@ -362,6 +411,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                             <div class="col-span-2">
                                 <label class="block text-xs font-medium text-gray-500 mb-1">Vendor</label>
                                 <EditableVendorField
+                                    inputRef={(el) => vendorRef = el}
                                     value={editVendor()}
                                     onChange={setEditVendor}
                                 />
@@ -369,6 +419,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                             <div class="col-span-2">
                                 <label class="block text-xs font-medium text-gray-500 mb-1">Description</label>
                                 <EditableTextField
+                                    ref={(el) => descriptionRef = el}
                                     value={editDescription()}
                                     onChange={setEditDescription}
                                     placeholder="Description"
@@ -395,6 +446,9 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                                             onRemove={() => removeEntry(index)}
                                             canRemove={editEntries().length > 2 && index > 0}
                                             isPrimary={index === 0}
+                                            accountRef={(el) => entryAccountRefs[index] = el}
+                                            debitRef={(el) => entryDebitRefs[index] = el}
+                                            creditRef={(el) => entryCreditRefs[index] = el}
                                         />
                                     )}
                                 </Index>

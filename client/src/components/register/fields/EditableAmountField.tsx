@@ -6,6 +6,7 @@ type EditableAmountFieldProps = {
     value: CurrencyAmt,
     onChange: (value: CurrencyAmt) => void,
     disabled?: boolean,
+    inputRef?: ((el: HTMLInputElement) => void) | undefined,
 }
 
 const EditableAmountField = (props: EditableAmountFieldProps) => {
@@ -62,6 +63,7 @@ const EditableAmountField = (props: EditableAmountFieldProps) => {
     return (
         <div class="flex flex-col">
             <input
+                ref={props.inputRef}
                 type="text"
                 inputMode="decimal"
                 value={rawValue()}

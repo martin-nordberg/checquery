@@ -6,6 +6,7 @@ type EditableCategoryFieldProps = {
     value: string | undefined,
     onChange: (value: string | undefined) => void,
     disabled?: boolean,
+    inputRef?: ((el: HTMLInputElement) => void) | undefined,
 }
 
 const EditableCategoryField = (props: EditableCategoryFieldProps) => {
@@ -21,6 +22,7 @@ const EditableCategoryField = (props: EditableCategoryFieldProps) => {
 
     return (
         <AutocompleteField
+            inputRef={props.inputRef}
             value={props.value}
             options={options()}
             onChange={props.onChange}

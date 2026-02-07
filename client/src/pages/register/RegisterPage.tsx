@@ -2,8 +2,10 @@ import TopNav from "../../components/nav/TopNav.tsx";
 import Breadcrumb from "../../components/nav/Breadcrumb.tsx";
 import HoverableDropDown from "../../components/nav/HoverableDropDown.tsx";
 import Register from "../../components/register/Register.tsx";
+import MessageDialog from "../../components/common/MessageDialog.tsx";
+import SearchField from "../../components/common/SearchField.tsx";
 import {useParams} from "@solidjs/router";
-import {createMemo, createResource, Show} from "solid-js";
+import {createMemo, createResource, createSignal, Show} from "solid-js";
 import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
 import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
 import {stmtNavOptions} from "../../nav/stmtNavOptions.ts";
@@ -32,24 +34,53 @@ const RegisterPage = () => {
     })
 
     const stmtOptions = stmtNavOptions("Register")
+    const [showNotFound, setShowNotFound] = createSignal(false)
+    const [searchText, setSearchText] = createSignal<string | undefined>(undefined)
+
+    const handleSearch = (text: string) => {
+        setSearchText(text)
+    }
+
+    const handleSearchComplete = (found: boolean) => {
+        if (!found) {
+            setShowNotFound(true)
+        }
+        // Reset searchText so subsequent searches work
+        setSearchText(undefined)
+    }
 
     return (
         <>
-            <TopNav>
-                <Breadcrumb>
-                    <HoverableDropDown options={stmtOptions} selectedOption="Register" />
-                </Breadcrumb>
-                <Breadcrumb>
-                    <Show when={account()} fallback="Loading...">
-                        <HoverableDropDown
-                            options={accountOptions()}
-                            selectedOption={formatAccountName(account()!.name)}
-                        />
-                    </Show>
-                </Breadcrumb>
-            </TopNav>
+            <MessageDialog
+                isOpen={showNotFound()}
+                message="No transactions found."
+                onClose={() => setShowNotFound(false)}
+            />
+            <div class="flex items-center justify-between pr-4">
+                <TopNav>
+                    <Breadcrumb>
+                        <HoverableDropDown options={stmtOptions} selectedOption="Register" />
+                    </Breadcrumb>
+                    <Breadcrumb>
+                        <Show when={account()} fallback="Loading...">
+                            <HoverableDropDown
+                                options={accountOptions()}
+                                selectedOption={formatAccountName(account()!.name)}
+                            />
+                        </Show>
+                    </Breadcrumb>
+                </TopNav>
+                <SearchField
+                    placeholder="Search transactions..."
+                    onSearch={handleSearch}
+                />
+            </div>
             <main class="p-4">
-                <Register accountId={accountId()}/>
+                <Register
+                    accountId={accountId()}
+                    searchText={searchText()}
+                    onSearchComplete={handleSearchComplete}
+                />
             </main>
         </>
     )

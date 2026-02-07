@@ -6,6 +6,7 @@ type EditableTextFieldProps = {
     placeholder?: string,
     maxLength?: number,
     disabled?: boolean,
+    ref?: (el: HTMLInputElement) => void,
 }
 
 const EditableTextField = (props: EditableTextFieldProps) => {
@@ -22,6 +23,7 @@ const EditableTextField = (props: EditableTextFieldProps) => {
 
     return (
         <input
+            ref={props.ref}
             type="text"
             value={localValue()}
             onInput={handleChange}

@@ -10,6 +10,9 @@ type EditableSplitEntryProps = {
     onRemove: () => void,
     canRemove: boolean,
     isPrimary?: boolean,
+    accountRef?: ((el: HTMLInputElement) => void) | undefined,
+    debitRef?: ((el: HTMLInputElement) => void) | undefined,
+    creditRef?: ((el: HTMLInputElement) => void) | undefined,
 }
 
 const EditableSplitEntry = (props: EditableSplitEntryProps) => {
@@ -45,6 +48,7 @@ const EditableSplitEntry = (props: EditableSplitEntryProps) => {
             <div class="flex-1">
                 <Show when={props.isPrimary} fallback={
                     <EditableCategoryField
+                        inputRef={props.accountRef}
                         value={props.entry.account}
                         onChange={handleAccountChange}
                     />
@@ -57,6 +61,7 @@ const EditableSplitEntry = (props: EditableSplitEntryProps) => {
             <div class="w-28 flex justify-end">
                 <Show when={props.isPrimary} fallback={
                     <EditableAmountField
+                        inputRef={props.debitRef}
                         value={props.entry.debit}
                         onChange={handleDebitChange}
                         disabled={hasCredit()}
@@ -72,6 +77,7 @@ const EditableSplitEntry = (props: EditableSplitEntryProps) => {
             <div class="w-28 flex justify-end">
                 <Show when={props.isPrimary} fallback={
                     <EditableAmountField
+                        inputRef={props.creditRef}
                         value={props.entry.credit}
                         onChange={handleCreditChange}
                         disabled={hasDebit()}
