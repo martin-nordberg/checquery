@@ -9,7 +9,7 @@ const client = hc<BalanceSheetRoutes>(`${webAppHost}`)
 
 export class BalanceSheetClientSvc implements IBalanceSheetSvc {
 
-    async findBalanceSheet(endingDate: IsoDate): Promise<BalanceSheet|null> {
+    async findBalanceSheet(endingDate: IsoDate): Promise<BalanceSheet | null> {
         console.log("findBalanceSheet", endingDate)
         const res = await client.balancesheet[':endingDate'].$get({param: {endingDate}})
 

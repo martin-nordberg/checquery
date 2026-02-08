@@ -3,8 +3,8 @@ import TopNav from "../../components/nav/TopNav.tsx";
 import Breadcrumb from "../../components/nav/Breadcrumb.tsx";
 import HoverableDropDown from "../../components/nav/HoverableDropDown.tsx";
 import VendorList from "../../components/vendors/VendorList.tsx";
-import MessageDialog from "../../components/common/MessageDialog.tsx";
-import SearchField from "../../components/common/SearchField.tsx";
+import MessageDialog from "../../components/common/dialogs/MessageDialog.tsx";
+import SearchField from "../../components/common/search/SearchField.tsx";
 import {stmtNavOptions} from "../../nav/stmtNavOptions.ts";
 
 export type StatusFilter = "active" | "inactive" | "both"
@@ -50,7 +50,7 @@ const VendorsPage = () => {
             <div class="flex-none flex items-center justify-between pr-4 bg-white">
                 <TopNav>
                     <Breadcrumb>
-                        <HoverableDropDown options={stmtOptions} selectedOption="Vendors" />
+                        <HoverableDropDown options={stmtOptions} selectedOption="Vendors"/>
                     </Breadcrumb>
                 </TopNav>
                 <div class="flex items-center gap-4">

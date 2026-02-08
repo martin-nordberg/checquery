@@ -10,15 +10,20 @@ export type AcctTypeStr = z.infer<typeof acctTypeSchema>
 
 export function acctTypeText(acctType: AcctTypeStr) {
     switch (acctType) {
-        case 'ASSET': return "Asset"
-        case 'LIABILITY': return "Liability"
-        case 'EQUITY': return "Net Worth"
-        case 'EXPENSE': return "Expense"
-        case 'INCOME': return "Income"
+        case 'ASSET':
+            return "Asset"
+        case 'LIABILITY':
+            return "Liability"
+        case 'EQUITY':
+            return "Net Worth"
+        case 'EXPENSE':
+            return "Expense"
+        case 'INCOME':
+            return "Income"
     }
 }
 
-export function acctTypeFromName(accountName: string) : AcctTypeStr {
+export function acctTypeFromName(accountName: string): AcctTypeStr {
     if (accountName.startsWith('Assets')) {
         return 'ASSET'
     }
@@ -35,5 +40,5 @@ export function acctTypeFromName(accountName: string) : AcctTypeStr {
         return 'INCOME'
     }
 
-    throw Error(`Unknown account type for account: ${ accountName }`)
+    throw Error(`Unknown account type for account: ${accountName}`)
 }

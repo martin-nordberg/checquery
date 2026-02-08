@@ -1,7 +1,7 @@
 import {describe, expect, it} from 'bun:test'
 import {
-    transactionSchema,
     transactionCreationSchema,
+    transactionSchema,
     transactionUpdateSchema
 } from '../../../src/domain/transactions/Transaction'
 import {genTxnId} from '../../../src/domain/transactions/TxnId'

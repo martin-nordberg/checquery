@@ -1,14 +1,14 @@
-import {createSignal, createEffect, createMemo, Show, Index, onCleanup} from "solid-js";
-import ConfirmDialog from "../common/ConfirmDialog.tsx";
-import type {RegisterLineItem, RegisterEntry, RegisterTransaction} from "$shared/domain/register/Register.ts";
+import {createEffect, createMemo, createSignal, Index, onCleanup, Show} from "solid-js";
+import ConfirmDialog from "../common/dialogs/ConfirmDialog.tsx";
+import type {RegisterEntry, RegisterLineItem, RegisterTransaction} from "$shared/domain/register/Register.ts";
 import type {CurrencyAmt} from "$shared/domain/core/CurrencyAmt.ts";
+import {fromCents} from "$shared/domain/core/CurrencyAmt.ts";
 import type {IsoDate} from "$shared/domain/core/IsoDate.ts";
 import type {AcctTypeStr} from "$shared/domain/accounts/AcctType.ts";
-import {fromCents} from "$shared/domain/core/CurrencyAmt.ts";
 import {registerClientSvc} from "../../clients/register/RegisterClientSvc.ts";
-import EditableDateField from "./fields/EditableDateField.tsx";
-import EditableTextField from "./fields/EditableTextField.tsx";
-import EditableVendorField from "./fields/EditableVendorField.tsx";
+import EditableDateField from "../common/fields/EditableDateField.tsx";
+import EditableTextField from "../common/fields/EditableTextField.tsx";
+import EditableVendorField from "../common/fields/EditableVendorField.tsx";
 import EditableSplitEntry from "./EditableSplitEntry.tsx";
 import RegisterActionButtons from "./RegisterActionButtons.tsx";
 
@@ -169,7 +169,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                 const rect = editRowRef.getBoundingClientRect()
                 const isBottomVisible = rect.bottom <= window.innerHeight
                 if (!isBottomVisible) {
-                    editRowRef.scrollIntoView({ behavior: 'smooth', block: 'end' })
+                    editRowRef.scrollIntoView({behavior: 'smooth', block: 'end'})
                 }
             }
 
@@ -343,7 +343,8 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                     title="Edit transaction"
                 >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
                     </svg>
                 </button>
             </td>
@@ -399,7 +400,8 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                         title="Cancel"
                     >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                     </button>
                 </td>
@@ -487,13 +489,13 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
     )
 
     return (
-        <Show when={props.isEditing} fallback={<DisplayRow />}>
+        <Show when={props.isEditing} fallback={<DisplayRow/>}>
             <Show when={transaction()} fallback={
                 <tr class="bg-blue-50">
                     <td colspan="8" class="px-4 py-4 text-center text-gray-500">Loading...</td>
                 </tr>
             }>
-                <EditRow />
+                <EditRow/>
             </Show>
         </Show>
     )

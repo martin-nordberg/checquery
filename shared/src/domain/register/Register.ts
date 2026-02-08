@@ -1,7 +1,7 @@
-import {currencyAmtSchema, type CurrencyAmt} from "../core/CurrencyAmt";
-import {isoDateSchema, type IsoDate} from "../core/IsoDate";
+import {type CurrencyAmt, currencyAmtSchema} from "../core/CurrencyAmt";
+import {type IsoDate, isoDateSchema} from "../core/IsoDate";
 import {txnStatusSchema, type TxnStatusStr} from "../transactions/TxnStatus";
-import {txnIdSchema, type TxnId} from "../transactions/TxnId";
+import {type TxnId, txnIdSchema} from "../transactions/TxnId";
 import {type AcctTypeStr} from "../accounts/AcctType";
 import {z} from "zod";
 import {nameSchema} from "../core/Name";
@@ -16,16 +16,16 @@ export type RegisterLineItem = {
     date: IsoDate,
 
     /** The check number or similar code. */
-    code?: string|undefined,
+    code?: string | undefined,
 
     /** The status of the entry. */
     status?: TxnStatusStr | undefined,
 
     /** The vendor (payee/payor). */
-    vendor?: string|undefined,
+    vendor?: string | undefined,
 
     /** The description of the transaction. */
-    description?: string|undefined,
+    description?: string | undefined,
 
     /** The offsetting account(s) for this entry. */
     offsetAccount: string,

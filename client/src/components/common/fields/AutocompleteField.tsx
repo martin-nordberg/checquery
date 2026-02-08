@@ -1,4 +1,4 @@
-import {createSignal, createEffect, For, Show} from "solid-js";
+import {createEffect, createSignal, For, Show} from "solid-js";
 
 type AutocompleteOption = {
     value: string,
@@ -123,7 +123,8 @@ const AutocompleteField = (props: AutocompleteFieldProps) => {
                 class={`px-2 py-1 border rounded text-sm border-gray-300 ${props.disabled ? 'bg-gray-100' : 'bg-white'} w-full`}
             />
             <Show when={isOpen() && filteredOptions().length > 0}>
-                <div class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded shadow-lg max-h-48 overflow-y-auto">
+                <div
+                    class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded shadow-lg max-h-48 overflow-y-auto">
                     <For each={filteredOptions()}>
                         {(option, index) => (
                             <div

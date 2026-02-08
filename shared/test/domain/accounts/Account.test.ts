@@ -1,9 +1,5 @@
 import {describe, expect, it} from 'bun:test'
-import {
-    accountCreationSchema,
-    accountSchema,
-    accountUpdateSchema
-} from "../../../src/domain/accounts/Account";
+import {accountCreationSchema, accountSchema, accountUpdateSchema} from "../../../src/domain/accounts/Account";
 import {z} from "zod";
 import {genAcctId} from "../../../src/domain/accounts/AcctId";
 

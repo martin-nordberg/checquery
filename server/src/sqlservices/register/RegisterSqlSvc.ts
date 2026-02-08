@@ -1,13 +1,24 @@
 import {z} from "zod";
 import {ChecquerySqlDb} from "../../sqldb/ChecquerySqlDb";
 import type {IRegisterSvc} from "$shared/services/register/IRegisterSvc";
-import type {Register, RegisterCreate, RegisterLineItem, RegisterTransaction, RegisterUpdate} from "$shared/domain/register/Register";
+import type {
+    Register,
+    RegisterCreate,
+    RegisterLineItem,
+    RegisterTransaction,
+    RegisterUpdate
+} from "$shared/domain/register/Register";
 import {fromCents} from "$shared/domain/core/CurrencyAmt";
 import type {AcctId} from "$shared/domain/accounts/AcctId";
-import {txnIdSchema, type TxnId} from "$shared/domain/transactions/TxnId";
+import {type TxnId, txnIdSchema} from "$shared/domain/transactions/TxnId";
 import {txnStatusSchema} from "$shared/domain/transactions/TxnStatus";
 import {acctTypeSchema} from "$shared/domain/accounts/AcctType";
-import {appendDirective, createTransactionCreateDirective, createTransactionDeleteDirective, createTransactionUpdateDirective} from "../../util/ChecqueryYamlAppender";
+import {
+    appendDirective,
+    createTransactionCreateDirective,
+    createTransactionDeleteDirective,
+    createTransactionUpdateDirective
+} from "../../util/ChecqueryYamlAppender";
 
 
 export class RegisterSqlService implements IRegisterSvc {
@@ -209,7 +220,7 @@ export class RegisterSqlService implements IRegisterSvc {
 
     async updateTransaction(update: RegisterUpdate): Promise<RegisterTransaction | null> {
         // Build the payload for YAML
-        const payload: Record<string, unknown> = { id: update.id }
+        const payload: Record<string, unknown> = {id: update.id}
         if (update.date !== undefined) {
             payload['date'] = update.date
         }
@@ -227,7 +238,7 @@ export class RegisterSqlService implements IRegisterSvc {
         }
         if (update.entries !== undefined) {
             payload['entries'] = update.entries.map(e => {
-                const entry: Record<string, string> = { account: e.account }
+                const entry: Record<string, string> = {account: e.account}
                 if (e.debit && e.debit !== '$0.00') {
                     entry['debit'] = e.debit
                 }
@@ -247,7 +258,7 @@ export class RegisterSqlService implements IRegisterSvc {
         // Apply to in-memory database via TransactionSqlService logic
         // For now, we replicate the update logic here
         const setClauses: string[] = []
-        const bindings: Record<string, unknown> = { $id: update.id }
+        const bindings: Record<string, unknown> = {$id: update.id}
 
         if (update.date !== undefined) {
             setClauses.push('date = $date')
@@ -270,7 +281,7 @@ export class RegisterSqlService implements IRegisterSvc {
                         `UPDATE Transaxtion
                          SET vendorId = (SELECT id FROM Vendor WHERE name = $vendor)
                          WHERE id = $id`,
-                    { $id: update.id, $vendor: update.vendor }
+                    {$id: update.id, $vendor: update.vendor}
                 )
             } else {
                 setClauses.push('vendorId = NULL')
@@ -290,7 +301,7 @@ export class RegisterSqlService implements IRegisterSvc {
             this.db.run(
                 'register.update.deleteEntries',
                 () => `DELETE FROM Entry WHERE txnId = $id`,
-                { $id: update.id }
+                {$id: update.id}
             )
 
             let entrySeq = 1
@@ -337,7 +348,7 @@ export class RegisterSqlService implements IRegisterSvc {
             payload['status'] = create.status
         }
         payload['entries'] = create.entries.map(e => {
-            const entry: Record<string, string> = { account: e.account }
+            const entry: Record<string, string> = {account: e.account}
             if (e.debit && e.debit !== '$0.00') {
                 entry['debit'] = e.debit
             }
@@ -414,12 +425,12 @@ export class RegisterSqlService implements IRegisterSvc {
         this.db.run(
             'register.deleteEntries',
             () => `DELETE FROM Entry WHERE txnId = $id`,
-            { $id: txnId }
+            {$id: txnId}
         )
         this.db.run(
             'register.deleteTransaction',
             () => `DELETE FROM Transaxtion WHERE id = $id`,
-            { $id: txnId }
+            {$id: txnId}
         )
     }
 }

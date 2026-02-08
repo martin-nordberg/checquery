@@ -1,4 +1,4 @@
-import {createResource, createSignal, createEffect, For, Show} from "solid-js";
+import {createEffect, createResource, createSignal, For, Show} from "solid-js";
 import {registerClientSvc} from "../../clients/register/RegisterClientSvc.ts";
 import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
 import type {TxnId} from "$shared/domain/transactions/TxnId.ts";
@@ -162,69 +162,70 @@ const Register = (props: RegisterProps) => {
                 <div class="bg-white shadow-lg rounded-lg overflow-auto flex-1">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-blue-100 sticky top-0 z-10">
-                            <tr>
-                                <th class="px-2 py-3 text-center w-10">
-                                    <button
-                                        onClick={handleAddNew}
-                                        disabled={isAddingNew() || isDirty()}
-                                        class="text-green-600 hover:text-green-800 hover:bg-gray-200 rounded p-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                                        title="Add transaction"
-                                    >
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                        </svg>
-                                    </button>
-                                </th>
-                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    Date
-                                </th>
-                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    Number
-                                </th>
-                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    Category
-                                </th>
-                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    Vendor
-                                </th>
-                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    Description
-                                </th>
-                                <th class="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    Amount
-                                </th>
-                                <th class="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    Balance
-                                </th>
-                            </tr>
+                        <tr>
+                            <th class="px-2 py-3 text-center w-10">
+                                <button
+                                    onClick={handleAddNew}
+                                    disabled={isAddingNew() || isDirty()}
+                                    class="text-green-600 hover:text-green-800 hover:bg-gray-200 rounded p-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Add transaction"
+                                >
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M12 4v16m8-8H4"/>
+                                    </svg>
+                                </button>
+                            </th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Date
+                            </th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Number
+                            </th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Category
+                            </th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Vendor
+                            </th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Description
+                            </th>
+                            <th class="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Amount
+                            </th>
+                            <th class="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Balance
+                            </th>
+                        </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            <Show when={isAddingNew()}>
-                                <NewTransactionRow
+                        <Show when={isAddingNew()}>
+                            <NewTransactionRow
+                                currentAccountName={register()!.accountName}
+                                onCancel={handleCancelNew}
+                                onSaved={handleSaved}
+                                onDirtyChange={handleDirtyChange}
+                            />
+                        </Show>
+                        <For each={register()?.lineItems}>
+                            {(lineItem) => (
+                                <EditableRegisterRow
+                                    lineItem={lineItem}
                                     currentAccountName={register()!.accountName}
-                                    onCancel={handleCancelNew}
+                                    accountType={register()!.accountType}
+                                    isEditing={editingTxnId() === lineItem.txnId}
+                                    editDisabled={isDirty() || isAddingNew()}
+                                    focusField={editingTxnId() === lineItem.txnId ? focusField() : undefined}
+                                    focusEntryIndex={editingTxnId() === lineItem.txnId ? focusEntryIndex() : undefined}
+                                    onStartEdit={() => handleStartEdit(lineItem.txnId)}
+                                    onCancelEdit={handleCancelEdit}
                                     onSaved={handleSaved}
+                                    onDeleted={handleDeleted}
                                     onDirtyChange={handleDirtyChange}
                                 />
-                            </Show>
-                            <For each={register()?.lineItems}>
-                                {(lineItem) => (
-                                    <EditableRegisterRow
-                                        lineItem={lineItem}
-                                        currentAccountName={register()!.accountName}
-                                        accountType={register()!.accountType}
-                                        isEditing={editingTxnId() === lineItem.txnId}
-                                        editDisabled={isDirty() || isAddingNew()}
-                                        focusField={editingTxnId() === lineItem.txnId ? focusField() : undefined}
-                                        focusEntryIndex={editingTxnId() === lineItem.txnId ? focusEntryIndex() : undefined}
-                                        onStartEdit={() => handleStartEdit(lineItem.txnId)}
-                                        onCancelEdit={handleCancelEdit}
-                                        onSaved={handleSaved}
-                                        onDeleted={handleDeleted}
-                                        onDirtyChange={handleDirtyChange}
-                                    />
-                                )}
-                            </For>
+                            )}
+                        </For>
                         </tbody>
                     </table>
                     <Show when={register()?.lineItems.length === 0 && !isAddingNew()}>

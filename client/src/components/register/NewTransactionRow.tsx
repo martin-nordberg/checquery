@@ -1,5 +1,5 @@
-import {createSignal, createMemo, createEffect, createResource, Show, Index} from "solid-js";
-import ConfirmDialog from "../common/ConfirmDialog.tsx";
+import {createEffect, createMemo, createResource, createSignal, Index, Show} from "solid-js";
+import ConfirmDialog from "../common/dialogs/ConfirmDialog.tsx";
 import type {RegisterEntry} from "$shared/domain/register/Register.ts";
 import type {CurrencyAmt} from "$shared/domain/core/CurrencyAmt.ts";
 import {fromCents} from "$shared/domain/core/CurrencyAmt.ts";
@@ -8,9 +8,9 @@ import {isoDateToday} from "$shared/domain/core/IsoDate.ts";
 import {genTxnId} from "$shared/domain/transactions/TxnId.ts";
 import {registerClientSvc} from "../../clients/register/RegisterClientSvc.ts";
 import {vendorClientSvc} from "../../clients/vendors/VendorClientSvc.ts";
-import EditableDateField from "./fields/EditableDateField.tsx";
-import EditableTextField from "./fields/EditableTextField.tsx";
-import EditableVendorField from "./fields/EditableVendorField.tsx";
+import EditableDateField from "../common/fields/EditableDateField.tsx";
+import EditableTextField from "../common/fields/EditableTextField.tsx";
+import EditableVendorField from "../common/fields/EditableVendorField.tsx";
 import EditableSplitEntry from "./EditableSplitEntry.tsx";
 import RegisterActionButtons from "./RegisterActionButtons.tsx";
 
@@ -241,99 +241,100 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
 
     return (
         <>
-        <ConfirmDialog
-            isOpen={showAbandonConfirm()}
-            message="You have unsaved changes. Abandon them?"
-            onYes={doCancel}
-            onNo={() => setShowAbandonConfirm(false)}
-        />
-        <tr class="bg-green-50">
-            <td class="px-2 py-2 align-top">
-                <button
-                    onClick={handleCancel}
-                    class="text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded p-1 cursor-pointer"
-                    title="Cancel"
-                >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </td>
-            <td class="px-2 py-2" colspan="7">
-                <div class="space-y-3 p-2">
-                    <div class="text-sm font-medium text-green-700 mb-2">New Transaction</div>
-                    <div class="grid grid-cols-6 gap-3">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-500 mb-1">Date</label>
-                            <EditableDateField
-                                value={editDate()}
-                                onChange={setEditDate}
-                            />
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-500 mb-1">Number</label>
-                            <EditableTextField
-                                value={editCode()}
-                                onChange={setEditCode}
-                                placeholder="Check #"
-                            />
-                        </div>
-                        <div class="col-span-2">
-                            <label class="block text-xs font-medium text-gray-500 mb-1">Vendor</label>
-                            <EditableVendorField
-                                value={editVendor()}
-                                onChange={setEditVendor}
-                            />
-                        </div>
-                        <div class="col-span-2">
-                            <label class="block text-xs font-medium text-gray-500 mb-1">Description</label>
-                            <EditableTextField
-                                value={editDescription()}
-                                onChange={setEditDescription}
-                                placeholder="Description"
-                            />
-                        </div>
-                    </div>
-
-                    <div>
-                        <div class="mb-2">
-                            <label class="text-xs font-medium text-gray-500">Entries</label>
-                        </div>
-                        <div class="bg-white border border-gray-200 rounded p-2">
-                            <div class="flex items-center gap-2 py-1 text-xs font-medium text-gray-500 border-b">
-                                <div class="flex-1">Account</div>
-                                <div class="w-28 text-right pr-2">Debit</div>
-                                <div class="w-28 text-right pr-2">Credit</div>
-                                <div class="w-6"></div>
+            <ConfirmDialog
+                isOpen={showAbandonConfirm()}
+                message="You have unsaved changes. Abandon them?"
+                onYes={doCancel}
+                onNo={() => setShowAbandonConfirm(false)}
+            />
+            <tr class="bg-green-50">
+                <td class="px-2 py-2 align-top">
+                    <button
+                        onClick={handleCancel}
+                        class="text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded p-1 cursor-pointer"
+                        title="Cancel"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </td>
+                <td class="px-2 py-2" colspan="7">
+                    <div class="space-y-3 p-2">
+                        <div class="text-sm font-medium text-green-700 mb-2">New Transaction</div>
+                        <div class="grid grid-cols-6 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-1">Date</label>
+                                <EditableDateField
+                                    value={editDate()}
+                                    onChange={setEditDate}
+                                />
                             </div>
-                            <Index each={balancedEntries()}>
-                                {(entry, index) => (
-                                    <EditableSplitEntry
-                                        entry={entry()}
-                                        onUpdate={(updated) => updateEntry(index, updated)}
-                                        onRemove={() => removeEntry(index)}
-                                        canRemove={editEntries().length > 2 && index > 0}
-                                        isPrimary={index === 0}
-                                    />
-                                )}
-                            </Index>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-1">Number</label>
+                                <EditableTextField
+                                    value={editCode()}
+                                    onChange={setEditCode}
+                                    placeholder="Check #"
+                                />
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-xs font-medium text-gray-500 mb-1">Vendor</label>
+                                <EditableVendorField
+                                    value={editVendor()}
+                                    onChange={setEditVendor}
+                                />
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-xs font-medium text-gray-500 mb-1">Description</label>
+                                <EditableTextField
+                                    value={editDescription()}
+                                    onChange={setEditDescription}
+                                    placeholder="Description"
+                                />
+                            </div>
                         </div>
+
+                        <div>
+                            <div class="mb-2">
+                                <label class="text-xs font-medium text-gray-500">Entries</label>
+                            </div>
+                            <div class="bg-white border border-gray-200 rounded p-2">
+                                <div class="flex items-center gap-2 py-1 text-xs font-medium text-gray-500 border-b">
+                                    <div class="flex-1">Account</div>
+                                    <div class="w-28 text-right pr-2">Debit</div>
+                                    <div class="w-28 text-right pr-2">Credit</div>
+                                    <div class="w-6"></div>
+                                </div>
+                                <Index each={balancedEntries()}>
+                                    {(entry, index) => (
+                                        <EditableSplitEntry
+                                            entry={entry()}
+                                            onUpdate={(updated) => updateEntry(index, updated)}
+                                            onRemove={() => removeEntry(index)}
+                                            canRemove={editEntries().length > 2 && index > 0}
+                                            isPrimary={index === 0}
+                                        />
+                                    )}
+                                </Index>
+                            </div>
+                        </div>
+
+                        <Show when={error()}>
+                            <div class="text-red-600 text-sm">{error()}</div>
+                        </Show>
+
+                        <RegisterActionButtons
+                            onSave={handleSave}
+                            onAddEntry={addEntry}
+                            isSaving={isSaving()}
+                            isNew={true}
+                            isDirty={isDirty()}
+                        />
                     </div>
-
-                    <Show when={error()}>
-                        <div class="text-red-600 text-sm">{error()}</div>
-                    </Show>
-
-                    <RegisterActionButtons
-                        onSave={handleSave}
-                        onAddEntry={addEntry}
-                        isSaving={isSaving()}
-                        isNew={true}
-                        isDirty={isDirty()}
-                    />
-                </div>
-            </td>
-        </tr>
+                </td>
+            </tr>
         </>
     )
 }

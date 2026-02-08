@@ -55,13 +55,13 @@ export const loadChecqueryLog = async (services: ChecqueryServices) => {
 
             // Transaction actions
             case 'create-transaction':
-                await services.txnSvc.createTransaction(transactionCreationSchema.parse(directive.payload, { reportInput: true }))
+                await services.txnSvc.createTransaction(transactionCreationSchema.parse(directive.payload, {reportInput: true}))
                 break
             case 'update-transaction':
-                await services.txnSvc.updateTransaction(transactionUpdateSchema.parse(directive.payload, { reportInput: true }))
+                await services.txnSvc.updateTransaction(transactionUpdateSchema.parse(directive.payload, {reportInput: true}))
                 break
             case 'delete-transaction':
-                await services.txnSvc.deleteTransaction(txnIdSchema.parse(directive.payload.id, { reportInput: true }))
+                await services.txnSvc.deleteTransaction(txnIdSchema.parse(directive.payload.id, {reportInput: true}))
                 break
         }
     }

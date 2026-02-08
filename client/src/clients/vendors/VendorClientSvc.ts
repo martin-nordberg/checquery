@@ -73,7 +73,7 @@ export class VendorClientSvc {
         return null
     }
 
-    async deleteVendor(vendorId: VndrId): Promise<{success: boolean, error?: string}> {
+    async deleteVendor(vendorId: VndrId): Promise<{ success: boolean, error?: string }> {
         console.log("deleteVendor", vendorId)
         const res = await client.vendors[':vendorId'].$delete({param: {vendorId}})
 
@@ -82,7 +82,7 @@ export class VendorClientSvc {
         }
 
         if (res.status === 409) {
-            const error = await res.json() as {error: string}
+            const error = await res.json() as { error: string }
             return {success: false, error: error.error}
         }
 

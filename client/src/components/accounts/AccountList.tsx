@@ -1,4 +1,4 @@
-import {createResource, createSignal, createEffect, For, Show} from "solid-js";
+import {createEffect, createResource, createSignal, For, Show} from "solid-js";
 import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
 import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
 import EditableAccountRow, {type AccountField} from "./EditableAccountRow.tsx";
@@ -126,56 +126,57 @@ const AccountList = (props: AccountListProps) => {
                 <div class="bg-white shadow-lg rounded-lg overflow-auto flex-1">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-blue-100 sticky top-0 z-10">
-                            <tr>
-                                <th class="px-2 py-3 text-center w-10">
-                                    <button
-                                        onClick={handleAddNew}
-                                        disabled={isAddingNew() || isDirty()}
-                                        class="text-green-600 hover:text-green-800 hover:bg-gray-200 rounded p-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                                        title="Add account"
-                                    >
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                        </svg>
-                                    </button>
-                                </th>
-                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    Name
-                                </th>
-                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    Account Type
-                                </th>
-                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    Account Number
-                                </th>
-                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    Description
-                                </th>
-                            </tr>
+                        <tr>
+                            <th class="px-2 py-3 text-center w-10">
+                                <button
+                                    onClick={handleAddNew}
+                                    disabled={isAddingNew() || isDirty()}
+                                    class="text-green-600 hover:text-green-800 hover:bg-gray-200 rounded p-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Add account"
+                                >
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M12 4v16m8-8H4"/>
+                                    </svg>
+                                </button>
+                            </th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Name
+                            </th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Account Type
+                            </th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Account Number
+                            </th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Description
+                            </th>
+                        </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            <Show when={isAddingNew()}>
-                                <NewAccountRow
-                                    onCancel={handleCancelNew}
+                        <Show when={isAddingNew()}>
+                            <NewAccountRow
+                                onCancel={handleCancelNew}
+                                onSaved={handleSaved}
+                                onDirtyChange={handleDirtyChange}
+                            />
+                        </Show>
+                        <For each={accounts()}>
+                            {(account) => (
+                                <EditableAccountRow
+                                    account={account}
+                                    isEditing={editingAccountId() === account.id}
+                                    editDisabled={isDirty() || isAddingNew()}
+                                    focusField={editingAccountId() === account.id ? focusField() : undefined}
+                                    onStartEdit={() => handleStartEdit(account.id)}
+                                    onCancelEdit={handleCancelEdit}
                                     onSaved={handleSaved}
+                                    onDeleted={handleDeleted}
                                     onDirtyChange={handleDirtyChange}
                                 />
-                            </Show>
-                            <For each={accounts()}>
-                                {(account) => (
-                                    <EditableAccountRow
-                                        account={account}
-                                        isEditing={editingAccountId() === account.id}
-                                        editDisabled={isDirty() || isAddingNew()}
-                                        focusField={editingAccountId() === account.id ? focusField() : undefined}
-                                        onStartEdit={() => handleStartEdit(account.id)}
-                                        onCancelEdit={handleCancelEdit}
-                                        onSaved={handleSaved}
-                                        onDeleted={handleDeleted}
-                                        onDirtyChange={handleDirtyChange}
-                                    />
-                                )}
-                            </For>
+                            )}
+                        </For>
                         </tbody>
                     </table>
                     <Show when={accounts()?.length === 0 && !isAddingNew()}>

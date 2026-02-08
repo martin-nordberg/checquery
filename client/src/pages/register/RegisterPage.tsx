@@ -2,8 +2,8 @@ import TopNav from "../../components/nav/TopNav.tsx";
 import Breadcrumb from "../../components/nav/Breadcrumb.tsx";
 import HoverableDropDown from "../../components/nav/HoverableDropDown.tsx";
 import Register from "../../components/register/Register.tsx";
-import MessageDialog from "../../components/common/MessageDialog.tsx";
-import SearchField from "../../components/common/SearchField.tsx";
+import MessageDialog from "../../components/common/dialogs/MessageDialog.tsx";
+import SearchField from "../../components/common/search/SearchField.tsx";
 import {useParams} from "@solidjs/router";
 import {createMemo, createResource, createSignal, Show} from "solid-js";
 import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
@@ -71,7 +71,7 @@ const RegisterPage = () => {
             <div class="flex-none flex items-center justify-between pr-4 bg-white">
                 <TopNav>
                     <Breadcrumb>
-                        <HoverableDropDown options={stmtOptions} selectedOption="Register" />
+                        <HoverableDropDown options={stmtOptions} selectedOption="Register"/>
                     </Breadcrumb>
                     <Breadcrumb>
                         <Show when={account()} fallback="Loading...">

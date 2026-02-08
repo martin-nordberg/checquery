@@ -1,4 +1,9 @@
-import {type Register, type RegisterCreate, type RegisterTransaction, type RegisterUpdate} from "../../domain/register/Register";
+import {
+    type Register,
+    type RegisterCreate,
+    type RegisterTransaction,
+    type RegisterUpdate
+} from "../../domain/register/Register";
 import {type AcctId} from "../../domain/accounts/AcctId";
 import {type TxnId} from "../../domain/transactions/TxnId";
 

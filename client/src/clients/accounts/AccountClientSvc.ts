@@ -22,7 +22,7 @@ export class AccountClientSvc {
         throw new HTTPException(404)
     }
 
-    async deleteAccount(accountId: AcctId): Promise<{success: boolean, error?: string}> {
+    async deleteAccount(accountId: AcctId): Promise<{ success: boolean, error?: string }> {
         console.log("deleteAccount", accountId)
         const res = await client.accounts[':accountId'].$delete({param: {accountId}})
 
@@ -31,7 +31,7 @@ export class AccountClientSvc {
         }
 
         if (res.status === 409) {
-            const error = await res.json() as {error: string}
+            const error = await res.json() as { error: string }
             return {success: false, error: error.error}
         }
 

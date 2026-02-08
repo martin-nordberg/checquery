@@ -9,7 +9,7 @@ const client = hc<IncomeStatementRoutes>(`${webAppHost}`)
 
 export class IncomeStatementClientSvc implements IIncomeStatementSvc {
 
-    async findIncomeStatement(period: Period): Promise<IncomeStatement|null> {
+    async findIncomeStatement(period: Period): Promise<IncomeStatement | null> {
         console.log("findIncomeStatement", period)
         const res = await client.incomestatement[':period'].$get({param: {period}})
 

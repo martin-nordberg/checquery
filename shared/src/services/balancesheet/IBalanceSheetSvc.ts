@@ -5,6 +5,6 @@ import {type IsoDate} from "../../domain/core/IsoDate";
 export interface IBalanceSheetSvc {
 
     /** Finds the entire balance sheet. */
-    findBalanceSheet(endingDate: IsoDate): Promise<BalanceSheet|null>
+    findBalanceSheet(endingDate: IsoDate): Promise<BalanceSheet | null>
 
 }

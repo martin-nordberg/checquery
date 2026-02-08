@@ -58,12 +58,12 @@ export type EntryUpdate = z.infer<typeof entryUpdateSchema>
 
 
 export const entriesSchema = z.array(entrySchema).min(2)
-.refine((entries => {
-    let totalDr = 0
-    let totalCr = 0
-    for (let entry of entries) {
-        totalDr += toCents(entry.debit)
-        totalCr += toCents(entry.credit)
-    }
-    return totalDr == totalCr
-}), {error: `Total debits for all entries must match total credits.`})
+    .refine((entries => {
+        let totalDr = 0
+        let totalCr = 0
+        for (let entry of entries) {
+            totalDr += toCents(entry.debit)
+            totalCr += toCents(entry.credit)
+        }
+        return totalDr == totalCr
+    }), {error: `Total debits for all entries must match total credits.`})

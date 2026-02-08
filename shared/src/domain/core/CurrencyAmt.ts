@@ -17,7 +17,7 @@ export type CurrencyAmt = z.infer<typeof currencyAmtSchema>
 
 export const toCents = (currencyAmt: CurrencyAmt): number => {
     if (currencyAmt.startsWith('(') && currencyAmt.endsWith(')')) {
-        return -toCents(currencyAmt.substring(1,currencyAmt.length - 1))
+        return -toCents(currencyAmt.substring(1, currencyAmt.length - 1))
     }
     const centsStr = currencyAmt.replace(/[$,.]/g, '')
     return parseInt(centsStr, 10)
@@ -44,5 +44,5 @@ export const fromCents = (cents: number): CurrencyAmt => {
     if (cents > 99999999999) {
         centsStr = centsStr.substring(0, centsStr.length - 13) + ',' + centsStr.substring(centsStr.length - 13)
     }
-    return "$" + centsStr.substring(0, centsStr.length-2) + '.' + centsStr.substring(centsStr.length-2)
+    return "$" + centsStr.substring(0, centsStr.length - 2) + '.' + centsStr.substring(centsStr.length - 2)
 }

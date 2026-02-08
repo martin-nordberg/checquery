@@ -8,7 +8,7 @@ type BalanceSheetProps = {
     endingDate: string,
 }
 
-const AccountName = (props: {lineItem: BalSheetLineItem}) => {
+const AccountName = (props: { lineItem: BalSheetLineItem }) => {
     const displayName = () => props.lineItem.description.replaceAll(':', ' : ')
     return (
         <Show when={props.lineItem.acctId} fallback={<>{displayName()}</>}>

@@ -1,9 +1,9 @@
 import {describe, expect, it} from 'bun:test'
 import {
-    entrySchema,
+    entriesSchema,
     entryCreationSchema,
-    entryUpdateSchema,
-    entriesSchema
+    entrySchema,
+    entryUpdateSchema
 } from '../../../src/domain/transactions/Entry'
 
 describe('entrySchema', () => {

@@ -164,7 +164,7 @@ export class TransactionSqlService implements ITransactionSvc {
 
         // Build SET clause for transaction update
         const setClauses: string[] = []
-        const bindings: Record<string, unknown> = { $id: transactionPatch.id }
+        const bindings: Record<string, unknown> = {$id: transactionPatch.id}
 
         if (transactionPatch.date !== undefined) {
             setClauses.push('date = $date')
@@ -187,7 +187,7 @@ export class TransactionSqlService implements ITransactionSvc {
                         `UPDATE Transaxtion
                          SET vendorId = (SELECT id FROM Vendor WHERE name = $vendor)
                          WHERE id = $id`,
-                    bindings: { $id: transactionPatch.id, $vendor: transactionPatch.vendor }
+                    bindings: {$id: transactionPatch.id, $vendor: transactionPatch.vendor}
                 })
             } else {
                 setClauses.push('vendorId = NULL')
@@ -208,7 +208,7 @@ export class TransactionSqlService implements ITransactionSvc {
             sqlQueries.push({
                 key: 'transaction.update.deleteEntries',
                 sql: () => `DELETE FROM Entry WHERE txnId = $id`,
-                bindings: { $id: transactionPatch.id }
+                bindings: {$id: transactionPatch.id}
             })
 
             let entrySeq = 1

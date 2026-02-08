@@ -5,6 +5,6 @@ import {type IsoDate} from "../../domain/core/IsoDate";
 export interface IIncomeStatementSvc {
 
     /** Finds the entire income statement. */
-    findIncomeStatement(startDate: IsoDate, endDate: IsoDate): Promise<IncomeStatement|null>
+    findIncomeStatement(startDate: IsoDate, endDate: IsoDate): Promise<IncomeStatement | null>
 
 }

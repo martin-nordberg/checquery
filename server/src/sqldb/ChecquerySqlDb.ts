@@ -1,4 +1,4 @@
-import {Database, Statement, type Changes} from 'bun:sqlite';
+import {type Changes, Database, Statement} from 'bun:sqlite';
 import type {z, ZodReadonly, ZodType} from "zod";
 
 export type SqlWithBindings = {
@@ -15,7 +15,7 @@ export class ChecquerySqlDb {
     readonly db
 
     /** Cached prepared queries. */
-    readonly queriesByKey: Map<string,Statement>
+    readonly queriesByKey: Map<string, Statement>
 
     constructor() {
         this.db = new Database(':memory:')
@@ -55,7 +55,7 @@ export class ChecquerySqlDb {
     run(queryKey: string, sql: () => string, bindings: any): Changes {
         let query = this.#prepareQuery(queryKey, sql)
         console.log({queryKey, bindings})
-        const txn = this.db.transaction( () =>
+        const txn = this.db.transaction(() =>
             query.run(bindings)
         )
         try {
@@ -68,8 +68,8 @@ export class ChecquerySqlDb {
 
     /** Executes multiple SQL queries in a single transaction. */
     runMultiple(queries: SqlWithBindings[]): void {
-        const txn = this.db.transaction( () => {
-            for( let {key, sql, bindings} of queries) {
+        const txn = this.db.transaction(() => {
+            for (let {key, sql, bindings} of queries) {
                 let query = this.#prepareQuery(key, sql)
                 console.log({key, bindings})
                 const changes = query.run(bindings)
@@ -93,7 +93,7 @@ export class ChecquerySqlDb {
         let query = this.queriesByKey.get(queryKey)
         if (!query) {
             const sql0 = sql()
-            console.log({queryKey, sql:sql0})
+            console.log({queryKey, sql: sql0})
             query = this.db.query(sql0)
             this.queriesByKey.set(queryKey, query)
         }

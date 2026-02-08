@@ -1,4 +1,8 @@
-import {type Transaction, type TransactionCreation, type TransactionUpdate} from "../../domain/transactions/Transaction";
+import {
+    type Transaction,
+    type TransactionCreation,
+    type TransactionUpdate
+} from "../../domain/transactions/Transaction";
 import {type TxnId} from "../../domain/transactions/TxnId";
 
 

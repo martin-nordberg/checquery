@@ -1,4 +1,4 @@
-import {createSignal, createEffect} from "solid-js";
+import {createEffect, createSignal} from "solid-js";
 
 type EditableTextFieldProps = {
     value: string | undefined,

@@ -1,12 +1,12 @@
 import {describe, expect, it} from 'bun:test'
 import {
-    registerCreateSchema,
-    registerEntrySchema,
-    registerUpdateSchema,
     type Register,
+    registerCreateSchema,
     type RegisterEntry,
+    registerEntrySchema,
     type RegisterLineItem,
     type RegisterTransaction,
+    registerUpdateSchema,
 } from "../../../src/domain/register/Register";
 import {genTxnId} from "../../../src/domain/transactions/TxnId";
 import type {CurrencyAmt} from "../../../src/domain/core/CurrencyAmt";

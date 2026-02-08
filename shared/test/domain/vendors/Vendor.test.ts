@@ -1,12 +1,5 @@
 import {describe, expect, it} from 'bun:test'
-import {
-    vendorSchema,
-    vendorCreationSchema,
-    vendorUpdateSchema,
-    type Vendor,
-    type VendorCreation,
-    type VendorUpdate
-} from '../../../src/domain/vendors/Vendor'
+import {vendorCreationSchema, vendorSchema, vendorUpdateSchema} from '../../../src/domain/vendors/Vendor'
 import {genVndrId} from '../../../src/domain/vendors/VndrId'
 
 describe('vendorSchema', () => {

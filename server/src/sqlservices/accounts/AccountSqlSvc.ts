@@ -1,12 +1,14 @@
-import {
-    type Account, type AccountCreation,
-    accountSchema, type AccountUpdate,
-} from "$shared/domain/accounts/Account";
+import {type Account, type AccountCreation, accountSchema, type AccountUpdate,} from "$shared/domain/accounts/Account";
 import {type IAccountSvc} from "$shared/services/accounts/IAccountSvc";
 import {ChecquerySqlDb} from "../../sqldb/ChecquerySqlDb";
 import {type AcctId} from "$shared/domain/accounts/AcctId";
 import {z} from "zod";
-import {appendDirective, createAccountCreateDirective, createAccountDeleteDirective, createAccountUpdateDirective} from "../../util/ChecqueryYamlAppender";
+import {
+    appendDirective,
+    createAccountCreateDirective,
+    createAccountDeleteDirective,
+    createAccountUpdateDirective
+} from "../../util/ChecqueryYamlAppender";
 
 
 export class AccountSqlService implements IAccountSvc {
@@ -46,7 +48,7 @@ export class AccountSqlService implements IAccountSvc {
         )
     }
 
-    async deleteAccount(accountId:AcctId): Promise<void> {
+    async deleteAccount(accountId: AcctId): Promise<void> {
         // Persist to YAML if enabled
         if (this.persistToYaml) {
             await appendDirective(createAccountDeleteDirective({
@@ -88,7 +90,7 @@ export class AccountSqlService implements IAccountSvc {
         )
     }
 
-    async updateAccount(accountPatch: AccountUpdate): Promise<Account|null> {
+    async updateAccount(accountPatch: AccountUpdate): Promise<Account | null> {
         // Persist to YAML if enabled
         if (this.persistToYaml) {
             await appendDirective(createAccountUpdateDirective({

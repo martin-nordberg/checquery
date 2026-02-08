@@ -1,9 +1,9 @@
-import {createSignal, createEffect, createMemo, Show, createResource, For, onCleanup} from "solid-js";
-import ConfirmDialog from "../common/ConfirmDialog.tsx";
+import {createEffect, createMemo, createResource, createSignal, For, onCleanup, Show} from "solid-js";
+import ConfirmDialog from "../common/dialogs/ConfirmDialog.tsx";
 import type {Account} from "$shared/domain/accounts/Account.ts";
 import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
-import EditableTextField from "../register/fields/EditableTextField.tsx";
-import {acctTypeCodes, acctTypeText, type AcctTypeStr} from "$shared/domain/accounts/AcctType.ts";
+import EditableTextField from "../common/fields/EditableTextField.tsx";
+import {acctTypeCodes, type AcctTypeStr, acctTypeText} from "$shared/domain/accounts/AcctType.ts";
 
 export type AccountField = 'name' | 'acctNumber' | 'description'
 
@@ -61,10 +61,7 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
         if (editAcctNumber() !== initialAcctNumber()) {
             return true
         }
-        if (editDescription() !== initialDescription()) {
-            return true
-        }
-        return false
+        return editDescription() !== initialDescription();
     })
 
     // Report dirty state changes to parent
@@ -105,7 +102,7 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
                         fieldRef.select()
                     }
                     if (rowRef) {
-                        rowRef.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                        rowRef.scrollIntoView({behavior: 'smooth', block: 'center'})
                     }
                 }, 50)
             }
@@ -194,7 +191,8 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
                     title="Edit account"
                 >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
                     </svg>
                 </button>
             </td>
@@ -236,7 +234,8 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
                         title="Cancel"
                     >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                     </button>
                 </td>
@@ -331,8 +330,8 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
     )
 
     return (
-        <Show when={props.isEditing} fallback={<DisplayRow />}>
-            <EditRow />
+        <Show when={props.isEditing} fallback={<DisplayRow/>}>
+            <EditRow/>
         </Show>
     )
 }

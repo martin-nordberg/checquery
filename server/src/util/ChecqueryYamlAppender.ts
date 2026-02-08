@@ -172,7 +172,7 @@ export const createVendorUpdateDirective = (payload: Record<string, unknown>): C
 
 export const createVendorDeleteDirective = (id: string): ChecqueryDirective => ({
     action: 'delete-vendor',
-    payload: { id }
+    payload: {id}
 })
 
 // Transaction directive factories
@@ -188,5 +188,5 @@ export const createTransactionUpdateDirective = (payload: Record<string, unknown
 
 export const createTransactionDeleteDirective = (id: string): ChecqueryDirective => ({
     action: 'delete-transaction',
-    payload: { id }
+    payload: {id}
 })

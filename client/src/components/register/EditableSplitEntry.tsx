@@ -1,8 +1,8 @@
 import {Show} from "solid-js";
 import type {RegisterEntry} from "$shared/domain/register/Register.ts";
 import type {CurrencyAmt} from "$shared/domain/core/CurrencyAmt.ts";
-import EditableCategoryField from "./fields/EditableCategoryField.tsx";
-import EditableAmountField from "./fields/EditableAmountField.tsx";
+import EditableCategoryField from "../common/fields/EditableCategoryField.tsx";
+import EditableAmountField from "../common/fields/EditableAmountField.tsx";
 
 type EditableSplitEntryProps = {
     entry: RegisterEntry,

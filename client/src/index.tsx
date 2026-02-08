@@ -19,9 +19,9 @@ const root = document.getElementById('root')
 render(() => (
     <Router root={App}>
         <Route path="/" component={HomePage}/>
-        <Route path="/balancesheet" component={() =><Navigate href={"./" + isoDateToday} />}/>
+        <Route path="/balancesheet" component={() => <Navigate href={"./" + isoDateToday}/>}/>
         <Route path="/balancesheet/:endingDate" component={BalanceSheetPage}/>
-        <Route path="/incomestatement" component={() =><Navigate href={"./" + "2026-01"} />}/>
+        <Route path="/incomestatement" component={() => <Navigate href={"./" + "2026-01"}/>}/>
         <Route path="/incomestatement/:period" component={IncomeStatementPage}/>
         <Route path="/register/:accountId" component={RegisterPage}/>
         <Route path="/vendors" component={VendorsPage}/>
