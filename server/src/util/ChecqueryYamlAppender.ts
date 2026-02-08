@@ -9,7 +9,7 @@ export type ChecqueryDirective = {
 }
 
 /** The file containing all directives. */
-const checqueryLogFile = "C:\\Data\\Documents\\checquery\\data\\checquery-log.yaml"
+const checqueryLogFile = process.env['CHECQUERY_LOG_FILE']!
 
 type TransactionEntry = {
     account: string

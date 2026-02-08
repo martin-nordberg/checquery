@@ -8,8 +8,8 @@ import {txnIdSchema} from "$shared/domain/transactions/TxnId";
 import {vendorCreationSchema, vendorUpdateSchema} from "$shared/domain/vendors/Vendor";
 import {vndrIdSchema} from "$shared/domain/vendors/VndrId";
 
-/** The file containing all directives. TODO: make configurable */
-const checqueryLogFile = "C:\\Data\\Documents\\checquery\\data\\checquery-log.yaml"
+/** The file containing all directives. */
+const checqueryLogFile = process.env['CHECQUERY_LOG_FILE']!
 
 export type ChecqueryServices = {
     acctSvc: IAccountSvc
