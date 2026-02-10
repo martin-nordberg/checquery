@@ -18,6 +18,16 @@ export const incomeStatementRoutes = (incomeStatementSvc: IIncomeStatementSvc) =
                 return c.json(await incomeStatementSvc.findIncomeStatement(startDate, endDate))
             }
         )
+        .get(
+            '/:period/details',
+            zxValidator('param', z.object({period: periodSchema})),
+            async (c) => {
+                const {period} = c.req.valid('param')
+                const startDate: IsoDate = getStartDate(period)
+                const endDate: IsoDate = getEndDate(period)
+                return c.json(await incomeStatementSvc.findIncomeStatementDetails(startDate, endDate))
+            }
+        )
 }
 
 /* Unused local function defined purely for its return type, needed by Hono Client. */

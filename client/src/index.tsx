@@ -21,8 +21,9 @@ render(() => (
         <Route path="/" component={HomePage}/>
         <Route path="/balancesheet" component={() => <Navigate href={"./" + isoDateToday}/>}/>
         <Route path="/balancesheet/:endingDate" component={BalanceSheetPage}/>
-        <Route path="/incomestatement" component={() => <Navigate href={"./" + "2026-01"}/>}/>
-        <Route path="/incomestatement/:period" component={IncomeStatementPage}/>
+        <Route path="/incomestatement" component={() => <Navigate href={"./2026-01/summary"}/>}/>
+        <Route path="/incomestatement/:period" component={() => <Navigate href={"./summary"}/>}/>
+        <Route path="/incomestatement/:period/:view" component={IncomeStatementPage}/>
         <Route path="/register/:accountId" component={RegisterPage}/>
         <Route path="/vendors" component={VendorsPage}/>
         <Route path="/accounts" component={AccountsPage}/>
