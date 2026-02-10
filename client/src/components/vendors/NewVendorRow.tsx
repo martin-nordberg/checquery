@@ -28,6 +28,7 @@ const NewVendorRow = (props: NewVendorRowProps) => {
             .filter(a => a.acctType === 'EXPENSE' || a.acctType === 'INCOME')
             .map(a => ({value: a.name, label: a.name.replaceAll(':', ' : ')}))
     })
+    const validAccountNames = createMemo(() => new Set(accounts()?.map(a => a.name) ?? []))
 
     // Compute dirty state - for new vendor, dirty if any field has been set
     const isDirty = createMemo(() => {
@@ -72,6 +73,13 @@ const NewVendorRow = (props: NewVendorRowProps) => {
             return
         }
 
+        // Validate default account exists if provided
+        const defaultAccount = editDefaultAccount()?.trim()
+        if (defaultAccount && !validAccountNames().has(defaultAccount)) {
+            setError(`Account "${defaultAccount}" does not exist`)
+            return
+        }
+
         setIsSaving(true)
 
         try {
@@ -79,7 +87,7 @@ const NewVendorRow = (props: NewVendorRowProps) => {
                 id: genVndrId(),
                 name: name,
                 description: editDescription()?.trim() || undefined,
-                defaultAccount: editDefaultAccount()?.trim() || undefined,
+                defaultAccount: defaultAccount || undefined,
                 isActive: true,
             })
 

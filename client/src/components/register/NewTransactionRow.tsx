@@ -6,6 +6,7 @@ import {fromCents} from "$shared/domain/core/CurrencyAmt.ts";
 import type {IsoDate} from "$shared/domain/core/IsoDate.ts";
 import {isoDateToday} from "$shared/domain/core/IsoDate.ts";
 import {genTxnId} from "$shared/domain/transactions/TxnId.ts";
+import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
 import {registerClientSvc} from "../../clients/register/RegisterClientSvc.ts";
 import {vendorClientSvc} from "../../clients/vendors/VendorClientSvc.ts";
 import EditableDateField from "../common/fields/EditableDateField.tsx";
@@ -45,6 +46,10 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
 
     // Load vendors for default account auto-population
     const [vendors] = createResource(() => vendorClientSvc.findVendorsAll())
+
+    // Load accounts for validation
+    const [accounts] = createResource(() => accountClientSvc.findAccountsAll())
+    const validAccountNames = createMemo(() => new Set(accounts()?.map(a => a.name) ?? []))
 
     // Auto-populate offset account from vendor's default account
     createEffect(() => {
@@ -181,7 +186,7 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
 
             // Validate at least 2 entries
             if (entries.length < 2) {
-                setError("Transaction must have at least 2 entries")
+                setError("A transaction must have at least 2 entries.")
                 setIsSaving(false)
                 return
             }
@@ -189,7 +194,17 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
             // Validate all entries have accounts
             for (const entry of entries) {
                 if (!entry.account) {
-                    setError("All entries must have an account")
+                    setError("All entries must have an account.")
+                    setIsSaving(false)
+                    return
+                }
+            }
+
+            // Validate all account names exist
+            const validNames = validAccountNames()
+            for (const entry of entries) {
+                if (!validNames.has(entry.account)) {
+                    setError(`Account "${entry.account}" does not exist.`)
                     setIsSaving(false)
                     return
                 }
@@ -198,7 +213,7 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
             // Validate the first entry has a non-zero amount
             const firstEntry = entries[0]!
             if (firstEntry.debit === '$0.00' && firstEntry.credit === '$0.00') {
-                setError("Transaction must have a non-zero amount")
+                setError("A transaction must have a non-zero amount.")
                 setIsSaving(false)
                 return
             }
@@ -209,7 +224,7 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
             const hasVendor = vendor !== undefined && vendor.trim() !== ''
             const hasDescription = description !== undefined && description.trim() !== ''
             if (!hasVendor && !hasDescription) {
-                setError("Transaction must have a vendor or description")
+                setError("A transaction must have a vendor or a description (or both).")
                 setIsSaving(false)
                 return
             }

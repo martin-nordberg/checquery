@@ -1,4 +1,4 @@
-import {createEffect, createMemo, createSignal, Index, onCleanup, Show} from "solid-js";
+import {createEffect, createMemo, createResource, createSignal, Index, onCleanup, Show} from "solid-js";
 import ConfirmDialog from "../common/dialogs/ConfirmDialog.tsx";
 import type {RegisterEntry, RegisterLineItem, RegisterTransaction} from "$shared/domain/register/Register.ts";
 import type {CurrencyAmt} from "$shared/domain/core/CurrencyAmt.ts";
@@ -6,6 +6,7 @@ import {fromCents} from "$shared/domain/core/CurrencyAmt.ts";
 import type {IsoDate} from "$shared/domain/core/IsoDate.ts";
 import type {AcctTypeStr} from "$shared/domain/accounts/AcctType.ts";
 import {txnStatusText} from "$shared/domain/transactions/TxnStatus.ts";
+import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
 import {registerClientSvc} from "../../clients/register/RegisterClientSvc.ts";
 import EditableDateField from "../common/fields/EditableDateField.tsx";
 import EditableTextField from "../common/fields/EditableTextField.tsx";
@@ -48,6 +49,10 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
     const entryAccountRefs: Record<number, HTMLInputElement> = {}
     const entryDebitRefs: Record<number, HTMLInputElement> = {}
     const entryCreditRefs: Record<number, HTMLInputElement> = {}
+
+    // Load accounts for validation
+    const [accounts] = createResource(() => accountClientSvc.findAccountsAll())
+    const validAccountNames = createMemo(() => new Set(accounts()?.map(a => a.name) ?? []))
 
     // Store initial values for dirty checking
     const [initialDate, setInitialDate] = createSignal<IsoDate | null>(null)
@@ -243,7 +248,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
 
             // Validate at least 2 entries
             if (entries.length < 2) {
-                setError("Transaction must have at least 2 entries")
+                setError("A transaction must have at least 2 entries")
                 setIsSaving(false)
                 return
             }
@@ -251,7 +256,17 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
             // Validate all entries have accounts
             for (const entry of entries) {
                 if (!entry.account) {
-                    setError("All entries must have an account")
+                    setError("All entries must have an account.")
+                    setIsSaving(false)
+                    return
+                }
+            }
+
+            // Validate all account names exist
+            const validNames = validAccountNames()
+            for (const entry of entries) {
+                if (!validNames.has(entry.account)) {
+                    setError(`Account "${entry.account}" does not exist.`)
                     setIsSaving(false)
                     return
                 }
@@ -260,7 +275,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
             // Validate the first entry has a non-zero amount
             const firstEntry = entries[0]!
             if (firstEntry.debit === '$0.00' && firstEntry.credit === '$0.00') {
-                setError("Transaction must have a non-zero amount")
+                setError("Transaction must have a non-zero amount.")
                 setIsSaving(false)
                 return
             }
@@ -271,7 +286,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
             const hasVendor = vendor !== undefined && vendor.trim() !== ''
             const hasDescription = description !== undefined && description.trim() !== ''
             if (!hasVendor && !hasDescription) {
-                setError("Transaction must have a vendor or description")
+                setError("A transaction must have a vendor or a description (or both).")
                 setIsSaving(false)
                 return
             }

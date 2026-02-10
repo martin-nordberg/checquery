@@ -49,6 +49,7 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
             .filter(a => a.acctType === 'EXPENSE' || a.acctType === 'INCOME')
             .map(a => ({value: a.name, label: a.name.replaceAll(':', ' : ')}))
     })
+    const validAccountNames = createMemo(() => new Set(accounts()?.map(a => a.name) ?? []))
 
     // Store initial values for dirty checking
     const [initialName, setInitialName] = createSignal<string>(props.vendor.name)
@@ -148,6 +149,14 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
 
     const handleSave = async () => {
         setError(null)
+
+        // Validate default account exists if provided
+        const defaultAccount = editDefaultAccount()?.trim()
+        if (defaultAccount && !validAccountNames().has(defaultAccount)) {
+            setError(`Account "${defaultAccount}" does not exist`)
+            return
+        }
+
         setIsSaving(true)
 
         try {
