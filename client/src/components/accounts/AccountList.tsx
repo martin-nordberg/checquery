@@ -12,6 +12,8 @@ type AccountListProps = {
 
 const AccountList = (props: AccountListProps) => {
 
+    let tableContainerRef: HTMLDivElement | undefined
+
     const [accounts, {refetch}] = createResource(() => accountClientSvc.findAccountsAll())
     const [editingAccountId, setEditingAccountId] = createSignal<AcctId | null>(null)
     const [focusField, setFocusField] = createSignal<AccountField | undefined>(undefined)
@@ -103,6 +105,7 @@ const AccountList = (props: AccountListProps) => {
         }
         setEditingAccountId(null)
         setIsAddingNew(true)
+        tableContainerRef?.scrollTo({top: 0, behavior: 'smooth'})
     }
 
     const handleCancelNew = () => {
@@ -123,7 +126,7 @@ const AccountList = (props: AccountListProps) => {
                 <p class="text-red-600">Error loading accounts.</p>
             </Show>
             <Show when={accounts()}>
-                <div class="bg-white shadow-lg rounded-lg overflow-auto flex-1">
+                <div ref={tableContainerRef} class="bg-white shadow-lg rounded-lg overflow-auto flex-1">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-blue-100 sticky top-0 z-10">
                         <tr>

@@ -24,7 +24,7 @@ const RegisterPage = () => {
     const accountOptions = createMemo(() => {
         const accounts = allAccounts() ?? []
         const balanceSheetAccounts = accounts.filter(a =>
-            a.acctType === 'ASSET' || a.acctType === 'LIABILITY' || a.acctType === 'EQUITY'
+            a.acctType === 'ASSET' || a.acctType === 'LIABILITY'
         )
         const options: Record<string, string> = {}
         for (const acct of balanceSheetAccounts) {

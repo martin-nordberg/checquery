@@ -82,9 +82,9 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
             setInitialDescription(props.account.description)
             setError(null)
 
-            // Focus the specified field after a short delay to allow DOM to update
-            if (props.focusField) {
-                setTimeout(() => {
+            // Focus the specified field and scroll into view after a short delay to allow DOM to update
+            setTimeout(() => {
+                if (props.focusField) {
                     let fieldRef: HTMLInputElement | undefined
                     switch (props.focusField) {
                         case 'name':
@@ -101,11 +101,16 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
                         fieldRef.focus()
                         fieldRef.select()
                     }
-                    if (rowRef) {
+                }
+                // Always scroll the edit row into view
+                if (rowRef) {
+                    const rect = rowRef.getBoundingClientRect()
+                    const isVisible = rect.top >= 0 && rect.bottom <= window.innerHeight
+                    if (!isVisible) {
                         rowRef.scrollIntoView({behavior: 'smooth', block: 'center'})
                     }
-                }, 50)
-            }
+                }
+            }, 50)
         }
     })
 

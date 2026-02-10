@@ -15,6 +15,8 @@ type RegisterProps = {
 
 const Register = (props: RegisterProps) => {
 
+    let tableContainerRef: HTMLDivElement | undefined
+
     const [register, {refetch}] = createResource(() => props.accountId, (id) => registerClientSvc.findRegister(id))
     const [editingTxnId, setEditingTxnId] = createSignal<TxnId | null>(null)
     const [focusField, setFocusField] = createSignal<RegisterField | undefined>(undefined)
@@ -149,6 +151,7 @@ const Register = (props: RegisterProps) => {
         }
         setEditingTxnId(null)
         setIsAddingNew(true)
+        tableContainerRef?.scrollTo({top: 0, behavior: 'smooth'})
     }
 
     const handleCancelNew = () => {
@@ -169,7 +172,7 @@ const Register = (props: RegisterProps) => {
                 <p class="text-red-600">Error loading register.</p>
             </Show>
             <Show when={register()}>
-                <div class="bg-white shadow-lg rounded-lg overflow-auto flex-1">
+                <div ref={tableContainerRef} class="bg-white shadow-lg rounded-lg overflow-auto flex-1">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-blue-100 sticky top-0 z-10">
                         <tr>

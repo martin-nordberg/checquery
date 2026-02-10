@@ -14,6 +14,8 @@ type VendorListProps = {
 
 const VendorList = (props: VendorListProps) => {
 
+    let tableContainerRef: HTMLDivElement | undefined
+
     const [allVendors, {refetch}] = createResource(() => vendorClientSvc.findVendorsAll())
 
     const vendors = createMemo(() => {
@@ -121,6 +123,7 @@ const VendorList = (props: VendorListProps) => {
         }
         setEditingVendorId(null)
         setIsAddingNew(true)
+        tableContainerRef?.scrollTo({top: 0, behavior: 'smooth'})
     }
 
     const handleCancelNew = () => {
@@ -141,7 +144,7 @@ const VendorList = (props: VendorListProps) => {
                 <p class="text-red-600">Error loading vendors.</p>
             </Show>
             <Show when={vendors()}>
-                <div class="bg-white shadow-lg rounded-lg overflow-auto flex-1">
+                <div ref={tableContainerRef} class="bg-white shadow-lg rounded-lg overflow-auto flex-1">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-blue-100 sticky top-0 z-10">
                         <tr>
