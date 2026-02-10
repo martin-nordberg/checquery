@@ -203,6 +203,17 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
                 return
             }
 
+            // Validate vendor or description is provided
+            const vendor = editVendor()
+            const description = editDescription()
+            const hasVendor = vendor !== undefined && vendor.trim() !== ''
+            const hasDescription = description !== undefined && description.trim() !== ''
+            if (!hasVendor && !hasDescription) {
+                setError("Transaction must have a vendor or description")
+                setIsSaving(false)
+                return
+            }
+
             const usedDate = editDate()
             await registerClientSvc.createTransaction({
                 id: genTxnId(),

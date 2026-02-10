@@ -5,6 +5,13 @@ import {txnIdSchema} from "./TxnId";
 import {isoDateSchema} from "../core/IsoDate";
 import {nameSchema} from "../core/Name";
 
+/** Validates that a transaction has either vendor or description (or both). */
+const hasVendorOrDescription = (txn: { vendor?: string | undefined, description?: string | undefined }) => {
+    const hasVendor = txn.vendor !== undefined && txn.vendor.trim() !== ''
+    const hasDescription = txn.description !== undefined && txn.description.trim() !== ''
+    return hasVendor || hasDescription
+}
+
 /** Base schema for a Stacquer transaction's details. */
 export const transactionAttributesSchema =
     z.strictObject({
@@ -25,6 +32,8 @@ export const transactionAttributesSchema =
 
         /** The two or more entries in the transaction. */
         entries: entriesSchema
+    }).refine(hasVendorOrDescription, {
+        message: "A transaction must have a vendor or a description (or both)."
     })
 
 
@@ -38,6 +47,8 @@ export type Transaction = z.infer<typeof transactionSchema>
 export const transactionCreationSchema =
     z.strictObject({
         ...transactionAttributesSchema.shape
+    }).refine(hasVendorOrDescription, {
+        message: "A transaction must have a vendor or a description (or both)."
     }).readonly()
 
 export type TransactionCreation = z.infer<typeof transactionCreationSchema>

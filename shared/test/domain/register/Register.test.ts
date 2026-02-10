@@ -199,6 +199,7 @@ describe('registerCreateSchema', () => {
             const create = registerCreateSchema.parse({
                 id,
                 date: '2024-01-15',
+                vendor: 'Test Vendor',
                 entries: [
                     {account: 'Expenses:Food', debit: '$100.00', credit: '$0.00'},
                     {account: 'Assets:Checking', debit: '$0.00', credit: '$100.00'},
@@ -227,14 +228,13 @@ describe('registerCreateSchema', () => {
             expect(create.description).toBe('Weekly groceries')
         })
 
-        it('accepts null for nullish fields', () => {
+        it('accepts null code with valid vendor', () => {
             const id = genTxnId()
             const create = registerCreateSchema.parse({
                 id,
                 date: '2024-01-15',
                 code: null,
-                vendor: null,
-                description: null,
+                vendor: 'Test Vendor',
                 entries: [
                     {account: 'Assets:Checking', debit: '$100.00', credit: '$0.00'},
                     {account: 'Income:Salary', debit: '$0.00', credit: '$100.00'},
@@ -248,6 +248,7 @@ describe('registerCreateSchema', () => {
             const create = registerCreateSchema.parse({
                 id,
                 date: '2024-01-15',
+                vendor: 'Test Vendor',
                 entries: [
                     {account: 'Expenses:Food', debit: '$50.00', credit: '$0.00'},
                     {account: 'Expenses:Supplies', debit: '$50.00', credit: '$0.00'},
@@ -256,12 +257,53 @@ describe('registerCreateSchema', () => {
             })
             expect(create.entries.length).toBe(3)
         })
+
+        it('accepts create with description only (no vendor)', () => {
+            const id = genTxnId()
+            const create = registerCreateSchema.parse({
+                id,
+                date: '2024-01-15',
+                description: 'Monthly payment',
+                entries: [
+                    {account: 'Expenses:Utilities', debit: '$100.00', credit: '$0.00'},
+                    {account: 'Assets:Checking', debit: '$0.00', credit: '$100.00'},
+                ],
+            })
+            expect(create.description).toBe('Monthly payment')
+        })
+    })
+
+    describe('vendor or description required', () => {
+        it('rejects create with neither vendor nor description', () => {
+            expect(() => registerCreateSchema.parse({
+                id: genTxnId(),
+                date: '2024-01-15',
+                entries: [
+                    {account: 'Assets:Checking', debit: '$100.00', credit: '$0.00'},
+                    {account: 'Income:Salary', debit: '$0.00', credit: '$100.00'},
+                ],
+            })).toThrow()
+        })
+
+        it('rejects create with null vendor and null description', () => {
+            expect(() => registerCreateSchema.parse({
+                id: genTxnId(),
+                date: '2024-01-15',
+                vendor: null,
+                description: null,
+                entries: [
+                    {account: 'Assets:Checking', debit: '$100.00', credit: '$0.00'},
+                    {account: 'Income:Salary', debit: '$0.00', credit: '$100.00'},
+                ],
+            })).toThrow()
+        })
     })
 
     describe('invalid creates', () => {
         it('rejects missing id', () => {
             expect(() => registerCreateSchema.parse({
                 date: '2024-01-15',
+                vendor: 'Test Vendor',
                 entries: [
                     {account: 'Assets:Checking', debit: '$100.00', credit: '$0.00'},
                     {account: 'Income:Salary', debit: '$0.00', credit: '$100.00'},
@@ -272,6 +314,7 @@ describe('registerCreateSchema', () => {
         it('rejects missing date', () => {
             expect(() => registerCreateSchema.parse({
                 id: genTxnId(),
+                vendor: 'Test Vendor',
                 entries: [
                     {account: 'Assets:Checking', debit: '$100.00', credit: '$0.00'},
                     {account: 'Income:Salary', debit: '$0.00', credit: '$100.00'},
@@ -283,6 +326,7 @@ describe('registerCreateSchema', () => {
             expect(() => registerCreateSchema.parse({
                 id: genTxnId(),
                 date: '2024-01-15',
+                vendor: 'Test Vendor',
             })).toThrow()
         })
 
@@ -290,6 +334,7 @@ describe('registerCreateSchema', () => {
             expect(() => registerCreateSchema.parse({
                 id: genTxnId(),
                 date: '2024-01-15',
+                vendor: 'Test Vendor',
                 entries: [
                     {account: 'Assets:Checking', debit: '$100.00', credit: '$0.00'},
                 ],
@@ -300,6 +345,7 @@ describe('registerCreateSchema', () => {
             expect(() => registerCreateSchema.parse({
                 id: genTxnId(),
                 date: '2024-01-15',
+                vendor: 'Test Vendor',
                 entries: [],
             })).toThrow()
         })
@@ -308,6 +354,7 @@ describe('registerCreateSchema', () => {
             expect(() => registerCreateSchema.parse({
                 id: genTxnId(),
                 date: '01-15-2024',
+                vendor: 'Test Vendor',
                 entries: [
                     {account: 'Assets:Checking', debit: '$100.00', credit: '$0.00'},
                     {account: 'Income:Salary', debit: '$0.00', credit: '$100.00'},
@@ -319,6 +366,7 @@ describe('registerCreateSchema', () => {
             expect(() => registerCreateSchema.parse({
                 id: genTxnId(),
                 date: '2024-01-15',
+                vendor: 'Test Vendor',
                 entries: [
                     {account: 'Assets:Checking', debit: '$100.00', credit: '$0.00'},
                     {account: 'Income:Salary', debit: '$0.00', credit: '$100.00'},

@@ -111,6 +111,13 @@ export const registerUpdateSchema = z.strictObject({
 
 export type RegisterUpdate = z.infer<typeof registerUpdateSchema>
 
+/** Validates that a transaction has either vendor or description (or both). */
+const hasVendorOrDescription = (txn: { vendor?: string | null | undefined, description?: string | null | undefined }) => {
+    const hasVendor = txn.vendor !== undefined && txn.vendor !== null && txn.vendor.trim() !== ''
+    const hasDescription = txn.description !== undefined && txn.description !== null && txn.description.trim() !== ''
+    return hasVendor || hasDescription
+}
+
 /** Schema for creating a new transaction from the register. */
 export const registerCreateSchema = z.strictObject({
     id: txnIdSchema,
@@ -119,6 +126,8 @@ export const registerCreateSchema = z.strictObject({
     vendor: nameSchema.nullish(),
     description: descriptionSchema.nullish(),
     entries: z.array(registerEntrySchema).min(2),
+}).refine(hasVendorOrDescription, {
+    message: "A transaction must have a vendor or a description (or both)."
 }).readonly()
 
 export type RegisterCreate = z.infer<typeof registerCreateSchema>

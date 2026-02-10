@@ -265,6 +265,17 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                 return
             }
 
+            // Validate vendor or description is provided
+            const vendor = editVendor()
+            const description = editDescription()
+            const hasVendor = vendor !== undefined && vendor.trim() !== ''
+            const hasDescription = description !== undefined && description.trim() !== ''
+            if (!hasVendor && !hasDescription) {
+                setError("Transaction must have a vendor or description")
+                setIsSaving(false)
+                return
+            }
+
             await registerClientSvc.updateTransaction({
                 id: props.lineItem.txnId,
                 date: editDate(),

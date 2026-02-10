@@ -17,6 +17,7 @@ describe('transactionSchema', () => {
             const txn = transactionSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
+                vendor: 'Test Vendor',
                 entries: validEntries
             })
 
@@ -45,6 +46,7 @@ describe('transactionSchema', () => {
             const txn = transactionSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
+                vendor: 'Test Vendor',
                 entries: [
                     {account: 'Assets:Checking', debit: '$50.00', credit: '$0.00'},
                     {account: 'Assets:Savings', debit: '$50.00', credit: '$0.00'},
@@ -131,20 +133,12 @@ describe('transactionSchema', () => {
     })
 
     describe('invalid vendor', () => {
-        it('rejects empty vendor', () => {
-            expect(() => transactionSchema.parse({
-                id: genTxnId(),
-                date: '2026-01-15',
-                vendor: '',
-                entries: validEntries
-            })).toThrow()
-        })
-
         it('rejects vendor with newlines', () => {
             expect(() => transactionSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
                 vendor: 'Acme\nCorp',
+                description: 'Valid description',
                 entries: validEntries
             })).toThrow()
         })
@@ -154,6 +148,7 @@ describe('transactionSchema', () => {
                 id: genTxnId(),
                 date: '2026-01-15',
                 vendor: 'x'.repeat(201),
+                description: 'Valid description',
                 entries: validEntries
             })).toThrow()
         })
@@ -164,6 +159,7 @@ describe('transactionSchema', () => {
             expect(() => transactionSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
+                vendor: 'Valid Vendor',
                 description: 'x'.repeat(201),
                 entries: validEntries
             })).toThrow()
@@ -173,6 +169,7 @@ describe('transactionSchema', () => {
             expect(() => transactionSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
+                vendor: 'Valid Vendor',
                 description: 'Line one\nLine two',
                 entries: validEntries
             })).toThrow()
@@ -183,7 +180,8 @@ describe('transactionSchema', () => {
         it('rejects missing entries', () => {
             expect(() => transactionSchema.parse({
                 id: genTxnId(),
-                date: '2026-01-15'
+                date: '2026-01-15',
+                vendor: 'Test Vendor'
             })).toThrow()
         })
 
@@ -191,6 +189,7 @@ describe('transactionSchema', () => {
             expect(() => transactionSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
+                vendor: 'Test Vendor',
                 entries: [
                     {account: 'Assets:Checking', debit: '$100.00', credit: '$0.00'}
                 ]
@@ -201,6 +200,7 @@ describe('transactionSchema', () => {
             expect(() => transactionSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
+                vendor: 'Test Vendor',
                 entries: [
                     {account: 'Assets:Checking', debit: '$100.00', credit: '$0.00'},
                     {account: 'Income:Salary', debit: '$0.00', credit: '$50.00'}
@@ -212,6 +212,7 @@ describe('transactionSchema', () => {
             expect(() => transactionSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
+                vendor: 'Test Vendor',
                 entries: []
             })).toThrow()
         })
@@ -222,8 +223,69 @@ describe('transactionSchema', () => {
             expect(() => transactionSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
+                vendor: 'Acme Corp',
                 entries: validEntries,
                 unknownField: 'should fail'
+            })).toThrow()
+        })
+    })
+
+    describe('vendor or description required', () => {
+        it('accepts transaction with vendor only', () => {
+            const txn = transactionSchema.parse({
+                id: genTxnId(),
+                date: '2026-01-15',
+                vendor: 'Acme Corp',
+                entries: validEntries
+            })
+            expect(txn.vendor).toBe('Acme Corp')
+        })
+
+        it('accepts transaction with description only', () => {
+            const txn = transactionSchema.parse({
+                id: genTxnId(),
+                date: '2026-01-15',
+                description: 'Monthly payment',
+                entries: validEntries
+            })
+            expect(txn.description).toBe('Monthly payment')
+        })
+
+        it('accepts transaction with both vendor and description', () => {
+            const txn = transactionSchema.parse({
+                id: genTxnId(),
+                date: '2026-01-15',
+                vendor: 'Acme Corp',
+                description: 'Monthly payment',
+                entries: validEntries
+            })
+            expect(txn.vendor).toBe('Acme Corp')
+            expect(txn.description).toBe('Monthly payment')
+        })
+
+        it('rejects transaction with neither vendor nor description', () => {
+            expect(() => transactionSchema.parse({
+                id: genTxnId(),
+                date: '2026-01-15',
+                entries: validEntries
+            })).toThrow()
+        })
+
+        it('rejects transaction with empty vendor and no description', () => {
+            expect(() => transactionSchema.parse({
+                id: genTxnId(),
+                date: '2026-01-15',
+                vendor: '',
+                entries: validEntries
+            })).toThrow()
+        })
+
+        it('rejects transaction with whitespace-only vendor and no description', () => {
+            expect(() => transactionSchema.parse({
+                id: genTxnId(),
+                date: '2026-01-15',
+                vendor: '   ',
+                entries: validEntries
             })).toThrow()
         })
     })
@@ -234,6 +296,7 @@ describe('transactionCreationSchema', () => {
         const txn = transactionCreationSchema.parse({
             id: genTxnId(),
             date: '2026-01-15',
+            vendor: 'Test Vendor',
             entries: validEntries
         })
 
@@ -242,7 +305,16 @@ describe('transactionCreationSchema', () => {
 
     it('requires all mandatory fields', () => {
         expect(() => transactionCreationSchema.parse({
-            id: genTxnId()
+            id: genTxnId(),
+            vendor: 'Test Vendor'
+        })).toThrow()
+    })
+
+    it('requires vendor or description', () => {
+        expect(() => transactionCreationSchema.parse({
+            id: genTxnId(),
+            date: '2026-01-15',
+            entries: validEntries
         })).toThrow()
     })
 })
