@@ -10,6 +10,6 @@ export const acctNumberSchema =
         .trim()
         .min(1, "Account Number must not be empty.")
         .max(acctNumberMaxLength, `Account Number can be at most ${acctNumberMaxLength} characters.`)
-        .regex(acctNumberRegex, "Account Number must consist alphanumeric characters and hyphens.")
+        .regex(acctNumberRegex, "Account Number must consist of alphanumeric characters and hyphens.")
 
 export type AcctNumberStr = z.infer<typeof acctNumberSchema>

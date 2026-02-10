@@ -81,9 +81,6 @@ export type RegisterTransaction = {
     /** The check number or similar code. */
     code?: string | undefined,
 
-    /** The status of the transaction. */
-    status?: TxnStatusStr | undefined,
-
     /** The vendor (payee/payor). */
     vendor?: string | undefined,
 
@@ -107,7 +104,6 @@ export const registerUpdateSchema = z.strictObject({
     id: txnIdSchema,
     date: isoDateSchema.optional(),
     code: z.string().nullish(),
-    status: txnStatusSchema.nullish(),
     vendor: nameSchema.nullish(),
     description: descriptionSchema.nullish(),
     entries: z.array(registerEntrySchema).min(2).optional(),
@@ -120,7 +116,6 @@ export const registerCreateSchema = z.strictObject({
     id: txnIdSchema,
     date: isoDateSchema,
     code: z.string().nullish(),
-    status: txnStatusSchema.nullish(),
     vendor: nameSchema.nullish(),
     description: descriptionSchema.nullish(),
     entries: z.array(registerEntrySchema).min(2),

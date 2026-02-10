@@ -233,9 +233,6 @@ export class RegisterSqlService implements IRegisterSvc {
         if (update.vendor !== undefined) {
             payload['vendor'] = update.vendor
         }
-        if (update.status !== undefined && update.status !== 'UNMARKED') {
-            payload['status'] = update.status
-        }
         if (update.entries !== undefined) {
             payload['entries'] = update.entries.map(e => {
                 const entry: Record<string, string> = {account: e.account}
@@ -344,9 +341,6 @@ export class RegisterSqlService implements IRegisterSvc {
         if (create.vendor) {
             payload['vendor'] = create.vendor
         }
-        if (create.status && create.status !== 'UNMARKED') {
-            payload['status'] = create.status
-        }
         payload['entries'] = create.entries.map(e => {
             const entry: Record<string, string> = {account: e.account}
             if (e.debit && e.debit !== '$0.00') {
@@ -408,7 +402,7 @@ export class RegisterSqlService implements IRegisterSvc {
                     $txnId: create.id,
                     $entrySeq: entrySeq,
                     $account: entry.account,
-                    $status: entry.status ?? create.status ?? 'UNMARKED',
+                    $status: entry.status ?? 'UNMARKED',
                     $debit: Math.round(parseFloat(entry.debit.replace(/[$,()]/g, '')) * 100) || 0,
                     $credit: Math.round(parseFloat(entry.credit.replace(/[$,()]/g, '')) * 100) || 0,
                 }

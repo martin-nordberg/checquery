@@ -29,7 +29,6 @@ describe('transactionSchema', () => {
             const txn = transactionSchema.parse({
                 id,
                 date: '2026-01-15',
-                status: 'RECONCILED',
                 code: '1234',
                 vendor: 'Acme Corp',
                 description: 'Monthly payment',
@@ -37,32 +36,9 @@ describe('transactionSchema', () => {
             })
 
             expect(txn.id).toBe(id)
-            expect(txn.status).toBe('RECONCILED')
             expect(txn.code).toBe('1234')
             expect(txn.vendor).toBe('Acme Corp')
             expect(txn.description).toBe('Monthly payment')
-        })
-
-        it('parses transaction with FORECAST status', () => {
-            const txn = transactionSchema.parse({
-                id: genTxnId(),
-                date: '2026-01-15',
-                status: 'FORECAST',
-                entries: validEntries
-            })
-
-            expect(txn.status).toBe('FORECAST')
-        })
-
-        it('parses transaction with UNMARKED status', () => {
-            const txn = transactionSchema.parse({
-                id: genTxnId(),
-                date: '2026-01-15',
-                status: 'UNMARKED',
-                entries: validEntries
-            })
-
-            expect(txn.status).toBe('UNMARKED')
         })
 
         it('parses transaction with multiple entries', () => {
@@ -149,26 +125,6 @@ describe('transactionSchema', () => {
             expect(() => transactionSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-32',
-                entries: validEntries
-            })).toThrow()
-        })
-    })
-
-    describe('invalid status', () => {
-        it('rejects invalid status value', () => {
-            expect(() => transactionSchema.parse({
-                id: genTxnId(),
-                date: '2026-01-15',
-                status: 'INVALID',
-                entries: validEntries
-            })).toThrow()
-        })
-
-        it('rejects lowercase status', () => {
-            expect(() => transactionSchema.parse({
-                id: genTxnId(),
-                date: '2026-01-15',
-                status: 'reconciled',
                 entries: validEntries
             })).toThrow()
         })

@@ -1,5 +1,6 @@
 import {describe, expect, it} from 'bun:test'
 import {
+    txnStatusCode,
     txnStatusCodes,
     txnStatusFromCode,
     txnStatusSchema,
@@ -19,6 +20,10 @@ describe('txnStatusSchema', () => {
         it('accepts RECONCILED', () => {
             expect(txnStatusSchema.parse('RECONCILED')).toBe('RECONCILED')
         })
+
+        it('accepts PENDING', () => {
+            expect(txnStatusSchema.parse('PENDING')).toBe('PENDING')
+        })
     })
 
     describe('invalid transaction statuses', () => {
@@ -27,7 +32,7 @@ describe('txnStatusSchema', () => {
         })
 
         it('rejects unknown status', () => {
-            expect(() => txnStatusSchema.parse('PENDING')).toThrow()
+            expect(() => txnStatusSchema.parse('SPENDING')).toThrow()
         })
 
         it('rejects empty string', () => {
@@ -46,11 +51,29 @@ describe('txnStatusSchema', () => {
 
 describe('txnStatusCodes', () => {
     it('contains all three transaction statuses', () => {
-        expect(txnStatusCodes).toEqual(['FORECAST', 'UNMARKED', 'RECONCILED'])
+        expect(txnStatusCodes).toEqual(['FORECAST', 'UNMARKED', 'PENDING', 'RECONCILED'])
     })
 
-    it('has length of 3', () => {
-        expect(txnStatusCodes.length).toBe(3)
+    it('has length of 4', () => {
+        expect(txnStatusCodes.length).toBe(4)
+    })
+})
+
+describe('txnStatusCode', () => {
+    it('returns "F" for FORECAST', () => {
+        expect(txnStatusCode('FORECAST')).toBe('F')
+    })
+
+    it('returns empty string for UNMARKED', () => {
+        expect(txnStatusCode('UNMARKED')).toBe('')
+    })
+
+    it('returns "r" for PENDING', () => {
+        expect(txnStatusCode('PENDING')).toBe('r')
+    })
+
+    it('returns "R" for RECONCILED', () => {
+        expect(txnStatusCode('RECONCILED')).toBe('R')
     })
 })
 
@@ -59,8 +82,12 @@ describe('txnStatusText', () => {
         expect(txnStatusText('FORECAST')).toBe('Forecast')
     })
 
-    it('returns "Unmarked" for UNMARKED', () => {
-        expect(txnStatusText('UNMARKED')).toBe('Unmarked')
+    it('returns "" for UNMARKED', () => {
+        expect(txnStatusText('UNMARKED')).toBe('')
+    })
+
+    it('returns "Pending" for PENDING', () => {
+        expect(txnStatusText('PENDING')).toBe('Pending')
     })
 
     it('returns "Reconciled" for RECONCILED', () => {
@@ -74,12 +101,16 @@ describe('txnStatusFromCode', () => {
             expect(txnStatusFromCode('')).toBe('UNMARKED')
         })
 
-        it('returns FORECAST for "!"', () => {
-            expect(txnStatusFromCode('!')).toBe('FORECAST')
+        it('returns FORECAST for "F"', () => {
+            expect(txnStatusFromCode('F')).toBe('FORECAST')
         })
 
-        it('returns RECONCILED for "*"', () => {
-            expect(txnStatusFromCode('*')).toBe('RECONCILED')
+        it('returns PENDING for "r"', () => {
+            expect(txnStatusFromCode('r')).toBe('PENDING')
+        })
+
+        it('returns RECONCILED for "R"', () => {
+            expect(txnStatusFromCode('R')).toBe('RECONCILED')
         })
     })
 

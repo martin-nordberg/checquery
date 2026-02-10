@@ -101,9 +101,6 @@ const formatDirective = (directive: ChecqueryDirective): string => {
         if (payload['vendor']) {
             lines.push(`    vendor: ${payload['vendor']}`)
         }
-        if (payload['status'] && payload['status'] !== 'UNMARKED') {
-            lines.push(`    status: '${payload['status']}'`)
-        }
 
         // Add entries
         const entries = payload['entries'] as TransactionEntry[] | undefined

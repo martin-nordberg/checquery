@@ -46,9 +46,6 @@ console.log(await isSvc.findIncomeStatement('2026-01-01', '2026-01-31'))
 
 const routes =
     app
-        // .route('/commands', commandRoutes(packageService, writeCommandToYaml))
-        // .route('/queries/packages', packageQryRoutes(packageService))
-
         .get('/', (c) => {
             return c.text('This is the Checquery web application.')
         })

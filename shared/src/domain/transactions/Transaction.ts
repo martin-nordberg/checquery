@@ -2,7 +2,6 @@ import {z} from "zod";
 import {descriptionSchema} from "../core/Description";
 import {entriesSchema} from "./Entry";
 import {txnIdSchema} from "./TxnId";
-import {txnStatusSchema} from "./TxnStatus";
 import {isoDateSchema} from "../core/IsoDate";
 import {nameSchema} from "../core/Name";
 
@@ -14,9 +13,6 @@ export const transactionAttributesSchema =
 
         /** The date of the transaction. */
         date: isoDateSchema,
-
-        /** The transaction status for all entries. */
-        status: txnStatusSchema.optional(),
 
         /* The check number or similar code. */
         code: z.string().optional(),

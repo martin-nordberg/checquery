@@ -115,7 +115,6 @@ describe('registerUpdateSchema', () => {
                 id,
                 date: '2024-01-15',
                 code: 'CHK001',
-                status: 'RECONCILED',
                 vendor: 'Grocery Store',
                 description: 'Weekly groceries',
                 entries: [
@@ -125,7 +124,6 @@ describe('registerUpdateSchema', () => {
             })
             expect(update.date).toBe('2024-01-15')
             expect(update.code).toBe('CHK001')
-            expect(update.status).toBe('RECONCILED')
             expect(update.vendor).toBe('Grocery Store')
             expect(update.description).toBe('Weekly groceries')
             expect(update.entries?.length).toBe(2)
@@ -136,12 +134,10 @@ describe('registerUpdateSchema', () => {
             const update = registerUpdateSchema.parse({
                 id,
                 code: null,
-                status: null,
                 vendor: null,
                 description: null,
             })
             expect(update.code).toBeNull()
-            expect(update.status).toBeNull()
             expect(update.vendor).toBeNull()
             expect(update.description).toBeNull()
         })
@@ -219,7 +215,6 @@ describe('registerCreateSchema', () => {
                 id,
                 date: '2024-01-15',
                 code: 'CHK001',
-                status: 'UNMARKED',
                 vendor: 'Grocery Store',
                 description: 'Weekly groceries',
                 entries: [
@@ -228,7 +223,6 @@ describe('registerCreateSchema', () => {
                 ],
             })
             expect(create.code).toBe('CHK001')
-            expect(create.status).toBe('UNMARKED')
             expect(create.vendor).toBe('Grocery Store')
             expect(create.description).toBe('Weekly groceries')
         })
@@ -239,7 +233,6 @@ describe('registerCreateSchema', () => {
                 id,
                 date: '2024-01-15',
                 code: null,
-                status: null,
                 vendor: null,
                 description: null,
                 entries: [
@@ -248,7 +241,6 @@ describe('registerCreateSchema', () => {
                 ],
             })
             expect(create.code).toBeNull()
-            expect(create.status).toBeNull()
         })
 
         it('accepts entries with more than 2 entries (split transaction)', () => {
@@ -430,7 +422,6 @@ describe('Register types', () => {
                 id: genTxnId(),
                 date: '2024-01-15' as IsoDate,
                 code: 'CHK001',
-                status: 'RECONCILED',
                 vendor: 'Grocery Store',
                 description: 'Weekly groceries',
                 entries: [
@@ -442,7 +433,6 @@ describe('Register types', () => {
             expect(transaction.id).toBeDefined()
             expect(transaction.date).toBe('2024-01-15')
             expect(transaction.code).toBe('CHK001')
-            expect(transaction.status).toBe('RECONCILED')
             expect(transaction.vendor).toBe('Grocery Store')
             expect(transaction.description).toBe('Weekly groceries')
             expect(transaction.entries.length).toBe(2)
@@ -459,7 +449,6 @@ describe('Register types', () => {
             }
 
             expect(transaction.code).toBeUndefined()
-            expect(transaction.status).toBeUndefined()
             expect(transaction.vendor).toBeUndefined()
             expect(transaction.description).toBeUndefined()
         })
