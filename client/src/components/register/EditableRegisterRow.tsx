@@ -6,8 +6,10 @@ import {fromCents} from "$shared/domain/core/CurrencyAmt.ts";
 import type {IsoDate} from "$shared/domain/core/IsoDate.ts";
 import type {AcctTypeStr} from "$shared/domain/accounts/AcctType.ts";
 import {txnStatusText} from "$shared/domain/transactions/TxnStatus.ts";
+import {genVndrId} from "$shared/domain/vendors/VndrId.ts";
 import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
 import {registerClientSvc} from "../../clients/register/RegisterClientSvc.ts";
+import {vendorClientSvc} from "../../clients/vendors/VendorClientSvc.ts";
 import EditableDateField from "../common/fields/EditableDateField.tsx";
 import EditableTextField from "../common/fields/EditableTextField.tsx";
 import EditableVendorField from "../common/fields/EditableVendorField.tsx";
@@ -53,6 +55,14 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
     // Load accounts for validation
     const [accounts] = createResource(() => accountClientSvc.findAccountsAll())
     const validAccountNames = createMemo(() => new Set(accounts()?.map(a => a.name) ?? []))
+
+    // Load vendors for validation
+    const [vendors] = createResource(() => vendorClientSvc.findVendorsAll())
+    const validVendorNames = createMemo(() => new Set(vendors()?.map(v => v.name) ?? []))
+
+    // State for handling new vendor creation
+    const [isNewVendor, setIsNewVendor] = createSignal(false)
+    const [addNewVendorChecked, setAddNewVendorChecked] = createSignal(false)
 
     // Store initial values for dirty checking
     const [initialDate, setInitialDate] = createSignal<IsoDate | null>(null)
@@ -125,6 +135,9 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                 setInitialVendor(txn.vendor)
                 setInitialDescription(txn.description)
                 setInitialEntries(reorderedEntries.map(e => ({...e})))
+                // Reset new vendor state
+                setIsNewVendor(false)
+                setAddNewVendorChecked(false)
             }
         }
     })
@@ -209,6 +222,37 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
         return [firstEntry, ...entries.slice(1)]
     })
 
+    // Check vendor validity when vendor field loses focus
+    const handleVendorBlur = () => {
+        const vendorName = editVendor()?.trim()
+        if (!vendorName) {
+            setIsNewVendor(false)
+            setAddNewVendorChecked(false)
+            return
+        }
+        const vendorExists = validVendorNames().has(vendorName)
+        setIsNewVendor(!vendorExists)
+        if (vendorExists) {
+            setAddNewVendorChecked(false)
+        }
+    }
+
+    // Handle vendor change - if they select an existing vendor, hide the checkbox
+    const handleVendorChange = (value: string | undefined) => {
+        setEditVendor(value)
+        const vendorName = value?.trim()
+        if (!vendorName) {
+            setIsNewVendor(false)
+            setAddNewVendorChecked(false)
+            return
+        }
+        // If they selected an existing vendor from autocomplete, hide the checkbox
+        if (validVendorNames().has(vendorName)) {
+            setIsNewVendor(false)
+            setAddNewVendorChecked(false)
+        }
+    }
+
     const handleCancel = () => {
         if (isDirty()) {
             setShowAbandonConfirm(true)
@@ -281,14 +325,29 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
             }
 
             // Validate vendor or description is provided
-            const vendor = editVendor()
+            const vendor = editVendor()?.trim()
             const description = editDescription()
-            const hasVendor = vendor !== undefined && vendor.trim() !== ''
+            const hasVendor = vendor !== undefined && vendor !== ''
             const hasDescription = description !== undefined && description.trim() !== ''
             if (!hasVendor && !hasDescription) {
                 setError("A transaction must have a vendor or a description (or both).")
                 setIsSaving(false)
                 return
+            }
+
+            // Validate vendor exists or user has opted to create it
+            if (hasVendor && !validVendorNames().has(vendor)) {
+                if (!addNewVendorChecked()) {
+                    setError(`Vendor "${vendor}" does not exist. Check "Add this new vendor" to create it.`)
+                    setIsSaving(false)
+                    return
+                }
+                // Create the new vendor first
+                await vendorClientSvc.createVendor({
+                    id: genVndrId(),
+                    name: vendor,
+                    isActive: true,
+                })
             }
 
             await registerClientSvc.updateTransaction({
@@ -459,8 +518,20 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                                 <EditableVendorField
                                     inputRef={(el) => vendorRef = el}
                                     value={editVendor()}
-                                    onChange={setEditVendor}
+                                    onChange={handleVendorChange}
+                                    onBlur={handleVendorBlur}
                                 />
+                                <Show when={isNewVendor()}>
+                                    <label class={`flex items-center gap-2 mt-1 ml-2 text-sm ${addNewVendorChecked() ? 'text-gray-900' : 'text-amber-700'}`}>
+                                        <input
+                                            type="checkbox"
+                                            checked={addNewVendorChecked()}
+                                            onChange={(e) => setAddNewVendorChecked(e.currentTarget.checked)}
+                                            class="rounded border-amber-400"
+                                        />
+                                        Add this new vendor
+                                    </label>
+                                </Show>
                             </div>
                             <div class="col-span-2">
                                 <label class="block text-xs font-medium text-gray-500 mb-1">Description</label>

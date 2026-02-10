@@ -7,6 +7,7 @@ type EditableVendorFieldProps = {
     onChange: (value: string | undefined) => void,
     disabled?: boolean,
     inputRef?: ((el: HTMLInputElement) => void) | undefined,
+    onBlur?: (() => void) | undefined,
 }
 
 const EditableVendorField = (props: EditableVendorFieldProps) => {
@@ -30,6 +31,7 @@ const EditableVendorField = (props: EditableVendorFieldProps) => {
             onChange={props.onChange}
             placeholder="Vendor..."
             disabled={props.disabled}
+            onBlur={props.onBlur}
         />
     )
 }

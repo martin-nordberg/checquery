@@ -12,6 +12,7 @@ type AutocompleteFieldProps = {
     placeholder?: string | undefined,
     disabled?: boolean | undefined,
     inputRef?: ((el: HTMLInputElement) => void) | undefined,
+    onBlur?: (() => void) | undefined,
 }
 
 const AutocompleteField = (props: AutocompleteFieldProps) => {
@@ -67,6 +68,7 @@ const AutocompleteField = (props: AutocompleteFieldProps) => {
             }
             setIsOpen(false)
             setHighlightedIndex(-1)
+            props.onBlur?.()
         }, 150)
     }
 
