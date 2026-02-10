@@ -260,7 +260,7 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
                         </svg>
                     </button>
                 </td>
-                <td class="px-2 py-2" colspan="7">
+                <td class="px-2 py-2" colspan="8">
                     <div class="space-y-3 p-2">
                         <div class="text-sm font-medium text-green-700 mb-2">New Transaction</div>
                         <div class="grid grid-cols-6 gap-3">
@@ -303,6 +303,7 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
                             <div class="bg-white border border-gray-200 rounded p-2">
                                 <div class="flex items-center gap-2 py-1 text-xs font-medium text-gray-500 border-b">
                                     <div class="flex-1">Account</div>
+                                    <div class="w-20 text-center">Status</div>
                                     <div class="w-28 text-right pr-2">Debit</div>
                                     <div class="w-28 text-right pr-2">Credit</div>
                                     <div class="w-6"></div>

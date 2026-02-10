@@ -48,6 +48,7 @@ export const transactionUpdateSchema =
     z.strictObject({
         ...transactionAttributesSchema.partial({
             date: true,
+            entries: true,
         }).shape
     }).readonly()
 

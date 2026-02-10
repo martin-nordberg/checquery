@@ -196,8 +196,10 @@ export class TransactionSqlService implements ITransactionSvc {
 
         // Update transaction main fields if any
         if (setClauses.length > 0) {
+            // Key must include field names since SQL varies by which fields are updated
+            const fieldKey = setClauses.map(c => c.split(' ')[0]).join(',')
             sqlQueries.push({
-                key: 'transaction.update.fields',
+                key: `transaction.update.fields.${fieldKey}`,
                 sql: () => `UPDATE Transaxtion SET ${setClauses.join(', ')} WHERE id = $id`,
                 bindings
             })

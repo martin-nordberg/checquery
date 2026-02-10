@@ -71,10 +71,10 @@ export class RegisterSqlService implements IRegisterSvc {
             z.strictObject({
                 txnId: z.string(),
                 date: z.string(),
-                code: z.string().optional(),
-                status: z.string().optional(),
-                vendor: z.string().optional(),
-                description: z.string().optional(),
+                code: z.string().nullish(),
+                status: z.string().nullish(),
+                vendor: z.string().nullish(),
+                description: z.string().nullish(),
                 debitCents: z.int(),
                 creditCents: z.int()
             }).readonly()
@@ -131,10 +131,10 @@ export class RegisterSqlService implements IRegisterSvc {
             lineItems.push({
                 txnId: txnIdSchema.parse(sqlItem.txnId),
                 date: sqlItem.date,
-                code: sqlItem.code,
+                code: sqlItem.code ?? undefined,
                 status: sqlItem.status ? txnStatusSchema.parse(sqlItem.status) : 'UNMARKED',
-                vendor: sqlItem.vendor,
-                description: sqlItem.description,
+                vendor: sqlItem.vendor ?? undefined,
+                description: sqlItem.description ?? undefined,
                 offsetAccount,
                 debit: fromCents(sqlItem.debitCents),
                 credit: fromCents(sqlItem.creditCents),
@@ -286,8 +286,10 @@ export class RegisterSqlService implements IRegisterSvc {
         }
 
         if (setClauses.length > 0) {
+            // Key must include field names since SQL varies by which fields are updated
+            const fieldKey = setClauses.map(c => c.split(' ')[0]).join(',')
             this.db.run(
-                'register.update.fields',
+                `register.update.fields.${fieldKey}`,
                 () => `UPDATE Transaxtion SET ${setClauses.join(', ')} WHERE id = $id`,
                 bindings
             )

@@ -274,9 +274,10 @@ describe('transactionUpdateSchema', () => {
         })).toThrow()
     })
 
-    it('requires entries field', () => {
-        expect(() => transactionUpdateSchema.parse({
+    it('allows update without entries', () => {
+        const txn = transactionUpdateSchema.parse({
             id: genTxnId()
-        })).toThrow()
+        })
+        expect(txn.entries).toBeUndefined()
     })
 })

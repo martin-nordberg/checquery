@@ -93,7 +93,7 @@ const formatDirective = (directive: ChecqueryDirective): string => {
             lines.push(`    date: ${payload['date']}`)
         }
         if (payload['code']) {
-            lines.push(`    code: ${payload['code']}`)
+            lines.push(`    code: ${maybeQuoteYaml(payload['code'])}`)
         }
         if (payload['description']) {
             lines.push(`    description: ${payload['description']}`)

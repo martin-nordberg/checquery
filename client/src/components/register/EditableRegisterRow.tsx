@@ -5,6 +5,7 @@ import type {CurrencyAmt} from "$shared/domain/core/CurrencyAmt.ts";
 import {fromCents} from "$shared/domain/core/CurrencyAmt.ts";
 import type {IsoDate} from "$shared/domain/core/IsoDate.ts";
 import type {AcctTypeStr} from "$shared/domain/accounts/AcctType.ts";
+import {txnStatusText} from "$shared/domain/transactions/TxnStatus.ts";
 import {registerClientSvc} from "../../clients/register/RegisterClientSvc.ts";
 import EditableDateField from "../common/fields/EditableDateField.tsx";
 import EditableTextField from "../common/fields/EditableTextField.tsx";
@@ -363,6 +364,9 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
             <td class="px-4 py-2 text-sm text-gray-500">
                 {props.lineItem.description ?? ''}
             </td>
+            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500 text-center">
+                {props.lineItem.status ? txnStatusText(props.lineItem.status) : ''}
+            </td>
             <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
                 <Show when={props.lineItem.debit !== '$0.00'}>
                     {props.lineItem.debit}
@@ -405,7 +409,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                         </svg>
                     </button>
                 </td>
-                <td class="px-2 py-2" colspan="7">
+                <td class="px-2 py-2" colspan="8">
                     <div class="space-y-3 p-2">
                         <div class="grid grid-cols-6 gap-3">
                             <div>
@@ -450,6 +454,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                             <div class="bg-white border border-gray-200 rounded p-2">
                                 <div class="flex items-center gap-2 py-1 text-xs font-medium text-gray-500 border-b">
                                     <div class="flex-1">Account</div>
+                                    <div class="w-20 text-center">Status</div>
                                     <div class="w-28 text-right pr-2">Debit</div>
                                     <div class="w-28 text-right pr-2">Credit</div>
                                     <div class="w-6"></div>

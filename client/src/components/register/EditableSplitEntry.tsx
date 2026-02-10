@@ -1,6 +1,7 @@
 import {Show} from "solid-js";
 import type {RegisterEntry} from "$shared/domain/register/Register.ts";
 import type {CurrencyAmt} from "$shared/domain/core/CurrencyAmt.ts";
+import {txnStatusText} from "$shared/domain/transactions/TxnStatus.ts";
 import EditableCategoryField from "../common/fields/EditableCategoryField.tsx";
 import EditableAmountField from "../common/fields/EditableAmountField.tsx";
 
@@ -57,6 +58,11 @@ const EditableSplitEntry = (props: EditableSplitEntryProps) => {
                         {props.entry.account.replaceAll(':', ' : ')}
                     </div>
                 </Show>
+            </div>
+            <div class="w-20 text-center">
+                <div class="px-2 py-1 text-sm text-gray-500">
+                    {props.entry.status ? txnStatusText(props.entry.status) : ''}
+                </div>
             </div>
             <div class="w-28 flex justify-end">
                 <Show when={props.isPrimary} fallback={
