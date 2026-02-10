@@ -68,15 +68,17 @@ export class BalanceSheetSqlService implements IBalanceSheetSvc {
                     totalLiabilities += sqlLineItem.totalCr - sqlLineItem.totalDr
                     break
                 case 'EQUITY':
-                    equityLineItems.push({
-                        acctId: acctIdSchema.parse(sqlLineItem.acctId),
-                        description: sqlLineItem.description,
-                        amount: fromCents(sqlLineItem.totalCr - sqlLineItem.totalDr),
-                    })
-                    totalEquity += sqlLineItem.totalCr - sqlLineItem.totalDr
+                    // ignore; compute from Assets minus Liabilities
                     break
             }
         }
+
+        totalEquity = totalAssets - totalLiabilities
+        equityLineItems.push({
+            acctId: acctIdSchema.parse("acctnetworth0000000000000000"),
+            description: "Net Worth",
+            amount: fromCents(totalEquity),
+        })
 
         return {
             date: endingDate,
