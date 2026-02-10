@@ -2,6 +2,7 @@ import {createEffect, createResource, createSignal, For, Show} from "solid-js";
 import {registerClientSvc} from "../../clients/register/RegisterClientSvc.ts";
 import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
 import type {TxnId} from "$shared/domain/transactions/TxnId.ts";
+import type {IsoDate} from "$shared/domain/core/IsoDate.ts";
 import EditableRegisterRow, {type RegisterField} from "./EditableRegisterRow.tsx";
 import NewTransactionRow from "./NewTransactionRow.tsx";
 
@@ -20,6 +21,8 @@ const Register = (props: RegisterProps) => {
     const [focusEntryIndex, setFocusEntryIndex] = createSignal<number | undefined>(undefined)
     const [isAddingNew, setIsAddingNew] = createSignal(false)
     const [isDirty, setIsDirty] = createSignal(false)
+    // Sticky date: remembers the date from the last saved new transaction
+    const [stickyDate, setStickyDate] = createSignal<IsoDate | undefined>(undefined)
 
     // Handle search when searchText prop changes
     createEffect(() => {
@@ -111,6 +114,8 @@ const Register = (props: RegisterProps) => {
         setFocusField(undefined)
         setFocusEntryIndex(undefined)
         setEditingTxnId(txnId)
+        // Reset sticky date when editing an existing transaction
+        setStickyDate(undefined)
     }
 
     const handleCancelEdit = () => {
@@ -125,6 +130,11 @@ const Register = (props: RegisterProps) => {
         setIsAddingNew(false)
         setIsDirty(false)
         refetch()
+    }
+
+    const handleNewSaved = (usedDate: IsoDate) => {
+        setStickyDate(usedDate)
+        handleSaved()
     }
 
     const handleDeleted = () => {
@@ -206,8 +216,9 @@ const Register = (props: RegisterProps) => {
                         <Show when={isAddingNew()}>
                             <NewTransactionRow
                                 currentAccountName={register()!.accountName}
+                                initialDate={stickyDate()}
                                 onCancel={handleCancelNew}
-                                onSaved={handleSaved}
+                                onSaved={handleNewSaved}
                                 onDirtyChange={handleDirtyChange}
                             />
                         </Show>

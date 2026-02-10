@@ -16,13 +16,14 @@ import RegisterActionButtons from "./RegisterActionButtons.tsx";
 
 type NewTransactionRowProps = {
     currentAccountName: string,
+    initialDate?: IsoDate | undefined,
     onCancel: () => void,
-    onSaved: () => void,
+    onSaved: (usedDate: IsoDate) => void,
     onDirtyChange: (isDirty: boolean) => void,
 }
 
 const NewTransactionRow = (props: NewTransactionRowProps) => {
-    const [editDate, setEditDate] = createSignal<IsoDate>(isoDateToday as IsoDate)
+    const [editDate, setEditDate] = createSignal<IsoDate>(props.initialDate ?? isoDateToday as IsoDate)
     const [editCode, setEditCode] = createSignal<string | undefined>(undefined)
     const [editVendor, setEditVendor] = createSignal<string | undefined>(undefined)
     const [editDescription, setEditDescription] = createSignal<string | undefined>(undefined)
@@ -202,16 +203,17 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
                 return
             }
 
+            const usedDate = editDate()
             await registerClientSvc.createTransaction({
                 id: genTxnId(),
-                date: editDate(),
+                date: usedDate,
                 code: editCode(),
                 vendor: editVendor(),
                 description: editDescription(),
                 entries: entries,
             })
 
-            props.onSaved()
+            props.onSaved(usedDate)
         } catch (e) {
             setError(e instanceof Error ? e.message : 'Failed to save')
         } finally {
