@@ -35,8 +35,16 @@ export const vendorRoutes = (vendorSvc: IVendorSvc) => {
             zxValidator('json', vendorCreationSchema),
             async (c) => {
                 const vendor = c.req.valid('json')
-                await vendorSvc.createVendor(vendor)
-                return c.body(null, 201)
+                try {
+                    await vendorSvc.createVendor(vendor)
+                    return c.body(null, 201)
+                } catch (e: unknown) {
+                    const msg = e instanceof Error ? e.message.toUpperCase() : ''
+                    if (msg.includes('UNIQUE') || msg.includes('DUPLICATE')) {
+                        return c.json({error: `Cannot create vendor: the name "${vendor.name}" is already in use.`}, 409)
+                    }
+                    throw e
+                }
             }
         )
         .patch(
@@ -45,7 +53,15 @@ export const vendorRoutes = (vendorSvc: IVendorSvc) => {
             zxValidator('json', vendorUpdateSchema),
             async (c) => {
                 const update = c.req.valid('json')
-                return c.json(await vendorSvc.updateVendor(update))
+                try {
+                    return c.json(await vendorSvc.updateVendor(update))
+                } catch (e: unknown) {
+                    const msg = e instanceof Error ? e.message.toUpperCase() : ''
+                    if (msg.includes('UNIQUE') || msg.includes('DUPLICATE')) {
+                        return c.json({error: `Cannot rename vendor: the name "${update.name}" is already in use.`}, 409)
+                    }
+                    throw e
+                }
             }
         )
         .delete(

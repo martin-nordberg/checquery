@@ -22,17 +22,7 @@ export class AccountSqlService implements IAccountSvc {
     }
 
     async createAccount(account: AccountCreation): Promise<void> {
-        // Persist to YAML if enabled
-        if (this.persistToYaml) {
-            await appendDirective(createAccountCreateDirective({
-                id: account.id,
-                name: account.name,
-                acctType: account.acctType,
-                acctNumber: account.acctNumber,
-                description: account.description,
-            }))
-        }
-
+        // Run SQL first to validate before persisting to YAML
         this.db.run(
             'account.create',
             () =>
@@ -46,16 +36,21 @@ export class AccountSqlService implements IAccountSvc {
                 $description: account.description ?? null,
             }
         )
+
+        // Persist to YAML if enabled (only after SQL succeeds)
+        if (this.persistToYaml) {
+            await appendDirective(createAccountCreateDirective({
+                id: account.id,
+                name: account.name,
+                acctType: account.acctType,
+                acctNumber: account.acctNumber,
+                description: account.description,
+            }))
+        }
     }
 
     async deleteAccount(accountId: AcctId): Promise<void> {
-        // Persist to YAML if enabled
-        if (this.persistToYaml) {
-            await appendDirective(createAccountDeleteDirective({
-                id: accountId,
-            }))
-        }
-
+        // Run SQL first
         this.db.run(
             'account.delete',
             () =>
@@ -64,6 +59,13 @@ export class AccountSqlService implements IAccountSvc {
                  WHERE id = $id`,
             {$id: accountId}
         )
+
+        // Persist to YAML if enabled (only after SQL succeeds)
+        if (this.persistToYaml) {
+            await appendDirective(createAccountDeleteDirective({
+                id: accountId,
+            }))
+        }
     }
 
     async findAccountById(accountId: AcctId): Promise<Account | null> {
@@ -91,16 +93,6 @@ export class AccountSqlService implements IAccountSvc {
     }
 
     async updateAccount(accountPatch: AccountUpdate): Promise<Account | null> {
-        // Persist to YAML if enabled
-        if (this.persistToYaml) {
-            await appendDirective(createAccountUpdateDirective({
-                id: accountPatch.id,
-                name: accountPatch.name,
-                acctNumber: accountPatch.acctNumber,
-                description: accountPatch.description,
-            }))
-        }
-
         const setClauses: string[] = []
         let bindings: any = {$id: accountPatch.id}
 
@@ -127,10 +119,21 @@ export class AccountSqlService implements IAccountSvc {
 
         const sql = `UPDATE Account SET ${setClauses.join(', ')} WHERE id = $id`
 
+        // Run SQL first
         const changes = this.db.run('account.update', () => sql, bindings)
 
         if (changes.changes == 0) {
             return null
+        }
+
+        // Persist to YAML if enabled (only after SQL succeeds)
+        if (this.persistToYaml) {
+            await appendDirective(createAccountUpdateDirective({
+                id: accountPatch.id,
+                name: accountPatch.name,
+                acctNumber: accountPatch.acctNumber,
+                description: accountPatch.description,
+            }))
         }
 
         return this.findAccountById(accountPatch.id)

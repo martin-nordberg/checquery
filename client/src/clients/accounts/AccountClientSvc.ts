@@ -19,7 +19,17 @@ export class AccountClientSvc {
 
         console.log(res)
 
-        throw new HTTPException(404)
+        try {
+            const error = await res.json() as { error?: string }
+            if (error.error) {
+                throw new Error(error.error)
+            }
+        } catch (e) {
+            if (e instanceof Error && e.message !== 'Failed to create account') {
+                throw e
+            }
+        }
+        throw new Error('Failed to create account')
     }
 
     async deleteAccount(accountId: AcctId): Promise<{ success: boolean, error?: string }> {
@@ -75,7 +85,17 @@ export class AccountClientSvc {
 
         console.log(res)
 
-        throw new HTTPException(res.status)
+        try {
+            const error = await res.json() as { error?: string }
+            if (error.error) {
+                throw new Error(error.error)
+            }
+        } catch (e) {
+            if (e instanceof Error && e.message !== 'Failed to update account') {
+                throw e
+            }
+        }
+        throw new Error('Failed to update account')
     }
 
     async isAccountInUse(accountId: AcctId): Promise<boolean> {

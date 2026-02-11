@@ -54,6 +54,17 @@ export class VendorClientSvc {
 
         if (!res.ok) {
             console.log(res)
+            try {
+                const error = await res.json() as { error?: string }
+                if (error.error) {
+                    throw new Error(error.error)
+                }
+            } catch (e) {
+                if (e instanceof Error && e.message !== 'Failed to create vendor') {
+                    throw e
+                }
+            }
+            throw new Error('Failed to create vendor')
         }
     }
 
@@ -70,7 +81,17 @@ export class VendorClientSvc {
 
         console.log(res)
 
-        return null
+        try {
+            const error = await res.json() as { error?: string }
+            if (error.error) {
+                throw new Error(error.error)
+            }
+        } catch (e) {
+            if (e instanceof Error && e.message !== 'Failed to update vendor') {
+                throw e
+            }
+        }
+        throw new Error('Failed to update vendor')
     }
 
     async deleteVendor(vendorId: VndrId): Promise<{ success: boolean, error?: string }> {

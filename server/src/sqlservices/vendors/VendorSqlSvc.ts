@@ -22,17 +22,7 @@ export class VendorSqlService implements IVendorSvc {
     }
 
     async createVendor(vendor: VendorCreation): Promise<void> {
-        // Persist to YAML if enabled
-        if (this.persistToYaml) {
-            await appendDirective(createVendorCreateDirective({
-                id: vendor.id,
-                name: vendor.name,
-                description: vendor.description,
-                defaultAccount: vendor.defaultAccount,
-                isActive: vendor.isActive,
-            }))
-        }
-
+        // Run SQL first to validate before persisting to YAML
         this.db.run(
             'vendor.create',
             () =>
@@ -46,14 +36,21 @@ export class VendorSqlService implements IVendorSvc {
                 $isActive: vendor.isActive ? 1 : 0,
             }
         )
+
+        // Persist to YAML if enabled (only after SQL succeeds)
+        if (this.persistToYaml) {
+            await appendDirective(createVendorCreateDirective({
+                id: vendor.id,
+                name: vendor.name,
+                description: vendor.description,
+                defaultAccount: vendor.defaultAccount,
+                isActive: vendor.isActive,
+            }))
+        }
     }
 
     async deleteVendor(vendorId: VndrId): Promise<void> {
-        // Persist to YAML if enabled
-        if (this.persistToYaml) {
-            await appendDirective(createVendorDeleteDirective(vendorId))
-        }
-
+        // Run SQL first
         this.db.run(
             'vendor.delete',
             () =>
@@ -62,6 +59,11 @@ export class VendorSqlService implements IVendorSvc {
                  WHERE id = $id`,
             {$id: vendorId}
         )
+
+        // Persist to YAML if enabled (only after SQL succeeds)
+        if (this.persistToYaml) {
+            await appendDirective(createVendorDeleteDirective(vendorId))
+        }
     }
 
     async findVendorById(vendorId: VndrId): Promise<Vendor | null> {
@@ -89,17 +91,6 @@ export class VendorSqlService implements IVendorSvc {
     }
 
     async updateVendor(vendorPatch: VendorUpdate): Promise<Vendor | null> {
-        // Persist to YAML if enabled
-        if (this.persistToYaml) {
-            await appendDirective(createVendorUpdateDirective({
-                id: vendorPatch.id,
-                name: vendorPatch.name,
-                description: vendorPatch.description,
-                defaultAccount: vendorPatch.defaultAccount,
-                isActive: vendorPatch.isActive,
-            }))
-        }
-
         const setClauses: string[] = []
         let bindings: any = {$id: vendorPatch.id}
 
@@ -126,10 +117,22 @@ export class VendorSqlService implements IVendorSvc {
 
         const sql = `UPDATE Vendor SET ${setClauses.join(', ')} WHERE id = $id`
 
+        // Run SQL first
         const changes = this.db.run('vendor.update', () => sql, bindings)
 
         if (changes.changes == 0) {
             return null
+        }
+
+        // Persist to YAML if enabled (only after SQL succeeds)
+        if (this.persistToYaml) {
+            await appendDirective(createVendorUpdateDirective({
+                id: vendorPatch.id,
+                name: vendorPatch.name,
+                description: vendorPatch.description,
+                defaultAccount: vendorPatch.defaultAccount,
+                isActive: vendorPatch.isActive,
+            }))
         }
 
         return this.findVendorById(vendorPatch.id)

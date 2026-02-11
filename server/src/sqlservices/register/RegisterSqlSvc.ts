@@ -219,41 +219,7 @@ export class RegisterSqlService implements IRegisterSvc {
     }
 
     async updateTransaction(update: RegisterUpdate): Promise<RegisterTransaction | null> {
-        // Build the payload for YAML
-        const payload: Record<string, unknown> = {id: update.id}
-        if (update.date !== undefined) {
-            payload['date'] = update.date
-        }
-        if (update.code !== undefined) {
-            payload['code'] = update.code
-        }
-        if (update.description !== undefined) {
-            payload['description'] = update.description
-        }
-        if (update.vendor !== undefined) {
-            payload['vendor'] = update.vendor
-        }
-        if (update.entries !== undefined) {
-            payload['entries'] = update.entries.map(e => {
-                const entry: Record<string, string> = {account: e.account}
-                if (e.debit && e.debit !== '$0.00') {
-                    entry['debit'] = e.debit
-                }
-                if (e.credit && e.credit !== '$0.00') {
-                    entry['credit'] = e.credit
-                }
-                if (e.status && e.status !== 'UNMARKED') {
-                    entry['status'] = e.status
-                }
-                return entry
-            })
-        }
-
-        // Append to YAML file
-        await appendDirective(createTransactionUpdateDirective(payload))
-
-        // Apply to in-memory database via TransactionSqlService logic
-        // For now, we replicate the update logic here
+        // Apply to in-memory database first
         const setClauses: string[] = []
         const bindings: Record<string, unknown> = {$id: update.id}
 
@@ -325,41 +291,44 @@ export class RegisterSqlService implements IRegisterSvc {
             }
         }
 
+        // Build the payload for YAML (only after SQL succeeds)
+        const payload: Record<string, unknown> = {id: update.id}
+        if (update.date !== undefined) {
+            payload['date'] = update.date
+        }
+        if (update.code !== undefined) {
+            payload['code'] = update.code
+        }
+        if (update.description !== undefined) {
+            payload['description'] = update.description
+        }
+        if (update.vendor !== undefined) {
+            payload['vendor'] = update.vendor
+        }
+        if (update.entries !== undefined) {
+            payload['entries'] = update.entries.map(e => {
+                const entry: Record<string, string> = {account: e.account}
+                if (e.debit && e.debit !== '$0.00') {
+                    entry['debit'] = e.debit
+                }
+                if (e.credit && e.credit !== '$0.00') {
+                    entry['credit'] = e.credit
+                }
+                if (e.status && e.status !== 'UNMARKED') {
+                    entry['status'] = e.status
+                }
+                return entry
+            })
+        }
+
+        // Append to YAML file
+        await appendDirective(createTransactionUpdateDirective(payload))
+
         return this.findTransaction(update.id)
     }
 
     async createTransaction(create: RegisterCreate): Promise<void> {
-        // Build payload, only including non-undefined fields
-        const payload: Record<string, unknown> = {
-            id: create.id,
-            date: create.date,
-        }
-        if (create.code) {
-            payload['code'] = create.code
-        }
-        if (create.description) {
-            payload['description'] = create.description
-        }
-        if (create.vendor) {
-            payload['vendor'] = create.vendor
-        }
-        payload['entries'] = create.entries.map(e => {
-            const entry: Record<string, string> = {account: e.account}
-            if (e.debit && e.debit !== '$0.00') {
-                entry['debit'] = e.debit
-            }
-            if (e.credit && e.credit !== '$0.00') {
-                entry['credit'] = e.credit
-            }
-            if (e.status && e.status !== 'UNMARKED') {
-                entry['status'] = e.status
-            }
-            return entry
-        })
-
-        await appendDirective(createTransactionCreateDirective(payload))
-
-        // Insert into in-memory database
+        // Insert into in-memory database first
         if (create.vendor) {
             this.db.run(
                 'register.create.withvendor',
@@ -411,13 +380,40 @@ export class RegisterSqlService implements IRegisterSvc {
             )
             entrySeq += 1
         }
+
+        // Build payload for YAML (only after SQL succeeds)
+        const payload: Record<string, unknown> = {
+            id: create.id,
+            date: create.date,
+        }
+        if (create.code) {
+            payload['code'] = create.code
+        }
+        if (create.description) {
+            payload['description'] = create.description
+        }
+        if (create.vendor) {
+            payload['vendor'] = create.vendor
+        }
+        payload['entries'] = create.entries.map(e => {
+            const entry: Record<string, string> = {account: e.account}
+            if (e.debit && e.debit !== '$0.00') {
+                entry['debit'] = e.debit
+            }
+            if (e.credit && e.credit !== '$0.00') {
+                entry['credit'] = e.credit
+            }
+            if (e.status && e.status !== 'UNMARKED') {
+                entry['status'] = e.status
+            }
+            return entry
+        })
+
+        await appendDirective(createTransactionCreateDirective(payload))
     }
 
     async deleteTransaction(txnId: TxnId): Promise<void> {
-        // Append to YAML file
-        await appendDirective(createTransactionDeleteDirective(txnId))
-
-        // Delete from in-memory database (entries are deleted via CASCADE or we delete manually)
+        // Delete from in-memory database first (entries are deleted via CASCADE or we delete manually)
         this.db.run(
             'register.deleteEntries',
             () => `DELETE FROM Entry WHERE txnId = $id`,
@@ -428,5 +424,8 @@ export class RegisterSqlService implements IRegisterSvc {
             () => `DELETE FROM Transaxtion WHERE id = $id`,
             {$id: txnId}
         )
+
+        // Append to YAML file (only after SQL succeeds)
+        await appendDirective(createTransactionDeleteDirective(txnId))
     }
 }

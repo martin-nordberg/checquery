@@ -24,8 +24,16 @@ export const accountRoutes = (accountService: IAccountSvc) => {
             zxValidator('json', accountCreationSchema),
             async (c) => {
                 const account: AccountCreation = c.req.valid('json')
-                await accountService.createAccount(account)
-                return c.body(null, 201)
+                try {
+                    await accountService.createAccount(account)
+                    return c.body(null, 201)
+                } catch (e: unknown) {
+                    const msg = e instanceof Error ? e.message.toUpperCase() : ''
+                    if (msg.includes('UNIQUE') || msg.includes('DUPLICATE')) {
+                        return c.json({error: `Cannot create account: the name "${account.name}" is already in use.`}, 409)
+                    }
+                    throw e
+                }
             }
         )
         .get(
@@ -64,7 +72,15 @@ export const accountRoutes = (accountService: IAccountSvc) => {
             async (c) => {
                 const {accountId} = c.req.valid('param')
                 const account: AccountUpdate = c.req.valid('json')
-                return c.json(await accountService.updateAccount({...account, id: accountId}))
+                try {
+                    return c.json(await accountService.updateAccount({...account, id: accountId}))
+                } catch (e: unknown) {
+                    const msg = e instanceof Error ? e.message.toUpperCase() : ''
+                    if (msg.includes('UNIQUE') || msg.includes('DUPLICATE')) {
+                        return c.json({error: `Cannot rename account: the name "${account.name}" is already in use.`}, 409)
+                    }
+                    throw e
+                }
             }
         )
 }
