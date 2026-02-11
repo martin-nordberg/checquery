@@ -11,7 +11,7 @@ import EditableVendorField from "../common/fields/EditableVendorField.tsx";
 import EditableSplitEntry from "./EditableSplitEntry.tsx";
 import RegisterActionButtons from "./RegisterActionButtons.tsx";
 import useTransactionForm from "./useTransactionForm.ts";
-import useAbandonConfirm from "./useAbandonConfirm.ts";
+import useAbandonConfirm from "../common/hooks/useAbandonConfirm.ts";
 
 export type RegisterField = 'code' | 'vendor' | 'description' | 'entryAccount' | 'entryDebit' | 'entryCredit'
 

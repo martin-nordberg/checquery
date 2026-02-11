@@ -1,5 +1,6 @@
 import {createEffect, createMemo, createSignal, For, Show} from "solid-js";
 import ConfirmDialog from "../common/dialogs/ConfirmDialog.tsx";
+import useAbandonConfirm from "../common/hooks/useAbandonConfirm.ts";
 import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
 import {genAcctId} from "$shared/domain/accounts/AcctId.ts";
 import {acctTypeCodes, type AcctTypeStr, acctTypeText} from "$shared/domain/accounts/AcctType.ts";
@@ -18,7 +19,6 @@ const NewAccountRow = (props: NewAccountRowProps) => {
     const [editDescription, setEditDescription] = createSignal<string | undefined>(undefined)
     const [isSaving, setIsSaving] = createSignal(false)
     const [error, setError] = createSignal<string | null>(null)
-    const [showAbandonConfirm, setShowAbandonConfirm] = createSignal(false)
 
     // Compute dirty state - for new account, dirty if any field has been set
     const isDirty = createMemo(() => {
@@ -42,19 +42,10 @@ const NewAccountRow = (props: NewAccountRowProps) => {
         props.onDirtyChange(isDirty())
     })
 
-    const handleCancel = () => {
-        if (isDirty()) {
-            setShowAbandonConfirm(true)
-            return
-        }
-        doCancel()
-    }
-
-    const doCancel = () => {
-        setShowAbandonConfirm(false)
+    const abandon = useAbandonConfirm(isDirty, () => {
         props.onDirtyChange(false)
         props.onCancel()
-    }
+    })
 
     const handleSave = async () => {
         setError(null)
@@ -93,15 +84,15 @@ const NewAccountRow = (props: NewAccountRowProps) => {
     return (
         <>
             <ConfirmDialog
-                isOpen={showAbandonConfirm()}
+                isOpen={abandon.showAbandonConfirm()}
                 message="You have unsaved changes. Abandon them?"
-                onYes={doCancel}
-                onNo={() => setShowAbandonConfirm(false)}
+                onYes={abandon.doCancel}
+                onNo={abandon.dismissConfirm}
             />
             <tr class="bg-green-50">
                 <td class="px-2 py-2 align-top">
                     <button
-                        onClick={handleCancel}
+                        onClick={abandon.handleCancel}
                         class="text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded p-1 cursor-pointer"
                         title="Cancel"
                     >

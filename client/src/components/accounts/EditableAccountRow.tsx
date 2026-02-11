@@ -1,5 +1,6 @@
 import {createEffect, createMemo, createResource, createSignal, For, onCleanup, Show} from "solid-js";
 import ConfirmDialog from "../common/dialogs/ConfirmDialog.tsx";
+import useAbandonConfirm from "../common/hooks/useAbandonConfirm.ts";
 import type {Account} from "$shared/domain/accounts/Account.ts";
 import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
 import EditableTextField from "../common/fields/EditableTextField.tsx";
@@ -26,7 +27,6 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
     const [editDescription, setEditDescription] = createSignal<string | undefined>(props.account.description)
     const [isSaving, setIsSaving] = createSignal(false)
     const [error, setError] = createSignal<string | null>(null)
-    const [showAbandonConfirm, setShowAbandonConfirm] = createSignal(false)
     const [showDeleteConfirm, setShowDeleteConfirm] = createSignal(false)
 
     // Refs for field focusing
@@ -114,20 +114,11 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
         }
     })
 
-    const handleCancel = () => {
-        if (isDirty()) {
-            setShowAbandonConfirm(true)
-            return
-        }
-        doCancel()
-    }
-
-    const doCancel = () => {
-        setShowAbandonConfirm(false)
+    const abandon = useAbandonConfirm(isDirty, () => {
         setError(null)
         props.onDirtyChange(false)
         props.onCancelEdit()
-    }
+    })
 
     // Handle ESC key to close edit mode
     createEffect(() => {
@@ -135,7 +126,7 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
             const handleKeyDown = (e: KeyboardEvent) => {
                 if (e.key === 'Escape') {
                     e.preventDefault()
-                    handleCancel()
+                    abandon.handleCancel()
                 }
             }
             window.addEventListener('keydown', handleKeyDown)
@@ -220,10 +211,10 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
     const EditRow = () => (
         <>
             <ConfirmDialog
-                isOpen={showAbandonConfirm()}
+                isOpen={abandon.showAbandonConfirm()}
                 message="You have unsaved changes. Abandon them?"
-                onYes={doCancel}
-                onNo={() => setShowAbandonConfirm(false)}
+                onYes={abandon.doCancel}
+                onNo={abandon.dismissConfirm}
             />
             <ConfirmDialog
                 isOpen={showDeleteConfirm()}
@@ -234,7 +225,7 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
             <tr ref={rowRef} class="bg-blue-50">
                 <td class="px-2 py-2 align-top">
                     <button
-                        onClick={handleCancel}
+                        onClick={abandon.handleCancel}
                         class="text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded p-1 cursor-pointer"
                         title="Cancel"
                     >
