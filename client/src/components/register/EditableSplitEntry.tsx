@@ -14,6 +14,7 @@ type EditableSplitEntryProps = {
     accountRef?: ((el: HTMLInputElement) => void) | undefined,
     debitRef?: ((el: HTMLInputElement) => void) | undefined,
     creditRef?: ((el: HTMLInputElement) => void) | undefined,
+    excludeAccounts?: string[],
 }
 
 const EditableSplitEntry = (props: EditableSplitEntryProps) => {
@@ -52,6 +53,7 @@ const EditableSplitEntry = (props: EditableSplitEntryProps) => {
                         inputRef={props.accountRef}
                         value={props.entry.account}
                         onChange={handleAccountChange}
+                        excludeAccounts={props.excludeAccounts}
                     />
                 }>
                     <div class="px-2 py-1 text-sm text-gray-700 bg-gray-100 rounded border border-gray-200">

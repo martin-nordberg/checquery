@@ -7,6 +7,7 @@ type EditableCategoryFieldProps = {
     onChange: (value: string | undefined) => void,
     disabled?: boolean,
     inputRef?: ((el: HTMLInputElement) => void) | undefined,
+    excludeAccounts?: string[] | undefined,
 }
 
 const EditableCategoryField = (props: EditableCategoryFieldProps) => {
@@ -14,10 +15,13 @@ const EditableCategoryField = (props: EditableCategoryFieldProps) => {
 
     const options = () => {
         const accts = accounts() ?? []
-        return accts.map(acct => ({
-            value: acct.name,
-            label: acct.name.replaceAll(':', ' : '),
-        }))
+        const excluded = new Set(props.excludeAccounts ?? [])
+        return accts
+            .filter(acct => !excluded.has(acct.name))
+            .map(acct => ({
+                value: acct.name,
+                label: acct.name.replaceAll(':', ' : '),
+            }))
     }
 
     return (

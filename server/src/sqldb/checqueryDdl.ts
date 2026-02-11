@@ -114,7 +114,8 @@ export function runChecqueryDdl(db: ChecquerySqlDb) {
              creditCents  INTEGER NOT NULL,
              comment      TEXT(200),
              CONSTRAINT Post_PK PRIMARY KEY (txnId, entrySeq),
-             UNIQUE (txnId, entrySeq)
+             UNIQUE (txnId, entrySeq),
+             UNIQUE (txnId, accountId)
          );`,
         {}
     )

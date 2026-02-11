@@ -247,6 +247,17 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
                 }
             }
 
+            // Validate no duplicate accounts
+            const usedAccounts = new Set<string>()
+            for (const entry of entries) {
+                if (usedAccounts.has(entry.account)) {
+                    setError(`Account "${entry.account}" is used by more than one entry.`)
+                    setIsSaving(false)
+                    return
+                }
+                usedAccounts.add(entry.account)
+            }
+
             // Validate the first entry has a non-zero amount
             const firstEntry = entries[0]!
             if (firstEntry.debit === '$0.00' && firstEntry.credit === '$0.00') {
@@ -401,15 +412,22 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
                                     <div class="w-6"></div>
                                 </div>
                                 <Index each={balancedEntries()}>
-                                    {(entry, index) => (
-                                        <EditableSplitEntry
-                                            entry={entry()}
-                                            onUpdate={(updated) => updateEntry(index, updated)}
-                                            onRemove={() => removeEntry(index)}
-                                            canRemove={editEntries().length > 2 && index > 0}
-                                            isPrimary={index === 0}
-                                        />
-                                    )}
+                                    {(entry, index) => {
+                                        const excludeAccounts = () => balancedEntries()
+                                            .filter((_, i) => i !== index)
+                                            .map(e => e.account)
+                                            .filter(a => a !== '')
+                                        return (
+                                            <EditableSplitEntry
+                                                entry={entry()}
+                                                onUpdate={(updated) => updateEntry(index, updated)}
+                                                onRemove={() => removeEntry(index)}
+                                                canRemove={editEntries().length > 2 && index > 0}
+                                                isPrimary={index === 0}
+                                                excludeAccounts={excludeAccounts()}
+                                            />
+                                        )
+                                    }}
                                 </Index>
                             </div>
                         </div>
