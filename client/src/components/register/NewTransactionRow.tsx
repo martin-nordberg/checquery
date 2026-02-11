@@ -1,20 +1,17 @@
-import {createEffect, createMemo, createResource, createSignal, Index, Show} from "solid-js";
+import {createEffect, createMemo, Index, Show} from "solid-js";
 import ConfirmDialog from "../common/dialogs/ConfirmDialog.tsx";
-import type {RegisterEntry} from "$shared/domain/register/Register.ts";
 import type {CurrencyAmt} from "$shared/domain/core/CurrencyAmt.ts";
-import {fromCents} from "$shared/domain/core/CurrencyAmt.ts";
 import type {IsoDate} from "$shared/domain/core/IsoDate.ts";
 import {isoDateToday} from "$shared/domain/core/IsoDate.ts";
 import {genTxnId} from "$shared/domain/transactions/TxnId.ts";
-import {genVndrId} from "$shared/domain/vendors/VndrId.ts";
-import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
 import {registerClientSvc} from "../../clients/register/RegisterClientSvc.ts";
-import {vendorClientSvc} from "../../clients/vendors/VendorClientSvc.ts";
 import EditableDateField from "../common/fields/EditableDateField.tsx";
 import EditableTextField from "../common/fields/EditableTextField.tsx";
 import EditableVendorField from "../common/fields/EditableVendorField.tsx";
 import EditableSplitEntry from "./EditableSplitEntry.tsx";
 import RegisterActionButtons from "./RegisterActionButtons.tsx";
+import useTransactionForm from "./useTransactionForm.ts";
+import useAbandonConfirm from "./useAbandonConfirm.ts";
 
 type NewTransactionRowProps = {
     currentAccountName: string,
@@ -25,66 +22,46 @@ type NewTransactionRowProps = {
 }
 
 const NewTransactionRow = (props: NewTransactionRowProps) => {
-    const [editDate, setEditDate] = createSignal<IsoDate>(props.initialDate ?? isoDateToday as IsoDate)
-    const [editCode, setEditCode] = createSignal<string | undefined>(undefined)
-    const [editVendor, setEditVendor] = createSignal<string | undefined>(undefined)
-    const [editDescription, setEditDescription] = createSignal<string | undefined>(undefined)
-    const [editEntries, setEditEntries] = createSignal<RegisterEntry[]>([
-        {
-            account: props.currentAccountName,
-            debit: '$0.00' as CurrencyAmt,
-            credit: '$0.00' as CurrencyAmt,
-        },
-        {
-            account: '',
-            debit: '$0.00' as CurrencyAmt,
-            credit: '$0.00' as CurrencyAmt,
-        }
-    ])
-    const [isSaving, setIsSaving] = createSignal(false)
-    const [error, setError] = createSignal<string | null>(null)
-    const [showAbandonConfirm, setShowAbandonConfirm] = createSignal(false)
-
-    // Load vendors for default account auto-population and validation
-    const [vendors] = createResource(() => vendorClientSvc.findVendorsAll())
-    const validVendorNames = createMemo(() => new Set(vendors()?.map(v => v.name) ?? []))
-
-    // State for handling new vendor creation
-    const [isNewVendor, setIsNewVendor] = createSignal(false)
-    const [addNewVendorChecked, setAddNewVendorChecked] = createSignal(false)
-
-    // Load accounts for validation
-    const [accounts] = createResource(() => accountClientSvc.findAccountsAll())
-    const validAccountNames = createMemo(() => new Set(accounts()?.map(a => a.name) ?? []))
+    const form = useTransactionForm({
+        initialDate: props.initialDate ?? isoDateToday as IsoDate,
+        initialEntries: [
+            {
+                account: props.currentAccountName,
+                debit: '$0.00' as CurrencyAmt,
+                credit: '$0.00' as CurrencyAmt,
+            },
+            {
+                account: '',
+                debit: '$0.00' as CurrencyAmt,
+                credit: '$0.00' as CurrencyAmt,
+            }
+        ],
+    })
 
     // Auto-populate offset account from vendor's default account
     createEffect(() => {
-        const vendorName = editVendor()
+        const vendorName = form.editVendor()
         if (!vendorName) {
             return
         }
 
-        const entries = editEntries()
-        // Only auto-populate if there's exactly one offset entry (2 total entries)
+        const entries = form.editEntries()
         if (entries.length !== 2) {
             return
         }
 
         const offsetEntry = entries[1]!
-        // Only auto-populate if amount hasn't been entered yet
         if (offsetEntry.debit !== '$0.00' || offsetEntry.credit !== '$0.00') {
             return
         }
 
-        // Find the vendor and get its default account
-        const vendor = vendors()?.find(v => v.name === vendorName)
+        const vendor = form.vendors()?.find(v => v.name === vendorName)
         if (!vendor?.defaultAccount) {
             return
         }
 
-        // Only update if account is empty or we're changing vendors
         if (offsetEntry.account === '' || offsetEntry.account !== vendor.defaultAccount) {
-            setEditEntries([
+            form.setEditEntries([
                 entries[0]!,
                 {
                     ...offsetEntry,
@@ -94,50 +71,18 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
         }
     })
 
-    // Check vendor validity when vendor field loses focus
-    const handleVendorBlur = () => {
-        const vendorName = editVendor()?.trim()
-        if (!vendorName) {
-            setIsNewVendor(false)
-            setAddNewVendorChecked(false)
-            return
-        }
-        const vendorExists = validVendorNames().has(vendorName)
-        setIsNewVendor(!vendorExists)
-        if (vendorExists) {
-            setAddNewVendorChecked(false)
-        }
-    }
-
-    // Handle vendor change - if they select an existing vendor, hide the checkbox
-    const handleVendorChange = (value: string | undefined) => {
-        setEditVendor(value)
-        const vendorName = value?.trim()
-        if (!vendorName) {
-            setIsNewVendor(false)
-            setAddNewVendorChecked(false)
-            return
-        }
-        // If they selected an existing vendor from autocomplete, hide the checkbox
-        if (validVendorNames().has(vendorName)) {
-            setIsNewVendor(false)
-            setAddNewVendorChecked(false)
-        }
-    }
-
-    // Compute dirty state - for new transaction, dirty if any field changed from default
+    // Dirty state - for new transaction, dirty if any field changed from default
     const isDirty = createMemo(() => {
-        if (editCode() !== undefined) {
+        if (form.editCode() !== undefined) {
             return true
         }
-        if (editVendor() !== undefined) {
+        if (form.editVendor() !== undefined) {
             return true
         }
-        if (editDescription() !== undefined) {
+        if (form.editDescription() !== undefined) {
             return true
         }
-        const entries = editEntries()
-        // Check if second entry has any non-default values
+        const entries = form.editEntries()
         if (entries.length > 1) {
             const second = entries[1]!
             if (second.account !== '') {
@@ -150,7 +95,6 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
                 return true
             }
         }
-        // Check if there are more than 2 entries
         if (entries.length > 2) {
             return true
         }
@@ -162,186 +106,51 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
         props.onDirtyChange(isDirty())
     })
 
-    const handleCancel = () => {
-        if (isDirty()) {
-            setShowAbandonConfirm(true)
-            return
-        }
-        doCancel()
-    }
-
-    const doCancel = () => {
-        setShowAbandonConfirm(false)
+    const abandon = useAbandonConfirm(isDirty, () => {
         props.onDirtyChange(false)
         props.onCancel()
-    }
-
-    const parseAmount = (amt: CurrencyAmt): number => {
-        if (amt === '$0.00') {
-            return 0
-        }
-        const str = amt.replace(/[$,()]/g, '')
-        const val = parseFloat(str) * 100
-        if (amt.startsWith('(')) {
-            return -Math.round(val)
-        }
-        return Math.round(val)
-    }
-
-    // Compute the balancing entry for the current account (first entry)
-    const balancedEntries = createMemo(() => {
-        const entries = editEntries()
-        if (entries.length < 2) {
-            return entries
-        }
-
-        // Sum debits and credits from entries after the first one
-        let totalDebit = 0
-        let totalCredit = 0
-        for (let i = 1; i < entries.length; i++) {
-            totalDebit += parseAmount(entries[i]!.debit)
-            totalCredit += parseAmount(entries[i]!.credit)
-        }
-
-        // The first entry needs to balance the transaction
-        const diff = totalDebit - totalCredit
-        const firstEntry: RegisterEntry = {
-            ...entries[0]!,
-            debit: diff < 0 ? fromCents(-diff) : '$0.00' as CurrencyAmt,
-            credit: diff > 0 ? fromCents(diff) : '$0.00' as CurrencyAmt,
-        }
-
-        return [firstEntry, ...entries.slice(1)]
     })
 
     const handleSave = async () => {
-        setError(null)
-        setIsSaving(true)
+        form.setError(null)
+        form.setIsSaving(true)
 
         try {
-            const entries = balancedEntries()
-
-            // Validate at least 2 entries
-            if (entries.length < 2) {
-                setError("A transaction must have at least 2 entries.")
-                setIsSaving(false)
+            const result = await form.validateForSave()
+            if (!result) {
                 return
             }
 
-            // Validate all entries have accounts
-            for (const entry of entries) {
-                if (!entry.account) {
-                    setError("All entries must have an account.")
-                    setIsSaving(false)
-                    return
-                }
-            }
-
-            // Validate all account names exist
-            const validNames = validAccountNames()
-            for (const entry of entries) {
-                if (!validNames.has(entry.account)) {
-                    setError(`Account "${entry.account}" does not exist.`)
-                    setIsSaving(false)
-                    return
-                }
-            }
-
-            // Validate no duplicate accounts
-            const usedAccounts = new Set<string>()
-            for (const entry of entries) {
-                if (usedAccounts.has(entry.account)) {
-                    setError(`Account "${entry.account}" is used by more than one entry.`)
-                    setIsSaving(false)
-                    return
-                }
-                usedAccounts.add(entry.account)
-            }
-
-            // Validate the first entry has a non-zero amount
-            const firstEntry = entries[0]!
-            if (firstEntry.debit === '$0.00' && firstEntry.credit === '$0.00') {
-                setError("A transaction must have a non-zero amount.")
-                setIsSaving(false)
-                return
-            }
-
-            // Validate vendor or description is provided
-            const vendor = editVendor()?.trim()
-            const description = editDescription()
-            const hasVendor = vendor !== undefined && vendor !== ''
-            const hasDescription = description !== undefined && description.trim() !== ''
-            if (!hasVendor && !hasDescription) {
-                setError("A transaction must have a vendor or a description (or both).")
-                setIsSaving(false)
-                return
-            }
-
-            // Validate vendor exists or user has opted to create it
-            if (hasVendor && !validVendorNames().has(vendor)) {
-                if (!addNewVendorChecked()) {
-                    setError(`Vendor "${vendor}" does not exist. Check "Add this new vendor" to create it.`)
-                    setIsSaving(false)
-                    return
-                }
-                // Create the new vendor first
-                await vendorClientSvc.createVendor({
-                    id: genVndrId(),
-                    name: vendor,
-                    isActive: true,
-                })
-            }
-
-            const usedDate = editDate()
+            const usedDate = form.editDate()
             await registerClientSvc.createTransaction({
                 id: genTxnId(),
                 date: usedDate,
-                code: editCode(),
-                vendor: editVendor(),
-                description: editDescription(),
-                entries: entries,
+                code: form.editCode(),
+                vendor: form.editVendor(),
+                description: form.editDescription(),
+                entries: result.entries,
             })
 
             props.onSaved(usedDate)
         } catch (e) {
-            setError(e instanceof Error ? e.message : 'Failed to save')
+            form.setError(e instanceof Error ? e.message : 'Failed to save')
         } finally {
-            setIsSaving(false)
+            form.setIsSaving(false)
         }
-    }
-
-    const updateEntry = (index: number, entry: RegisterEntry) => {
-        const entries = [...editEntries()]
-        entries[index] = entry
-        setEditEntries(entries)
-    }
-
-    const removeEntry = (index: number) => {
-        const entries = [...editEntries()]
-        entries.splice(index, 1)
-        setEditEntries(entries)
-    }
-
-    const addEntry = () => {
-        setEditEntries([...editEntries(), {
-            account: '',
-            debit: '$0.00' as CurrencyAmt,
-            credit: '$0.00' as CurrencyAmt,
-        }])
     }
 
     return (
         <>
             <ConfirmDialog
-                isOpen={showAbandonConfirm()}
+                isOpen={abandon.showAbandonConfirm()}
                 message="You have unsaved changes. Abandon them?"
-                onYes={doCancel}
-                onNo={() => setShowAbandonConfirm(false)}
+                onYes={abandon.doCancel}
+                onNo={abandon.dismissConfirm}
             />
             <tr class="bg-green-50">
                 <td class="px-2 py-2 align-top">
                     <button
-                        onClick={handleCancel}
+                        onClick={abandon.handleCancel}
                         class="text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded p-1 cursor-pointer"
                         title="Cancel"
                     >
@@ -358,31 +167,31 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
                             <div>
                                 <label class="block text-xs font-medium text-gray-500 mb-1">Date</label>
                                 <EditableDateField
-                                    value={editDate()}
-                                    onChange={setEditDate}
+                                    value={form.editDate()}
+                                    onChange={form.setEditDate}
                                 />
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-gray-500 mb-1">Number</label>
                                 <EditableTextField
-                                    value={editCode()}
-                                    onChange={setEditCode}
+                                    value={form.editCode()}
+                                    onChange={form.setEditCode}
                                     placeholder="Check #"
                                 />
                             </div>
                             <div class="col-span-2">
                                 <label class="block text-xs font-medium text-gray-500 mb-1">Vendor</label>
                                 <EditableVendorField
-                                    value={editVendor()}
-                                    onChange={handleVendorChange}
-                                    onBlur={handleVendorBlur}
+                                    value={form.editVendor()}
+                                    onChange={form.handleVendorChange}
+                                    onBlur={form.handleVendorBlur}
                                 />
-                                <Show when={isNewVendor()}>
-                                    <label class={`flex items-center gap-2 mt-1 ml-2 text-sm ${addNewVendorChecked() ? 'text-gray-900' : 'text-amber-700'}`}>
+                                <Show when={form.isNewVendor()}>
+                                    <label class={`flex items-center gap-2 mt-1 ml-2 text-sm ${form.addNewVendorChecked() ? 'text-gray-900' : 'text-amber-700'}`}>
                                         <input
                                             type="checkbox"
-                                            checked={addNewVendorChecked()}
-                                            onChange={(e) => setAddNewVendorChecked(e.currentTarget.checked)}
+                                            checked={form.addNewVendorChecked()}
+                                            onChange={(e) => form.setAddNewVendorChecked(e.currentTarget.checked)}
                                             class="rounded border-amber-400"
                                         />
                                         Add this new vendor
@@ -392,8 +201,8 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
                             <div class="col-span-2">
                                 <label class="block text-xs font-medium text-gray-500 mb-1">Description</label>
                                 <EditableTextField
-                                    value={editDescription()}
-                                    onChange={setEditDescription}
+                                    value={form.editDescription()}
+                                    onChange={form.setEditDescription}
                                     placeholder="Description"
                                 />
                             </div>
@@ -411,18 +220,18 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
                                     <div class="w-28 text-right pr-2">Credit</div>
                                     <div class="w-6"></div>
                                 </div>
-                                <Index each={balancedEntries()}>
+                                <Index each={form.balancedEntries()}>
                                     {(entry, index) => {
-                                        const excludeAccounts = () => balancedEntries()
+                                        const excludeAccounts = () => form.balancedEntries()
                                             .filter((_, i) => i !== index)
                                             .map(e => e.account)
                                             .filter(a => a !== '')
                                         return (
                                             <EditableSplitEntry
                                                 entry={entry()}
-                                                onUpdate={(updated) => updateEntry(index, updated)}
-                                                onRemove={() => removeEntry(index)}
-                                                canRemove={editEntries().length > 2 && index > 0}
+                                                onUpdate={(updated) => form.updateEntry(index, updated)}
+                                                onRemove={() => form.removeEntry(index)}
+                                                canRemove={form.editEntries().length > 2 && index > 0}
                                                 isPrimary={index === 0}
                                                 excludeAccounts={excludeAccounts()}
                                             />
@@ -432,14 +241,14 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
                             </div>
                         </div>
 
-                        <Show when={error()}>
-                            <div class="text-red-600 text-sm">{error()}</div>
+                        <Show when={form.error()}>
+                            <div class="text-red-600 text-sm">{form.error()}</div>
                         </Show>
 
                         <RegisterActionButtons
                             onSave={handleSave}
-                            onAddEntry={addEntry}
-                            isSaving={isSaving()}
+                            onAddEntry={form.addEntry}
+                            isSaving={form.isSaving()}
                             isNew={true}
                             isDirty={isDirty()}
                         />
