@@ -20,12 +20,12 @@ describe('registerEntrySchema', () => {
                 account: 'Assets:Checking',
                 debit: '$100.00',
                 credit: '$0.00',
-                status: 'RECONCILED',
+                status: 'Reconciled',
             })
             expect(entry.account).toBe('Assets:Checking')
             expect(entry.debit).toBe('$100.00')
             expect(entry.credit).toBe('$0.00')
-            expect(entry.status).toBe('RECONCILED')
+            expect(entry.status).toBe('Reconciled')
         })
 
         it('accepts entry without optional status', () => {
@@ -384,7 +384,7 @@ describe('Register types', () => {
                 txnId: genTxnId(),
                 date: '2024-01-15' as IsoDate,
                 code: 'CHK001',
-                status: 'RECONCILED',
+                status: 'Reconciled',
                 vendor: 'Grocery Store',
                 description: 'Weekly groceries',
                 offsetAccount: 'Assets:Checking',
@@ -396,7 +396,7 @@ describe('Register types', () => {
             expect(lineItem.txnId).toBeDefined()
             expect(lineItem.date).toBe('2024-01-15')
             expect(lineItem.code).toBe('CHK001')
-            expect(lineItem.status).toBe('RECONCILED')
+            expect(lineItem.status).toBe('Reconciled')
             expect(lineItem.vendor).toBe('Grocery Store')
             expect(lineItem.description).toBe('Weekly groceries')
             expect(lineItem.offsetAccount).toBe('Assets:Checking')
@@ -444,13 +444,13 @@ describe('Register types', () => {
                 account: 'Expenses:Food',
                 debit: '$100.00' as CurrencyAmt,
                 credit: '$0.00' as CurrencyAmt,
-                status: 'UNMARKED',
+                status: '',
             }
 
             expect(entry.account).toBe('Expenses:Food')
             expect(entry.debit).toBe('$100.00')
             expect(entry.credit).toBe('$0.00')
-            expect(entry.status).toBe('UNMARKED')
+            expect(entry.status).toBe('')
         })
 
         it('allows optional status to be undefined', () => {

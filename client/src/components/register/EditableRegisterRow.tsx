@@ -3,7 +3,6 @@ import ConfirmDialog from "../common/dialogs/ConfirmDialog.tsx";
 import type {RegisterEntry, RegisterLineItem, RegisterTransaction} from "$shared/domain/register/Register.ts";
 import type {IsoDate} from "$shared/domain/core/IsoDate.ts";
 import type {AcctTypeStr} from "$shared/domain/accounts/AcctType.ts";
-import {txnStatusText} from "$shared/domain/transactions/TxnStatus.ts";
 import {registerClientSvc} from "../../clients/register/RegisterClientSvc.ts";
 import EditableDateField from "../common/fields/EditableDateField.tsx";
 import EditableTextField from "../common/fields/EditableTextField.tsx";
@@ -280,7 +279,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                 {props.lineItem.description ?? ''}
             </td>
             <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500 text-center">
-                {props.lineItem.status ? txnStatusText(props.lineItem.status) : ''}
+                {props.lineItem.status ?? ''}
             </td>
             <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
                 <Show when={props.lineItem.debit !== '$0.00'}>

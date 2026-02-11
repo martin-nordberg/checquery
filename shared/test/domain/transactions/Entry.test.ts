@@ -37,10 +37,10 @@ describe('entrySchema', () => {
                 account: 'Assets:Checking',
                 debit: '$50.00',
                 credit: '$0.00',
-                status: 'RECONCILED'
+                status: 'Reconciled'
             })
 
-            expect(entry.status).toBe('RECONCILED')
+            expect(entry.status).toBe('Reconciled')
         })
 
         it('parses entry with optional comment', () => {

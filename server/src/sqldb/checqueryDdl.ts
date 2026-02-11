@@ -1,6 +1,6 @@
 import {type AcctTypeStr, acctTypeText} from "$shared/domain/accounts/AcctType";
 import type {ChecquerySqlDb} from "./ChecquerySqlDb";
-import {type TxnStatusStr, txnStatusText} from "$shared/domain/transactions/TxnStatus";
+import {type TxnStatusStr} from "$shared/domain/transactions/TxnStatus";
 
 
 export function runChecqueryDdl(db: ChecquerySqlDb) {
@@ -72,7 +72,7 @@ export function runChecqueryDdl(db: ChecquerySqlDb) {
     )
 
     // Transaction Status - Reference Data
-    const txnStatuses: TxnStatusStr[] = ['UNMARKED', 'FORECAST', 'RECONCILED']
+    const txnStatuses: TxnStatusStr[] = ['Pending', 'Reconciled']
     txnStatuses.forEach(code =>
         db.exec(
             `INSERT INTO TxnStatus (code, text)
@@ -82,7 +82,7 @@ export function runChecqueryDdl(db: ChecquerySqlDb) {
                 text = excluded.text;`,
             {
                 $code: code,
-                $text: txnStatusText(code)
+                $text: code
             }
         )
     )
@@ -127,7 +127,7 @@ export function runChecqueryDdl(db: ChecquerySqlDb) {
              txnId        TEXT(27) NOT NULL REFERENCES Transaxtion(id),
              entrySeq     INTEGER NOT NULL,
              accountId    TEXT(200) NOT NULL REFERENCES Account(id),
-             status       TEXT(10) NOT NULL REFERENCES TxnStatus(code),
+             status       TEXT(10) REFERENCES TxnStatus(code),
              debitCents   INTEGER NOT NULL,
              creditCents  INTEGER NOT NULL,
              comment      TEXT(200),

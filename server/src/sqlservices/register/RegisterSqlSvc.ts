@@ -132,7 +132,7 @@ export class RegisterSqlService implements IRegisterSvc {
                 txnId: txnIdSchema.parse(sqlItem.txnId),
                 date: sqlItem.date,
                 code: sqlItem.code ?? undefined,
-                status: sqlItem.status ? txnStatusSchema.parse(sqlItem.status) : 'UNMARKED',
+                status: sqlItem.status ? txnStatusSchema.parse(sqlItem.status) : undefined,
                 vendor: sqlItem.vendor ?? undefined,
                 description: sqlItem.description ?? undefined,
                 offsetAccount,
@@ -282,7 +282,7 @@ export class RegisterSqlService implements IRegisterSvc {
                         $txnId: update.id,
                         $entrySeq: entrySeq,
                         $account: entry.account,
-                        $status: entry.status ?? 'UNMARKED',
+                        $status: entry.status ?? '',
                         $debit: Math.round(parseFloat(entry.debit.replace(/[$,()]/g, '')) * 100) || 0,
                         $credit: Math.round(parseFloat(entry.credit.replace(/[$,()]/g, '')) * 100) || 0,
                     }
@@ -314,7 +314,7 @@ export class RegisterSqlService implements IRegisterSvc {
                 if (e.credit && e.credit !== '$0.00') {
                     entry['credit'] = e.credit
                 }
-                if (e.status && e.status !== 'UNMARKED') {
+                if (e.status) {
                     entry['status'] = e.status
                 }
                 return entry
@@ -373,7 +373,7 @@ export class RegisterSqlService implements IRegisterSvc {
                     $txnId: create.id,
                     $entrySeq: entrySeq,
                     $account: entry.account,
-                    $status: entry.status ?? 'UNMARKED',
+                    $status: entry.status ?? '',
                     $debit: Math.round(parseFloat(entry.debit.replace(/[$,()]/g, '')) * 100) || 0,
                     $credit: Math.round(parseFloat(entry.credit.replace(/[$,()]/g, '')) * 100) || 0,
                 }
@@ -403,7 +403,7 @@ export class RegisterSqlService implements IRegisterSvc {
             if (e.credit && e.credit !== '$0.00') {
                 entry['credit'] = e.credit
             }
-            if (e.status && e.status !== 'UNMARKED') {
+            if (e.status) {
                 entry['status'] = e.status
             }
             return entry

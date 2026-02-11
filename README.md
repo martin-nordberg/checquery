@@ -11,3 +11,5 @@ validation, and persistence.
 
 The front end is built with SolidJS plus Hono Client and Zod for seamless type-safe interaction with the backend.
 CSS is via TailwindCSS.
+
+This application was built in a few hours with Claude Code.

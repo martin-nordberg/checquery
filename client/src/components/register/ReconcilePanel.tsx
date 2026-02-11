@@ -73,7 +73,7 @@ const ReconcilePanel = (props: ReconcilePanelProps) => {
                 || endDate() !== defaults.endDate
                 || beginningBalance() !== undefined
                 || endingBalance() !== undefined
-                || isReconciled() !== false
+                || isReconciled()
         }
     })
 

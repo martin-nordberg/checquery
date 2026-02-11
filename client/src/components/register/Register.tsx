@@ -205,7 +205,7 @@ const Register = (props: RegisterProps) => {
                                 Description
                             </th>
                             <th class="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                Status
+                                Reconciled
                             </th>
                             <th class="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
                                 Amount

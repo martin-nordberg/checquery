@@ -95,10 +95,7 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
                 return true
             }
         }
-        if (entries.length > 2) {
-            return true
-        }
-        return false
+        return entries.length > 2
     })
 
     // Report dirty state changes to parent

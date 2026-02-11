@@ -70,7 +70,7 @@ export class TransactionSqlService implements ITransactionSvc {
                     $txnId: transaction.id,
                     $entrySeq: entrySeq,
                     $account: entry.account,
-                    $status: entry.status ?? 'UNMARKED',
+                    $status: entry.status ?? undefined,
                     $debit: toCents(entry.debit),
                     $credit: toCents(entry.credit),
                     $comment: entry.comment,
@@ -126,7 +126,7 @@ export class TransactionSqlService implements ITransactionSvc {
                 account: z.string(),
                 debitCents: z.int(),
                 creditCents: z.int(),
-                status: txnStatusSchema,
+                status: txnStatusSchema.optional(),
                 comment: descriptionSchema.optional()
             }).readonly()
         )
@@ -226,7 +226,7 @@ export class TransactionSqlService implements ITransactionSvc {
                         $txnId: transactionPatch.id,
                         $entrySeq: entrySeq,
                         $account: entry.account,
-                        $status: entry.status ?? 'UNMARKED',
+                        $status: entry.status ?? undefined,
                         $debit: toCents(entry.debit),
                         $credit: toCents(entry.credit),
                         $comment: entry.comment,
