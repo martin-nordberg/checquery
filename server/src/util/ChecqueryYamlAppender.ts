@@ -2,6 +2,7 @@ export type DirectiveAction =
     | 'create-account' | 'update-account' | 'delete-account'
     | 'create-vendor' | 'update-vendor' | 'delete-vendor'
     | 'create-transaction' | 'update-transaction' | 'delete-transaction'
+    | 'create-statement' | 'update-statement' | 'delete-statement'
 
 export type ChecqueryDirective = {
     action: DirectiveAction
@@ -123,6 +124,38 @@ const formatDirective = (directive: ChecqueryDirective): string => {
             }
         }
     }
+    // Statement directives
+    else if (action === 'create-statement' || action === 'update-statement' || action === 'delete-statement') {
+        if (payload['id']) {
+            lines.push(`    id: ${payload['id']}`)
+        }
+        if (payload['beginDate']) {
+            lines.push(`    beginDate: ${payload['beginDate']}`)
+        }
+        if (payload['endDate']) {
+            lines.push(`    endDate: ${payload['endDate']}`)
+        }
+        if (payload['beginningBalance']) {
+            lines.push(`    beginningBalance: ${payload['beginningBalance']}`)
+        }
+        if (payload['endingBalance']) {
+            lines.push(`    endingBalance: ${payload['endingBalance']}`)
+        }
+        if (payload['account']) {
+            lines.push(`    account: ${payload['account']}`)
+        }
+        if (payload['isReconciled'] !== undefined) {
+            lines.push(`    isReconciled: ${payload['isReconciled']}`)
+        }
+
+        const transactions = payload['transactions'] as string[] | undefined
+        if (transactions && transactions.length > 0) {
+            lines.push(`    transactions:`)
+            for (const txnId of transactions) {
+                lines.push(`      - ${txnId}`)
+            }
+        }
+    }
 
     return lines.join('\n')
 }
@@ -185,5 +218,21 @@ export const createTransactionUpdateDirective = (payload: Record<string, unknown
 
 export const createTransactionDeleteDirective = (id: string): ChecqueryDirective => ({
     action: 'delete-transaction',
+    payload: {id}
+})
+
+// Statement directive factories
+export const createStatementCreateDirective = (payload: Record<string, unknown>): ChecqueryDirective => ({
+    action: 'create-statement',
+    payload
+})
+
+export const createStatementUpdateDirective = (payload: Record<string, unknown>): ChecqueryDirective => ({
+    action: 'update-statement',
+    payload
+})
+
+export const createStatementDeleteDirective = (id: string): ChecqueryDirective => ({
+    action: 'delete-statement',
     payload: {id}
 })

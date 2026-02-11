@@ -1,12 +1,15 @@
 import type {IAccountSvc} from "$shared/services/accounts/IAccountSvc";
 import type {ITransactionSvc} from "$shared/services/transactions/ITransactionSvc";
 import type {IVendorSvc} from "$shared/services/vendors/IVendorSvc";
+import type {IStatementSvc} from "$shared/services/statements/IStatementSvc";
 import {accountCreationSchema, accountUpdateSchema} from "$shared/domain/accounts/Account";
 import {acctIdSchema} from "$shared/domain/accounts/AcctId";
 import {transactionCreationSchema, transactionUpdateSchema} from "$shared/domain/transactions/Transaction";
 import {txnIdSchema} from "$shared/domain/transactions/TxnId";
 import {vendorCreationSchema, vendorUpdateSchema} from "$shared/domain/vendors/Vendor";
 import {vndrIdSchema} from "$shared/domain/vendors/VndrId";
+import {statementCreationSchema, statementUpdateSchema} from "$shared/domain/statements/Statement";
+import {stmtIdSchema} from "$shared/domain/statements/StmtId";
 
 /** The file containing all directives. */
 const checqueryLogFile = process.env['CHECQUERY_LOG_FILE']!
@@ -15,6 +18,7 @@ export type ChecqueryServices = {
     acctSvc: IAccountSvc
     txnSvc: ITransactionSvc
     vendorSvc: IVendorSvc
+    stmtSvc: IStatementSvc
 }
 
 /**
@@ -62,6 +66,17 @@ export const loadChecqueryLog = async (services: ChecqueryServices) => {
                 break
             case 'delete-transaction':
                 await services.txnSvc.deleteTransaction(txnIdSchema.parse(directive.payload.id, {reportInput: true}))
+                break
+
+            // Statement actions
+            case 'create-statement':
+                await services.stmtSvc.createStatement(statementCreationSchema.parse(directive.payload))
+                break
+            case 'update-statement':
+                await services.stmtSvc.updateStatement(statementUpdateSchema.parse(directive.payload))
+                break
+            case 'delete-statement':
+                await services.stmtSvc.deleteStatement(stmtIdSchema.parse(directive.payload.id))
                 break
         }
     }

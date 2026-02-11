@@ -2,6 +2,7 @@ import TopNav from "../../components/nav/TopNav.tsx";
 import Breadcrumb from "../../components/nav/Breadcrumb.tsx";
 import HoverableDropDown from "../../components/nav/HoverableDropDown.tsx";
 import Register from "../../components/register/Register.tsx";
+import ReconcilePanel from "../../components/register/ReconcilePanel.tsx";
 import MessageDialog from "../../components/common/dialogs/MessageDialog.tsx";
 import SearchField from "../../components/common/search/SearchField.tsx";
 import {useParams} from "@solidjs/router";
@@ -34,6 +35,7 @@ const RegisterPage = () => {
     })
 
     const stmtOptions = stmtNavOptions("Register")
+    const [showReconcile, setShowReconcile] = createSignal(false)
     const [showNotFound, setShowNotFound] = createSignal(false)
     const [searchText, setSearchText] = createSignal<string | undefined>(undefined)
     const [searchStartIndex, setSearchStartIndex] = createSignal(0)
@@ -82,11 +84,31 @@ const RegisterPage = () => {
                         </Show>
                     </Breadcrumb>
                 </TopNav>
-                <SearchField
-                    placeholder="Search transactions..."
-                    onSearch={handleSearch}
-                />
+                <div class="flex items-center gap-2">
+                    <button
+                        onClick={() => setShowReconcile(!showReconcile())}
+                        class="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 hover:bg-gray-200 border border-blue-300 rounded cursor-pointer flex items-center gap-1"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                        </svg>
+                        Reconcile
+                    </button>
+                    <SearchField
+                        placeholder="Search transactions..."
+                        onSearch={handleSearch}
+                    />
+                </div>
             </div>
+            <Show when={showReconcile() && account()}>
+                <ReconcilePanel
+                    accountName={account()!.name}
+                    onClose={() => setShowReconcile(false)}
+                    onSaved={() => setShowReconcile(false)}
+                    onDeleted={() => setShowReconcile(false)}
+                />
+            </Show>
             <main class="flex-1 min-h-0 p-4 flex flex-col">
                 <Register
                     accountId={accountId()}

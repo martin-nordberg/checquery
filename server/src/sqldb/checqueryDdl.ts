@@ -87,6 +87,23 @@ export function runChecqueryDdl(db: ChecquerySqlDb) {
         )
     )
 
+    // Statement
+    db.exec(
+        `CREATE TABLE Statement
+         (
+             id                TEXT(28) NOT NULL,
+             beginDate         TEXT(10) NOT NULL,
+             endDate           TEXT(10) NOT NULL,
+             beginBalanceCents INTEGER NOT NULL,
+             endBalanceCents   INTEGER NOT NULL,
+             accountId         TEXT(200) NOT NULL REFERENCES Account(id),
+             isReconciled      INTEGER NOT NULL DEFAULT 0,
+             CONSTRAINT Statement_PK PRIMARY KEY (id),
+             UNIQUE (endDate, accountId)
+         );`,
+        {}
+    )
+
     // Transaction
     db.exec(
         `CREATE TABLE Transaxtion
@@ -95,6 +112,7 @@ export function runChecqueryDdl(db: ChecquerySqlDb) {
              date           TEXT(10) NOT NULL,
              code           TEXT(100),
              vendorId       TEXT(27) REFERENCES Vendor(id),
+             stmtId         TEXT(28) REFERENCES Statement(id) ON DELETE SET NULL,
              description    TEXT(200),
              comment        TEXT(200),
              CONSTRAINT Transaxtion_PK PRIMARY KEY (id)

@@ -5,6 +5,7 @@ import {AccountSqlService} from "./sqlservices/accounts/AccountSqlSvc";
 import {ChecquerySqlDb} from "./sqldb/ChecquerySqlDb";
 import {runChecqueryDdl} from "./sqldb/checqueryDdl";
 import {TransactionSqlService} from "./sqlservices/transactions/TransactionSqlSvc";
+import {StatementSqlService} from "./sqlservices/statements/StatementSqlSvc";
 import {BalanceSheetSqlService} from "./sqlservices/balancesheet/BalanceSheetSqlSvc";
 import {balanceSheetRoutes} from "$shared/routes/balancesheet/BalanceSheetRoutes";
 import {VendorSqlService} from "./sqlservices/vendors/VendorSqlSvc";
@@ -13,6 +14,7 @@ import {incomeStatementRoutes} from "$shared/routes/incomestatement/IncomeStatem
 import {RegisterSqlService} from "./sqlservices/register/RegisterSqlSvc";
 import {registerRoutes} from "$shared/routes/register/RegisterRoutes";
 import {vendorRoutes} from "$shared/routes/vendors/VendorRoutes";
+import {statementRoutes} from "$shared/routes/statements/StatementRoutes";
 import {loadChecqueryLog} from "./eventsources/ChecqueryEvents";
 
 const app = new Hono()
@@ -27,10 +29,12 @@ runChecqueryDdl(db)
 // Services for loading from YAML (no persistence to avoid duplicates)
 const vndrLoaderSvc = new VendorSqlService(db, false)
 const acctLoaderSvc = new AccountSqlService(db, false)
+const stmtLoaderSvc = new StatementSqlService(db, false)
 // Services for API (with persistence to YAML)
 const vndrSvc = new VendorSqlService(db, true)
 const acctSvc = new AccountSqlService(db, true)
 const txnSvc = new TransactionSqlService(db)
+const stmtSvc = new StatementSqlService(db, true)
 const bsSvc = new BalanceSheetSqlService(db)
 const isSvc = new IncomeStatementSqlService(db)
 const regSvc = new RegisterSqlService(db)
@@ -38,7 +42,8 @@ const regSvc = new RegisterSqlService(db)
 await loadChecqueryLog({
     acctSvc: acctLoaderSvc,
     txnSvc: txnSvc,
-    vendorSvc: vndrLoaderSvc
+    vendorSvc: vndrLoaderSvc,
+    stmtSvc: stmtLoaderSvc
 })
 
 console.log(await bsSvc.findBalanceSheet('2026-01-11'))
@@ -61,6 +66,7 @@ const routes =
         .route('/balancesheet', balanceSheetRoutes(bsSvc))
         .route('/incomestatement', incomeStatementRoutes(isSvc))
         .route('/register', registerRoutes(regSvc))
+        .route('/statements', statementRoutes(stmtSvc))
         .route('/vendors', vendorRoutes(vndrSvc))
 
 export type AppType = typeof routes
