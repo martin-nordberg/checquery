@@ -32,17 +32,6 @@ describe('entrySchema', () => {
             expect(entry.credit).toBe('$100.00')
         })
 
-        it('parses entry with optional status', () => {
-            const entry = entrySchema.parse({
-                account: 'Assets:Checking',
-                debit: '$50.00',
-                credit: '$0.00',
-                status: 'Reconciled'
-            })
-
-            expect(entry.status).toBe('Reconciled')
-        })
-
         it('parses entry with optional comment', () => {
             const entry = entrySchema.parse({
                 account: 'Assets:Checking',
@@ -145,15 +134,6 @@ describe('entrySchema', () => {
                 account: 'Assets:Checking',
                 debit: '$100.000',
                 credit: '$0.00'
-            })).toThrow()
-        })
-
-        it('rejects invalid status', () => {
-            expect(() => entrySchema.parse({
-                account: 'Assets:Checking',
-                debit: '$100.00',
-                credit: '$0.00',
-                status: 'INVALID'
             })).toThrow()
         })
 

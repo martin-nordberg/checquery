@@ -62,15 +62,14 @@ export class TransactionSqlService implements ITransactionSvc {
             sqlQueries.push({
                 key: 'entry.create',
                 sql: () =>
-                    `INSERT INTO Entry (txnId, entrySeq, accountId, status, debitCents, creditCents, comment)
-                     SELECT $txnId, $entrySeq, Account.id, $status, $debit, $credit, $comment
+                    `INSERT INTO Entry (txnId, entrySeq, accountId, debitCents, creditCents, comment)
+                     SELECT $txnId, $entrySeq, Account.id, $debit, $credit, $comment
                      FROM Account
                      WHERE name = $account;`,
                 bindings: {
                     $txnId: transaction.id,
                     $entrySeq: entrySeq,
                     $account: entry.account,
-                    $status: entry.status ?? undefined,
                     $debit: toCents(entry.debit),
                     $credit: toCents(entry.credit),
                     $comment: entry.comment,
@@ -116,11 +115,15 @@ export class TransactionSqlService implements ITransactionSvc {
                 `SELECT Account.name as account,
                         debitCents,
                         creditCents,
-                        status,
-                        comment 
+                        CASE WHEN Transaxtion.stmtId IS NULL THEN NULL
+                             WHEN Statement.isReconciled = 1 THEN 'Reconciled'
+                             ELSE 'Pending' END as status,
+                        comment
                  FROM Entry
                  JOIN Account ON Entry.accountId = Account.id
-                 WHERE txnId = $id`,
+                 JOIN Transaxtion ON Entry.txnId = Transaxtion.id
+                 LEFT JOIN Statement ON Transaxtion.stmtId = Statement.id
+                 WHERE Entry.txnId = $id`,
             {$id: transactionId},
             z.strictObject({
                 account: z.string(),
@@ -218,15 +221,14 @@ export class TransactionSqlService implements ITransactionSvc {
                 sqlQueries.push({
                     key: 'entry.create',
                     sql: () =>
-                        `INSERT INTO Entry (txnId, entrySeq, accountId, status, debitCents, creditCents, comment)
-                         SELECT $txnId, $entrySeq, Account.id, $status, $debit, $credit, $comment
+                        `INSERT INTO Entry (txnId, entrySeq, accountId, debitCents, creditCents, comment)
+                         SELECT $txnId, $entrySeq, Account.id, $debit, $credit, $comment
                          FROM Account
                          WHERE name = $account;`,
                     bindings: {
                         $txnId: transactionPatch.id,
                         $entrySeq: entrySeq,
                         $account: entry.account,
-                        $status: entry.status ?? undefined,
                         $debit: toCents(entry.debit),
                         $credit: toCents(entry.credit),
                         $comment: entry.comment,

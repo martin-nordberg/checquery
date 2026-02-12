@@ -1,6 +1,6 @@
 import {type CurrencyAmt, currencyAmtSchema} from "../core/CurrencyAmt";
 import {type IsoDate, isoDateSchema} from "../core/IsoDate";
-import {txnStatusSchema, type TxnStatusStr} from "../transactions/TxnStatus";
+import {type TxnStatusStr} from "../transactions/TxnStatus";
 import {type TxnId, txnIdSchema} from "../transactions/TxnId";
 import {type AcctTypeStr} from "../accounts/AcctType";
 import {z} from "zod";
@@ -96,7 +96,6 @@ export const registerEntrySchema = z.strictObject({
     account: nameSchema,
     debit: currencyAmtSchema,
     credit: currencyAmtSchema,
-    status: txnStatusSchema.optional(),
 }).readonly()
 
 /** Schema for updating a transaction from the register. */

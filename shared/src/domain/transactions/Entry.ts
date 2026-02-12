@@ -1,6 +1,5 @@
 import {z} from "zod";
 import {nameSchema} from "../core/Name";
-import {txnStatusSchema} from "./TxnStatus";
 import {currencyAmtSchema, toCents} from "../core/CurrencyAmt";
 
 /** Base schema for a Stacquer entry's details. */
@@ -14,9 +13,6 @@ export const entryAttributesSchema =
 
         /** The debit amount of the entry.  */
         debit: currencyAmtSchema,
-
-        /** The status of the entry. */
-        status: txnStatusSchema.optional(),
 
         /** The comment for the entry. */
         comment: z.string().optional(),
@@ -49,7 +45,6 @@ export const entryUpdateSchema =
             account: true,
             credit: true,
             debit: true,
-            status: true,
             comment: true,
         }).shape
     }).readonly()

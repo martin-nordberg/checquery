@@ -16,7 +16,6 @@ type TransactionEntry = {
     account: string
     debit?: string
     credit?: string
-    status?: string
 }
 
 /**
@@ -116,10 +115,6 @@ const formatDirective = (directive: ChecqueryDirective): string => {
                 // Only include credit if non-zero
                 if (entry.credit && entry.credit !== '$0.00') {
                     lines.push(`        credit: ${entry.credit}`)
-                }
-                // Only include status if not unmarked
-                if (entry.status && entry.status !== '') {
-                    lines.push(`        status: '${entry.status}'`)
                 }
             }
         }

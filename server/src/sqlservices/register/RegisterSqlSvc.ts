@@ -57,7 +57,9 @@ export class RegisterSqlService implements IRegisterSvc {
                     Transaxtion.id as txnId,
                     Transaxtion.date as date,
                     Transaxtion.code as code,
-                    Entry.status as status,
+                    CASE WHEN Transaxtion.stmtId IS NULL THEN NULL
+                         WHEN Statement.isReconciled = 1 THEN 'Reconciled'
+                         ELSE 'Pending' END as status,
                     Vendor.name as vendor,
                     Transaxtion.description as description,
                     Entry.debitCents as debitCents,
@@ -65,6 +67,7 @@ export class RegisterSqlService implements IRegisterSvc {
                  FROM Entry
                     INNER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
                     LEFT OUTER JOIN Vendor ON Transaxtion.vendorId = Vendor.id
+                    LEFT JOIN Statement ON Transaxtion.stmtId = Statement.id
                  WHERE Entry.accountId = $accountId
                  ORDER BY Transaxtion.date ASC, Transaxtion.ROWID ASC`,
             {$accountId: accountId},
@@ -187,11 +190,15 @@ export class RegisterSqlService implements IRegisterSvc {
             () =>
                 `SELECT
                     Account.name as account,
-                    Entry.status as status,
+                    CASE WHEN Transaxtion.stmtId IS NULL THEN NULL
+                         WHEN Statement.isReconciled = 1 THEN 'Reconciled'
+                         ELSE 'Pending' END as status,
                     Entry.debitCents as debitCents,
                     Entry.creditCents as creditCents
                  FROM Entry
                     INNER JOIN Account ON Entry.accountId = Account.id
+                    INNER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
+                    LEFT JOIN Statement ON Transaxtion.stmtId = Statement.id
                  WHERE Entry.txnId = $txnId
                  ORDER BY Entry.entrySeq`,
             {$txnId: txnId},
@@ -274,15 +281,14 @@ export class RegisterSqlService implements IRegisterSvc {
                 this.db.run(
                     'register.update.createEntry',
                     () =>
-                        `INSERT INTO Entry (txnId, entrySeq, accountId, status, debitCents, creditCents)
-                         SELECT $txnId, $entrySeq, Account.id, $status, $debit, $credit
+                        `INSERT INTO Entry (txnId, entrySeq, accountId, debitCents, creditCents)
+                         SELECT $txnId, $entrySeq, Account.id, $debit, $credit
                          FROM Account
                          WHERE name = $account`,
                     {
                         $txnId: update.id,
                         $entrySeq: entrySeq,
                         $account: entry.account,
-                        $status: entry.status ?? '',
                         $debit: Math.round(parseFloat(entry.debit.replace(/[$,()]/g, '')) * 100) || 0,
                         $credit: Math.round(parseFloat(entry.credit.replace(/[$,()]/g, '')) * 100) || 0,
                     }
@@ -313,9 +319,6 @@ export class RegisterSqlService implements IRegisterSvc {
                 }
                 if (e.credit && e.credit !== '$0.00') {
                     entry['credit'] = e.credit
-                }
-                if (e.status) {
-                    entry['status'] = e.status
                 }
                 return entry
             })
@@ -365,15 +368,14 @@ export class RegisterSqlService implements IRegisterSvc {
             this.db.run(
                 'register.create.entry',
                 () =>
-                    `INSERT INTO Entry (txnId, entrySeq, accountId, status, debitCents, creditCents)
-                     SELECT $txnId, $entrySeq, Account.id, $status, $debit, $credit
+                    `INSERT INTO Entry (txnId, entrySeq, accountId, debitCents, creditCents)
+                     SELECT $txnId, $entrySeq, Account.id, $debit, $credit
                      FROM Account
                      WHERE name = $account`,
                 {
                     $txnId: create.id,
                     $entrySeq: entrySeq,
                     $account: entry.account,
-                    $status: entry.status ?? '',
                     $debit: Math.round(parseFloat(entry.debit.replace(/[$,()]/g, '')) * 100) || 0,
                     $credit: Math.round(parseFloat(entry.credit.replace(/[$,()]/g, '')) * 100) || 0,
                 }
@@ -402,9 +404,6 @@ export class RegisterSqlService implements IRegisterSvc {
             }
             if (e.credit && e.credit !== '$0.00') {
                 entry['credit'] = e.credit
-            }
-            if (e.status) {
-                entry['status'] = e.status
             }
             return entry
         })

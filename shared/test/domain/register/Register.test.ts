@@ -20,22 +20,10 @@ describe('registerEntrySchema', () => {
                 account: 'Assets:Checking',
                 debit: '$100.00',
                 credit: '$0.00',
-                status: 'Reconciled',
             })
             expect(entry.account).toBe('Assets:Checking')
             expect(entry.debit).toBe('$100.00')
             expect(entry.credit).toBe('$0.00')
-            expect(entry.status).toBe('Reconciled')
-        })
-
-        it('accepts entry without optional status', () => {
-            const entry = registerEntrySchema.parse({
-                account: 'Expenses:Food',
-                debit: '$50.00',
-                credit: '$0.00',
-            })
-            expect(entry.account).toBe('Expenses:Food')
-            expect(entry.status).toBeUndefined()
         })
 
         it('trims account name', () => {
@@ -78,15 +66,6 @@ describe('registerEntrySchema', () => {
                 account: 'Assets:Checking',
                 debit: '$0.00',
                 credit: 'invalid',
-            })).toThrow()
-        })
-
-        it('rejects invalid status', () => {
-            expect(() => registerEntrySchema.parse({
-                account: 'Assets:Checking',
-                debit: '$100.00',
-                credit: '$0.00',
-                status: 'INVALID',
             })).toThrow()
         })
 
@@ -444,13 +423,13 @@ describe('Register types', () => {
                 account: 'Expenses:Food',
                 debit: '$100.00' as CurrencyAmt,
                 credit: '$0.00' as CurrencyAmt,
-                status: '',
+                status: 'Reconciled',
             }
 
             expect(entry.account).toBe('Expenses:Food')
             expect(entry.debit).toBe('$100.00')
             expect(entry.credit).toBe('$0.00')
-            expect(entry.status).toBe('')
+            expect(entry.status).toBe('Reconciled')
         })
 
         it('allows optional status to be undefined', () => {
