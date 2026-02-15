@@ -1,9 +1,10 @@
 {
   "name": "checquery-shared",
   "dependencies": {
+    "@electric-sql/pglite": "^0.3.15",
     "@hono/zod-validator": "0.7.6",
     "@paralleldrive/cuid2": "3.0.2",
-    "hono": "4.11.1",
+    "hono": "4.11.9",
     "zod": "4.2.1"
   },
   "devDependencies": {
