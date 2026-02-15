@@ -156,7 +156,7 @@ export class TransactionSqlService implements ITransactionSvc {
             () =>
                 `SELECT *
                  FROM Transaxtion
-                 ORDER BY name`,
+                 ORDER BY date`,
             {},
             transactionSchema
         )
