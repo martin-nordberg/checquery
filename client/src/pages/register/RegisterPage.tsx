@@ -9,6 +9,10 @@ import {useParams} from "@solidjs/router";
 import {createMemo, createResource, createSignal, Show} from "solid-js";
 import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
 import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
+import type {TxnId} from "$shared/domain/transactions/TxnId.ts";
+import type {RegisterLineItem} from "$shared/domain/register/Register.ts";
+import type {AcctTypeStr} from "$shared/domain/accounts/AcctType.ts";
+import {type CurrencyAmt, fromCents, toCents} from "$shared/domain/core/CurrencyAmt.ts";
 import {stmtNavOptions} from "../../nav/stmtNavOptions.ts";
 
 const RegisterPage = () => {
@@ -36,6 +40,10 @@ const RegisterPage = () => {
 
     const stmtOptions = stmtNavOptions("Register")
     const [showReconcile, setShowReconcile] = createSignal(false)
+    const [checkedTxnIds, setCheckedTxnIds] = createSignal<Set<TxnId>>(new Set<TxnId>())
+    const [refetchTrigger, setRefetchTrigger] = createSignal(0)
+    const [lineItems, setLineItems] = createSignal<RegisterLineItem[]>([])
+    const [accountType, setAccountType] = createSignal<AcctTypeStr>('ASSET')
     const [showNotFound, setShowNotFound] = createSignal(false)
     const [searchText, setSearchText] = createSignal<string | undefined>(undefined)
     const [searchStartIndex, setSearchStartIndex] = createSignal(0)
@@ -63,6 +71,63 @@ const RegisterPage = () => {
         setSearchText(undefined)
     }
 
+    const hideReconcilePanel = () => {
+        setShowReconcile(false)
+        setCheckedTxnIds(new Set<TxnId>())
+    }
+
+    const handleToggleTxn = (txnId: TxnId) => {
+        const current = new Set(checkedTxnIds())
+        if (current.has(txnId)) {
+            current.delete(txnId)
+        } else {
+            current.add(txnId)
+        }
+        setCheckedTxnIds(current)
+    }
+
+    const handleReconcileSaved = () => {
+        hideReconcilePanel()
+        setRefetchTrigger(n => n + 1)
+    }
+
+    const handleReconcileDeleted = () => {
+        hideReconcilePanel()
+        setRefetchTrigger(n => n + 1)
+    }
+
+    const handleRegisterLoaded = (items: RegisterLineItem[], acctType: AcctTypeStr) => {
+        setLineItems(items)
+        setAccountType(acctType)
+    }
+
+    const reconciledBalance = createMemo((): CurrencyAmt => {
+        const isDebitBalance = accountType() === 'ASSET' || accountType() === 'EXPENSE'
+        let sum = 0
+        for (const item of lineItems()) {
+            if (item.status === 'Reconciled') {
+                const dr = toCents(item.debit)
+                const cr = toCents(item.credit)
+                sum += isDebitBalance ? (dr - cr) : (cr - dr)
+            }
+        }
+        return fromCents(sum)
+    })
+
+    const checkedAmountCents = createMemo(() => {
+        const checked = checkedTxnIds()
+        const isDebitBalance = accountType() === 'ASSET' || accountType() === 'EXPENSE'
+        let sum = 0
+        for (const item of lineItems()) {
+            if (checked.has(item.txnId)) {
+                const dr = toCents(item.debit)
+                const cr = toCents(item.credit)
+                sum += isDebitBalance ? (dr - cr) : (cr - dr)
+            }
+        }
+        return sum
+    })
+
     return (
         <div class="h-screen flex flex-col">
             <MessageDialog
@@ -86,7 +151,13 @@ const RegisterPage = () => {
                 </TopNav>
                 <div class="flex items-center gap-2">
                     <button
-                        onClick={() => setShowReconcile(!showReconcile())}
+                        onClick={() => {
+                            if (showReconcile()) {
+                                hideReconcilePanel()
+                            } else {
+                                setShowReconcile(true)
+                            }
+                        }}
                         class="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 hover:bg-gray-200 border border-blue-300 rounded cursor-pointer flex items-center gap-1"
                     >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,9 +175,13 @@ const RegisterPage = () => {
             <Show when={showReconcile() && account()}>
                 <ReconcilePanel
                     accountName={account()!.name}
-                    onClose={() => setShowReconcile(false)}
-                    onSaved={() => setShowReconcile(false)}
-                    onDeleted={() => setShowReconcile(false)}
+                    checkedTxnIds={checkedTxnIds}
+                    checkedAmountCents={checkedAmountCents()}
+                    defaultBeginningBalance={reconciledBalance()}
+                    onInitCheckedTxnIds={(txnIds) => setCheckedTxnIds(new Set(txnIds))}
+                    onClose={hideReconcilePanel}
+                    onSaved={handleReconcileSaved}
+                    onDeleted={handleReconcileDeleted}
                 />
             </Show>
             <main class="flex-1 min-h-0 p-4 flex flex-col">
@@ -115,6 +190,11 @@ const RegisterPage = () => {
                     searchText={searchText()}
                     searchStartIndex={searchStartIndex()}
                     onSearchComplete={handleSearchComplete}
+                    isReconciling={showReconcile()}
+                    checkedTxnIds={checkedTxnIds()}
+                    onToggleReconcile={handleToggleTxn}
+                    refetchTrigger={refetchTrigger()}
+                    onRegisterLoaded={handleRegisterLoaded}
                 />
             </main>
         </div>

@@ -1,8 +1,10 @@
-import {createEffect, createResource, createSignal, For, Show} from "solid-js";
+import {createEffect, createResource, createSignal, For, on, Show} from "solid-js";
 import {registerClientSvc} from "../../clients/register/RegisterClientSvc.ts";
 import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
 import type {TxnId} from "$shared/domain/transactions/TxnId.ts";
 import type {IsoDate} from "$shared/domain/core/IsoDate.ts";
+import type {RegisterLineItem} from "$shared/domain/register/Register.ts";
+import type {AcctTypeStr} from "$shared/domain/accounts/AcctType.ts";
 import EditableRegisterRow, {type RegisterField} from "./EditableRegisterRow.tsx";
 import NewTransactionRow from "./NewTransactionRow.tsx";
 
@@ -11,6 +13,11 @@ type RegisterProps = {
     searchText?: string | undefined,
     searchStartIndex?: number | undefined,
     onSearchComplete?: ((found: boolean, foundIndex: number) => void) | undefined,
+    isReconciling?: boolean | undefined,
+    checkedTxnIds?: Set<TxnId> | undefined,
+    onToggleReconcile?: ((txnId: TxnId) => void) | undefined,
+    refetchTrigger?: number | undefined,
+    onRegisterLoaded?: ((lineItems: RegisterLineItem[], accountType: AcctTypeStr) => void) | undefined,
 }
 
 const Register = (props: RegisterProps) => {
@@ -25,6 +32,21 @@ const Register = (props: RegisterProps) => {
     const [isDirty, setIsDirty] = createSignal(false)
     // Sticky date: remembers the date from the last saved new transaction
     const [stickyDate, setStickyDate] = createSignal<IsoDate | undefined>(undefined)
+
+    // Report line items to parent when register data loads/changes
+    createEffect(() => {
+        const reg = register()
+        if (reg) {
+            props.onRegisterLoaded?.(reg.lineItems, reg.accountType)
+        }
+    })
+
+    // Refetch register when refetchTrigger changes (e.g. after statement save)
+    createEffect(on(
+        () => props.refetchTrigger,
+        () => refetch(),
+        {defer: true}
+    ))
 
     // Handle search when searchText prop changes
     createEffect(() => {
@@ -240,6 +262,11 @@ const Register = (props: RegisterProps) => {
                                     onSaved={handleSaved}
                                     onDeleted={handleDeleted}
                                     onDirtyChange={handleDirtyChange}
+                                    isReconciling={props.isReconciling}
+                                    isCheckedForReconcile={props.checkedTxnIds?.has(lineItem.txnId)}
+                                    onToggleReconcile={props.onToggleReconcile
+                                        ? () => props.onToggleReconcile!(lineItem.txnId)
+                                        : undefined}
                                 />
                             )}
                         </For>

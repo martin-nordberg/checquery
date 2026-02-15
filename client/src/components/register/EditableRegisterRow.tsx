@@ -27,6 +27,9 @@ type EditableRegisterRowProps = {
     onSaved: () => void,
     onDeleted: () => void,
     onDirtyChange: (isDirty: boolean) => void,
+    isReconciling?: boolean | undefined,
+    isCheckedForReconcile?: boolean | undefined,
+    onToggleReconcile?: (() => void) | undefined,
 }
 
 const EditableRegisterRow = (props: EditableRegisterRowProps) => {
@@ -279,7 +282,15 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                 {props.lineItem.description ?? ''}
             </td>
             <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500 text-center">
-                {props.lineItem.status ?? ''}
+                {props.isReconciling && props.lineItem.status !== 'Reconciled'
+                    ? <input
+                        type="checkbox"
+                        checked={props.isCheckedForReconcile ?? false}
+                        onChange={() => props.onToggleReconcile?.()}
+                        class="rounded border-gray-300"
+                    />
+                    : (props.lineItem.status ?? '')
+                }
             </td>
             <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
                 <Show when={props.lineItem.debit !== '$0.00'}>

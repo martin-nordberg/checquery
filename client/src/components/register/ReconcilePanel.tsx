@@ -1,7 +1,8 @@
-import {createMemo, createSignal, onMount, Show} from "solid-js";
+import {type Accessor, createMemo, createSignal, onMount, Show} from "solid-js";
 import type {Statement} from "$shared/domain/statements/Statement.ts";
 import type {IsoDate} from "$shared/domain/core/IsoDate.ts";
-import type {CurrencyAmt} from "$shared/domain/core/CurrencyAmt.ts";
+import {type CurrencyAmt, fromCents, toCents} from "$shared/domain/core/CurrencyAmt.ts";
+import type {TxnId} from "$shared/domain/transactions/TxnId.ts";
 import {genStmtId} from "$shared/domain/statements/StmtId.ts";
 import {statementClientSvc} from "../../clients/statements/StatementClientSvc.ts";
 import EditableDateField from "../common/fields/EditableDateField.tsx";
@@ -38,6 +39,10 @@ const defaultStatementDates = (): { beginDate: IsoDate, endDate: IsoDate } => {
 
 type ReconcilePanelProps = {
     accountName: string
+    checkedTxnIds: Accessor<Set<TxnId>>
+    checkedAmountCents: number
+    defaultBeginningBalance: CurrencyAmt
+    onInitCheckedTxnIds: (txnIds: TxnId[]) => void
     onClose: () => void
     onSaved: () => void
     onDeleted: () => void
@@ -53,27 +58,55 @@ const ReconcilePanel = (props: ReconcilePanelProps) => {
     const [endDate, setEndDate] = createSignal<IsoDate | undefined>(undefined)
     const [beginningBalance, setBeginningBalance] = createSignal<CurrencyAmt | undefined>(undefined)
     const [endingBalance, setEndingBalance] = createSignal<CurrencyAmt | undefined>(undefined)
-    const [isReconciled, setIsReconciled] = createSignal(false)
+    const [initialTxnIds, setInitialTxnIds] = createSignal<Set<TxnId>>(new Set())
 
     const isEditing = () => existingStatement() !== null
+
+    const reconciledBalance = createMemo(() => {
+        const bb = beginningBalance()
+        const bbCents = bb ? toCents(bb) : 0
+        return fromCents(bbCents + props.checkedAmountCents)
+    })
+
+    const difference = createMemo(() => {
+        const eb = endingBalance()
+        const ebCents = eb ? toCents(eb) : 0
+        const rb = reconciledBalance()
+        const rbCents = toCents(rb)
+        return fromCents(ebCents - rbCents)
+    })
+
+    const txnIdsDirty = () => {
+        const current = props.checkedTxnIds()
+        const initial = initialTxnIds()
+        if (current.size !== initial.size) {
+            return true
+        }
+        for (const id of current) {
+            if (!initial.has(id)) {
+                return true
+            }
+        }
+        return false
+    }
 
     const isDirty = createMemo(() => {
         const stmt = existingStatement()
         if (stmt) {
             // Edit mode: dirty if any field differs from loaded statement
-            return beginDate() !== stmt.beginDate
+            return txnIdsDirty()
+                || beginDate() !== stmt.beginDate
                 || endDate() !== stmt.endDate
                 || beginningBalance() !== stmt.beginningBalance
                 || endingBalance() !== stmt.endingBalance
-                || isReconciled() !== stmt.isReconciled
         } else {
             // Create mode: dirty if any field differs from defaults
             const defaults = defaultStatementDates()
-            return beginDate() !== defaults.beginDate
+            return txnIdsDirty()
+                || beginDate() !== defaults.beginDate
                 || endDate() !== defaults.endDate
-                || beginningBalance() !== undefined
+                || beginningBalance() !== props.defaultBeginningBalance
                 || endingBalance() !== undefined
-                || isReconciled()
         }
     })
 
@@ -91,33 +124,35 @@ const ReconcilePanel = (props: ReconcilePanelProps) => {
                 setEndDate(unreconciled.endDate)
                 setBeginningBalance(unreconciled.beginningBalance)
                 setEndingBalance(unreconciled.endingBalance)
-                setIsReconciled(unreconciled.isReconciled)
+                props.onInitCheckedTxnIds(unreconciled.transactions)
+                setInitialTxnIds(new Set(unreconciled.transactions))
             } else {
                 const defaults = defaultStatementDates()
                 setBeginDate(defaults.beginDate)
                 setEndDate(defaults.endDate)
+                setBeginningBalance(props.defaultBeginningBalance)
             }
         } finally {
             setIsLoading(false)
         }
     })
 
-    const handleSave = async () => {
+    const saveStatement = async (reconciled: boolean) => {
         setIsSaving(true)
         try {
             const stmt = existingStatement()
+            const transactions = [...props.checkedTxnIds()]
             if (stmt) {
-                // Edit mode: update only changed fields
                 await statementClientSvc.updateStatement({
                     id: stmt.id,
                     beginDate: beginDate(),
                     endDate: endDate(),
                     beginningBalance: beginningBalance(),
                     endingBalance: endingBalance(),
-                    isReconciled: isReconciled(),
+                    isReconciled: reconciled,
+                    transactions,
                 })
             } else {
-                // Create mode
                 await statementClientSvc.createStatement({
                     id: genStmtId(),
                     account: props.accountName,
@@ -125,8 +160,8 @@ const ReconcilePanel = (props: ReconcilePanelProps) => {
                     endDate: endDate()!,
                     beginningBalance: beginningBalance() ?? '$0.00' as CurrencyAmt,
                     endingBalance: endingBalance() ?? '$0.00' as CurrencyAmt,
-                    isReconciled: isReconciled(),
-                    transactions: [],
+                    isReconciled: reconciled,
+                    transactions,
                 })
             }
             props.onSaved()
@@ -134,6 +169,9 @@ const ReconcilePanel = (props: ReconcilePanelProps) => {
             setIsSaving(false)
         }
     }
+
+    const handleSave = () => saveStatement(false)
+    const handleFinalize = () => saveStatement(true)
 
     const handleDelete = async () => {
         const stmt = existingStatement()
@@ -160,7 +198,7 @@ const ReconcilePanel = (props: ReconcilePanelProps) => {
             <Show when={!isLoading()} fallback={<p class="text-sm text-gray-500">Loading...</p>}>
                 <div class="flex items-center justify-between mb-3">
                     <span class="text-sm font-medium text-blue-700">
-                        {isEditing() ? "Edit Statement" : "New Statement"}
+                        {isEditing() ? "Edit Statement" : "Reconcile with Account Statement"}
                     </span>
                     <button
                         onClick={abandon.handleCancel}
@@ -173,7 +211,7 @@ const ReconcilePanel = (props: ReconcilePanelProps) => {
                         </svg>
                     </button>
                 </div>
-                <div class="grid grid-cols-5 gap-3">
+                <div class="grid gap-3" style={{"grid-template-columns": "1fr 1fr 1fr 1fr 0.5fr 0.5fr"}}>
                     <div>
                         <label class="block text-xs font-medium text-gray-500 mb-1">Begin Date</label>
                         <EditableDateField
@@ -203,18 +241,30 @@ const ReconcilePanel = (props: ReconcilePanelProps) => {
                         />
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-500 mb-1">Reconciled</label>
-                        <div class="flex items-center h-[30px]">
-                            <input
-                                type="checkbox"
-                                checked={isReconciled()}
-                                onChange={(e) => setIsReconciled(e.currentTarget.checked)}
-                                class="rounded border-gray-300"
-                            />
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Reconciled Balance</label>
+                        <div class="text-sm px-2 py-1 h-[30px] bg-gray-100 rounded border border-gray-200 text-gray-700 text-right">
+                            {reconciledBalance()}
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Difference</label>
+                        <div class={`text-sm px-2 py-1 h-[30px] bg-gray-100 rounded border border-gray-200 text-right ${difference() === '$0.00' ? 'text-green-700' : 'text-red-700'}`}>
+                            {difference()}
                         </div>
                     </div>
                 </div>
                 <div class="flex gap-2 mt-3">
+                    <button
+                        type="button"
+                        onClick={handleFinalize}
+                        disabled={isSaving() || difference() !== '$0.00'}
+                        class="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 flex items-center gap-1"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        {isSaving() ? 'Saving...' : 'Finalize'}
+                    </button>
                     <button
                         type="button"
                         onClick={handleSave}
@@ -222,9 +272,10 @@ const ReconcilePanel = (props: ReconcilePanelProps) => {
                         class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1"
                     >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
                         </svg>
-                        {isSaving() ? 'Saving...' : 'Save'}
+                        {isSaving() ? 'Saving...' : 'Save for Later'}
                     </button>
                     <Show when={isEditing()}>
                         <button
