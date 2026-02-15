@@ -144,10 +144,14 @@ const formatDirective = (directive: ChecqueryDirective): string => {
         }
 
         const transactions = payload['transactions'] as string[] | undefined
-        if (transactions && transactions.length > 0) {
-            lines.push(`    transactions:`)
-            for (const txnId of transactions) {
-                lines.push(`      - ${txnId}`)
+        if (transactions) {
+            if (transactions.length > 0) {
+                lines.push(`    transactions:`)
+                for (const txnId of transactions) {
+                    lines.push(`      - ${txnId}`)
+                }
+            } else {
+                lines.push(`    transactions: []`)
             }
         }
     }
