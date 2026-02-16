@@ -4,7 +4,7 @@ import {
     entryCreationSchema,
     entrySchema,
     entryUpdateSchema
-} from '../../../src/domain/transactions/Entry'
+} from '$shared/domain/transactions/Entry'
 
 describe('entrySchema', () => {
     describe('valid entries', () => {

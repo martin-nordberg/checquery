@@ -1,7 +1,7 @@
 import {describe, expect, it} from 'bun:test'
-import {statementCreationSchema, statementSchema, statementUpdateSchema} from '../../../src/domain/statements/Statement'
-import {genStmtId} from '../../../src/domain/statements/StmtId'
-import {genTxnId} from '../../../src/domain/transactions/TxnId'
+import {statementCreationSchema, statementSchema, statementUpdateSchema} from '$shared/domain/statements/Statement'
+import {genStmtId} from '$shared/domain/statements/StmtId'
+import {genTxnId} from '$shared/domain/transactions/TxnId'
 
 const validInput = () => ({
     id: genStmtId(),

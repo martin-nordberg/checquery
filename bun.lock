@@ -9,7 +9,7 @@
       "name": "checquery-client",
       "version": "0.0.0",
       "dependencies": {
-        "@electric-sql/pglite": "^0.3.15",
+        "@electric-sql/pglite": "0.3.15",
         "@hono/zod-validator": "0.7.6",
         "@paralleldrive/cuid2": "3.0.2",
         "@solid-primitives/map": "0.7.2",
@@ -31,7 +31,7 @@
     "server": {
       "name": "checquery-server",
       "dependencies": {
-        "@electric-sql/pglite": "^0.3.15",
+        "@electric-sql/pglite": "0.3.15",
         "@hono/zod-validator": "0.7.6",
         "@paralleldrive/cuid2": "3.0.2",
         "hono": "4.11.9",
@@ -44,7 +44,7 @@
     "shared": {
       "name": "checquery-shared",
       "dependencies": {
-        "@electric-sql/pglite": "^0.3.15",
+        "@electric-sql/pglite": "0.3.15",
         "@hono/zod-validator": "0.7.6",
         "@paralleldrive/cuid2": "3.0.2",
         "hono": "4.11.9",

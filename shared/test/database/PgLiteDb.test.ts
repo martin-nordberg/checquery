@@ -1,6 +1,6 @@
 import {describe, it, expect} from 'bun:test'
-import {createPgLiteDb} from "../../src/database/PgLiteDb";
-import {runChecqueryPgDdl} from "../../src/database/CheckqueryPgDdl";
+import {createPgLiteDb} from "$shared/database/PgLiteDb";
+import {runChecqueryPgDdl} from "$shared/database/CheckqueryPgDdl";
 import {z} from "zod";
 
 describe('PGLite Database', () => {
@@ -16,10 +16,10 @@ describe('PGLite Database', () => {
 
         const r2 = await db.findMany('SELECT code FROM AcctType ORDER BY code', [], z.object({code: z.string()}).readonly())
         expect(r2.length).toEqual(5)
-        expect(r2[0].code).toEqual('ASSET')
-        expect(r2[1].code).toEqual('EQUITY')
-        expect(r2[2].code).toEqual('EXPENSE')
-        expect(r2[3].code).toEqual('INCOME')
-        expect(r2[4].code).toEqual('LIABILITY')
+        expect(r2[0]!.code).toEqual('ASSET')
+        expect(r2[1]!.code).toEqual('EQUITY')
+        expect(r2[2]!.code).toEqual('EXPENSE')
+        expect(r2[3]!.code).toEqual('INCOME')
+        expect(r2[4]!.code).toEqual('LIABILITY')
     })
 })

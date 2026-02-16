@@ -1,7 +1,7 @@
 import {describe, expect, it} from 'bun:test'
-import {accountCreationSchema, accountSchema, accountUpdateSchema} from "../../../src/domain/accounts/Account";
+import {accountCreationSchema, accountSchema, accountUpdateSchema} from "$shared/domain/accounts/Account";
 import {z} from "zod";
-import {genAcctId} from "../../../src/domain/accounts/AcctId";
+import {genAcctId} from "$shared/domain/accounts/AcctId";
 
 describe('Sample Accounts', () => {
     it('Should parse without error', () => {

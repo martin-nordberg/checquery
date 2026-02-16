@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'bun:test'
-import {genStmtId, stmtIdPrefix, stmtIdSchema} from "../../../src/domain/statements/StmtId";
+import {genStmtId, stmtIdPrefix, stmtIdSchema} from "$shared/domain/statements/StmtId";
 
 describe('genStmtId', () => {
     it('generates a valid statement ID', () => {

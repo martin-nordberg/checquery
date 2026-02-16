@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'bun:test'
-import {acctNumberMaxLength, acctNumberRegex, acctNumberSchema} from "../../../src/domain/accounts/AcctNumber";
+import {acctNumberMaxLength, acctNumberRegex, acctNumberSchema} from "$shared/domain/accounts/AcctNumber";
 
 describe('acctNumberSchema', () => {
     describe('valid account numbers', () => {

@@ -2,7 +2,7 @@ import {z} from "zod";
 import {createId} from "@paralleldrive/cuid2";
 
 /** Schema for a transaction ID. */
-export const txnIdPrefix = 'txn'
+export const txnIdPrefix = 'trxn'
 export const txnIdSchema =
     z.cuid2({message: `Transaction ID must be a string in CUID2 format with prefix '${txnIdPrefix}'.`})
         .trim()

@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'bun:test'
-import {genTxnId, txnIdPrefix, txnIdSchema} from "../../../src/domain/transactions/TxnId";
+import {genTxnId, txnIdPrefix, txnIdSchema} from "$shared/domain/transactions/TxnId";
 
 describe('genTxnId', () => {
     it('generates a valid transaction ID', () => {
@@ -38,7 +38,7 @@ describe('txnIdSchema', () => {
         it('accepts a valid ID with correct prefix', () => {
             const id = genTxnId()
             const result = txnIdSchema.parse(id)
-            expect(result.startsWith('txn')).toBe(true)
+            expect(result.startsWith('trxn')).toBe(true)
         })
     })
 
@@ -75,7 +75,7 @@ describe('txnIdSchema', () => {
 })
 
 describe('txnIdPrefix', () => {
-    it('is "txn"', () => {
-        expect(txnIdPrefix).toBe('txn')
+    it('is "trxn"', () => {
+        expect(txnIdPrefix).toBe('trxn')
     })
 })

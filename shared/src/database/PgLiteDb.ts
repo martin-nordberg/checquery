@@ -14,19 +14,10 @@ export class PgLiteDb {
         this.#db = db
     }
 
-    /** Executes a parameterized SQL query with no result needed. */
+    /** Executes an optionally parameterized SQL query with no result needed. */
     async exec(sql: string, params?: any[]) {
-        await this.#db.query(sql, params)
-    }
-
-    /** Executes a SQL query with neither parameters nor results. */
-    async execDdl(sql: string) {
-        await this.#db.exec(sql)
-    }
-
-    /** Executes a parameterized SQL query with one record expected, type-checked by Zod. */
-    async findOnexx(sql: string, params?: any[]) {
-        await this.#db.query(sql, params)
+        const result = await this.#db.query(sql, params)
+        return result.affectedRows
     }
 
     /** Finds one record and parses it with the given Zod schema. */

@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'bun:test'
-import {acctTypeCodes, acctTypeFromName, acctTypeSchema, acctTypeText} from "../../../src/domain/accounts/AcctType";
+import {acctTypeCodes, acctTypeFromName, acctTypeSchema, acctTypeText} from "$shared/domain/accounts/AcctType";
 
 describe('acctTypeSchema', () => {
     describe('valid account types', () => {

@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@electric-sql/pglite": "^0.3.15",
+    "@electric-sql/pglite": "0.3.15",
     "@hono/zod-validator": "0.7.6",
     "@paralleldrive/cuid2": "3.0.2",
     "@solid-primitives/map": "0.7.2",
