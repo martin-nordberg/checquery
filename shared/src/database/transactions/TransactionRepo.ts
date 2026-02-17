@@ -184,7 +184,7 @@ export class TransactionRepo {
                  SELECT $1, $2, Account.id, $4, $5, $6
                  FROM Account
                  WHERE name = $3
-                 ON CONFLICT (txnId, entrySeq)
+                 ON CONFLICT ON CONSTRAINT Entry_PK
                  DO UPDATE SET
                     accountId = EXCLUDED.accountId,
                     debitCents = EXCLUDED.debitCents,
