@@ -12,7 +12,7 @@ export const hlcSchema =
     z.string()
         .trim()
         .length(hlcLength, `Hybrid logical clock must be ${hlcLength} characters in length.`)
-        .regex(hlcRegex, "Hybrid logical clock must be a hexadecimal integer.")
+        .regex(hlcRegex, "Hybrid logical clock must be an upper case hexadecimal integer.")
 
 export type HLClock = z.infer<typeof hlcSchema>
 

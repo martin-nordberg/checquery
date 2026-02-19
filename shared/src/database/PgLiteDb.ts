@@ -1,54 +1,41 @@
 import {PGlite} from "@electric-sql/pglite";
 import {live, type LiveNamespace} from "@electric-sql/pglite/live";
-import {z, ZodReadonly, ZodType} from "zod";
+import {PgLiteTxn} from "$shared/database/PgLiteTxn";
+import {advanceHLClock, getHLClock, type HLClock, mergeHLClock} from "$shared/domain/core/HybridLogicalClock";
 
 
 /**
- * Wrapper around the PGLite API.
+ * Wrapper around the PGLite API. Forces everything into transactions or live queries.
+ * Adds a hybrid logical clock for use in transactions.
  */
 export class PgLiteDb {
 
     #db: PGlite & { live: LiveNamespace }
 
-    constructor(db: PGlite & { live: LiveNamespace }) {
+    #hlc: HLClock
+
+    constructor(db: PGlite & { live: LiveNamespace }, nodeId: string) {
         this.#db = db
+        this.#hlc = getHLClock(nodeId)
     }
 
-    /** Executes an optionally parameterized SQL query with no result needed. */
-    async exec(sql: string, params?: any[]) {
-        const result = await this.#db.query(sql, params)
-        return result.affectedRows
+    getLastHlc() {
+        return this.#hlc
     }
 
-    /** Finds one record and parses it with the given Zod schema. */
-    async findOne<T extends ZodType>(sql: string, params: any[], schema: ZodReadonly<T>) {
-        const qryResult = await this.#db.query(sql, params)
-
-        if (qryResult.rows.length == 0) {
-            return null
-        }
-        if (qryResult.rows.length > 1) {
-            throw new Error("Expected a single result row.")
-        }
-
-        return schema.parse(dropNullFields(qryResult.rows[0]))
+    mergeHlc(externalHlc: HLClock) {
+        this.#hlc = mergeHLClock(this.#hlc, externalHlc)
     }
 
-    /** Finds many records and parses them with the given Zod schema. */
-    async findMany<T extends ZodType>(sql: string, params: any[], schema: ZodReadonly<T>) {
-        const qryResult = await this.#db.query(sql, params)
-
-        const result: z.infer<typeof schema>[] = []
-        for (let row of qryResult.rows) {
-            result.push(schema.parse(dropNullFields(row)))
-        }
-        return result
+    async transaction<T>(callback: (txn: PgLiteTxn) => Promise<T>): Promise<T> {
+        this.#hlc = advanceHLClock(this.#hlc)
+        return this.#db.transaction((tx) => callback(new PgLiteTxn(tx, this.#hlc)))
     }
 
 }
 
-
-export async function createPgLiteDb() {
+/** Constructs a new PGLite database with given node ID for clock purposes. */
+export async function createPgLiteDb(nodeId: string) {
     const db = await PGlite.create({
             extensions: {
                 live
@@ -56,15 +43,5 @@ export async function createPgLiteDb() {
         }
     )
 
-    return new PgLiteDb(db)
-}
-
-
-/** Removes all null fields from an object, leaving them undefined instead. */
-function dropNullFields(rec: any)  {
-    if (rec == null) {
-        return null
-    }
-
-    return Object.fromEntries(Object.entries(rec).filter(([_, v]) => (typeof v !== 'undefined') && (v !== null)))
+    return new PgLiteDb(db, nodeId)
 }

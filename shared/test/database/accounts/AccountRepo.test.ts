@@ -3,14 +3,14 @@ import {type Account} from "$shared/domain/accounts/Account";
 import {genAcctId} from "$shared/domain/accounts/AcctId";
 import {createPgLiteDb} from "$shared/database/PgLiteDb";
 import {runChecqueryPgDdl} from "$shared/database/CheckqueryPgDdl";
-import {AccountRepo} from "$shared/database/accounts/AccountRepo";
 import {VendorRepo} from "$shared/database/vendors/VendorRepo";
 import {genVndrId} from "$shared/domain/vendors/VndrId";
 import type {Vendor} from "$shared/domain/vendors/Vendor";
+import {AccountRepo} from "$shared/database/accounts/AccountRepo";
 
 describe('Account Repo', () => {
     it('Should create, find, update, and delete an account', async () => {
-        const db = await createPgLiteDb()
+        const db = await createPgLiteDb("ACC")
         await runChecqueryPgDdl(db)
         const repo = new AccountRepo(db)
 

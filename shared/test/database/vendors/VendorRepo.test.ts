@@ -7,7 +7,7 @@ import {genVndrId} from "$shared/domain/vendors/VndrId";
 
 describe('Vendor Repo', () => {
     it('Should create, find, update, and delete a vendor', async () => {
-        const db = await createPgLiteDb()
+        const db = await createPgLiteDb("E1E")
         await runChecqueryPgDdl(db)
         const repo = new VendorRepo(db)
 

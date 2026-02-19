@@ -2,10 +2,12 @@ import {z} from "zod";
 import {createId} from "@paralleldrive/cuid2";
 
 /** Schema for a statement ID. */
+export const stmtIdLength = 28
 export const stmtIdPrefix = 'stmt'
 export const stmtIdSchema =
     z.cuid2({message: `Statement ID must be a string in CUID2 format with prefix '${stmtIdPrefix}'.`})
         .trim()
+        .length(stmtIdLength)
         .startsWith(stmtIdPrefix)
         .brand('Statement')
 export type StmtId = z.infer<typeof stmtIdSchema>

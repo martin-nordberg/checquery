@@ -5,16 +5,20 @@ import {z} from "zod";
 
 describe('PGLite Database', () => {
     it('Should initialize a Checquery database', async () => {
-        const db = await createPgLiteDb()
+        const db = await createPgLiteDb("000")
         await runChecqueryPgDdl(db)
 
         const tableNames = ['Account', 'Entry', 'Statement', 'Transaxtion', 'Vendor']
         for (let tableName of tableNames) {
-            const r1 = await db.findOne(`SELECT count(*) as c FROM ${tableName}`, [], z.object({c: z.number()}).readonly())
+            const r1 = await db.transaction(async (txn) =>
+                txn.findOne(`SELECT count(*) as c FROM ${tableName}`, [], z.object({c: z.number()}).readonly())
+            )
             expect(r1).toEqual({c: 0})
         }
 
-        const r2 = await db.findMany('SELECT code FROM AcctType ORDER BY code', [], z.object({code: z.string()}).readonly())
+        const r2 = await db.transaction(async (txn) =>
+            txn.findMany('SELECT code FROM AcctType ORDER BY code', [], z.object({code: z.string()}).readonly())
+        )
         expect(r2.length).toEqual(5)
         expect(r2[0]!.code).toEqual('ASSET')
         expect(r2[1]!.code).toEqual('EQUITY')

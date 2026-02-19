@@ -1,0 +1,202 @@
+import type {StmtId} from "$shared/domain/statements/StmtId";
+import {stmtIdSchema} from "$shared/domain/statements/StmtId";
+import {type Statement, type StatementCreation, type StatementUpdate} from "$shared/domain/statements/Statement";
+import {fromCents, toCents} from "$shared/domain/core/CurrencyAmt";
+import {z} from "zod";
+import {isoDateSchema} from "$shared/domain/core/IsoDate";
+import {nameSchema} from "$shared/domain/core/Name";
+import type {PgLiteTxn} from "$shared/database/PgLiteTxn";
+import type {IStatementSvc} from "$shared/services/statements/IStatementSvc";
+
+
+/** Schema for parsing a Statement row joined with Account. */
+const statementRowSchema = z.strictObject({
+    id: stmtIdSchema,
+    beginDate: isoDateSchema,
+    endDate: isoDateSchema,
+    beginBalanceCents: z.int(),
+    endBalanceCents: z.int(),
+    account: nameSchema,
+    isReconciled: z.boolean(),
+}).readonly()
+
+export class StatementTxnRepo implements IStatementSvc {
+
+    readonly #txn: PgLiteTxn
+
+    constructor(txn: PgLiteTxn) {
+        this.#txn = txn
+    }
+
+    async createStatement(statement: StatementCreation): Promise<void> {
+        await this.#txn.exec(
+            `INSERT INTO Statement (id, beginDate, beginDateHlc, endDate, endDateHlc, beginBalanceCents,
+                                    beginBalanceCentsHlc,
+                                    endBalanceCents, endBalanceCentsHlc, accountId, isReconciled, isReconciledHlc,
+                                    isDeleted, isDeletedHlc)
+             SELECT $1,
+                    $2,
+                    $hlc,
+                    $3,
+                    $hlc,
+                    $4,
+                    $hlc,
+                    $5,
+                    $hlc,
+                    Account.id,
+                    $7,
+                    $hlc,
+                    false,
+                    $hlc
+             FROM Account
+             WHERE name = $6;`,
+            [
+                statement.id,
+                statement.beginDate,
+                statement.endDate,
+                toCents(statement.beginningBalance),
+                toCents(statement.endingBalance),
+                statement.account,
+                statement.isReconciled,
+            ]
+        )
+    }
+
+    async deleteStatement(statementId: StmtId): Promise<void> {
+        await this.#txn.exec(
+            `UPDATE Statement
+             SET isDeleted    = true,
+                 isDeletedHlc = $hlc
+             WHERE id = $1
+               AND (isDeleted = false or isDeletedHlc > $hlc)`,
+            [statementId]
+        )
+    }
+
+    async findStatementById(statementId: StmtId): Promise<Statement | null> {
+        const row = await this.#txn.findOne(
+            `SELECT Statement.id,
+                    beginDate         as "beginDate",
+                    endDate           as "endDate",
+                    beginBalanceCents as "beginBalanceCents",
+                    endBalanceCents   as "endBalanceCents",
+                    Account.name      as account,
+                    isReconciled      as "isReconciled"
+             FROM Statement
+                      JOIN Account ON Statement.accountId = Account.id
+             WHERE Statement.id = $1
+               AND Statement.isDeleted = false`,
+            [statementId],
+            statementRowSchema
+        )
+
+        if (!row) {
+            return null
+        }
+
+        return {
+            id: row.id,
+            beginDate: row.beginDate,
+            endDate: row.endDate,
+            beginningBalance: fromCents(row.beginBalanceCents),
+            endingBalance: fromCents(row.endBalanceCents),
+            account: row.account,
+            isReconciled: row.isReconciled,
+            transactions: [],
+        }
+    }
+
+    async findStatementsAll(): Promise<Statement[]> {
+        const rows = await this.#txn.findMany(
+            `SELECT Statement.id,
+                    beginDate         as "beginDate",
+                    endDate           as "endDate",
+                    beginBalanceCents as "beginBalanceCents",
+                    endBalanceCents   as "endBalanceCents",
+                    Account.name      as account,
+                    isReconciled      as "isReconciled"
+             FROM Statement
+                      JOIN Account ON Statement.accountId = Account.id
+             WHERE Statement.isDeleted = false
+             ORDER BY endDate, account`,
+            [],
+            statementRowSchema
+        )
+
+        const result: Statement[] = []
+        for (const row of rows) {
+            result.push({
+                id: row.id,
+                beginDate: row.beginDate,
+                endDate: row.endDate,
+                beginningBalance: fromCents(row.beginBalanceCents),
+                endingBalance: fromCents(row.endBalanceCents),
+                account: row.account,
+                isReconciled: row.isReconciled,
+                transactions: [] /*TODO*/,
+            })
+        }
+
+        return result
+    }
+
+    async updateStatement(statementPatch: StatementUpdate): Promise<Statement | null> {
+
+        if (statementPatch.beginDate !== undefined) {
+            await this.#txn.exec(
+                `UPDATE Statement
+                 SET beginDate    = $2,
+                     beginDateHlc = $hlc
+                 WHERE id = $1
+                   AND beginDateHlc < $hlc`,
+                [statementPatch.id, statementPatch.beginDate]
+            )
+        }
+
+        if (statementPatch.endDate !== undefined) {
+            await this.#txn.exec(
+                `UPDATE Statement
+                 SET endDate    = $2,
+                     endDateHlc = $hlc
+                 WHERE id = $1
+                   AND endDateHlc < $hlc`,
+                [statementPatch.id, statementPatch.endDate]
+            )
+        }
+
+        if (statementPatch.beginningBalance !== undefined) {
+            await this.#txn.exec(
+                `UPDATE Statement
+                 SET beginBalanceCents    = $2,
+                     beginBalanceCentsHlc = $hlc
+                 WHERE id = $1
+                   AND beginBalanceCentsHlc < $hlc`,
+                [statementPatch.id, toCents(statementPatch.beginningBalance)]
+            )
+        }
+        if (statementPatch.endingBalance !== undefined) {
+            await this.#txn.exec(
+                `UPDATE Statement
+                 SET endBalanceCents    = $2,
+                     endBalanceCentsHlc = $hlc
+                 WHERE id = $1
+                   AND endBalanceCentsHlc < $hlc`,
+                [statementPatch.id, toCents(statementPatch.endingBalance)]
+            )
+        }
+
+        if (statementPatch.isReconciled !== undefined) {
+            await this.#txn.exec(
+                `UPDATE Statement
+                 SET isReconciled    = $2,
+                     isReconciledHlc = $hlc
+                 WHERE id = $1
+                   AND isReconciledHlc < $hlc`,
+                [statementPatch.id, statementPatch.isReconciled]
+            )
+        }
+
+        return this.findStatementById(statementPatch.id)
+    }
+
+}

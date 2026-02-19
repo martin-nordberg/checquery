@@ -10,7 +10,7 @@ import type {Account} from "$shared/domain/accounts/Account";
 
 describe('Statement Repo', () => {
     it('Should create, find, update, and delete a statement', async () => {
-        const db = await createPgLiteDb()
+        const db = await createPgLiteDb("EEF")
         await runChecqueryPgDdl(db)
 
         const arepo = new AccountRepo(db)

@@ -12,7 +12,7 @@ import type {Transaction} from "$shared/domain/transactions/Transaction";
 
 describe('Transaction Repo', () => {
     it('Should create, find, update, and delete a transaction', async () => {
-        const db = await createPgLiteDb()
+        const db = await createPgLiteDb("F00")
         await runChecqueryPgDdl(db)
         const arepo = new AccountRepo(db)
 
@@ -47,7 +47,6 @@ describe('Transaction Repo', () => {
         }
 
         await vrepo.createVendor(vndr0)
-
 
         const repo = new TransactionRepo(db)
 
