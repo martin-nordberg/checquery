@@ -20,6 +20,10 @@ export class PgLiteTxn {
     /** Executes an optionally parameterized SQL query with no result needed. */
     async exec(sql: string, params?: any[]) {
         const result = await this.#txn.query(sql.replaceAll(/\$hlc/g, `'${this.hlc}'`), params)
+        if (result.affectedRows === 0 && !sql.toUpperCase().startsWith("CREATE")) {
+            console.log("SQL with no affected rows:")
+            console.log({sql, params})
+        }
         return result.affectedRows
     }
 

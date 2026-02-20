@@ -81,6 +81,8 @@ describe('Account Repo', () => {
 
         expect(acct5).toBeNull()
 
+        await db.close()
+
     })
 
 })

@@ -110,6 +110,8 @@ describe('Transaction Repo', () => {
 
         expect(txn5).toBeNull()
 
+        await db.close()
+
     })
 
 })

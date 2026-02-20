@@ -25,5 +25,7 @@ describe('PGLite Database', () => {
         expect(r2[2]!.code).toEqual('EXPENSE')
         expect(r2[3]!.code).toEqual('INCOME')
         expect(r2[4]!.code).toEqual('LIABILITY')
+
+        await db.close()
     })
 })

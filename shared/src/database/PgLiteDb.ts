@@ -19,6 +19,10 @@ export class PgLiteDb {
         this.#hlc = getHLClock(nodeId)
     }
 
+    async close() {
+        await this.#db.close()
+    }
+
     getLastHlc() {
         return this.#hlc
     }

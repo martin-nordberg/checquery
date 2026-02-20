@@ -67,6 +67,9 @@ describe('Statement Repo', () => {
         const stmt5 = await repo.findStatementById(id)
 
         expect(stmt5).toBeNull()
+
+        await db.close()
+
     })
 
 })

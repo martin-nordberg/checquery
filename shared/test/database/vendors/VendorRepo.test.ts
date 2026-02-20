@@ -56,6 +56,9 @@ describe('Vendor Repo', () => {
         const vndr5 = await repo.findVendorById(id)
 
         expect(vndr5).toBeNull()
+
+        await db.close()
+
     })
 
 })
