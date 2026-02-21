@@ -29,19 +29,20 @@ runChecqueryDdl(db)
 // Services for loading from YAML (no persistence to avoid duplicates)
 const vndrLoaderSvc = new VendorSqlService(db, false)
 const acctLoaderSvc = new AccountSqlService(db, false)
+const txnLoaderSvc = new TransactionSqlService(db, false)
 const stmtLoaderSvc = new StatementSqlService(db, false)
 // Services for API (with persistence to YAML)
 const vndrSvc = new VendorSqlService(db, true)
 const acctSvc = new AccountSqlService(db, true)
-const txnSvc = new TransactionSqlService(db)
+const txnSvc = new TransactionSqlService(db, true)
 const stmtSvc = new StatementSqlService(db, true)
 const bsSvc = new BalanceSheetSqlService(db)
 const isSvc = new IncomeStatementSqlService(db)
-const regSvc = new RegisterSqlService(db)
+const regSvc = new RegisterSqlService(db, txnSvc)
 
 await loadChecqueryLog({
     acctSvc: acctLoaderSvc,
-    txnSvc: txnSvc,
+    txnSvc: txnLoaderSvc,
     vendorSvc: vndrLoaderSvc,
     stmtSvc: stmtLoaderSvc
 })
@@ -72,6 +73,6 @@ const routes =
 export type AppType = typeof routes
 
 export default {
-    port: 3001,
+    port: parseInt(process.env.CHECQUERY_PORT ?? '3001'),
     fetch: app.fetch,
 }

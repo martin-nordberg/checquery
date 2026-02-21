@@ -13,20 +13,17 @@ import type {AcctId} from "$shared/domain/accounts/AcctId";
 import {type TxnId, txnIdSchema} from "$shared/domain/transactions/TxnId";
 import {txnStatusSchema} from "$shared/domain/transactions/TxnStatus";
 import {acctTypeSchema} from "$shared/domain/accounts/AcctType";
-import {
-    appendDirective,
-    createTransactionCreateDirective,
-    createTransactionDeleteDirective,
-    createTransactionUpdateDirective
-} from "../../util/ChecqueryYamlAppender";
+import type {ITransactionSvc} from "$shared/services/transactions/ITransactionSvc";
 
 
 export class RegisterSqlService implements IRegisterSvc {
 
     readonly db: ChecquerySqlDb
+    readonly txnSvc: ITransactionSvc
 
-    constructor(db: ChecquerySqlDb) {
+    constructor(db: ChecquerySqlDb, txnSvc: ITransactionSvc) {
         this.db = db
+        this.txnSvc = txnSvc
     }
 
     async findRegister(accountId: AcctId): Promise<Register | null> {
@@ -226,205 +223,40 @@ export class RegisterSqlService implements IRegisterSvc {
     }
 
     async updateTransaction(update: RegisterUpdate): Promise<RegisterTransaction | null> {
-        // Apply to in-memory database first
-        const setClauses: string[] = []
-        const bindings: Record<string, unknown> = {$id: update.id}
-
-        if (update.date !== undefined) {
-            setClauses.push('date = $date')
-            bindings['$date'] = update.date
-        }
-        if (update.code !== undefined) {
-            setClauses.push('code = $code')
-            bindings['$code'] = update.code || null
-        }
-        if (update.description !== undefined) {
-            setClauses.push('description = $description')
-            bindings['$description'] = update.description || null
-        }
-
-        if (update.vendor !== undefined) {
-            if (update.vendor) {
-                this.db.run(
-                    'register.update.vendor',
-                    () =>
-                        `UPDATE Transaxtion
-                         SET vendorId = (SELECT id FROM Vendor WHERE name = $vendor)
-                         WHERE id = $id`,
-                    {$id: update.id, $vendor: update.vendor}
-                )
-            } else {
-                setClauses.push('vendorId = NULL')
-            }
-        }
-
-        if (setClauses.length > 0) {
-            // Key must include field names since SQL varies by which fields are updated
-            const fieldKey = setClauses.map(c => c.split(' ')[0]).join(',')
-            this.db.run(
-                `register.update.fields.${fieldKey}`,
-                () => `UPDATE Transaxtion SET ${setClauses.join(', ')} WHERE id = $id`,
-                bindings
-            )
-        }
-
-        // Handle entries update
-        if (update.entries !== undefined) {
-            this.db.run(
-                'register.update.deleteEntries',
-                () => `DELETE FROM Entry WHERE txnId = $id`,
-                {$id: update.id}
-            )
-
-            let entrySeq = 1
-            for (const entry of update.entries) {
-                this.db.run(
-                    'register.update.createEntry',
-                    () =>
-                        `INSERT INTO Entry (txnId, entrySeq, accountId, debitCents, creditCents)
-                         SELECT $txnId, $entrySeq, Account.id, $debit, $credit
-                         FROM Account
-                         WHERE name = $account`,
-                    {
-                        $txnId: update.id,
-                        $entrySeq: entrySeq,
-                        $account: entry.account,
-                        $debit: Math.round(parseFloat(entry.debit.replace(/[$,()]/g, '')) * 100) || 0,
-                        $credit: Math.round(parseFloat(entry.credit.replace(/[$,()]/g, '')) * 100) || 0,
-                    }
-                )
-                entrySeq += 1
-            }
-        }
-
-        // Build the payload for YAML (only after SQL succeeds)
-        const payload: Record<string, unknown> = {id: update.id}
-        if (update.date !== undefined) {
-            payload['date'] = update.date
-        }
-        if (update.code !== undefined) {
-            payload['code'] = update.code
-        }
-        if (update.description !== undefined) {
-            payload['description'] = update.description
-        }
-        if (update.vendor !== undefined) {
-            payload['vendor'] = update.vendor
-        }
-        if (update.entries !== undefined) {
-            payload['entries'] = update.entries.map(e => {
-                const entry: Record<string, string> = {account: e.account}
-                if (e.debit && e.debit !== '$0.00') {
-                    entry['debit'] = e.debit
-                }
-                if (e.credit && e.credit !== '$0.00') {
-                    entry['credit'] = e.credit
-                }
-                return entry
-            })
-        }
-
-        // Append to YAML file
-        await appendDirective(createTransactionUpdateDirective(payload))
+        await this.txnSvc.updateTransaction({
+            id: update.id,
+            date: update.date,
+            code: update.code ?? undefined,
+            vendor: update.vendor ?? undefined,
+            description: update.description ?? undefined,
+            entries: update.entries?.map(e => ({
+                account: e.account,
+                debit: e.debit,
+                credit: e.credit,
+                comment: undefined,
+            })),
+        })
 
         return this.findTransaction(update.id)
     }
 
     async createTransaction(create: RegisterCreate): Promise<void> {
-        // Insert into in-memory database first
-        if (create.vendor) {
-            this.db.run(
-                'register.create.withvendor',
-                () =>
-                    `INSERT INTO Transaxtion (id, date, code, vendorId, description)
-                     SELECT $id, $date, $code, Vendor.id, $description
-                     FROM Vendor
-                     WHERE name = $vendor`,
-                {
-                    $id: create.id,
-                    $date: create.date,
-                    $code: create.code ?? null,
-                    $vendor: create.vendor,
-                    $description: create.description ?? null,
-                }
-            )
-        } else {
-            this.db.run(
-                'register.create.withoutvendor',
-                () =>
-                    `INSERT INTO Transaxtion (id, date, code, description)
-                     VALUES ($id, $date, $code, $description)`,
-                {
-                    $id: create.id,
-                    $date: create.date,
-                    $code: create.code ?? null,
-                    $description: create.description ?? null,
-                }
-            )
-        }
-
-        let entrySeq = 1
-        for (const entry of create.entries) {
-            this.db.run(
-                'register.create.entry',
-                () =>
-                    `INSERT INTO Entry (txnId, entrySeq, accountId, debitCents, creditCents)
-                     SELECT $txnId, $entrySeq, Account.id, $debit, $credit
-                     FROM Account
-                     WHERE name = $account`,
-                {
-                    $txnId: create.id,
-                    $entrySeq: entrySeq,
-                    $account: entry.account,
-                    $debit: Math.round(parseFloat(entry.debit.replace(/[$,()]/g, '')) * 100) || 0,
-                    $credit: Math.round(parseFloat(entry.credit.replace(/[$,()]/g, '')) * 100) || 0,
-                }
-            )
-            entrySeq += 1
-        }
-
-        // Build payload for YAML (only after SQL succeeds)
-        const payload: Record<string, unknown> = {
+        await this.txnSvc.createTransaction({
             id: create.id,
             date: create.date,
-        }
-        if (create.code) {
-            payload['code'] = create.code
-        }
-        if (create.description) {
-            payload['description'] = create.description
-        }
-        if (create.vendor) {
-            payload['vendor'] = create.vendor
-        }
-        payload['entries'] = create.entries.map(e => {
-            const entry: Record<string, string> = {account: e.account}
-            if (e.debit && e.debit !== '$0.00') {
-                entry['debit'] = e.debit
-            }
-            if (e.credit && e.credit !== '$0.00') {
-                entry['credit'] = e.credit
-            }
-            return entry
+            code: create.code ?? undefined,
+            vendor: create.vendor ?? undefined,
+            description: create.description ?? undefined,
+            entries: create.entries.map(e => ({
+                account: e.account,
+                debit: e.debit,
+                credit: e.credit,
+                comment: undefined,
+            })),
         })
-
-        await appendDirective(createTransactionCreateDirective(payload))
     }
 
     async deleteTransaction(txnId: TxnId): Promise<void> {
-        // Delete from in-memory database first (entries are deleted via CASCADE or we delete manually)
-        this.db.run(
-            'register.deleteEntries',
-            () => `DELETE FROM Entry WHERE txnId = $id`,
-            {$id: txnId}
-        )
-        this.db.run(
-            'register.deleteTransaction',
-            () => `DELETE FROM Transaxtion WHERE id = $id`,
-            {$id: txnId}
-        )
-
-        // Append to YAML file (only after SQL succeeds)
-        await appendDirective(createTransactionDeleteDirective(txnId))
+        await this.txnSvc.deleteTransaction(txnId)
     }
 }
