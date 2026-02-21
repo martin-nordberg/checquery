@@ -321,6 +321,7 @@ type TxnData = {
     code?: string
     entries: EntryData[]
 }
+type Directive = { action: string; payload: Record<string, any> }
 
 /** Create a simple 2-entry expense from checking. */
 function expenseFromChecking(date: string, vendor: string, expenseAcct: string, cents: number): TxnData {
@@ -473,84 +474,43 @@ function generateStatements(
 // YAML formatting
 // ---------------------------------------------------------------------------
 
-function formatYaml(
-    accounts: (AcctDef & { id: string })[],
-    vendors: (VndrDef & { id: string })[],
-    txns: TxnData[],
-    stmts: StmtData[],
-): string {
+function formatDirectives(directives: Directive[]): string {
     const lines: string[] = []
 
-    // Accounts
-    for (const a of accounts) {
-        lines.push('- action: create-account')
+    for (const d of directives) {
+        lines.push(`- action: ${d.action}`)
         lines.push('  payload:')
-        lines.push(`    acctType: ${a.type}`)
-        lines.push(`    id: ${a.id}`)
-        lines.push(`    name: ${a.name}`)
-        if (a.acctNumber) {
-            lines.push(`    acctNumber: ${a.acctNumber}`)
-        }
-        if (a.description) {
-            lines.push(`    description: ${a.description}`)
-        }
-        lines.push('')
-    }
-
-    // Vendors
-    for (const v of vendors) {
-        lines.push('- action: create-vendor')
-        lines.push('  payload:')
-        lines.push(`    id: ${v.id}`)
-        lines.push(`    name: ${v.name}`)
-        if (v.defaultAccount) {
-            lines.push(`    defaultAccount: ${v.defaultAccount}`)
-        }
-        lines.push('')
-    }
-
-    // Transactions
-    for (const t of txns) {
-        lines.push('- action: create-transaction')
-        lines.push('  payload:')
-        lines.push(`    id: ${t.id}`)
-        lines.push(`    date: ${t.date}`)
-        if (t.code) {
-            lines.push(`    code: "${t.code}"`)
-        }
-        if (t.vendor) {
-            lines.push(`    vendor: ${t.vendor}`)
-        }
-        if (t.description) {
-            lines.push(`    description: ${t.description}`)
-        }
-        lines.push('    entries:')
-        for (const e of t.entries) {
-            lines.push(`      - account: ${e.account}`)
-            if (e.debit) {
-                lines.push(`        debit: ${e.debit}`)
+        for (const [key, value] of Object.entries(d.payload)) {
+            if (Array.isArray(value)) {
+                if (value.length > 0 && typeof value[0] === 'object') {
+                    // Entries array: list of objects
+                    lines.push(`    ${key}:`)
+                    for (const item of value) {
+                        let first = true
+                        for (const [ik, iv] of Object.entries(item)) {
+                            if (first) {
+                                lines.push(`      - ${ik}: ${iv}`)
+                                first = false
+                            } else {
+                                lines.push(`        ${ik}: ${iv}`)
+                            }
+                        }
+                    }
+                } else {
+                    // Transaction ID array: list of strings
+                    lines.push(`    ${key}:`)
+                    for (const item of value) {
+                        lines.push(`      - ${item}`)
+                    }
+                }
+            } else if (typeof value === 'boolean') {
+                lines.push(`    ${key}: ${value}`)
+            } else if (typeof value === 'string' && /^\d+$/.test(value)) {
+                // Numeric-looking strings (check codes) — quote them
+                lines.push(`    ${key}: "${value}"`)
+            } else {
+                lines.push(`    ${key}: ${value}`)
             }
-            if (e.credit) {
-                lines.push(`        credit: ${e.credit}`)
-            }
-        }
-        lines.push('')
-    }
-
-    // Statements
-    for (const s of stmts) {
-        lines.push('- action: create-statement')
-        lines.push('  payload:')
-        lines.push(`    id: ${s.id}`)
-        lines.push(`    account: ${s.account}`)
-        lines.push(`    beginDate: ${s.beginDate}`)
-        lines.push(`    endDate: ${s.endDate}`)
-        lines.push(`    beginningBalance: ${s.beginningBalance}`)
-        lines.push(`    endingBalance: ${s.endingBalance}`)
-        lines.push(`    isReconciled: ${s.isReconciled}`)
-        lines.push('    transactions:')
-        for (const txnId of s.transactions) {
-            lines.push(`      - ${txnId}`)
         }
         lines.push('')
     }
@@ -567,10 +527,37 @@ async function main() {
     const accounts = accountDefs.map(a => ({...a, id: genAcctId()}))
     const vendors = vendorDefs.map(v => ({...v, id: genVndrId()}))
 
-    // We need to collect statement data from transaction generation.
-    // The generateTransactions function captures this in closures, so we
-    // restructure to make statement data accessible.
+    // Name tracking for renames
+    const acctRenames = new Map<string, string>()
+    const vendorRenames = new Map<string, string>()
 
+    function currentAcctName(original: string): string {
+        return acctRenames.get(original) ?? original
+    }
+    function currentVendorName(original: string): string {
+        return vendorRenames.get(original) ?? original
+    }
+    function acctIdByName(name: string): string {
+        const a = accounts.find(a => a.name === name)
+        if (!a) { throw new Error(`Account not found: ${name}`) }
+        return a.id
+    }
+    function vendorIdByName(name: string): string {
+        const v = vendors.find(v => v.name === name)
+        if (!v) { throw new Error(`Vendor not found: ${name}`) }
+        return v.id
+    }
+
+    // Extra accounts (created then immediately deleted — never used in transactions)
+    const extraAccounts: (AcctDef & { id: string })[] = [
+        {id: genAcctId(), type: 'ASSET', name: 'Savings:Vacation Fund', description: 'Vacation savings fund'},
+        {id: genAcctId(), type: 'LIABILITY', name: 'Loans:Personal Loan', description: 'Personal loan'},
+    ]
+
+    // Extra vendor (created then immediately deleted)
+    const extraVendor = {id: genVndrId(), name: 'Blockbuster Video', defaultAccount: 'Entertainment:Movies'}
+
+    // Statement data collection
     const checkingTxnsByMonth = new Map<number, string[]>()
     const savingsTxnsByMonth = new Map<number, string[]>()
     const visaTxnsByMonth = new Map<number, string[]>()
@@ -578,8 +565,20 @@ async function main() {
     const savingsBalByMonth: { begin: number; end: number }[] = []
     const visaBalByMonth: { begin: number; end: number }[] = []
 
-    // We'll inline the transaction generation here so we can capture the data.
     const allTxns: TxnData[] = []
+
+    // Per-month directive collectors
+    const preMonthDirectives = new Map<number, Directive[]>()
+    const postMonthDirectives = new Map<number, Directive[]>()
+    for (let m = 1; m <= 12; m++) {
+        preMonthDirectives.set(m, [])
+        postMonthDirectives.set(m, [])
+    }
+
+    // Track specific txn IDs for later updates
+    let groceryTxnMonth2Id = ''
+    let restaurantTxnMonth6Id = ''
+    let retailTxnMonth9Id = ''
 
     // ---- Opening Balances (2010-01-01) ----
     allTxns.push({
@@ -630,6 +629,86 @@ async function main() {
     const charitableVendors = ['First Baptist Church', 'Red Cross', 'Salvation Army']
     const personalCareVendors = ['Great Clips', 'Bath and Body Works', 'Supercuts']
 
+    // Deferred renames: applied at the start of each month
+    const deferredAcctRenames = new Map<number, [string, string][]>()
+    const deferredVendorRenames = new Map<number, [string, string][]>()
+
+    // ---- Set up pre-month directives: account renames/updates ----
+    // Month 3: Rename Utilities:Landline → Utilities:Home Phone
+    preMonthDirectives.get(3)!.push({
+        action: 'update-account',
+        payload: {id: acctIdByName('Utilities:Landline'), name: 'Utilities:Home Phone'},
+    })
+    deferredAcctRenames.set(3, [['Utilities:Landline', 'Utilities:Home Phone']])
+
+    // Month 5: Update CD description
+    preMonthDirectives.get(5)!.push({
+        action: 'update-account',
+        payload: {id: acctIdByName('CD:12-Month Certificate'), description: '12-month CD renewed at higher rate'},
+    })
+
+    // Month 7: Rename Utilities:Cable TV → Utilities:Streaming TV
+    preMonthDirectives.get(7)!.push({
+        action: 'update-account',
+        payload: {id: acctIdByName('Utilities:Cable TV'), name: 'Utilities:Streaming TV'},
+    })
+    deferredAcctRenames.set(7, [['Utilities:Cable TV', 'Utilities:Streaming TV']])
+
+    // ---- Set up pre-month directives: vendor renames ----
+    // Month 5: Rename Dunkin Donuts → Dunkin
+    preMonthDirectives.get(5)!.push({
+        action: 'update-vendor',
+        payload: {id: vendorIdByName('Dunkin Donuts'), name: 'Dunkin'},
+    })
+    deferredVendorRenames.set(5, [['Dunkin Donuts', 'Dunkin']])
+
+    // Month 7: Rename Time Warner Cable → Spectrum
+    preMonthDirectives.get(7)!.push({
+        action: 'update-vendor',
+        payload: {id: vendorIdByName('Time Warner Cable'), name: 'Spectrum'},
+    })
+    deferredVendorRenames.set(7, [['Time Warner Cable', 'Spectrum']])
+
+    // ---- Set up post-month directives: mistake txn creates + deletes ----
+    // Month 3: Mistaken expense entry
+    const mistakeTxn3Id = genTxnId()
+    postMonthDirectives.get(3)!.push(
+        {action: 'create-transaction', payload: {
+            id: mistakeTxn3Id, date: dateStr(3, 15), description: 'Mistaken expense entry',
+            entries: [
+                {account: 'Banking:Checking', credit: fromCents(5000)},
+                {account: 'Miscellaneous:General', debit: fromCents(5000)},
+            ],
+        }},
+        {action: 'delete-transaction', payload: {id: mistakeTxn3Id}},
+    )
+
+    // Month 7: Duplicate entry (uses post-rename name since rename happens at month start)
+    const mistakeTxn7Id = genTxnId()
+    postMonthDirectives.get(7)!.push(
+        {action: 'create-transaction', payload: {
+            id: mistakeTxn7Id, date: dateStr(7, 10), description: 'Duplicate entry',
+            entries: [
+                {account: 'Banking:Checking', credit: fromCents(3500)},
+                {account: 'Utilities:Streaming TV', debit: fromCents(3500)},
+            ],
+        }},
+        {action: 'delete-transaction', payload: {id: mistakeTxn7Id}},
+    )
+
+    // Month 11: Wrong account entry
+    const mistakeTxn11Id = genTxnId()
+    postMonthDirectives.get(11)!.push(
+        {action: 'create-transaction', payload: {
+            id: mistakeTxn11Id, date: dateStr(11, 20), description: 'Wrong account entry',
+            entries: [
+                {account: 'Banking:Checking', credit: fromCents(7500)},
+                {account: 'Miscellaneous:General', debit: fromCents(7500)},
+            ],
+        }},
+        {action: 'delete-transaction', payload: {id: mistakeTxn11Id}},
+    )
+
     let checkingCents = 1000000
     let savingsCents = 2500000
     let visaCents = 250000
@@ -644,7 +723,19 @@ async function main() {
         const savingsBegin = savingsCents
         const visaBegin = visaCents
 
+        // Apply deferred renames for this month
+        for (const [from, to] of deferredAcctRenames.get(month) || []) {
+            acctRenames.set(from, to)
+        }
+        for (const [from, to] of deferredVendorRenames.get(month) || []) {
+            vendorRenames.set(from, to)
+        }
+
         const addTxn = (txn: TxnData) => {
+            // Resolve renamed names
+            if (txn.vendor) { txn.vendor = currentVendorName(txn.vendor) }
+            for (const e of txn.entries) { e.account = currentAcctName(e.account) }
+
             monthTxns.push(txn)
             for (const e of txn.entries) {
                 if (e.account === 'Banking:Checking') {
@@ -666,7 +757,25 @@ async function main() {
         }
 
         // ---- PAYROLL ----
-        addTxn(incomeToChecking(dateStr(month, 1), 'Acme Corporation', 'Salary:Primary Employment', 320000))
+        // Months 2 and 8: replace first paycheck with multi-entry version
+        if (month === 2 || month === 8) {
+            addTxn({
+                id: genTxnId(),
+                date: dateStr(month, 1),
+                vendor: 'Acme Corporation',
+                description: 'Payroll with deductions',
+                entries: [
+                    {account: 'Salary:Primary Employment', credit: fromCents(480000)},
+                    {account: 'Banking:Checking', debit: fromCents(320000)},
+                    {account: 'Investments:401K', debit: fromCents(60000)},
+                    {account: 'Taxes:Federal Income Tax', debit: fromCents(70000)},
+                    {account: 'Taxes:State Income Tax', debit: fromCents(20000)},
+                    {account: 'Insurance:Health Premium', debit: fromCents(10000)},
+                ]
+            })
+        } else {
+            addTxn(incomeToChecking(dateStr(month, 1), 'Acme Corporation', 'Salary:Primary Employment', 320000))
+        }
         addTxn(incomeToChecking(dateStr(month, 15), 'Acme Corporation', 'Salary:Primary Employment', 320000))
         addTxn(incomeToChecking(dateStr(month, 5), 'Tech Solutions Inc', 'Salary:Spouse Employment', 240000))
         addTxn(incomeToChecking(dateStr(month, 20), 'Tech Solutions Inc', 'Salary:Spouse Employment', 240000))
@@ -736,9 +845,13 @@ async function main() {
             const acct = vendor === 'Whole Foods' ? 'Groceries:Organic Market' : 'Groceries:General'
             const cents = randomInt(2500, 22000)
             if (rng() < 0.25) {
-                addTxn(expenseOnVisa(randomDate(month), vendor, acct, cents))
+                const txn = expenseOnVisa(randomDate(month), vendor, acct, cents)
+                if (month === 2 && !groceryTxnMonth2Id) { groceryTxnMonth2Id = txn.id }
+                addTxn(txn)
             } else {
-                addTxn(expenseFromChecking(randomDate(month), vendor, acct, cents))
+                const txn = expenseFromChecking(randomDate(month), vendor, acct, cents)
+                if (month === 2 && !groceryTxnMonth2Id) { groceryTxnMonth2Id = txn.id }
+                addTxn(txn)
             }
         }
 
@@ -755,9 +868,13 @@ async function main() {
             const acct = vendorAcctMap[vendor] || 'Dining:Restaurants'
             const cents = randomInt(800, 8000)
             if (rng() < 0.3) {
-                addTxn(expenseOnVisa(randomDate(month), vendor, acct, cents))
+                const txn = expenseOnVisa(randomDate(month), vendor, acct, cents)
+                if (month === 6 && !restaurantTxnMonth6Id) { restaurantTxnMonth6Id = txn.id }
+                addTxn(txn)
             } else {
-                addTxn(expenseFromChecking(randomDate(month), vendor, acct, cents))
+                const txn = expenseFromChecking(randomDate(month), vendor, acct, cents)
+                if (month === 6 && !restaurantTxnMonth6Id) { restaurantTxnMonth6Id = txn.id }
+                addTxn(txn)
             }
         }
 
@@ -774,9 +891,13 @@ async function main() {
             const acct = vendorAcctMap[vendor] || 'Miscellaneous:General'
             const cents = randomInt(1000, 15000)
             if (rng() < 0.2) {
-                addTxn(expenseOnVisa(randomDate(month), vendor, acct, cents))
+                const txn = expenseOnVisa(randomDate(month), vendor, acct, cents)
+                if (month === 9 && !retailTxnMonth9Id) { retailTxnMonth9Id = txn.id }
+                addTxn(txn)
             } else {
-                addTxn(expenseFromChecking(randomDate(month), vendor, acct, cents))
+                const txn = expenseFromChecking(randomDate(month), vendor, acct, cents)
+                if (month === 9 && !retailTxnMonth9Id) { retailTxnMonth9Id = txn.id }
+                addTxn(txn)
             }
         }
 
@@ -861,6 +982,54 @@ async function main() {
             addTxn(expenseOnVisa(randomDate(month), 'Hilton Hotels', 'Miscellaneous:General', randomInt(25000, 60000)))
         }
 
+        // ---- MULTI-ENTRY TRANSACTIONS ----
+        // Month 5: Costco split shopping (4 entries)
+        if (month === 5) {
+            addTxn({
+                id: genTxnId(),
+                date: randomDate(month),
+                vendor: 'Costco',
+                description: 'Costco split shopping trip',
+                entries: [
+                    {account: 'Banking:Checking', credit: fromCents(28500)},
+                    {account: 'Groceries:General', debit: fromCents(18000)},
+                    {account: 'Pets:Food and Supplies', debit: fromCents(5500)},
+                    {account: 'Miscellaneous:General', debit: fromCents(5000)},
+                ]
+            })
+        }
+
+        // Month 7: Vacation on Visa (5 entries)
+        if (month === 7) {
+            addTxn({
+                id: genTxnId(),
+                date: randomDate(month),
+                description: 'Vacation expenses',
+                entries: [
+                    {account: 'Credit Cards:Visa', credit: fromCents(45000)},
+                    {account: 'Dining:Restaurants', debit: fromCents(15000)},
+                    {account: 'Entertainment:Movies', debit: fromCents(8000)},
+                    {account: 'Transportation:Fuel', debit: fromCents(12000)},
+                    {account: 'Miscellaneous:General', debit: fromCents(10000)},
+                ]
+            })
+        }
+
+        // Month 10: Home repair project (3 entries)
+        if (month === 10) {
+            addTxn({
+                id: genTxnId(),
+                date: randomDate(month),
+                vendor: 'Home Depot',
+                description: 'Home repair project supplies',
+                entries: [
+                    {account: 'Banking:Checking', credit: fromCents(35000)},
+                    {account: 'Home Maintenance:Repairs', debit: fromCents(25000)},
+                    {account: 'Home Maintenance:Lawn and Garden', debit: fromCents(10000)},
+                ]
+            })
+        }
+
         // ---- GIFTS ----
         if (month === 12) {
             for (let i = 0; i < 8; i++) {
@@ -887,7 +1056,7 @@ async function main() {
         const savIntId = genTxnId()
         const savIntAmt = randomInt(500, 2000)
         savingsCents += savIntAmt
-        monthTxns.push({
+        const savIntTxn: TxnData = {
             id: savIntId,
             date: dateStr(month, lastDay(month)),
             description: 'Savings interest earned',
@@ -895,7 +1064,8 @@ async function main() {
                 {account: 'Banking:Savings', debit: fromCents(savIntAmt)},
                 {account: 'Interest:Savings Interest', credit: fromCents(savIntAmt)},
             ]
-        })
+        }
+        monthTxns.push(savIntTxn)
         savingsTxns.push(savIntId)
 
         // ---- SAVINGS TRANSFER ----
@@ -959,22 +1129,146 @@ async function main() {
         visaBalByMonth.push({begin: visaBegin, end: visaCents})
     }
 
+    // ---- Set up post-month transaction updates (now that IDs are captured) ----
+    // Month 2: Update grocery transaction date
+    postMonthDirectives.get(2)!.push({
+        action: 'update-transaction',
+        payload: {id: groceryTxnMonth2Id, date: dateStr(2, 14)},
+    })
+
+    // Month 6: Update restaurant transaction description
+    postMonthDirectives.get(6)!.push({
+        action: 'update-transaction',
+        payload: {id: restaurantTxnMonth6Id, description: 'Dinner with client - business meal'},
+    })
+
+    // Month 9: Update retail transaction vendor (typo correction)
+    postMonthDirectives.get(9)!.push({
+        action: 'update-transaction',
+        payload: {id: retailTxnMonth9Id, vendor: 'Amazon'},
+    })
+
     // Generate statements
     const stmts = generateStatements(
         checkingTxnsByMonth, savingsTxnsByMonth, visaTxnsByMonth,
         checkingBalByMonth, savingsBalByMonth, visaBalByMonth,
     )
 
+    // ---- Build directive array ----
+    const directives: Directive[] = []
+
+    // 1. Account creates
+    for (const a of accounts) {
+        const payload: Record<string, any> = {acctType: a.type, id: a.id, name: a.name}
+        if (a.acctNumber) { payload.acctNumber = a.acctNumber }
+        if (a.description) { payload.description = a.description }
+        directives.push({action: 'create-account', payload})
+    }
+
+    // 2. Extra account creates + deletes
+    for (const ea of extraAccounts) {
+        directives.push({action: 'create-account', payload: {acctType: ea.type, id: ea.id, name: ea.name, description: ea.description}})
+        directives.push({action: 'delete-account', payload: {id: ea.id}})
+    }
+
+    // 3. Vendor creates
+    for (const v of vendors) {
+        const payload: Record<string, any> = {id: v.id, name: v.name}
+        if (v.defaultAccount) { payload.defaultAccount = v.defaultAccount }
+        directives.push({action: 'create-vendor', payload})
+    }
+
+    // 4. Extra vendor create + delete
+    directives.push({action: 'create-vendor', payload: {id: extraVendor.id, name: extraVendor.name, defaultAccount: extraVendor.defaultAccount}})
+    directives.push({action: 'delete-vendor', payload: {id: extraVendor.id}})
+
+    // 5. For each month: pre-month directives, transaction creates, post-month directives
+    // Group transactions by month based on date
+    const txnsByMonth = new Map<number, TxnData[]>()
+    for (const txn of allTxns) {
+        const m = parseInt(txn.date.substring(5, 7), 10)
+        if (!txnsByMonth.has(m)) { txnsByMonth.set(m, []) }
+        txnsByMonth.get(m)!.push(txn)
+    }
+
+    // Opening balance txns (month 0 = January 1st but they're special)
+    // They are month 1 txns, so they'll be included naturally
+
+    for (let month = 1; month <= 12; month++) {
+        // Pre-month directives (renames, updates)
+        for (const d of preMonthDirectives.get(month)!) {
+            directives.push(d)
+        }
+
+        // Transaction creates for this month
+        const monthTxns = txnsByMonth.get(month) || []
+        for (const t of monthTxns) {
+            const payload: Record<string, any> = {id: t.id, date: t.date}
+            if (t.code) { payload.code = t.code }
+            if (t.vendor) { payload.vendor = t.vendor }
+            if (t.description) { payload.description = t.description }
+            payload.entries = t.entries
+            directives.push({action: 'create-transaction', payload})
+        }
+
+        // Post-month directives (mistake creates+deletes, transaction updates)
+        for (const d of postMonthDirectives.get(month)!) {
+            directives.push(d)
+        }
+    }
+
+    // 6. Statement creates
+    for (const s of stmts) {
+        directives.push({action: 'create-statement', payload: {
+            id: s.id,
+            account: s.account,
+            beginDate: s.beginDate,
+            endDate: s.endDate,
+            beginningBalance: s.beginningBalance,
+            endingBalance: s.endingBalance,
+            isReconciled: s.isReconciled,
+            transactions: s.transactions,
+        }})
+    }
+
+    // 7. Statement update: set Visa December statement isReconciled to true
+    const visaDecStmt = stmts.find(s => s.account === 'Credit Cards:Visa' && s.endDate === '2010-12-31')
+    if (visaDecStmt) {
+        directives.push({action: 'update-statement', payload: {id: visaDecStmt.id, isReconciled: true}})
+    }
+
+    // 8. Statement delete + recreate: Savings Q2 statement with corrected ending balance
+    const savingsQ2Stmt = stmts.find(s => s.account === 'Banking:Savings' && s.endDate === '2010-06-30')
+    if (savingsQ2Stmt) {
+        directives.push({action: 'delete-statement', payload: {id: savingsQ2Stmt.id}})
+        const correctedBalance = centsOf(savingsQ2Stmt.endingBalance) + 150
+        directives.push({action: 'create-statement', payload: {
+            id: genStmtId(),
+            account: savingsQ2Stmt.account,
+            beginDate: savingsQ2Stmt.beginDate,
+            endDate: savingsQ2Stmt.endDate,
+            beginningBalance: savingsQ2Stmt.beginningBalance,
+            endingBalance: fromCents(correctedBalance),
+            isReconciled: savingsQ2Stmt.isReconciled,
+            transactions: savingsQ2Stmt.transactions,
+        }})
+    }
+
     // Format and write YAML
-    const yaml = formatYaml(accounts, vendors, allTxns, stmts)
-    const outputPath = 'data/checquery-test-log-2010.yaml'
+    const yaml = formatDirectives(directives)
+    const outputPath = 'checquery-test-log-2010.yaml'
     await Bun.write(outputPath, yaml)
 
-    console.log(`Generated:`)
-    console.log(`  ${accounts.length} accounts`)
-    console.log(`  ${vendors.length} vendors`)
-    console.log(`  ${allTxns.length} transactions`)
-    console.log(`  ${stmts.length} statements`)
+    // Count directives by type
+    const actionCounts = new Map<string, number>()
+    for (const d of directives) {
+        actionCounts.set(d.action, (actionCounts.get(d.action) || 0) + 1)
+    }
+
+    console.log(`Generated ${directives.length} directives:`)
+    for (const [action, count] of [...actionCounts.entries()].sort()) {
+        console.log(`  ${action}: ${count}`)
+    }
     console.log(`Written to ${outputPath}`)
 }
 

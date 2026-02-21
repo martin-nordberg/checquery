@@ -118,9 +118,10 @@ export class AccountSqlService implements IAccountSvc {
         }
 
         const sql = `UPDATE Account SET ${setClauses.join(', ')} WHERE id = $id`
+        const cacheKey = `account.update:${setClauses.join(',')}`
 
         // Run SQL first
-        const changes = this.db.run('account.update', () => sql, bindings)
+        const changes = this.db.run(cacheKey, () => sql, bindings)
 
         if (changes.changes == 0) {
             return null
