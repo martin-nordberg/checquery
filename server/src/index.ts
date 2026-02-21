@@ -72,6 +72,6 @@ const routes =
 export type AppType = typeof routes
 
 export default {
-    port: 3001,
+    port: parseInt(process.env.CHECQUERY_PORT ?? '3001'),
     fetch: app.fetch,
 }
