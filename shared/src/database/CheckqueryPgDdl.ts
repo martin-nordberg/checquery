@@ -112,6 +112,7 @@ async function runChecqueryPgDdlTxn(txn: PgLiteTxn) {
              vendorIdHlc    CHAR(${hlcLength})        NOT NULL,
              description    VARCHAR(${descriptionMaxLength}),
              descriptionHlc CHAR(${hlcLength})        NOT NULL,
+             insertOrder    SERIAL,
              isDeleted      BOOLEAN                   NOT NULL DEFAULT FALSE,
              isDeletedHlc   CHAR(${hlcLength})        NOT NULL
          );`
