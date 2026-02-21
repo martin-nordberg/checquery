@@ -1,0 +1,45 @@
+import {
+    type Transaction,
+    type TransactionCreation,
+    type TransactionUpdate
+} from "../../domain/transactions/Transaction";
+import {type TxnId} from "../../domain/transactions/TxnId";
+import type {ITransactionSvc} from "$shared/services/transactions/ITransactionSvc";
+
+
+export class TransactionTeeSvc implements ITransactionSvc {
+
+    constructor(
+        private svcs: ITransactionSvc[]
+    ) {
+    }
+
+    /** Creates a new transaction with given attributes. */
+    async createTransaction(transaction: TransactionCreation): Promise<void> {
+        for (const svc of this.svcs) {
+            await svc.createTransaction(transaction)
+        }
+    }
+
+    /** Deletes a given transaction. */
+    async deleteTransaction(transactionId: TxnId): Promise<void> {
+        for (const svc of this.svcs) {
+            await svc.deleteTransaction(transactionId)
+        }
+    }
+
+    /** Finds the transaction with given unique ID. */
+    async findTransactionById(transactionId: TxnId): Promise<Transaction | null> {
+        return this.svcs[0]!.findTransactionById(transactionId)
+    }
+
+    /** Updates a transaction's attributes. */
+    async updateTransaction(newTransaction: TransactionUpdate): Promise<Transaction | null> {
+        let result: Transaction | null = null
+        for (const svc of this.svcs) {
+            result = result ?? await svc.updateTransaction(newTransaction)
+        }
+        return result
+    }
+
+}

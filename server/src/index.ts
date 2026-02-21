@@ -1,21 +1,29 @@
 import {Hono} from 'hono'
 import {cors} from 'hono/cors'
 import {accountRoutes} from "$shared/routes/accounts/AccountRoutes";
-import {AccountSqlService} from "./sqlservices/accounts/AccountSqlSvc";
-import {ChecquerySqlDb} from "./sqldb/ChecquerySqlDb";
-import {runChecqueryDdl} from "./sqldb/checqueryDdl";
-import {TransactionSqlService} from "./sqlservices/transactions/TransactionSqlSvc";
-import {StatementSqlService} from "./sqlservices/statements/StatementSqlSvc";
-import {BalanceSheetSqlService} from "./sqlservices/balancesheet/BalanceSheetSqlSvc";
 import {balanceSheetRoutes} from "$shared/routes/balancesheet/BalanceSheetRoutes";
-import {VendorSqlService} from "./sqlservices/vendors/VendorSqlSvc";
-import {IncomeStatementSqlService} from "./sqlservices/incomestatement/IncomeStatementSqlSvc";
 import {incomeStatementRoutes} from "$shared/routes/incomestatement/IncomeStatementRoutes";
-import {RegisterSqlService} from "./sqlservices/register/RegisterSqlSvc";
 import {registerRoutes} from "$shared/routes/register/RegisterRoutes";
 import {vendorRoutes} from "$shared/routes/vendors/VendorRoutes";
 import {statementRoutes} from "$shared/routes/statements/StatementRoutes";
-import {loadChecqueryLog} from "./eventsources/ChecqueryEvents";
+import {createPgLiteDb} from "$shared/database/PgLiteDb";
+import {runChecqueryPgDdl} from "$shared/database/CheckqueryPgDdl";
+import {VendorRepo} from "$shared/database/vendors/VendorRepo";
+import {AccountRepo} from "$shared/database/accounts/AccountRepo";
+import {TransactionRepo} from "$shared/database/transactions/TransactionRepo";
+import {StatementRepo} from "$shared/database/statements/StatementRepo";
+import {VendorEventWriter} from "$shared/events/VendorEventWriter";
+import {StatementEventWriter} from "$shared/events/StatementEventWriter";
+import {AccountEventWriter} from "$shared/events/AccountEventWriter";
+import {TransactionEventWriter} from "$shared/events/TransactionEventWriter";
+import {AccountTeeSvc} from "$shared/services/accounts/AccountTeeSvc";
+import {VendorTeeSvc} from "$shared/services/vendors/VendorTeeSvc";
+import {TransactionTeeSvc} from "$shared/services/transactions/TransactionTeeSvc";
+import {BalanceSheetRepo} from "$shared/database/balancesheet/BalanceSheetRepo";
+import {StatementTeeSvc} from "$shared/services/statements/StatementTeeSvc";
+import {IncomeStatementRepo} from "$shared/database/incomestatement/IncomeStatementRepo";
+import {RegisterRepo} from "$shared/database/register/RegisterRepo";
+import {loadChecqueryLog} from "$shared/events/ChecqueryEventLoader";
 
 const app = new Hono()
 
@@ -23,29 +31,40 @@ app.use('*', cors({
     origin: ['http://localhost:3000', 'http://10.0.0.3:3000']
 }));
 
-const db = new ChecquerySqlDb()
-runChecqueryDdl(db)
+const db = await createPgLiteDb("000")
+runChecqueryPgDdl(db)
 
-// Services for loading from YAML (no persistence to avoid duplicates)
-const vndrLoaderSvc = new VendorSqlService(db, false)
-const acctLoaderSvc = new AccountSqlService(db, false)
-const txnLoaderSvc = new TransactionSqlService(db, false)
-const stmtLoaderSvc = new StatementSqlService(db, false)
+// Services for the database
+const accountRepo = new AccountRepo(db)
+const statementRepo = new StatementRepo(db)
+const transactionRepo = new TransactionRepo(db)
+const vendorRepo = new VendorRepo(db)
+
+// Services for YAML
+const accountEventWriter = new AccountEventWriter()
+const statementEventWriter = new StatementEventWriter()
+const transactionEventWriter = new TransactionEventWriter()
+const vendorEventWriter = new VendorEventWriter()
+
 // Services for API (with persistence to YAML)
-const vndrSvc = new VendorSqlService(db, true)
-const acctSvc = new AccountSqlService(db, true)
-const txnSvc = new TransactionSqlService(db, true)
-const stmtSvc = new StatementSqlService(db, true)
-const bsSvc = new BalanceSheetSqlService(db)
-const isSvc = new IncomeStatementSqlService(db)
-const regSvc = new RegisterSqlService(db, txnSvc)
+const vndrSvc = new VendorTeeSvc([vendorRepo, vendorEventWriter])
+const acctSvc = new AccountTeeSvc([accountRepo, accountEventWriter])
+const txnSvc = new TransactionTeeSvc([transactionRepo, transactionEventWriter])
+const stmtSvc = new StatementTeeSvc([statementRepo, statementEventWriter])
+const bsSvc = new BalanceSheetRepo(db)
+const isSvc = new IncomeStatementRepo(db)
+const regSvc = new RegisterRepo(db, txnSvc)
 
-await loadChecqueryLog({
-    acctSvc: acctLoaderSvc,
-    txnSvc: txnLoaderSvc,
-    vendorSvc: vndrLoaderSvc,
-    stmtSvc: stmtLoaderSvc
-})
+/** Returns the file containing all directives. */
+const checqueryLogFile = () => process.env['CHECQUERY_LOG_FILE']!
+
+await loadChecqueryLog(
+    checqueryLogFile(),
+    accountRepo,
+    transactionRepo,
+    vendorRepo,
+    statementRepo
+)
 
 console.log(await bsSvc.findBalanceSheet('2026-01-11'))
 console.log(await isSvc.findIncomeStatement('2026-01-01', '2026-01-31'))
@@ -73,6 +92,6 @@ const routes =
 export type AppType = typeof routes
 
 export default {
-    port: parseInt(process.env.CHECQUERY_PORT ?? '3001'),
+    port: parseInt(process.env["CHECQUERY_PORT"] ?? '3001'),
     fetch: app.fetch,
 }

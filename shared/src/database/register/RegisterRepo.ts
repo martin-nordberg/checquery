@@ -189,7 +189,7 @@ export class RegisterRepo implements IRegisterSvc {
                     INNER JOIN Account ON Entry.accountId = Account.id
                     INNER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
                     LEFT JOIN Statement ON Entry.stmtId = Statement.id
-                 WHERE Entry.txnId = $txnId
+                 WHERE Entry.txnId = $1
                  ORDER BY Entry.entrySeq`,
                 [txnId],
                 z.strictObject({
