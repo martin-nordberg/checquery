@@ -83,14 +83,20 @@ export class TransactionSqlService implements ITransactionSvc {
     }
 
     async deleteTransaction(transactionId: TxnId): Promise<void> {
-        this.db.run(
-            'transaction.delete',
-            () =>
-                `DELETE
-                 FROM Transaxtion
-                 WHERE id = $id`,
-            {$id: transactionId}
-        )
+        this.db.runMultiple([
+            {
+                key: 'transaction.delete.entries',
+                sql: () =>
+                    `DELETE FROM Entry WHERE txnId = $id`,
+                bindings: {$id: transactionId}
+            },
+            {
+                key: 'transaction.delete',
+                sql: () =>
+                    `DELETE FROM Transaxtion WHERE id = $id`,
+                bindings: {$id: transactionId}
+            },
+        ])
     }
 
     async findTransactionById(transactionId: TxnId): Promise<Transaction | null> {
@@ -118,7 +124,7 @@ export class TransactionSqlService implements ITransactionSvc {
                         CASE WHEN Transaxtion.stmtId IS NULL THEN NULL
                              WHEN Statement.isReconciled = 1 THEN 'Reconciled'
                              ELSE 'Pending' END as status,
-                        comment
+                        Entry.comment
                  FROM Entry
                  JOIN Account ON Entry.accountId = Account.id
                  JOIN Transaxtion ON Entry.txnId = Transaxtion.id
@@ -156,7 +162,7 @@ export class TransactionSqlService implements ITransactionSvc {
             () =>
                 `SELECT *
                  FROM Transaxtion
-                 ORDER BY name`,
+                 ORDER BY date`,
             {},
             transactionSchema
         )

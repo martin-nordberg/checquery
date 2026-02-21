@@ -11,8 +11,8 @@ import {vndrIdSchema} from "$shared/domain/vendors/VndrId";
 import {statementCreationSchema, statementUpdateSchema} from "$shared/domain/statements/Statement";
 import {stmtIdSchema} from "$shared/domain/statements/StmtId";
 
-/** The file containing all directives. */
-const checqueryLogFile = process.env['CHECQUERY_LOG_FILE']!
+/** Returns the file containing all directives. */
+const checqueryLogFile = () => process.env['CHECQUERY_LOG_FILE']!
 
 export type ChecqueryServices = {
     acctSvc: IAccountSvc
@@ -27,7 +27,7 @@ export type ChecqueryServices = {
  */
 export const loadChecqueryLog = async (services: ChecqueryServices) => {
     // Read the file content as a string.
-    const yaml = await Bun.file(checqueryLogFile).text()
+    const yaml = await Bun.file(checqueryLogFile()).text()
 
     // Parse the YAML string into a JavaScript object.
     const directives = Bun.YAML.parse(yaml) as any[]

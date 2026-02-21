@@ -1,0 +1,1 @@
+copy checquery-log.yaml ..\..\checquery-data

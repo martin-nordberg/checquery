@@ -116,9 +116,10 @@ export class VendorSqlService implements IVendorSvc {
         }
 
         const sql = `UPDATE Vendor SET ${setClauses.join(', ')} WHERE id = $id`
+        const cacheKey = `vendor.update:${setClauses.join(',')}`
 
         // Run SQL first
-        const changes = this.db.run('vendor.update', () => sql, bindings)
+        const changes = this.db.run(cacheKey, () => sql, bindings)
 
         if (changes.changes == 0) {
             return null
