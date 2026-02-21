@@ -38,7 +38,7 @@ describe('txnIdSchema', () => {
         it('accepts a valid ID with correct prefix', () => {
             const id = genTxnId()
             const result = txnIdSchema.parse(id)
-            expect(result.startsWith('txn')).toBe(true)
+            expect(result.startsWith('trxn')).toBe(true)
         })
     })
 
@@ -56,7 +56,7 @@ describe('txnIdSchema', () => {
         })
 
         it('rejects invalid CUID2 format', () => {
-            expect(() => txnIdSchema.parse('txn-not-a-valid-cuid2')).toThrow()
+            expect(() => txnIdSchema.parse('trxn-not-a-valid-cuid2')).toThrow()
         })
 
         it('rejects empty string', () => {
@@ -64,18 +64,18 @@ describe('txnIdSchema', () => {
         })
 
         it('rejects ID with uppercase letters', () => {
-            expect(() => txnIdSchema.parse('txnABCDEFGHIJ1234567890ab')).toThrow()
+            expect(() => txnIdSchema.parse('trxnABCDEFGHIJ1234567890ab')).toThrow()
         })
 
         it('rejects ID with special characters', () => {
-            expect(() => txnIdSchema.parse('txn@bcdefghij1234567890ab')).toThrow()
+            expect(() => txnIdSchema.parse('trxn@bcdefghij1234567890ab')).toThrow()
         })
     })
 
 })
 
 describe('txnIdPrefix', () => {
-    it('is "txn"', () => {
-        expect(txnIdPrefix).toBe('txn')
+    it('is "trxn"', () => {
+        expect(txnIdPrefix).toBe('trxn')
     })
 })
