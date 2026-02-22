@@ -30,7 +30,7 @@ export class RegisterRepo implements IRegisterSvc {
         return this.db.transaction(async (txn) => {
             // First get the account info
             const accountInfo = await txn.findOne(
-                    `SELECT id, name, acctType as "acctType"
+                `SELECT id, name, acctType as "acctType"
                  FROM Account
                  WHERE id = $1`,
                 [accountId],
@@ -47,13 +47,14 @@ export class RegisterRepo implements IRegisterSvc {
 
             // Get all entries for this account with transaction details
             const sqlLineItems = await txn.findMany(
-                    `SELECT
-                    Transaxtion.id as "txnId",
-                    Transaxtion.date as date,
+                `SELECT Transaxtion.id as "txnId",
+                        Transaxtion.date as date,
                     Transaxtion.code as code,
                     CASE WHEN Entry.stmtId IS NULL THEN NULL
                          WHEN Statement.isReconciled = true THEN 'Reconciled'
-                         ELSE 'Pending' END as status,
+                         ELSE 'Pending'
+                END
+                as status,
                     Vendor.name as vendor,
                     Transaxtion.description as description,
                     Entry.debitCents as "debitCents",
@@ -62,8 +63,18 @@ export class RegisterRepo implements IRegisterSvc {
                     INNER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
                     LEFT OUTER JOIN Vendor ON Transaxtion.vendorId = Vendor.id
                     LEFT JOIN Statement ON Entry.stmtId = Statement.id
-                 WHERE Entry.accountId = $1
-                 ORDER BY Transaxtion.date ASC, Transaxtion.insertOrder ASC`,
+                 WHERE Entry.accountId =
+                $1
+                ORDER
+                BY
+                Transaxtion
+                .
+                date
+                ASC,
+                Transaxtion
+                .
+                insertOrder
+                ASC`,
                 [accountId],
                 z.strictObject({
                     txnId: z.string(),
@@ -79,15 +90,14 @@ export class RegisterRepo implements IRegisterSvc {
 
             // Get offsetting accounts for each transaction
             const offsetAccounts = await txn.findMany(
-                    `SELECT
-                    Entry.txnId as "txnId",
-                    Account.name as "accountName"
+                `SELECT Entry.txnId  as "txnId",
+                        Account.name as "accountName"
                  FROM Entry
-                    INNER JOIN Account ON Entry.accountId = Account.id
-                 WHERE Entry.txnId IN (
-                    SELECT DISTINCT txnId FROM Entry WHERE accountId = $1
-                 )
-                 AND Entry.accountId != $1
+                          INNER JOIN Account ON Entry.accountId = Account.id
+                 WHERE Entry.txnId IN (SELECT DISTINCT txnId
+                                       FROM Entry
+                                       WHERE accountId = $1)
+                   AND Entry.accountId != $1
                  ORDER BY Entry.txnId, Entry.entrySeq`,
                 [accountId],
                 z.strictObject({
@@ -153,14 +163,14 @@ export class RegisterRepo implements IRegisterSvc {
         return this.db.transaction(async (txn) => {
             // Get transaction details
             const txnRow = await txn.findOne(
-                    `SELECT
-                    Transaxtion.id as id,
-                    Transaxtion.date as date,
+                `SELECT Transaxtion.id as id,
+                        Transaxtion.date as date,
                     Transaxtion.code as code,
                     Transaxtion.description as description,
                     Vendor.name as vendor
                  FROM Transaxtion
-                    LEFT OUTER JOIN Vendor ON Transaxtion.vendorId = Vendor.id
+                     LEFT OUTER JOIN Vendor
+                 ON Transaxtion.vendorId = Vendor.id
                  WHERE Transaxtion.id = $1`,
                 [txnId],
                 z.strictObject({
@@ -178,7 +188,7 @@ export class RegisterRepo implements IRegisterSvc {
 
             // Get all entries for this transaction
             const entries = await txn.findMany(
-                    `SELECT
+                `SELECT
                     Account.name as account,
                     CASE WHEN Entry.stmtId IS NULL THEN NULL
                          WHEN Statement.isReconciled = true THEN 'Reconciled'

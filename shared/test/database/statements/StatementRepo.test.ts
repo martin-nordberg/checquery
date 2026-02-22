@@ -16,7 +16,7 @@ describe('Statement Repo', () => {
         const arepo = new AccountRepo(db)
 
         const aid = genAcctId()
-        const acct0 : Account = {
+        const acct0: Account = {
             id: aid,
             name: "Sample",
             acctNumber: "123-456",
@@ -29,7 +29,7 @@ describe('Statement Repo', () => {
         const repo = new StatementRepo(db)
 
         const id = genStmtId()
-        const stmt0 : Statement = {
+        const stmt0: Statement = {
             id: id,
             beginDate: "2010-01-01",
             endDate: "2010-01-31",

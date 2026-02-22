@@ -16,7 +16,7 @@ describe('Hybrid Logical Clocks', () => {
         const hlc0 = getHLClock(nodeId)
 
         expect(hlc0.endsWith(nodeId)).toBe(true)
-        expect(hlc0.substring(10,13)).toEqual("000")
+        expect(hlc0.substring(10, 13)).toEqual("000")
         expect(hlc0.length).toBe(16)
         check(hlc0)
 
@@ -34,7 +34,7 @@ describe('Hybrid Logical Clocks', () => {
         check(hlc3)
 
         let priorHlc = hlc0
-        for (let i=0; i<100; i+=1) {
+        for (let i = 0; i < 100; i += 1) {
             const nextHlc = advanceHLClock(priorHlc)
             expect(nextHlc > priorHlc).toBeTrue()
             check(nextHlc)

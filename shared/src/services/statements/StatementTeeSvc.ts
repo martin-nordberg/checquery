@@ -13,7 +13,7 @@ export class StatementTeeSvc implements IStatementSvc {
     /** Creates a new statement with given attributes. */
     async createStatement(statement: StatementCreation): Promise<void> {
         for (const svc of this.svcs) {
-           await svc.createStatement(statement)
+            await svc.createStatement(statement)
         }
     }
 

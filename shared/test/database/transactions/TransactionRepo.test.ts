@@ -39,7 +39,7 @@ describe('Transaction Repo', () => {
         const vrepo = new VendorRepo(db)
 
         const vid = genVndrId()
-        const vndr0 : Vendor = {
+        const vndr0: Vendor = {
             id: vid,
             name: "Vendorr",
             description: "An example vendor",
@@ -52,7 +52,7 @@ describe('Transaction Repo', () => {
 
         const id = genTxnId()
 
-        const txn0 : Transaction = {
+        const txn0: Transaction = {
             id: id,
             code: "1234",
             description: "Bought something",
@@ -78,7 +78,7 @@ describe('Transaction Repo', () => {
 
         expect(txn1).toMatchObject(txn0)
 
-        const txn2 : Transaction = {
+        const txn2: Transaction = {
             id: id,
             code: "9945",
             description: "Bought sssomething",

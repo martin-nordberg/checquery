@@ -4,7 +4,8 @@ import {type Statement, type StatementCreation, type StatementUpdate} from "$sha
 import {
     appendDirective,
     createStatementCreateDirective,
-    createStatementDeleteDirective, createStatementUpdateDirective
+    createStatementDeleteDirective,
+    createStatementUpdateDirective
 } from "checquery-server/src/util/ChecqueryYamlAppender";
 
 export class StatementEventWriter implements IStatementSvc {

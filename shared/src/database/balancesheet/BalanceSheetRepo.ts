@@ -9,7 +9,7 @@ import type {PgLiteDb} from "$shared/database/PgLiteDb";
 
 export class BalanceSheetRepo implements IBalanceSheetSvc {
 
-    readonly db : PgLiteDb
+    readonly db: PgLiteDb
 
     constructor(db: PgLiteDb) {
         this.db = db
@@ -18,18 +18,18 @@ export class BalanceSheetRepo implements IBalanceSheetSvc {
     async findBalanceSheet(endingDate: IsoDate): Promise<BalanceSheet> {
         return this.db.transaction(async (txn) => {
             const sqlLineItems = await txn.findMany(
-                    `SELECT Account.id       as "acctId",
-                            Account.acctType as "acctType",
-                            Account.name     as description,
-                            sum(debitCents)  as "totalDr",
-                            sum(creditCents) as "totalCr"
-                     FROM Account
-                              LEFT OUTER JOIN Entry ON Account.id = Entry.accountId
-                              LEFT OUTER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
-                     WHERE Account.acctType IN ('ASSET', 'LIABILITY', 'EQUITY')
-                       AND (Transaxtion.date <= $1 OR Transaxtion.date IS NULL)
-                     GROUP BY Account.id, Account.acctType, Account.name
-                     ORDER BY Account.name`,
+                `SELECT Account.id       as "acctId",
+                        Account.acctType as "acctType",
+                        Account.name     as description,
+                        sum(debitCents)  as "totalDr",
+                        sum(creditCents) as "totalCr"
+                 FROM Account
+                          LEFT OUTER JOIN Entry ON Account.id = Entry.accountId
+                          LEFT OUTER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
+                 WHERE Account.acctType IN ('ASSET', 'LIABILITY', 'EQUITY')
+                   AND (Transaxtion.date <= $1 OR Transaxtion.date IS NULL)
+                 GROUP BY Account.id, Account.acctType, Account.name
+                 ORDER BY Account.name`,
                 [
                     endingDate
                 ],

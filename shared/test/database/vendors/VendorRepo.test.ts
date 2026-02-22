@@ -12,7 +12,7 @@ describe('Vendor Repo', () => {
         const repo = new VendorRepo(db)
 
         const id = genVndrId()
-        const vndr0 : Vendor = {
+        const vndr0: Vendor = {
             id: id,
             name: "Sample",
             description: "An example vendor",

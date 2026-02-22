@@ -12,14 +12,14 @@ export class AccountTeeSvc implements IAccountSvc {
 
     /** Creates a new account with given attributes. */
     async createAccount(account: AccountCreation): Promise<void> {
-        for(const svc of this.svcs){
+        for (const svc of this.svcs) {
             await svc.createAccount(account)
         }
     }
 
     /** Deletes a given account. */
     async deleteAccount(accountId: AcctId): Promise<void> {
-        for(const svc of this.svcs){
+        for (const svc of this.svcs) {
             await svc.deleteAccount(accountId)
         }
     }
@@ -42,7 +42,7 @@ export class AccountTeeSvc implements IAccountSvc {
     /** Updates an account's attributes. */
     async updateAccount(accountPatch: AccountUpdate): Promise<AccountUpdate | null> {
         let result: AccountUpdate | null = accountPatch
-        for(const svc of this.svcs){
+        for (const svc of this.svcs) {
             result = result ? await svc.updateAccount(result) : null
         }
         return result

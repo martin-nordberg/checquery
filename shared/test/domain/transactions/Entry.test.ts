@@ -1,10 +1,5 @@
 import {describe, expect, it} from 'bun:test'
-import {
-    entriesSchema,
-    entryCreationSchema,
-    entrySchema,
-    entryUpdateSchema
-} from '$shared/domain/transactions/Entry'
+import {entriesSchema, entryCreationSchema, entrySchema, entryUpdateSchema} from '$shared/domain/transactions/Entry'
 
 describe('entrySchema', () => {
     describe('valid entries', () => {

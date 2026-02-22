@@ -90,7 +90,7 @@ export class AccountTxnRepo implements IAccountSvc {
     }
 
     async updateAccount(accountPatch: AccountUpdate): Promise<AccountUpdate | null> {
-        let result : AccountUpdate|null = null
+        let result: AccountUpdate | null = null
 
         if (accountPatch.name !== undefined) {
             const count = await this.#txn.exec(
