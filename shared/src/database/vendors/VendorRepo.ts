@@ -43,7 +43,7 @@ export class VendorRepo implements IVendorSvc {
         )
     }
 
-    async updateVendor(vendorPatch: VendorUpdate): Promise<Vendor | null> {
+    async updateVendor(vendorPatch: VendorUpdate): Promise<VendorUpdate | null> {
         return this.db.transaction(async (txn) =>
             new VendorTxnRepo(txn).updateVendor(vendorPatch)
         )

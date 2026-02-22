@@ -75,12 +75,12 @@ export class AccountClientSvc {
         throw new HTTPException(res.status)
     }
 
-    async updateAccount(account: AccountUpdate): Promise<Account | null> {
+    async updateAccount(account: AccountUpdate): Promise<void> {
         console.log("updateAccount", account)
         const res = await client.accounts[':accountId'].$patch({param: {accountId: account.id}, json: account})
 
         if (res.ok) {
-            return res.json()
+            return
         }
 
         console.log(res)

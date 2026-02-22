@@ -52,9 +52,14 @@ export const vendorRoutes = (vendorSvc: IVendorSvc) => {
             zxValidator('param', z.object({vendorId: vndrIdSchema})),
             zxValidator('json', vendorUpdateSchema),
             async (c) => {
-                const update = c.req.valid('json')
+                const {vendorId} = c.req.valid('param')
+                const update = {
+                    ...c.req.valid('json'),
+                    id: vendorId
+                }
                 try {
-                    return c.json(await vendorSvc.updateVendor(update))
+                    await vendorSvc.updateVendor(update)
+                    return c.body(null, 204)
                 } catch (e: unknown) {
                     const msg = e instanceof Error ? e.message.toUpperCase() : ''
                     if (msg.includes('UNIQUE') || msg.includes('DUPLICATE')) {

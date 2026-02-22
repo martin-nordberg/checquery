@@ -73,7 +73,8 @@ export const accountRoutes = (accountService: IAccountSvc) => {
                 const {accountId} = c.req.valid('param')
                 const account: AccountUpdate = c.req.valid('json')
                 try {
-                    return c.json(await accountService.updateAccount({...account, id: accountId}))
+                    await accountService.updateAccount({...account, id: accountId})
+                    return c.body(null, 201)
                 } catch (e: unknown) {
                     const msg = e instanceof Error ? e.message.toUpperCase() : ''
                     if (msg.includes('UNIQUE') || msg.includes('DUPLICATE')) {

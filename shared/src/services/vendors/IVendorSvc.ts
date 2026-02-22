@@ -16,10 +16,10 @@ export interface IVendorSvc {
     /** Finds the entire list of vendors */
     findVendorsAll(): Promise<Vendor[]>
 
-    /** Updates a vendor's attributes. */
-    updateVendor(vendorPatch: VendorUpdate): Promise<Vendor | null>
-
     /** Checks if a vendor is used in any transaction. */
     isVendorInUse(vendorId: VndrId): Promise<boolean>
+
+    /** Updates a vendor's attributes. */
+    updateVendor(vendorPatch: VendorUpdate): Promise<VendorUpdate | null>
 
 }

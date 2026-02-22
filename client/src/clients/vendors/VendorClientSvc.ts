@@ -68,7 +68,7 @@ export class VendorClientSvc {
         }
     }
 
-    async updateVendor(update: VendorUpdate): Promise<Vendor | null> {
+    async updateVendor(update: VendorUpdate): Promise<void> {
         console.log("updateVendor", update)
         const res = await client.vendors[':vendorId'].$patch({
             param: {vendorId: update.id},
@@ -76,7 +76,7 @@ export class VendorClientSvc {
         })
 
         if (res.ok) {
-            return res.json()
+            return
         }
 
         console.log(res)

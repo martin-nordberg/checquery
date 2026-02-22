@@ -38,7 +38,7 @@ describe('Sample Accounts', () => {
         expect(acct.name).toBe('example')
         expect(acct.acctNumber).toBe('1234-4567')
         expect(acct.acctType).toBe('ASSET')
-        expect(acct.description).toBeUndefined()
+        expect(acct.description).toBe('')
     })
 
     it('Should convert to JSON', () => {
@@ -90,15 +90,15 @@ describe('Sample Accounts', () => {
     })
 
     it('Should generate JSON schema', () => {
-        const jsonSchema = z.toJSONSchema(accountSchema)
+        const jsonSchema = z.toJSONSchema(accountCreationSchema)
         expect(jsonSchema).toMatchObject({
             $schema: "https://json-schema.org/draft/2020-12/schema",
             additionalProperties: false,
             properties: {
                 acctNumber: {
+                    default: "",
                     maxLength: 50,
-                    minLength: 1,
-                    pattern: "^[a-zA-Z0-9-$]+$",
+                    pattern: "^[a-zA-Z0-9-$]*$",
                     type: "string",
                 },
                 acctType: {
@@ -120,6 +120,8 @@ describe('Sample Accounts', () => {
                             pattern: "^acct.*",
                         }
                     ],
+                    maxLength: 28,
+                    minLength: 28,
                     format: "cuid2",
                     type: "string",
                 },
@@ -130,6 +132,7 @@ describe('Sample Accounts', () => {
                     type: "string",
                 },
                 description: {
+                    default: "",
                     maxLength: 200,
                     pattern: "^[^\\r\\n]*$",
                     type: "string",
@@ -138,8 +141,10 @@ describe('Sample Accounts', () => {
             readOnly: true,
             required: [
                 "id",
+                "acctNumber",
                 "acctType",
                 "name",
+                "description",
             ],
             type: "object",
         })
@@ -248,15 +253,6 @@ describe('Invalid Accounts', () => {
     })
 
     describe('invalid acctNumber', () => {
-        it('rejects empty acctNumber', () => {
-            expect(() => accountSchema.parse({
-                id: genAcctId(),
-                name: 'example',
-                acctType: 'ASSET',
-                acctNumber: ''
-            })).toThrow()
-        })
-
         it('rejects acctNumber with invalid characters', () => {
             expect(() => accountSchema.parse({
                 id: genAcctId(),

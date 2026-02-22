@@ -20,7 +20,7 @@ export async function runChecqueryPgDdl(db: PgLiteDb) {
 
 async function runChecqueryPgDdlTxn(txn: PgLiteTxn) {
 
-        // Account Type
+    // Account Type
     await txn.exec(
         `CREATE TABLE AcctType
          (
@@ -48,11 +48,11 @@ async function runChecqueryPgDdlTxn(txn: PgLiteTxn) {
              id             CHAR(${acctIdLength}) PRIMARY KEY,
              acctType       VARCHAR(10)                      NOT NULL REFERENCES AcctType (code),
              acctTypeHlc    CHAR(${hlcLength})               NOT NULL,
-             acctNumber     VARCHAR(${acctNumberMaxLength}) UNIQUE,
+             acctNumber     VARCHAR(${acctNumberMaxLength})  NOT NULL,
              acctNumberHlc  CHAR(${hlcLength})               NOT NULL,
              name           VARCHAR(${nameMaxLength}) UNIQUE NOT NULL,
              nameHlc        CHAR(${hlcLength})               NOT NULL,
-             description    VARCHAR(${descriptionMaxLength}),
+             description    VARCHAR(${descriptionMaxLength}) NOT NULL,
              descriptionHlc CHAR(${hlcLength})               NOT NULL,
              isDeleted      BOOLEAN                          NOT NULL DEFAULT FALSE,
              isDeletedHlc   CHAR(${hlcLength})               NOT NULL
@@ -66,7 +66,7 @@ async function runChecqueryPgDdlTxn(txn: PgLiteTxn) {
              id                  CHAR(${vndrIdLength}) PRIMARY KEY,
              name                VARCHAR(${nameMaxLength}) UNIQUE NOT NULL,
              nameHlc             CHAR(${hlcLength})               NOT NULL,
-             description         VARCHAR(${descriptionMaxLength}),
+             description         VARCHAR(${descriptionMaxLength}) NOT NULL,
              descriptionHlc      CHAR(${hlcLength})               NOT NULL,
              defaultAccountId    CHAR(${acctIdLength}) REFERENCES Account (id),
              defaultAccountIdHlc CHAR(${hlcLength})               NOT NULL,

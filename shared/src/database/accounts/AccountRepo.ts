@@ -44,7 +44,7 @@ export class AccountRepo implements IAccountSvc {
         )
     }
 
-    async updateAccount(accountPatch: AccountUpdate): Promise<Account | null> {
+    async updateAccount(accountPatch: AccountUpdate): Promise<AccountUpdate | null> {
         return this.db.transaction(async (txn) =>
             new AccountTxnRepo(txn).updateAccount(accountPatch)
         )

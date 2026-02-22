@@ -1,13 +1,14 @@
 import {describe, expect, it} from 'bun:test'
-import {vendorCreationSchema, vendorSchema, vendorUpdateSchema} from '../../../src/domain/vendors/Vendor'
-import {genVndrId} from '../../../src/domain/vendors/VndrId'
+import {vendorCreationSchema, vendorSchema, vendorUpdateSchema} from '$shared/domain/vendors/Vendor'
+import {genVndrId} from '$shared/domain/vendors/VndrId'
 
 describe('vendorSchema', () => {
     it('parses a valid vendor', () => {
         const input = {
             id: genVndrId(),
             name: 'Acme Corporation',
-            description: 'A fictional company'
+            description: 'A fictional company',
+            isActive: true
         }
 
         const result = vendorSchema.parse(input)
@@ -15,25 +16,15 @@ describe('vendorSchema', () => {
         expect(result.id).toBe(input.id)
         expect(result.name).toBe(input.name)
         expect(result.description).toBe(input.description)
-    })
-
-    it('parses vendor without optional description', () => {
-        const input = {
-            id: genVndrId(),
-            name: 'Acme Corporation'
-        }
-
-        const result = vendorSchema.parse(input)
-
-        expect(result.id).toBe(input.id)
-        expect(result.name).toBe(input.name)
-        expect(result.description).toBeUndefined()
+        expect(result.isActive).toBe(true)
     })
 
     it('trims whitespace from name', () => {
         const input = {
             id: genVndrId(),
-            name: '  Acme Corporation  '
+            name: '  Acme Corporation  ',
+            description: 'A fictional company',
+            isActive: true
         }
 
         const result = vendorSchema.parse(input)

@@ -40,10 +40,10 @@ export class AccountTeeSvc implements IAccountSvc {
     }
 
     /** Updates an account's attributes. */
-    async updateAccount(accountPatch: AccountUpdate): Promise<Account | null> {
-        let result: Account | null = null
+    async updateAccount(accountPatch: AccountUpdate): Promise<AccountUpdate | null> {
+        let result: AccountUpdate | null = accountPatch
         for(const svc of this.svcs){
-            result = result ?? await svc.updateAccount(accountPatch)
+            result = result ? await svc.updateAccount(result) : null
         }
         return result
     }

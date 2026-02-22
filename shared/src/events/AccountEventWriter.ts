@@ -12,19 +12,19 @@ import {
 export class AccountEventWriter implements IAccountSvc {
 
     async createAccount(account: AccountCreation): Promise<void> {
-            await appendDirective(createAccountCreateDirective({
-                id: account.id,
-                name: account.name,
-                acctType: account.acctType,
-                acctNumber: account.acctNumber,
-                description: account.description,
-            }))
+        await appendDirective(createAccountCreateDirective({
+            id: account.id,
+            name: account.name,
+            acctType: account.acctType,
+            acctNumber: account.acctNumber,
+            description: account.description,
+        }))
     }
 
     async deleteAccount(accountId: AcctId): Promise<void> {
-            await appendDirective(createAccountDeleteDirective({
-                id: accountId,
-            }))
+        await appendDirective(createAccountDeleteDirective({
+            id: accountId,
+        }))
     }
 
     async findAccountById(_accountId: AcctId): Promise<Account | null> {
@@ -39,15 +39,15 @@ export class AccountEventWriter implements IAccountSvc {
         throw Error("Not implemented")
     }
 
-    async updateAccount(accountPatch: AccountUpdate): Promise<Account | null> {
-            await appendDirective(createAccountUpdateDirective({
-                id: accountPatch.id,
-                name: accountPatch.name,
-                acctNumber: accountPatch.acctNumber,
-                description: accountPatch.description,
-            }))
+    async updateAccount(accountPatch: AccountUpdate): Promise<AccountUpdate | null> {
+        await appendDirective(createAccountUpdateDirective({
+            id: accountPatch.id,
+            name: accountPatch.name,
+            acctNumber: accountPatch.acctNumber,
+            description: accountPatch.description,
+        }))
 
-        return null
+        return accountPatch
     }
 
 }

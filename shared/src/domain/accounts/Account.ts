@@ -12,7 +12,7 @@ export const accountAttributesSchema =
         id: acctIdSchema,
 
         /** The account number of the account. */
-        acctNumber: acctNumberSchema.optional(),
+        acctNumber: acctNumberSchema,
 
         /** The account type of the account. */
         acctType: acctTypeSchema,
@@ -21,7 +21,7 @@ export const accountAttributesSchema =
         name: nameSchema,
 
         /* A short description of the account. */
-        description: descriptionSchema.optional(),
+        description: descriptionSchema,
     })
 
 
@@ -33,8 +33,9 @@ export type Account = z.infer<typeof accountSchema>
 
 /** Sub-schema for account creation. */
 export const accountCreationSchema =
-    z.strictObject({
-        ...accountAttributesSchema.shape
+    accountAttributesSchema.extend({
+        acctNumber: accountAttributesSchema.shape.acctNumber.default(""),
+        description: accountAttributesSchema.shape.description.default(""),
     }).readonly()
 
 export type AccountCreation = z.infer<typeof accountCreationSchema>
@@ -42,11 +43,11 @@ export type AccountCreation = z.infer<typeof accountCreationSchema>
 
 /** Sub-schema for account updates. */
 export const accountUpdateSchema =
-    z.strictObject({
-        ...accountAttributesSchema.partial({
-            acctType: true,
-            name: true
-        }).shape
+    accountAttributesSchema.partial({
+        acctNumber: true,
+        acctType: true,
+        name: true,
+        description: true,
     }).readonly()
 
 export type AccountUpdate = z.infer<typeof accountUpdateSchema>

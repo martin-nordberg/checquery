@@ -89,52 +89,70 @@ export class AccountTxnRepo implements IAccountSvc {
         return true
     }
 
-    async updateAccount(accountPatch: AccountUpdate): Promise<Account | null> {
+    async updateAccount(accountPatch: AccountUpdate): Promise<AccountUpdate | null> {
+        let result : AccountUpdate|null = null
+
         if (accountPatch.name !== undefined) {
-            await this.#txn.exec(
+            const count = await this.#txn.exec(
                 `UPDATE Account
                  SET name    = $2,
                      nameHlc = $hlc
                  WHERE id = $1
-                   AND nameHlc < $hlc`,
+                   AND nameHlc < $hlc
+                   AND name <> $2`,
                 [accountPatch.id, accountPatch.name]
             )
+            if (count) {
+                result = {id: accountPatch.id, name: accountPatch.name}
+            }
         }
 
         if (accountPatch.description !== undefined) {
-            await this.#txn.exec(
+            const count = await this.#txn.exec(
                 `UPDATE Account
                  SET description    = $2,
                      descriptionHlc = $hlc
                  WHERE id = $1
-                   AND descriptionHlc < $hlc`,
-                [accountPatch.id, accountPatch.description === "" ? null : accountPatch.description]
+                   AND descriptionHlc < $hlc
+                   AND description <> $2`,
+                [accountPatch.id, accountPatch.description]
             )
+            if (count) {
+                result = {...(result ?? {id: accountPatch.id}), description: accountPatch.description}
+            }
         }
 
         if (accountPatch.acctNumber !== undefined) {
-            await this.#txn.exec(
+            const count = await this.#txn.exec(
                 `UPDATE Account
                  SET acctNumber    = $2,
                      acctNumberHlc = $hlc
                  WHERE id = $1
-                   AND acctNumberHlc < $hlc`,
-                [accountPatch.id, accountPatch.acctNumber === "" ? null : accountPatch.acctNumber]
+                   AND acctNumberHlc < $hlc
+                   AND acctNumber <> $2`,
+                [accountPatch.id, accountPatch.acctNumber]
             )
+            if (count) {
+                result = {...(result ?? {id: accountPatch.id}), acctNumber: accountPatch.acctNumber}
+            }
         }
 
         if (accountPatch.acctType !== undefined) {
-            await this.#txn.exec(
+            const count = await this.#txn.exec(
                 `UPDATE Account
                  SET acctType    = $2,
                      acctTypeHlc = $hlc
                  WHERE id = $1
-                   AND acctTypeHlc < $hlc`,
+                   AND acctTypeHlc < $hlc
+                   AND acctType <> $2`,
                 [accountPatch.id, accountPatch.acctType]
             )
+            if (count) {
+                result = {...(result ?? {id: accountPatch.id}), acctType: accountPatch.acctType}
+            }
         }
 
-        return this.findAccountById(accountPatch.id)
+        return result
     }
 
 }

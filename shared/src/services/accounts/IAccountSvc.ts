@@ -20,6 +20,6 @@ export interface IAccountSvc {
     isAccountInUse(accountId: AcctId): Promise<boolean>
 
     /** Updates an account's attributes. */
-    updateAccount(accountPatch: AccountUpdate): Promise<Account | null>
+    updateAccount(accountPatch: AccountUpdate): Promise<AccountUpdate | null>
 
 }

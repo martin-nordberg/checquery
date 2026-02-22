@@ -36,7 +36,7 @@ export class VendorEventWriter implements IVendorSvc {
         throw Error("Unimplemented")
     }
 
-    async updateVendor(vendorPatch: VendorUpdate): Promise<Vendor | null> {
+    async updateVendor(vendorPatch: VendorUpdate): Promise<VendorUpdate|null> {
         await appendDirective(createVendorUpdateDirective({
             id: vendorPatch.id,
             name: vendorPatch.name,
@@ -44,8 +44,7 @@ export class VendorEventWriter implements IVendorSvc {
             defaultAccount: vendorPatch.defaultAccount,
             isActive: vendorPatch.isActive,
         }))
-
-        return null
+        return vendorPatch
     }
 
 }
