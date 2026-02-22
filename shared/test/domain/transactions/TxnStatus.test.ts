@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'bun:test'
-import {txnStatusSchema,} from "../../../src/domain/transactions/TxnStatus";
+import {txnStatusSchema,} from "$shared/domain/transactions/TxnStatus";
 
 describe('txnStatusSchema', () => {
     describe('valid transaction statuses', () => {

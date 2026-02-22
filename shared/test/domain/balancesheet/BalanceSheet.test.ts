@@ -1,7 +1,7 @@
 import {describe, expect, it} from 'bun:test'
-import type {BalanceSheet, BalSheetLineItem} from "../../../src/domain/balancesheet/BalanceSheet";
-import type {CurrencyAmt} from "../../../src/domain/core/CurrencyAmt";
-import {genAcctId} from "../../../src/domain/accounts/AcctId";
+import type {BalanceSheet, BalSheetLineItem} from "$shared/domain/balancesheet/BalanceSheet";
+import type {CurrencyAmt} from "$shared/domain/core/CurrencyAmt";
+import {genAcctId} from "$shared/domain/accounts/AcctId";
 
 describe('BalanceSheet types', () => {
     describe('BalSheetLineItem', () => {

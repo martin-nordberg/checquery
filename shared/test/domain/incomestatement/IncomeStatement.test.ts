@@ -1,7 +1,7 @@
 import {describe, expect, it} from 'bun:test'
-import type {IncomeStatement, IncStmtLineItem} from "../../../src/domain/incomestatement/IncomeStatement";
-import type {CurrencyAmt} from "../../../src/domain/core/CurrencyAmt";
-import {genAcctId} from "../../../src/domain/accounts/AcctId";
+import type {IncomeStatement, IncStmtLineItem} from "$shared/domain/incomestatement/IncomeStatement";
+import type {CurrencyAmt} from "$shared/domain/core/CurrencyAmt";
+import {genAcctId} from "$shared/domain/accounts/AcctId";
 
 describe('IncomeStatement types', () => {
     describe('IncStmtLineItem', () => {

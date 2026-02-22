@@ -7,11 +7,11 @@ import {
     type RegisterLineItem,
     type RegisterTransaction,
     registerUpdateSchema,
-} from "../../../src/domain/register/Register";
-import {genTxnId} from "../../../src/domain/transactions/TxnId";
-import type {CurrencyAmt} from "../../../src/domain/core/CurrencyAmt";
-import type {IsoDate} from "../../../src/domain/core/IsoDate";
-import {genAcctId} from "../../../src/domain/accounts/AcctId";
+} from "$shared/domain/register/Register";
+import {genTxnId} from "$shared/domain/transactions/TxnId";
+import type {CurrencyAmt} from "$shared/domain/core/CurrencyAmt";
+import type {IsoDate} from "$shared/domain/core/IsoDate";
+import {genAcctId} from "$shared/domain/accounts/AcctId";
 
 describe('registerEntrySchema', () => {
     describe('valid entries', () => {

@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'bun:test'
-import {acctIdPrefix, acctIdSchema, genAcctId} from "../../../src/domain/accounts/AcctId";
+import {acctIdPrefix, acctIdSchema, genAcctId} from "$shared/domain/accounts/AcctId";
 
 describe('genAcctId', () => {
     it('generates a valid account ID', () => {

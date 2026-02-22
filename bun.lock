@@ -1,5 +1,6 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "checquery",
@@ -8,11 +9,12 @@
       "name": "checquery-client",
       "version": "0.0.0",
       "dependencies": {
+        "@electric-sql/pglite": "0.3.15",
         "@hono/zod-validator": "0.7.6",
         "@paralleldrive/cuid2": "3.0.2",
         "@solid-primitives/map": "0.7.2",
         "@solidjs/router": "0.15.4",
-        "hono": "4.11.1",
+        "hono": "4.11.9",
         "solid-icons": "1.1.0",
         "solid-js": "1.9.10",
         "zod": "4.2.1",
@@ -29,9 +31,10 @@
     "server": {
       "name": "checquery-server",
       "dependencies": {
+        "@electric-sql/pglite": "0.3.15",
         "@hono/zod-validator": "0.7.6",
         "@paralleldrive/cuid2": "3.0.2",
-        "hono": "4.11.1",
+        "hono": "4.11.9",
         "zod": "4.2.1",
       },
       "devDependencies": {
@@ -41,9 +44,10 @@
     "shared": {
       "name": "checquery-shared",
       "dependencies": {
+        "@electric-sql/pglite": "0.3.15",
         "@hono/zod-validator": "0.7.6",
         "@paralleldrive/cuid2": "3.0.2",
-        "hono": "4.11.1",
+        "hono": "4.11.9",
         "zod": "4.2.1",
       },
       "devDependencies": {
@@ -92,6 +96,8 @@
     "@babel/traverse": ["@babel/traverse@7.28.5", "", { "dependencies": { "@babel/code-frame": "^7.27.1", "@babel/generator": "^7.28.5", "@babel/helper-globals": "^7.28.0", "@babel/parser": "^7.28.5", "@babel/template": "^7.27.2", "@babel/types": "^7.28.5", "debug": "^4.3.1" } }, "sha512-TCCj4t55U90khlYkVV/0TfkJkAkUg3jZFA3Neb7unZT8CPok7iiRfaX0F+WnqWqt7OxhOn0uBKXCw4lbL8W0aQ=="],
 
     "@babel/types": ["@babel/types@7.28.5", "", { "dependencies": { "@babel/helper-string-parser": "^7.27.1", "@babel/helper-validator-identifier": "^7.28.5" } }, "sha512-qQ5m48eI/MFLQ5PxQj4PFaprjyCTLI37ElWMmNs0K8Lk3dVeOdNpB3ks8jc7yM5CDmVC73eMVk/trk3fgmrUpA=="],
+
+    "@electric-sql/pglite": ["@electric-sql/pglite@0.3.15", "", {}, "sha512-Cj++n1Mekf9ETfdc16TlDi+cDDQF0W7EcbyRHYOAeZdsAe8M/FJg18itDTSwyHfar2WIezawM9o0EKaRGVKygQ=="],
 
     "@esbuild/aix-ppc64": ["@esbuild/aix-ppc64@0.27.2", "", { "os": "aix", "cpu": "ppc64" }, "sha512-GZMB+a0mOMZs4MpDbj8RJp4cw+w1WV5NYD6xzgvzUJ5Ek2jerwfO2eADyI6ExDSUED+1X8aMbegahsJi+8mgpw=="],
 
@@ -305,7 +311,7 @@
 
     "graceful-fs": ["graceful-fs@4.2.11", "", {}, "sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ=="],
 
-    "hono": ["hono@4.11.1", "", {}, "sha512-KsFcH0xxHes0J4zaQgWbYwmz3UPOOskdqZmItstUG93+Wk1ePBLkLGwbP9zlmh1BFUiL8Qp+Xfu9P7feJWpGNg=="],
+    "hono": ["hono@4.11.9", "", {}, "sha512-Eaw2YTGM6WOxA6CXbckaEvslr2Ne4NFsKrvc0v97JD5awbmeBLO5w9Ho9L9kmKonrwF9RJlW6BxT1PVv/agBHQ=="],
 
     "html-entities": ["html-entities@2.3.3", "", {}, "sha512-DV5Ln36z34NNTDgnz0EWGBLZENelNAtkiFA4kyNOG2tDI6Mz1uSWiq1wAKdyjnJwyDiDO7Fa2SO1CTxPXL8VxA=="],
 

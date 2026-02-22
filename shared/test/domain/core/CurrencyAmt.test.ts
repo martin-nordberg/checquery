@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'bun:test'
-import {CurrencyAmt, currencyAmtSchema, fromCents, toCents} from "../../../src/domain/core/CurrencyAmt";
+import {type CurrencyAmt, currencyAmtSchema, fromCents, toCents} from "$shared/domain/core/CurrencyAmt";
 
 const check = (amt: CurrencyAmt) => {
     currencyAmtSchema.parse(amt)

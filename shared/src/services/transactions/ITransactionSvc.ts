@@ -17,9 +17,6 @@ export interface ITransactionSvc {
     /** Finds the transaction with given unique ID. */
     findTransactionById(transactionId: TxnId): Promise<Transaction | null>
 
-    /** Finds the entire list of transactions. */
-    findTransactionsAll(): Promise<Transaction[]>
-
     /** Updates a transaction's attributes. */
     updateTransaction(newTransaction: TransactionUpdate): Promise<Transaction | null>
 

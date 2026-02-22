@@ -3,8 +3,8 @@ import {
     transactionCreationSchema,
     transactionSchema,
     transactionUpdateSchema
-} from '../../../src/domain/transactions/Transaction'
-import {genTxnId} from '../../../src/domain/transactions/TxnId'
+} from '$shared/domain/transactions/Transaction'
+import {genTxnId} from '$shared/domain/transactions/TxnId'
 
 const validEntries = [
     {account: 'Assets:Checking', debit: '$100.00', credit: '$0.00'},

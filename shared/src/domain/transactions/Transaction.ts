@@ -5,13 +5,6 @@ import {txnIdSchema} from "./TxnId";
 import {isoDateSchema} from "../core/IsoDate";
 import {nameSchema} from "../core/Name";
 
-/** Validates that a transaction has either vendor or description (or both). */
-const hasVendorOrDescription = (txn: { vendor?: string | undefined, description?: string | undefined }) => {
-    const hasVendor = txn.vendor !== undefined && txn.vendor.trim() !== ''
-    const hasDescription = txn.description !== undefined && txn.description.trim() !== ''
-    return hasVendor || hasDescription
-}
-
 /** Base schema for a Stacquer transaction's details. */
 export const transactionAttributesSchema =
     z.strictObject({
@@ -75,3 +68,12 @@ export const transactionStandAloneSchema =
     }).readonly()
 
 export type TransactionStandAlone = z.infer<typeof transactionStandAloneSchema>
+
+/** Validates that a transaction has either vendor or description (or both). */
+function hasVendorOrDescription(txn: { vendor?: string | undefined, description?: string | undefined }) {
+    if (txn.vendor !== undefined && txn.vendor.trim() !== '') {
+        return true
+    }
+    return txn.description !== undefined && txn.description.trim() !== ''
+}
+

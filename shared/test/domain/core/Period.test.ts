@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'bun:test'
-import {isoDateSchema} from "../../../src/domain/core/IsoDate";
-import {getEndDate, getStartDate, periodSchema} from "../../../src/domain/core/Period";
+import {isoDateSchema} from "$shared/domain/core/IsoDate";
+import {getEndDate, getStartDate, periodSchema} from "$shared/domain/core/Period";
 
 const check = (periodStr: string, startDateStr: string, endDateStr: string) => {
     const period = periodSchema.parse(periodStr)
