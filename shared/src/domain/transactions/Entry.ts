@@ -16,11 +16,7 @@ export const entryAttributesSchema =
 
         /** The comment for the entry. */
         comment: z.string().optional(),
-    }).refine((entry) => {
-        const crIsZero = entry.credit == "$0.00"
-        const drIsZero = entry.debit == "$0.00"
-        return crIsZero != drIsZero
-    }, {error: "An entry must have a debit or a credit, but not both."})
+    })
 
 
 /** Schema for an entry. */
@@ -31,9 +27,17 @@ export type Entry = z.infer<typeof entrySchema>
 
 /** Sub-schema for entry creation. */
 export const entryCreationSchema =
-    z.strictObject({
-        ...entryAttributesSchema.shape
-    }).readonly()
+    entryAttributesSchema.extend({
+        credit: entryAttributesSchema.shape.credit.default("$0.00"),
+        debit: entryAttributesSchema.shape.debit.default("$0.00"),
+    }).refine(
+        (entry) => {
+            const crIsZero = entry.credit == "$0.00"
+            const drIsZero = entry.debit == "$0.00"
+            return crIsZero != drIsZero
+        },
+        {error: "An entry must have a debit or a credit, but not both."}
+    ).readonly()
 
 export type EntryCreation = z.infer<typeof entryCreationSchema>
 
@@ -52,7 +56,7 @@ export const entryUpdateSchema =
 export type EntryUpdate = z.infer<typeof entryUpdateSchema>
 
 
-export const entriesSchema = z.array(entrySchema).min(2)
+export const entriesSchema = z.array(entryCreationSchema).min(2)
     .refine((entries => {
         let totalDr = 0
         let totalCr = 0

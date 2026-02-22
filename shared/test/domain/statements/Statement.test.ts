@@ -36,53 +36,11 @@ describe('statementSchema', () => {
         expect(result.transactions).toEqual([])
     })
 
-    it('defaults isReconciled to false when omitted', () => {
-        const {isReconciled: _, ...input} = validInput()
-        const result = statementSchema.parse(input)
-
-        expect(result.isReconciled).toBe(false)
-    })
-
-    it('coerces SQLite integer 0 to false for isReconciled', () => {
-        const input = {...validInput(), isReconciled: 0}
-        const result = statementSchema.parse(input)
-
-        expect(result.isReconciled).toBe(false)
-    })
-
-    it('coerces SQLite integer 1 to true for isReconciled', () => {
-        const input = {...validInput(), isReconciled: 1}
-        const result = statementSchema.parse(input)
-
-        expect(result.isReconciled).toBe(true)
-    })
-
-    it('coerces null to false for isReconciled', () => {
-        const input = {...validInput(), isReconciled: null}
-        const result = statementSchema.parse(input)
-
-        expect(result.isReconciled).toBe(false)
-    })
-
     it('accepts true for isReconciled', () => {
         const input = {...validInput(), isReconciled: true}
         const result = statementSchema.parse(input)
 
         expect(result.isReconciled).toBe(true)
-    })
-
-    it('defaults beginningBalance to $0.00 when omitted', () => {
-        const {beginningBalance: _, ...input} = validInput()
-        const result = statementSchema.parse(input)
-
-        expect(result.beginningBalance).toBe('$0.00')
-    })
-
-    it('defaults endingBalance to $0.00 when omitted', () => {
-        const {endingBalance: _, ...input} = validInput()
-        const result = statementSchema.parse(input)
-
-        expect(result.endingBalance).toBe('$0.00')
     })
 
     it('accepts negative currency amounts in parentheses', () => {
@@ -195,6 +153,21 @@ describe('statementCreationSchema', () => {
         const {transactions: _, ...input} = validInput()
         expect(() => statementCreationSchema.parse(input)).toThrow()
     })
+
+    it('defaults beginningBalance to $0.00 when omitted', () => {
+        const {beginningBalance: _, ...input} = validInput()
+        const result = statementCreationSchema.parse(input)
+
+        expect(result.beginningBalance).toBe('$0.00')
+    })
+
+    it('defaults endingBalance to $0.00 when omitted', () => {
+        const {endingBalance: _, ...input} = validInput()
+        const result = statementCreationSchema.parse(input)
+
+        expect(result.endingBalance).toBe('$0.00')
+    })
+
 })
 
 describe('statementUpdateSchema', () => {

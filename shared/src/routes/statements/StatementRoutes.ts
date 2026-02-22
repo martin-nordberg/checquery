@@ -38,7 +38,8 @@ export const statementRoutes = (statementSvc: IStatementSvc) => {
             async (c) => {
                 const {statementId} = c.req.valid('param')
                 const statement: StatementUpdate = c.req.valid('json')
-                return c.json(await statementSvc.updateStatement({...statement, id: statementId}))
+                await statementSvc.updateStatement({...statement, id: statementId})
+                return c.body(null, 204)
             }
         )
         .delete(

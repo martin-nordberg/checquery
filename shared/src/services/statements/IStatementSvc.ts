@@ -17,6 +17,6 @@ export interface IStatementSvc {
     findStatementsAll(): Promise<Statement[]>
 
     /** Updates a statement's attributes. */
-    updateStatement(statementPatch: StatementUpdate): Promise<Statement | null>
+    updateStatement(statementPatch: StatementUpdate): Promise<StatementUpdate | null>
 
 }

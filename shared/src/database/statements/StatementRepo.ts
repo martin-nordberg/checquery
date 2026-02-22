@@ -37,7 +37,7 @@ export class StatementRepo implements IStatementSvc {
         )
     }
 
-    async updateStatement(statementPatch: StatementUpdate): Promise<Statement | null> {
+    async updateStatement(statementPatch: StatementUpdate): Promise<StatementUpdate | null> {
         return this.db.transaction(async (txn) =>
             new StatementTxnRepo(txn).updateStatement(statementPatch)
         )

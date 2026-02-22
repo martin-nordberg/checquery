@@ -8,6 +8,26 @@ const client = hc<StatementRoutes>(`${webAppHost}`)
 
 export class StatementClientSvc {
 
+    async createStatement(statement: StatementCreation): Promise<void> {
+        console.log("createStatement", statement)
+        const res = await client.statements.$post({json: statement})
+
+        if (!res.ok) {
+            console.log(res)
+            throw new Error('Failed to create statement')
+        }
+    }
+
+    async deleteStatement(statementId: StmtId): Promise<void> {
+        console.log("deleteStatement", statementId)
+        const res = await client.statements[':statementId'].$delete({param: {statementId}})
+
+        if (!res.ok) {
+            console.log(res)
+            throw new Error('Failed to delete statement')
+        }
+    }
+
     async findStatementsAll(): Promise<Statement[]> {
         console.log("findStatementsAll")
         const res = await client.statements.$get()
@@ -34,17 +54,7 @@ export class StatementClientSvc {
         return null
     }
 
-    async createStatement(statement: StatementCreation): Promise<void> {
-        console.log("createStatement", statement)
-        const res = await client.statements.$post({json: statement})
-
-        if (!res.ok) {
-            console.log(res)
-            throw new Error('Failed to create statement')
-        }
-    }
-
-    async updateStatement(update: StatementUpdate): Promise<Statement | null> {
+    async updateStatement(update: StatementUpdate): Promise<void> {
         console.log("updateStatement", update)
         const res = await client.statements[':statementId'].$patch({
             param: {statementId: update.id},
@@ -52,21 +62,11 @@ export class StatementClientSvc {
         })
 
         if (res.ok) {
-            return res.json()
+            return
         }
 
         console.log(res)
         throw new Error('Failed to update statement')
-    }
-
-    async deleteStatement(statementId: StmtId): Promise<void> {
-        console.log("deleteStatement", statementId)
-        const res = await client.statements[':statementId'].$delete({param: {statementId}})
-
-        if (!res.ok) {
-            console.log(res)
-            throw new Error('Failed to delete statement')
-        }
     }
 
 }

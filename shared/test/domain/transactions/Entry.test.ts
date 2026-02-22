@@ -38,15 +38,6 @@ describe('entrySchema', () => {
             expect(entry.comment).toBe('Monthly deposit')
         })
 
-        it('defaults credit and debit to $0.00', () => {
-            const entry = entrySchema.parse({
-                account: 'Assets:Checking',
-                debit: '$100.00'
-            })
-
-            expect(entry.credit).toBe('$0.00')
-        })
-
         it('parses entry with large amounts', () => {
             const entry = entrySchema.parse({
                 account: 'Assets:Savings',
@@ -70,7 +61,7 @@ describe('entrySchema', () => {
 
     describe('invalid entries', () => {
         it('rejects entry with both debit and credit non-zero', () => {
-            expect(() => entrySchema.parse({
+            expect(() => entryCreationSchema.parse({
                 account: 'Assets:Checking',
                 debit: '$100.00',
                 credit: '$50.00'
@@ -78,7 +69,7 @@ describe('entrySchema', () => {
         })
 
         it('rejects entry with both debit and credit zero', () => {
-            expect(() => entrySchema.parse({
+            expect(() => entryCreationSchema.parse({
                 account: 'Assets:Checking',
                 debit: '$0.00',
                 credit: '$0.00'
@@ -198,17 +189,19 @@ describe('entryCreationSchema', () => {
 
         expect(entry.account).toBe('Assets:Checking')
     })
+
+    it('defaults credit to $0.00', () => {
+        const entry = entryCreationSchema.parse({
+            account: 'Assets:Checking',
+            debit: '$100.00'
+        })
+
+        expect(entry.credit).toBe('$0.00')
+    })
+
 })
 
 describe('entryUpdateSchema', () => {
-    it('parses update with all fields optional', () => {
-        const entry = entryUpdateSchema.parse({})
-
-        expect(entry.account).toBeUndefined()
-        expect(entry.debit).toEqual("$0.00")
-        expect(entry.credit).toEqual("$0.00")
-    })
-
     it('parses update with partial fields', () => {
         const entry = entryUpdateSchema.parse({
             account: 'Updated:Account'

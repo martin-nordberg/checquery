@@ -35,10 +35,10 @@ export class StatementTeeSvc implements IStatementSvc {
     }
 
     /** Updates a statement's attributes. */
-    async updateStatement(statementPatch: StatementUpdate): Promise<Statement | null> {
-        let result: Statement | null = null
+    async updateStatement(statementPatch: StatementUpdate): Promise<StatementUpdate | null> {
+        let result: StatementUpdate | null = statementPatch
         for (const svc of this.svcs) {
-            result = result ?? await svc.updateStatement(statementPatch)
+            result = result ? await svc.updateStatement(result) : null
         }
         return result
     }

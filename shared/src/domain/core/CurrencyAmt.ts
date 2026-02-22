@@ -10,7 +10,6 @@ export const currencyAmtSchema =
         .trim()
         .max(currencyAmtMaxLength, `Currency amount can be at most ${currencyAmtMaxLength} characters.`)
         .regex(currencyAmtRegex, "Currency amount must match format '$#,###.##'.")
-        .default("$0.00")
 
 export type CurrencyAmt = z.infer<typeof currencyAmtSchema>
 

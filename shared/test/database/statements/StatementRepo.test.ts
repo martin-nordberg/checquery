@@ -46,11 +46,12 @@ describe('Statement Repo', () => {
 
         expect(stmt2).toMatchObject(stmt0)
 
-        const stmt3 = await repo.updateStatement({
+        await repo.updateStatement({
             id,
             beginningBalance: "$12,456.78",
             endingBalance: "$12,456.79",
         })
+        const stmt3 = await repo.findStatementById(id)
 
         expect(stmt3).toMatchObject({
             ...stmt0,
