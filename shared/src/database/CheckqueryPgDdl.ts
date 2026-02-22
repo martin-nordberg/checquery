@@ -94,9 +94,15 @@ async function runChecqueryPgDdlTxn(txn: PgLiteTxn) {
              isReconciled         BOOLEAN                   NOT NULL DEFAULT FALSE,
              isReconciledHlc      CHAR(${hlcLength})        NOT NULL,
              isDeleted            BOOLEAN                   NOT NULL DEFAULT FALSE,
-             isDeletedHlc         CHAR(${hlcLength})        NOT NULL,
-             UNIQUE (endDate, accountId)
+             isDeletedHlc         CHAR(${hlcLength})        NOT NULL
          );`
+    )
+
+    // Statement - partial unique index excluding soft-deleted rows
+    await txn.exec(
+        `CREATE UNIQUE INDEX statement_enddate_accountid_key
+         ON Statement (endDate, accountId)
+         WHERE isDeleted = false;`
     )
 
     // Transaction
