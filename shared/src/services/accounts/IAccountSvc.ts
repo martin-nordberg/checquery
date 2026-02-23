@@ -1,11 +1,11 @@
-import {type Account, type AccountCreation, type AccountUpdate} from "../../domain/accounts/Account";
+import {type Account, type AccountToWrite, type AccountPatch} from "../../domain/accounts/Account";
 import {type AcctId} from "../../domain/accounts/AcctId";
 
 
 export interface IAccountSvc {
 
     /** Creates a new account with given attributes. */
-    createAccount(account: AccountCreation): Promise<void>
+    createAccount(account: AccountToWrite): Promise<void>
 
     /** Deletes a given account. */
     deleteAccount(accountId: AcctId): Promise<void>
@@ -20,6 +20,6 @@ export interface IAccountSvc {
     isAccountInUse(accountId: AcctId): Promise<boolean>
 
     /** Updates an account's attributes. */
-    updateAccount(accountPatch: AccountUpdate): Promise<AccountUpdate | null>
+    patchAccount(accountPatch: AccountPatch): Promise<AccountPatch | null>
 
 }

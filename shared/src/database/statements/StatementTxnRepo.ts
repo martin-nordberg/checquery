@@ -1,6 +1,6 @@
 import type {StmtId} from "$shared/domain/statements/StmtId";
 import {stmtIdSchema} from "$shared/domain/statements/StmtId";
-import {type Statement, type StatementCreation, type StatementUpdate} from "$shared/domain/statements/Statement";
+import {type Statement, type StatementToWrite, type StatementPatch} from "$shared/domain/statements/Statement";
 import {fromCents, toCents} from "$shared/domain/core/CurrencyAmt";
 import {z} from "zod";
 import {isoDateSchema} from "$shared/domain/core/IsoDate";
@@ -28,7 +28,7 @@ export class StatementTxnRepo implements IStatementSvc {
         this.#txn = txn
     }
 
-    async createStatement(statement: StatementCreation): Promise<void> {
+    async createStatement(statement: StatementToWrite): Promise<void> {
         await this.#txn.exec(
             `INSERT INTO Statement (id, beginDate, beginDateHlc, endDate, endDateHlc, beginBalanceCents,
                                     beginBalanceCentsHlc,
@@ -140,8 +140,8 @@ export class StatementTxnRepo implements IStatementSvc {
         return result
     }
 
-    async updateStatement(statementPatch: StatementUpdate): Promise<StatementUpdate | null> {
-        let result: StatementUpdate | null = null
+    async updateStatement(statementPatch: StatementPatch): Promise<StatementPatch | null> {
+        let result: StatementPatch | null = null
 
         if (statementPatch.beginDate !== undefined) {
             const count = await this.#txn.exec(

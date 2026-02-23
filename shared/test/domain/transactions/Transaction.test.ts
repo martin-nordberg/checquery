@@ -1,8 +1,8 @@
 import {describe, expect, it} from 'bun:test'
 import {
-    transactionCreationSchema,
-    transactionSchema,
-    transactionUpdateSchema
+    transactionWriteSchema,
+    transactionReadSchema,
+    transactionPatchSchema
 } from '$shared/domain/transactions/Transaction'
 import {genTxnId} from '$shared/domain/transactions/TxnId'
 
@@ -14,7 +14,7 @@ const validEntries = [
 describe('transactionSchema', () => {
     describe('valid transactions', () => {
         it('parses transaction with required fields', () => {
-            const txn = transactionSchema.parse({
+            const txn = transactionWriteSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
                 vendor: 'Test Vendor',
@@ -27,7 +27,7 @@ describe('transactionSchema', () => {
 
         it('parses transaction with all optional fields', () => {
             const id = genTxnId()
-            const txn = transactionSchema.parse({
+            const txn = transactionWriteSchema.parse({
                 id,
                 date: '2026-01-15',
                 code: '1234',
@@ -43,7 +43,7 @@ describe('transactionSchema', () => {
         })
 
         it('parses transaction with multiple entries', () => {
-            const txn = transactionSchema.parse({
+            const txn = transactionWriteSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
                 vendor: 'Test Vendor',
@@ -60,14 +60,14 @@ describe('transactionSchema', () => {
 
     describe('invalid id', () => {
         it('rejects missing id', () => {
-            expect(() => transactionSchema.parse({
+            expect(() => transactionReadSchema.parse({
                 date: '2026-01-15',
                 entries: validEntries
             })).toThrow()
         })
 
         it('rejects invalid id format', () => {
-            expect(() => transactionSchema.parse({
+            expect(() => transactionReadSchema.parse({
                 id: 'invalid-id',
                 date: '2026-01-15',
                 entries: validEntries
@@ -75,7 +75,7 @@ describe('transactionSchema', () => {
         })
 
         it('rejects id with wrong prefix', () => {
-            expect(() => transactionSchema.parse({
+            expect(() => transactionReadSchema.parse({
                 id: 'acctabcdefghij1234567890',
                 date: '2026-01-15',
                 entries: validEntries
@@ -85,14 +85,14 @@ describe('transactionSchema', () => {
 
     describe('invalid date', () => {
         it('rejects missing date', () => {
-            expect(() => transactionSchema.parse({
+            expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
                 entries: validEntries
             })).toThrow()
         })
 
         it('rejects invalid date format - wrong separator', () => {
-            expect(() => transactionSchema.parse({
+            expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
                 date: '2026/01/15',
                 entries: validEntries
@@ -100,7 +100,7 @@ describe('transactionSchema', () => {
         })
 
         it('rejects invalid date format - wrong order', () => {
-            expect(() => transactionSchema.parse({
+            expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
                 date: '15-01-2026',
                 entries: validEntries
@@ -108,7 +108,7 @@ describe('transactionSchema', () => {
         })
 
         it('rejects date before year 2000', () => {
-            expect(() => transactionSchema.parse({
+            expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
                 date: '1999-01-15',
                 entries: validEntries
@@ -116,7 +116,7 @@ describe('transactionSchema', () => {
         })
 
         it('rejects invalid month', () => {
-            expect(() => transactionSchema.parse({
+            expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
                 date: '2026-13-15',
                 entries: validEntries
@@ -124,7 +124,7 @@ describe('transactionSchema', () => {
         })
 
         it('rejects invalid day', () => {
-            expect(() => transactionSchema.parse({
+            expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-32',
                 entries: validEntries
@@ -134,7 +134,7 @@ describe('transactionSchema', () => {
 
     describe('invalid vendor', () => {
         it('rejects vendor with newlines', () => {
-            expect(() => transactionSchema.parse({
+            expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
                 vendor: 'Acme\nCorp',
@@ -144,7 +144,7 @@ describe('transactionSchema', () => {
         })
 
         it('rejects vendor exceeding max length', () => {
-            expect(() => transactionSchema.parse({
+            expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
                 vendor: 'x'.repeat(201),
@@ -156,7 +156,7 @@ describe('transactionSchema', () => {
 
     describe('invalid description', () => {
         it('rejects description exceeding max length', () => {
-            expect(() => transactionSchema.parse({
+            expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
                 vendor: 'Valid Vendor',
@@ -166,7 +166,7 @@ describe('transactionSchema', () => {
         })
 
         it('rejects description with newlines', () => {
-            expect(() => transactionSchema.parse({
+            expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
                 vendor: 'Valid Vendor',
@@ -178,7 +178,7 @@ describe('transactionSchema', () => {
 
     describe('invalid entries', () => {
         it('rejects missing entries', () => {
-            expect(() => transactionSchema.parse({
+            expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
                 vendor: 'Test Vendor'
@@ -186,7 +186,7 @@ describe('transactionSchema', () => {
         })
 
         it('rejects single entry', () => {
-            expect(() => transactionSchema.parse({
+            expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
                 vendor: 'Test Vendor',
@@ -197,7 +197,7 @@ describe('transactionSchema', () => {
         })
 
         it('rejects unbalanced entries', () => {
-            expect(() => transactionSchema.parse({
+            expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
                 vendor: 'Test Vendor',
@@ -209,7 +209,7 @@ describe('transactionSchema', () => {
         })
 
         it('rejects empty entries array', () => {
-            expect(() => transactionSchema.parse({
+            expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
                 vendor: 'Test Vendor',
@@ -220,7 +220,7 @@ describe('transactionSchema', () => {
 
     describe('unknown properties', () => {
         it('rejects unknown properties', () => {
-            expect(() => transactionSchema.parse({
+            expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
                 vendor: 'Acme Corp',
@@ -232,7 +232,7 @@ describe('transactionSchema', () => {
 
     describe('vendor or description required', () => {
         it('accepts transaction with vendor only', () => {
-            const txn = transactionSchema.parse({
+            const txn = transactionWriteSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
                 vendor: 'Acme Corp',
@@ -242,7 +242,7 @@ describe('transactionSchema', () => {
         })
 
         it('accepts transaction with description only', () => {
-            const txn = transactionSchema.parse({
+            const txn = transactionWriteSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
                 description: 'Monthly payment',
@@ -252,7 +252,7 @@ describe('transactionSchema', () => {
         })
 
         it('accepts transaction with both vendor and description', () => {
-            const txn = transactionSchema.parse({
+            const txn = transactionWriteSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
                 vendor: 'Acme Corp',
@@ -264,7 +264,7 @@ describe('transactionSchema', () => {
         })
 
         it('rejects transaction with neither vendor nor description', () => {
-            expect(() => transactionSchema.parse({
+            expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
                 entries: validEntries
@@ -272,7 +272,7 @@ describe('transactionSchema', () => {
         })
 
         it('rejects transaction with empty vendor and no description', () => {
-            expect(() => transactionSchema.parse({
+            expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
                 vendor: '',
@@ -281,7 +281,7 @@ describe('transactionSchema', () => {
         })
 
         it('rejects transaction with whitespace-only vendor and no description', () => {
-            expect(() => transactionSchema.parse({
+            expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
                 vendor: '   ',
@@ -293,7 +293,7 @@ describe('transactionSchema', () => {
 
 describe('transactionCreationSchema', () => {
     it('parses valid creation input', () => {
-        const txn = transactionCreationSchema.parse({
+        const txn = transactionWriteSchema.parse({
             id: genTxnId(),
             date: '2026-01-15',
             vendor: 'Test Vendor',
@@ -304,14 +304,14 @@ describe('transactionCreationSchema', () => {
     })
 
     it('requires all mandatory fields', () => {
-        expect(() => transactionCreationSchema.parse({
+        expect(() => transactionWriteSchema.parse({
             id: genTxnId(),
             vendor: 'Test Vendor'
         })).toThrow()
     })
 
     it('requires vendor or description', () => {
-        expect(() => transactionCreationSchema.parse({
+        expect(() => transactionWriteSchema.parse({
             id: genTxnId(),
             date: '2026-01-15',
             entries: validEntries
@@ -321,7 +321,7 @@ describe('transactionCreationSchema', () => {
 
 describe('transactionUpdateSchema', () => {
     it('parses update with all fields', () => {
-        const txn = transactionUpdateSchema.parse({
+        const txn = transactionPatchSchema.parse({
             id: genTxnId(),
             date: '2026-02-15',
             entries: validEntries
@@ -331,7 +331,7 @@ describe('transactionUpdateSchema', () => {
     })
 
     it('allows update without date (date is optional in updates)', () => {
-        const txn = transactionUpdateSchema.parse({
+        const txn = transactionPatchSchema.parse({
             id: genTxnId(),
             entries: validEntries
         })
@@ -340,14 +340,14 @@ describe('transactionUpdateSchema', () => {
     })
 
     it('requires id field', () => {
-        expect(() => transactionUpdateSchema.parse({
+        expect(() => transactionPatchSchema.parse({
             date: '2026-01-15',
             entries: validEntries
         })).toThrow()
     })
 
     it('allows update without entries', () => {
-        const txn = transactionUpdateSchema.parse({
+        const txn = transactionPatchSchema.parse({
             id: genTxnId()
         })
         expect(txn.entries).toBeUndefined()

@@ -1,4 +1,4 @@
-import {type Account, type AccountCreation, accountSchema, type AccountUpdate,} from "$shared/domain/accounts/Account";
+import {type Account, type AccountToWrite, accountReadSchema, type AccountPatch,} from "$shared/domain/accounts/Account";
 import {type AcctId} from "$shared/domain/accounts/AcctId";
 import {z} from "zod";
 import type {PgLiteTxn} from "$shared/database/PgLiteTxn";
@@ -13,7 +13,7 @@ export class AccountTxnRepo implements IAccountSvc {
         this.#txn = txn
     }
 
-    async createAccount(account: AccountCreation): Promise<void> {
+    async createAccount(account: AccountToWrite): Promise<void> {
         await this.#txn.exec(
             `INSERT INTO Account (id, name, nameHlc, acctNumber, acctNumberHlc, acctType, acctTypeHlc, description,
                                   descriptionHlc, isDeleted, isDeletedHlc)
@@ -46,7 +46,7 @@ export class AccountTxnRepo implements IAccountSvc {
              WHERE id = $1
                AND isDeleted = false`,
             [accountId],
-            accountSchema
+            accountReadSchema
         )
     }
 
@@ -57,7 +57,7 @@ export class AccountTxnRepo implements IAccountSvc {
              WHERE isDeleted = false
              ORDER BY name`,
             [],
-            accountSchema
+            accountReadSchema
         )
     }
 
@@ -89,8 +89,8 @@ export class AccountTxnRepo implements IAccountSvc {
         return true
     }
 
-    async updateAccount(accountPatch: AccountUpdate): Promise<AccountUpdate | null> {
-        let result: AccountUpdate | null = null
+    async patchAccount(accountPatch: AccountPatch): Promise<AccountPatch | null> {
+        let result: AccountPatch | null = null
 
         if (accountPatch.name !== undefined) {
             const count = await this.#txn.exec(

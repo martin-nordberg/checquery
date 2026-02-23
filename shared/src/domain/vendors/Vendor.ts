@@ -24,29 +24,29 @@ export const vendorAttributesSchema =
 
 
 /** Schema for a vendor. */
-export const vendorSchema = vendorAttributesSchema.readonly()
+export const vendorReadSchema = vendorAttributesSchema.readonly()
 
-export type Vendor = z.infer<typeof vendorSchema>
+export type Vendor = z.infer<typeof vendorReadSchema>
 
 
 /** Sub-schema for vendor creation. */
-export const vendorCreationSchema =
+export const vendorWriteSchema =
     vendorAttributesSchema.extend({
         description: vendorAttributesSchema.shape.description.default(""),
         isActive: vendorAttributesSchema.shape.isActive.default(true)
     }).readonly()
 
-export type VendorCreation = z.infer<typeof vendorCreationSchema>
+export type VendorToWrite = z.infer<typeof vendorWriteSchema>
 
 
 /** Sub-schema for vendor updates. */
-export const vendorUpdateSchema =
+export const vendorPatchSchema =
     vendorAttributesSchema.partial({
         name: true,
         description: true,
         isActive: true,
     }).readonly()
 
-export type VendorUpdate = z.infer<typeof vendorUpdateSchema>
+export type VendorPatch = z.infer<typeof vendorPatchSchema>
 
 

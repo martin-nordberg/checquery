@@ -6,7 +6,7 @@ import {acctTypeSchema} from "./AcctType";
 import {acctIdSchema} from "./AcctId";
 
 /** Base schema for a Stacquer account's details. */
-export const accountAttributesSchema =
+const accountAttributesSchema =
     z.strictObject({
         /** The unique ID of the account. */
         id: acctIdSchema,
@@ -26,23 +26,23 @@ export const accountAttributesSchema =
 
 
 /** Schema for an account. */
-export const accountSchema = accountAttributesSchema.readonly()
+export const accountReadSchema = accountAttributesSchema.readonly()
 
-export type Account = z.infer<typeof accountSchema>
+export type Account = z.infer<typeof accountReadSchema>
 
 
 /** Sub-schema for account creation. */
-export const accountCreationSchema =
+export const accountWriteSchema =
     accountAttributesSchema.extend({
         acctNumber: accountAttributesSchema.shape.acctNumber.default(""),
         description: accountAttributesSchema.shape.description.default(""),
     }).readonly()
 
-export type AccountCreation = z.infer<typeof accountCreationSchema>
+export type AccountToWrite = z.infer<typeof accountWriteSchema>
 
 
-/** Sub-schema for account updates. */
-export const accountUpdateSchema =
+/** Sub-schema for account patches. */
+export const accountPatchSchema =
     accountAttributesSchema.partial({
         acctNumber: true,
         acctType: true,
@@ -50,6 +50,6 @@ export const accountUpdateSchema =
         description: true,
     }).readonly()
 
-export type AccountUpdate = z.infer<typeof accountUpdateSchema>
+export type AccountPatch = z.infer<typeof accountPatchSchema>
 
 

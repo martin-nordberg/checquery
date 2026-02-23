@@ -1,4 +1,4 @@
-import {type Vendor, type VendorCreation, type VendorUpdate,} from "$shared/domain/vendors/Vendor";
+import {type Vendor, type VendorToWrite, type VendorPatch,} from "$shared/domain/vendors/Vendor";
 import {type VndrId} from "$shared/domain/vendors/VndrId";
 import type {PgLiteDb} from "$shared/database/PgLiteDb";
 import {VendorTxnRepo} from "$shared/database/vendors/VendorTxnRepo";
@@ -13,7 +13,7 @@ export class VendorRepo implements IVendorSvc {
         this.db = db
     }
 
-    async createVendor(vendor: VendorCreation): Promise<void> {
+    async createVendor(vendor: VendorToWrite): Promise<void> {
         return this.db.transaction(async (txn) =>
             new VendorTxnRepo(txn).createVendor(vendor)
         )
@@ -43,7 +43,7 @@ export class VendorRepo implements IVendorSvc {
         )
     }
 
-    async updateVendor(vendorPatch: VendorUpdate): Promise<VendorUpdate | null> {
+    async updateVendor(vendorPatch: VendorPatch): Promise<VendorPatch | null> {
         return this.db.transaction(async (txn) =>
             new VendorTxnRepo(txn).updateVendor(vendorPatch)
         )

@@ -1,4 +1,4 @@
-import {type Vendor, type VendorCreation, type VendorUpdate} from "../../domain/vendors/Vendor";
+import {type Vendor, type VendorToWrite, type VendorPatch} from "../../domain/vendors/Vendor";
 import {type VndrId} from "../../domain/vendors/VndrId";
 import type {IVendorSvc} from "$shared/services/vendors/IVendorSvc";
 
@@ -11,7 +11,7 @@ export class VendorTeeSvc implements IVendorSvc {
     }
 
     /** Creates a new vendor with given attributes. */
-    async createVendor(vendor: VendorCreation): Promise<void> {
+    async createVendor(vendor: VendorToWrite): Promise<void> {
         for (const svc of this.svcs) {
             await svc.createVendor(vendor)
         }
@@ -40,8 +40,8 @@ export class VendorTeeSvc implements IVendorSvc {
     }
 
     /** Updates a vendor's attributes. */
-    async updateVendor(vendorPatch: VendorUpdate): Promise<VendorUpdate | null> {
-        let result: VendorUpdate | null = vendorPatch
+    async updateVendor(vendorPatch: VendorPatch): Promise<VendorPatch | null> {
+        let result: VendorPatch | null = vendorPatch
         for (const svc of this.svcs) {
             result = result ? await svc.updateVendor(result) : null
         }

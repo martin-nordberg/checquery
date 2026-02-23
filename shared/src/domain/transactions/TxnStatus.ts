@@ -2,7 +2,7 @@ import {z} from "zod";
 
 /** Schema for a Checquery transaction status. */
 export const txnStatusSchema =
-    z.enum(['Pending', 'Reconciled'])
+    z.enum(['', 'Pending', 'Reconciled'])
 
 export const txnStatusCodes = txnStatusSchema.options
 

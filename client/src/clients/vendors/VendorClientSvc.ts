@@ -1,5 +1,5 @@
 import {hc} from 'hono/client'
-import type {Vendor, VendorCreation, VendorUpdate} from "$shared/domain/vendors/Vendor.ts";
+import type {Vendor, VendorToWrite, VendorPatch} from "$shared/domain/vendors/Vendor.ts";
 import type {VendorRoutes} from "$shared/routes/vendors/VendorRoutes.ts";
 import type {VndrId} from "$shared/domain/vendors/VndrId.ts";
 import {webAppHost} from "../config.ts";
@@ -48,7 +48,7 @@ export class VendorClientSvc {
         return false
     }
 
-    async createVendor(vendor: VendorCreation): Promise<void> {
+    async createVendor(vendor: VendorToWrite): Promise<void> {
         console.log("createVendor", vendor)
         const res = await client.vendors.$post({json: vendor})
 
@@ -68,7 +68,7 @@ export class VendorClientSvc {
         }
     }
 
-    async updateVendor(update: VendorUpdate): Promise<void> {
+    async updateVendor(update: VendorPatch): Promise<void> {
         console.log("updateVendor", update)
         const res = await client.vendors[':vendorId'].$patch({
             param: {vendorId: update.id},

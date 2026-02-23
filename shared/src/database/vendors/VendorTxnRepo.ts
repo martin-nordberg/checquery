@@ -1,4 +1,4 @@
-import {type Vendor, type VendorCreation, vendorSchema, type VendorUpdate,} from "$shared/domain/vendors/Vendor";
+import {type Vendor, type VendorToWrite, vendorReadSchema, type VendorPatch,} from "$shared/domain/vendors/Vendor";
 import {type VndrId} from "$shared/domain/vendors/VndrId";
 import {z} from "zod";
 import type {PgLiteTxn} from "$shared/database/PgLiteTxn";
@@ -13,7 +13,7 @@ export class VendorTxnRepo implements IVendorSvc {
         this.#txn = txn
     }
 
-    async createVendor(vendor: VendorCreation): Promise<void> {
+    async createVendor(vendor: VendorToWrite): Promise<void> {
         if (vendor.defaultAccount) {
             await this.#txn.exec(
                 `INSERT INTO Vendor (id, name, nameHlc, description, descriptionHlc, defaultAccountId,
@@ -77,7 +77,7 @@ export class VendorTxnRepo implements IVendorSvc {
              WHERE Vendor.id = $1
                AND Vendor.isDeleted = false`,
             [vendorId],
-            vendorSchema
+            vendorReadSchema
         )
     }
 
@@ -93,7 +93,7 @@ export class VendorTxnRepo implements IVendorSvc {
              WHERE Vendor.isDeleted = false
              ORDER BY name`,
             [],
-            vendorSchema
+            vendorReadSchema
         )
     }
 
@@ -108,8 +108,8 @@ export class VendorTxnRepo implements IVendorSvc {
         return result !== null && result.count > 0
     }
 
-    async updateVendor(vendorPatch: VendorUpdate): Promise<VendorUpdate | null> {
-        let result: VendorUpdate | null = null
+    async updateVendor(vendorPatch: VendorPatch): Promise<VendorPatch | null> {
+        let result: VendorPatch | null = null
 
         if (vendorPatch.name !== undefined) {
             const count = await this.#txn.exec(

@@ -1,4 +1,4 @@
-import {type Account, type AccountCreation, type AccountUpdate,} from "$shared/domain/accounts/Account";
+import {type Account, type AccountToWrite, type AccountPatch,} from "$shared/domain/accounts/Account";
 import {type IAccountSvc} from "$shared/services/accounts/IAccountSvc";
 import {type AcctId} from "$shared/domain/accounts/AcctId";
 import {
@@ -11,7 +11,7 @@ import {
 
 export class AccountEventWriter implements IAccountSvc {
 
-    async createAccount(account: AccountCreation): Promise<void> {
+    async createAccount(account: AccountToWrite): Promise<void> {
         await appendDirective(createAccountCreateDirective({
             id: account.id,
             name: account.name,
@@ -39,7 +39,7 @@ export class AccountEventWriter implements IAccountSvc {
         throw Error("Not implemented")
     }
 
-    async updateAccount(accountPatch: AccountUpdate): Promise<AccountUpdate | null> {
+    async patchAccount(accountPatch: AccountPatch): Promise<AccountPatch | null> {
         await appendDirective(createAccountUpdateDirective({
             id: accountPatch.id,
             name: accountPatch.name,

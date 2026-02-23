@@ -2,8 +2,8 @@ import type {ITransactionSvc} from "$shared/services/transactions/ITransactionSv
 import type {TxnId} from "$shared/domain/transactions/TxnId";
 import {
     type Transaction,
-    type TransactionCreation,
-    type TransactionUpdate
+    type TransactionToWrite,
+    type TransactionPatch
 } from "$shared/domain/transactions/Transaction";
 import {
     appendDirective,
@@ -15,7 +15,7 @@ import {
 
 export class TransactionEventWriter implements ITransactionSvc {
 
-    async createTransaction(transaction: TransactionCreation): Promise<void> {
+    async createTransaction(transaction: TransactionToWrite): Promise<void> {
 
         const payload: Record<string, unknown> = {
             id: transaction.id,
@@ -55,7 +55,7 @@ export class TransactionEventWriter implements ITransactionSvc {
         throw Error("Unimplemented")
     }
 
-    async updateTransaction(transactionPatch: TransactionUpdate): Promise<Transaction | null> {
+    async updateTransaction(transactionPatch: TransactionPatch): Promise<Transaction | null> {
         const payload: Record<string, unknown> = {id: transactionPatch.id}
         if (transactionPatch.date !== undefined) {
             payload['date'] = transactionPatch.date

@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'bun:test'
-import {vendorCreationSchema, vendorSchema, vendorUpdateSchema} from '$shared/domain/vendors/Vendor'
+import {vendorWriteSchema, vendorReadSchema, vendorPatchSchema} from '$shared/domain/vendors/Vendor'
 import {genVndrId} from '$shared/domain/vendors/VndrId'
 
 describe('vendorSchema', () => {
@@ -11,7 +11,7 @@ describe('vendorSchema', () => {
             isActive: true
         }
 
-        const result = vendorSchema.parse(input)
+        const result = vendorReadSchema.parse(input)
 
         expect(result.id).toBe(input.id)
         expect(result.name).toBe(input.name)
@@ -27,7 +27,7 @@ describe('vendorSchema', () => {
             isActive: true
         }
 
-        const result = vendorSchema.parse(input)
+        const result = vendorReadSchema.parse(input)
 
         expect(result.name).toBe('Acme Corporation')
     })
@@ -38,7 +38,7 @@ describe('vendorSchema', () => {
             name: ''
         }
 
-        expect(() => vendorSchema.parse(input)).toThrow()
+        expect(() => vendorReadSchema.parse(input)).toThrow()
     })
 
     it('rejects name with only whitespace', () => {
@@ -47,7 +47,7 @@ describe('vendorSchema', () => {
             name: '   '
         }
 
-        expect(() => vendorSchema.parse(input)).toThrow()
+        expect(() => vendorReadSchema.parse(input)).toThrow()
     })
 
     it('rejects name exceeding max length', () => {
@@ -56,7 +56,7 @@ describe('vendorSchema', () => {
             name: 'x'.repeat(201)
         }
 
-        expect(() => vendorSchema.parse(input)).toThrow()
+        expect(() => vendorReadSchema.parse(input)).toThrow()
     })
 
     it('rejects name with newlines', () => {
@@ -65,7 +65,7 @@ describe('vendorSchema', () => {
             name: 'Acme\nCorporation'
         }
 
-        expect(() => vendorSchema.parse(input)).toThrow()
+        expect(() => vendorReadSchema.parse(input)).toThrow()
     })
 
     it('rejects invalid vendor id format', () => {
@@ -74,7 +74,7 @@ describe('vendorSchema', () => {
             name: 'Acme Corporation'
         }
 
-        expect(() => vendorSchema.parse(input)).toThrow()
+        expect(() => vendorReadSchema.parse(input)).toThrow()
     })
 
     it('rejects vendor id without correct prefix', () => {
@@ -83,7 +83,7 @@ describe('vendorSchema', () => {
             name: 'Acme Corporation'
         }
 
-        expect(() => vendorSchema.parse(input)).toThrow()
+        expect(() => vendorReadSchema.parse(input)).toThrow()
     })
 
     it('rejects description exceeding max length', () => {
@@ -93,7 +93,7 @@ describe('vendorSchema', () => {
             description: 'x'.repeat(201)
         }
 
-        expect(() => vendorSchema.parse(input)).toThrow()
+        expect(() => vendorReadSchema.parse(input)).toThrow()
     })
 
     it('rejects description with newlines', () => {
@@ -103,7 +103,7 @@ describe('vendorSchema', () => {
             description: 'Line one\nLine two'
         }
 
-        expect(() => vendorSchema.parse(input)).toThrow()
+        expect(() => vendorReadSchema.parse(input)).toThrow()
     })
 
     it('rejects unknown properties', () => {
@@ -113,7 +113,7 @@ describe('vendorSchema', () => {
             unknownField: 'should fail'
         }
 
-        expect(() => vendorSchema.parse(input)).toThrow()
+        expect(() => vendorReadSchema.parse(input)).toThrow()
     })
 })
 
@@ -125,7 +125,7 @@ describe('vendorCreationSchema', () => {
             description: 'Created for testing'
         }
 
-        const result = vendorCreationSchema.parse(input)
+        const result = vendorWriteSchema.parse(input)
 
         expect(result.id).toBe(input.id)
         expect(result.name).toBe(input.name)
@@ -137,7 +137,7 @@ describe('vendorCreationSchema', () => {
             name: 'New Vendor'
         }
 
-        expect(() => vendorCreationSchema.parse(input)).toThrow()
+        expect(() => vendorWriteSchema.parse(input)).toThrow()
     })
 
     it('requires name field', () => {
@@ -145,7 +145,7 @@ describe('vendorCreationSchema', () => {
             id: genVndrId()
         }
 
-        expect(() => vendorCreationSchema.parse(input)).toThrow()
+        expect(() => vendorWriteSchema.parse(input)).toThrow()
     })
 })
 
@@ -157,7 +157,7 @@ describe('vendorUpdateSchema', () => {
             description: 'Updated description'
         }
 
-        const result = vendorUpdateSchema.parse(input)
+        const result = vendorPatchSchema.parse(input)
 
         expect(result.id).toBe(input.id)
         expect(result.name).toBe(input.name)
@@ -170,7 +170,7 @@ describe('vendorUpdateSchema', () => {
             description: 'Updated description only'
         }
 
-        const result = vendorUpdateSchema.parse(input)
+        const result = vendorPatchSchema.parse(input)
 
         expect(result.id).toBe(input.id)
         expect(result.name).toBeUndefined()
@@ -182,7 +182,7 @@ describe('vendorUpdateSchema', () => {
             name: 'Updated Name'
         }
 
-        expect(() => vendorUpdateSchema.parse(input)).toThrow()
+        expect(() => vendorPatchSchema.parse(input)).toThrow()
     })
 
     it('validates name when provided', () => {
@@ -191,6 +191,6 @@ describe('vendorUpdateSchema', () => {
             name: ''
         }
 
-        expect(() => vendorUpdateSchema.parse(input)).toThrow()
+        expect(() => vendorPatchSchema.parse(input)).toThrow()
     })
 })

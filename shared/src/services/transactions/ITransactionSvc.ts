@@ -1,7 +1,7 @@
 import {
     type Transaction,
-    type TransactionCreation,
-    type TransactionUpdate
+    type TransactionToWrite,
+    type TransactionPatch
 } from "../../domain/transactions/Transaction";
 import {type TxnId} from "../../domain/transactions/TxnId";
 
@@ -9,7 +9,7 @@ import {type TxnId} from "../../domain/transactions/TxnId";
 export interface ITransactionSvc {
 
     /** Creates a new transaction with given attributes. */
-    createTransaction(transaction: TransactionCreation): Promise<void>
+    createTransaction(transaction: TransactionToWrite): Promise<void>
 
     /** Deletes a given transaction. */
     deleteTransaction(transactionId: TxnId): Promise<void>
@@ -18,6 +18,6 @@ export interface ITransactionSvc {
     findTransactionById(transactionId: TxnId): Promise<Transaction | null>
 
     /** Updates a transaction's attributes. */
-    updateTransaction(newTransaction: TransactionUpdate): Promise<Transaction | null>
+    updateTransaction(newTransaction: TransactionPatch): Promise<TransactionPatch | null>
 
 }

@@ -1,12 +1,12 @@
 import {z} from "zod";
 import {descriptionSchema} from "../core/Description";
-import {entriesSchema} from "./Entry";
 import {txnIdSchema} from "./TxnId";
 import {isoDateSchema} from "../core/IsoDate";
 import {nameSchema} from "../core/Name";
+import {entriesWriteSchema, entriesReadSchema} from "$shared/domain/transactions/Entries";
 
 /** Base schema for a Stacquer transaction's details. */
-export const transactionAttributesSchema =
+const transactionAttributesSchema =
     z.strictObject({
         /** The transaction sequence number. */
         id: txnIdSchema,
@@ -15,59 +15,62 @@ export const transactionAttributesSchema =
         date: isoDateSchema,
 
         /* The check number or similar code. */
-        code: z.string().optional(),
+        code: z.string(),
 
         /** The name of the vendor (payee or payor). */
         vendor: nameSchema.optional(),
 
         /** A description of the transaction. */
-        description: descriptionSchema.optional(),
-
-        /** The two or more entries in the transaction. */
-        entries: entriesSchema
-    }).refine(hasVendorOrDescription, {
-        message: "A transaction must have a vendor or a description (or both)."
+        description: descriptionSchema,
     })
 
 
-/** Schema for a transaction. */
-export const transactionSchema = transactionAttributesSchema.readonly()
+/** Sub-schema for transaction before it has entries added. */
+export const transactionBeforeEntriesSchema =
+    transactionAttributesSchema.readonly()
 
-export type Transaction = z.infer<typeof transactionSchema>
+export type TransactionBeforeEntries = z.infer<typeof transactionBeforeEntriesSchema>
+
+/** Schema for a transaction. */
+export const transactionReadSchema =
+    transactionAttributesSchema.extend({
+        /** The two or more entries in the transaction. */
+        entries: entriesReadSchema,
+    }).readonly()
+
+export type Transaction = z.infer<typeof transactionReadSchema>
 
 
 /** Sub-schema for transaction creation. */
-export const transactionCreationSchema =
-    z.strictObject({
-        ...transactionAttributesSchema.shape
+export const transactionWriteSchema =
+    transactionAttributesSchema.extend({
+        code: transactionAttributesSchema.shape.code.default(''),
+        description: transactionAttributesSchema.shape.description.default(''),
+
+        /** The two or more entries in the transaction. */
+        entries: entriesWriteSchema
     }).refine(hasVendorOrDescription, {
         message: "A transaction must have a vendor or a description (or both)."
     }).readonly()
 
-export type TransactionCreation = z.infer<typeof transactionCreationSchema>
+export type TransactionToWrite = z.infer<typeof transactionWriteSchema>
 
 
-/** Sub-schema for transaction updates. */
-export const transactionUpdateSchema =
-    z.strictObject({
-        ...transactionAttributesSchema.partial({
-            date: true,
-            entries: true,
-        }).shape
+/** Sub-schema for transaction patches. */
+export const transactionPatchSchema =
+    transactionAttributesSchema.extend({
+        /** The two or more entries in the transaction. */
+        entries: entriesWriteSchema
+    }).partial({
+        code: true,
+        date: true,
+        description: true,
+        entries: true,
+        vendor: true,
     }).readonly()
 
-export type TransactionUpdate = z.infer<typeof transactionUpdateSchema>
+export type TransactionPatch = z.infer<typeof transactionPatchSchema>
 
-
-/** Sub-schema for transaction before it has entries added. */
-export const transactionStandAloneSchema =
-    z.strictObject({
-        ...transactionAttributesSchema.partial({
-            entries: true,
-        }).shape
-    }).readonly()
-
-export type TransactionStandAlone = z.infer<typeof transactionStandAloneSchema>
 
 /** Validates that a transaction has either vendor or description (or both). */
 function hasVendorOrDescription(txn: { vendor?: string | undefined, description?: string | undefined }) {

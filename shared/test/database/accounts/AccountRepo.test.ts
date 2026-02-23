@@ -29,7 +29,7 @@ describe('Account Repo', () => {
 
         expect(acct2).toMatchObject(acct0)
 
-        await repo.updateAccount({
+        await repo.patchAccount({
             id,
             name: "Zample"
         })
@@ -44,7 +44,7 @@ describe('Account Repo', () => {
 
         expect(accts).toContainValue(acct3!)
 
-        await repo.updateAccount({
+        await repo.patchAccount({
             id,
             acctNumber: "",
             description: ""

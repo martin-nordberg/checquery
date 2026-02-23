@@ -1,7 +1,7 @@
 import {
     type Transaction,
-    type TransactionCreation,
-    type TransactionUpdate
+    type TransactionToWrite,
+    type TransactionPatch
 } from "../../domain/transactions/Transaction";
 import {type TxnId} from "../../domain/transactions/TxnId";
 import type {ITransactionSvc} from "$shared/services/transactions/ITransactionSvc";
@@ -15,7 +15,7 @@ export class TransactionTeeSvc implements ITransactionSvc {
     }
 
     /** Creates a new transaction with given attributes. */
-    async createTransaction(transaction: TransactionCreation): Promise<void> {
+    async createTransaction(transaction: TransactionToWrite): Promise<void> {
         for (const svc of this.svcs) {
             await svc.createTransaction(transaction)
         }
@@ -34,10 +34,10 @@ export class TransactionTeeSvc implements ITransactionSvc {
     }
 
     /** Updates a transaction's attributes. */
-    async updateTransaction(newTransaction: TransactionUpdate): Promise<Transaction | null> {
-        let result: Transaction | null = null
+    async updateTransaction(transactionPatch: TransactionPatch): Promise<TransactionPatch | null> {
+        let result: TransactionPatch | null = transactionPatch
         for (const svc of this.svcs) {
-            result = result ?? await svc.updateTransaction(newTransaction)
+            result = result ? await svc.updateTransaction(transactionPatch) : null
         }
         return result
     }

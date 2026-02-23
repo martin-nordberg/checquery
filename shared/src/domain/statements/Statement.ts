@@ -6,7 +6,7 @@ import {nameSchema} from "../core/Name";
 import {txnIdSchema} from "../transactions/TxnId";
 
 /** Base schema for a Checquery statement's details. */
-export const statementAttributesSchema =
+const statementAttributesSchema =
     z.strictObject({
         /** The unique ID of the statement. */
         id: stmtIdSchema,
@@ -35,24 +35,24 @@ export const statementAttributesSchema =
 
 
 /** Schema for a statement. */
-export const statementSchema = statementAttributesSchema.readonly()
+export const statementReadSchema = statementAttributesSchema.readonly()
 
-export type Statement = z.infer<typeof statementSchema>
+export type Statement = z.infer<typeof statementReadSchema>
 
 
 /** Sub-schema for statement creation. */
-export const statementCreationSchema =
+export const statementWriteSchema =
     statementAttributesSchema.extend({
         beginningBalance: statementAttributesSchema.shape.beginningBalance.default("$0.00"),
         endingBalance: statementAttributesSchema.shape.endingBalance.default("$0.00"),
         isReconciled: statementAttributesSchema.shape.isReconciled.default(false),
     }).readonly()
 
-export type StatementCreation = z.infer<typeof statementCreationSchema>
+export type StatementToWrite = z.infer<typeof statementWriteSchema>
 
 
 /** Sub-schema for statement updates. */
-export const statementUpdateSchema =
+export const statementPatchSchema =
     statementAttributesSchema.partial({
         beginDate: true,
         endDate: true,
@@ -63,4 +63,4 @@ export const statementUpdateSchema =
         transactions: true,
     }).readonly()
 
-export type StatementUpdate = z.infer<typeof statementUpdateSchema>
+export type StatementPatch = z.infer<typeof statementPatchSchema>

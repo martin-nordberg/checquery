@@ -1,5 +1,5 @@
 import {hc} from 'hono/client'
-import type {Statement, StatementCreation, StatementUpdate} from "$shared/domain/statements/Statement.ts";
+import type {Statement, StatementToWrite, StatementPatch} from "$shared/domain/statements/Statement.ts";
 import type {StatementRoutes} from "$shared/routes/statements/StatementRoutes.ts";
 import type {StmtId} from "$shared/domain/statements/StmtId.ts";
 import {webAppHost} from "../config.ts";
@@ -8,7 +8,7 @@ const client = hc<StatementRoutes>(`${webAppHost}`)
 
 export class StatementClientSvc {
 
-    async createStatement(statement: StatementCreation): Promise<void> {
+    async createStatement(statement: StatementToWrite): Promise<void> {
         console.log("createStatement", statement)
         const res = await client.statements.$post({json: statement})
 
@@ -54,7 +54,7 @@ export class StatementClientSvc {
         return null
     }
 
-    async updateStatement(update: StatementUpdate): Promise<void> {
+    async updateStatement(update: StatementPatch): Promise<void> {
         console.log("updateStatement", update)
         const res = await client.statements[':statementId'].$patch({
             param: {statementId: update.id},

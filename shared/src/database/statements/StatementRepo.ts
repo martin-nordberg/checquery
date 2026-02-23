@@ -1,5 +1,5 @@
 import type {StmtId} from "$shared/domain/statements/StmtId";
-import {type Statement, type StatementCreation, type StatementUpdate} from "$shared/domain/statements/Statement";
+import {type Statement, type StatementToWrite, type StatementPatch} from "$shared/domain/statements/Statement";
 import type {PgLiteDb} from "$shared/database/PgLiteDb";
 import {StatementTxnRepo} from "$shared/database/statements/StatementTxnRepo";
 import type {IStatementSvc} from "$shared/services/statements/IStatementSvc";
@@ -13,7 +13,7 @@ export class StatementRepo implements IStatementSvc {
         this.db = db
     }
 
-    async createStatement(statement: StatementCreation): Promise<void> {
+    async createStatement(statement: StatementToWrite): Promise<void> {
         return this.db.transaction(async (txn) =>
             new StatementTxnRepo(txn).createStatement(statement)
         )
@@ -37,7 +37,7 @@ export class StatementRepo implements IStatementSvc {
         )
     }
 
-    async updateStatement(statementPatch: StatementUpdate): Promise<StatementUpdate | null> {
+    async updateStatement(statementPatch: StatementPatch): Promise<StatementPatch | null> {
         return this.db.transaction(async (txn) =>
             new StatementTxnRepo(txn).updateStatement(statementPatch)
         )

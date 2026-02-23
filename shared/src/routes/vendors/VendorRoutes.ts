@@ -3,7 +3,7 @@ import {z} from 'zod'
 import {type IVendorSvc} from "../../services/vendors/IVendorSvc";
 import {zxValidator} from "../validation/zxvalidator";
 import {vndrIdSchema} from "../../domain/vendors/VndrId";
-import {vendorCreationSchema, vendorUpdateSchema} from "../../domain/vendors/Vendor";
+import {vendorWriteSchema, vendorPatchSchema} from "../../domain/vendors/Vendor";
 
 /** REST routes for vendors. */
 export const vendorRoutes = (vendorSvc: IVendorSvc) => {
@@ -32,7 +32,7 @@ export const vendorRoutes = (vendorSvc: IVendorSvc) => {
         )
         .post(
             '/',
-            zxValidator('json', vendorCreationSchema),
+            zxValidator('json', vendorWriteSchema),
             async (c) => {
                 const vendor = c.req.valid('json')
                 try {
@@ -50,7 +50,7 @@ export const vendorRoutes = (vendorSvc: IVendorSvc) => {
         .patch(
             '/:vendorId',
             zxValidator('param', z.object({vendorId: vndrIdSchema})),
-            zxValidator('json', vendorUpdateSchema),
+            zxValidator('json', vendorPatchSchema),
             async (c) => {
                 const {vendorId} = c.req.valid('param')
                 const update = {

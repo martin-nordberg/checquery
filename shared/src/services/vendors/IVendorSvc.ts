@@ -1,11 +1,11 @@
-import {type Vendor, type VendorCreation, type VendorUpdate} from "../../domain/vendors/Vendor";
+import {type Vendor, type VendorToWrite, type VendorPatch} from "../../domain/vendors/Vendor";
 import {type VndrId} from "../../domain/vendors/VndrId";
 
 
 export interface IVendorSvc {
 
     /** Creates a new vendor with given attributes. */
-    createVendor(vendor: VendorCreation): Promise<void>
+    createVendor(vendor: VendorToWrite): Promise<void>
 
     /** Deletes a given vendor. */
     deleteVendor(vendorId: VndrId): Promise<void>
@@ -20,6 +20,6 @@ export interface IVendorSvc {
     isVendorInUse(vendorId: VndrId): Promise<boolean>
 
     /** Updates a vendor's attributes. */
-    updateVendor(vendorPatch: VendorUpdate): Promise<VendorUpdate | null>
+    updateVendor(vendorPatch: VendorPatch): Promise<VendorPatch | null>
 
 }

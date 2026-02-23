@@ -1,6 +1,6 @@
 import {hc} from 'hono/client'
 import {type AccountRoutes} from "$shared/routes/accounts/AccountRoutes.ts";
-import type {Account, AccountCreation, AccountUpdate} from "$shared/domain/accounts/Account";
+import type {Account, AccountToWrite, AccountPatch} from "$shared/domain/accounts/Account";
 import {HTTPException} from "hono/http-exception";
 import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
 import {webAppHost} from "../config.ts";
@@ -9,7 +9,7 @@ const client = hc<AccountRoutes>(`${webAppHost}`)
 
 export class AccountClientSvc {
 
-    async createAccount(account: AccountCreation): Promise<void> {
+    async createAccount(account: AccountToWrite): Promise<void> {
         console.log("createAccount", account)
         const res = await client.accounts.$post({json: account})
 
@@ -75,7 +75,7 @@ export class AccountClientSvc {
         throw new HTTPException(res.status)
     }
 
-    async updateAccount(account: AccountUpdate): Promise<void> {
+    async updateAccount(account: AccountPatch): Promise<void> {
         console.log("updateAccount", account)
         const res = await client.accounts[':accountId'].$patch({param: {accountId: account.id}, json: account})
 

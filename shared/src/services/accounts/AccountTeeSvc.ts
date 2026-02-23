@@ -1,4 +1,4 @@
-import {type Account, type AccountCreation, type AccountUpdate} from "../../domain/accounts/Account";
+import {type Account, type AccountToWrite, type AccountPatch} from "../../domain/accounts/Account";
 import {type AcctId} from "../../domain/accounts/AcctId";
 import type {IAccountSvc} from "$shared/services/accounts/IAccountSvc";
 
@@ -11,7 +11,7 @@ export class AccountTeeSvc implements IAccountSvc {
     }
 
     /** Creates a new account with given attributes. */
-    async createAccount(account: AccountCreation): Promise<void> {
+    async createAccount(account: AccountToWrite): Promise<void> {
         for (const svc of this.svcs) {
             await svc.createAccount(account)
         }
@@ -40,10 +40,10 @@ export class AccountTeeSvc implements IAccountSvc {
     }
 
     /** Updates an account's attributes. */
-    async updateAccount(accountPatch: AccountUpdate): Promise<AccountUpdate | null> {
-        let result: AccountUpdate | null = accountPatch
+    async patchAccount(accountPatch: AccountPatch): Promise<AccountPatch | null> {
+        let result: AccountPatch | null = accountPatch
         for (const svc of this.svcs) {
-            result = result ? await svc.updateAccount(result) : null
+            result = result ? await svc.patchAccount(result) : null
         }
         return result
     }
