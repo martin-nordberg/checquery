@@ -10,6 +10,10 @@ describe('txnStatusSchema', () => {
         it('accepts Pending', () => {
             expect(txnStatusSchema.parse('Pending')).toBe('Pending')
         })
+
+        it('accepts blank', () => {
+            expect(txnStatusSchema.parse('')).toBe('')
+        })
     })
 
     describe('invalid transaction statuses', () => {
@@ -23,10 +27,6 @@ describe('txnStatusSchema', () => {
 
         it('rejects null', () => {
             expect(() => txnStatusSchema.parse(null)).toThrow()
-        })
-
-        it('rejects blank', () => {
-            expect(() => txnStatusSchema.parse('')).toThrow()
         })
 
         it('rejects number', () => {

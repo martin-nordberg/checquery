@@ -1,6 +1,7 @@
 import {z} from "zod";
 import {nameSchema} from "../core/Name";
-import {currencyAmtSchema, toCents} from "../core/CurrencyAmt";
+import {currencyAmtSchema} from "../core/CurrencyAmt";
+import {txnStatusSchema} from "$shared/domain/transactions/TxnStatus";
 
 /** Base schema for a Stacquer entry's details. */
 export const entryAttributesSchema =
@@ -15,31 +16,38 @@ export const entryAttributesSchema =
         debit: currencyAmtSchema,
 
         /** The comment for the entry. */
-        comment: z.string().optional(),
-    }).refine((entry) => {
-        const crIsZero = entry.credit == "$0.00"
-        const drIsZero = entry.debit == "$0.00"
-        return crIsZero != drIsZero
-    }, {error: "An entry must have a debit or a credit, but not both."})
+        comment: z.string(),
+    })
 
+/** Schema for an entry as query output. */
+export const entryReadSchema =
+    entryAttributesSchema.extend({
+        status: txnStatusSchema
+    }).readonly()
 
-/** Schema for an entry. */
-export const entrySchema = entryAttributesSchema.readonly()
-
-export type Entry = z.infer<typeof entrySchema>
+export type Entry = z.infer<typeof entryReadSchema>
 
 
 /** Sub-schema for entry creation. */
-export const entryCreationSchema =
-    z.strictObject({
-        ...entryAttributesSchema.shape
-    }).readonly()
+export const entryWriteSchema =
+    entryAttributesSchema.extend({
+        credit: entryAttributesSchema.shape.credit.default("$0.00"),
+        debit: entryAttributesSchema.shape.debit.default("$0.00"),
+        comment: entryAttributesSchema.shape.comment.default(""),
+    }).refine(
+        (entry) => {
+            const crIsZero = entry.credit == "$0.00"
+            const drIsZero = entry.debit == "$0.00"
+            return crIsZero != drIsZero
+        },
+        {error: "An entry must have a debit or a credit, but not both."}
+    ).readonly()
 
-export type EntryCreation = z.infer<typeof entryCreationSchema>
+export type EntryToWrite = z.infer<typeof entryWriteSchema>
 
 
-/** Sub-schema for entry updates. */
-export const entryUpdateSchema =
+/** Sub-schema for entry patches. */
+export const entryPatchSchema =
     z.strictObject({
         ...entryAttributesSchema.partial({
             account: true,
@@ -47,18 +55,14 @@ export const entryUpdateSchema =
             debit: true,
             comment: true,
         }).shape
-    }).readonly()
+    }).refine(
+        (entry) => {
+            const crIsZero = entry.credit == "$0.00"
+            const drIsZero = entry.debit == "$0.00"
+            return crIsZero != drIsZero
+        },
+        {error: "An entry must have a debit or a credit, but not both."}
+    ).readonly()
 
-export type EntryUpdate = z.infer<typeof entryUpdateSchema>
+export type EntryPatch = z.infer<typeof entryPatchSchema>
 
-
-export const entriesSchema = z.array(entrySchema).min(2)
-    .refine((entries => {
-        let totalDr = 0
-        let totalCr = 0
-        for (let entry of entries) {
-            totalDr += toCents(entry.debit)
-            totalCr += toCents(entry.credit)
-        }
-        return totalDr == totalCr
-    }), {error: `Total debits for all entries must match total credits.`})

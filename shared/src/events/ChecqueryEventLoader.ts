@@ -2,13 +2,13 @@ import type {IAccountSvc} from "$shared/services/accounts/IAccountSvc";
 import type {ITransactionSvc} from "$shared/services/transactions/ITransactionSvc";
 import type {IVendorSvc} from "$shared/services/vendors/IVendorSvc";
 import type {IStatementSvc} from "$shared/services/statements/IStatementSvc";
-import {accountCreationSchema, accountUpdateSchema} from "$shared/domain/accounts/Account";
+import {accountWriteSchema, accountPatchSchema} from "$shared/domain/accounts/Account";
 import {acctIdSchema} from "$shared/domain/accounts/AcctId";
-import {transactionCreationSchema, transactionUpdateSchema} from "$shared/domain/transactions/Transaction";
+import {transactionWriteSchema, transactionPatchSchema} from "$shared/domain/transactions/Transaction";
 import {txnIdSchema} from "$shared/domain/transactions/TxnId";
-import {vendorCreationSchema, vendorUpdateSchema} from "$shared/domain/vendors/Vendor";
+import {vendorWriteSchema, vendorPatchSchema} from "$shared/domain/vendors/Vendor";
 import {vndrIdSchema} from "$shared/domain/vendors/VndrId";
-import {statementCreationSchema, statementUpdateSchema} from "$shared/domain/statements/Statement";
+import {statementWriteSchema, statementPatchSchema} from "$shared/domain/statements/Statement";
 import {stmtIdSchema} from "$shared/domain/statements/StmtId";
 
 /**
@@ -32,10 +32,10 @@ export const loadChecqueryLog = async (
         switch (directive.action) {
             // Account actions
             case 'create-account':
-                await acctSvc.createAccount(accountCreationSchema.parse(directive.payload))
+                await acctSvc.createAccount(accountWriteSchema.parse(directive.payload))
                 break
             case 'update-account':
-                await acctSvc.updateAccount(accountUpdateSchema.parse(directive.payload))
+                await acctSvc.patchAccount(accountPatchSchema.parse(directive.payload))
                 break
             case 'delete-account':
                 await acctSvc.deleteAccount(acctIdSchema.parse(directive.payload.id))
@@ -43,10 +43,10 @@ export const loadChecqueryLog = async (
 
             // Vendor actions
             case 'create-vendor':
-                await vendorSvc.createVendor(vendorCreationSchema.parse(directive.payload))
+                await vendorSvc.createVendor(vendorWriteSchema.parse(directive.payload))
                 break
             case 'update-vendor':
-                await vendorSvc.updateVendor(vendorUpdateSchema.parse(directive.payload))
+                await vendorSvc.updateVendor(vendorPatchSchema.parse(directive.payload))
                 break
             case 'delete-vendor':
                 await vendorSvc.deleteVendor(vndrIdSchema.parse(directive.payload.id))
@@ -54,10 +54,10 @@ export const loadChecqueryLog = async (
 
             // Transaction actions
             case 'create-transaction':
-                await txnSvc.createTransaction(transactionCreationSchema.parse(directive.payload, {reportInput: true}))
+                await txnSvc.createTransaction(transactionWriteSchema.parse(directive.payload, {reportInput: true}))
                 break
             case 'update-transaction':
-                await txnSvc.updateTransaction(transactionUpdateSchema.parse(directive.payload, {reportInput: true}))
+                await txnSvc.updateTransaction(transactionPatchSchema.parse(directive.payload, {reportInput: true}))
                 break
             case 'delete-transaction':
                 await txnSvc.deleteTransaction(txnIdSchema.parse(directive.payload.id, {reportInput: true}))
@@ -65,10 +65,10 @@ export const loadChecqueryLog = async (
 
             // Statement actions
             case 'create-statement':
-                await stmtSvc.createStatement(statementCreationSchema.parse(directive.payload))
+                await stmtSvc.createStatement(statementWriteSchema.parse(directive.payload))
                 break
             case 'update-statement':
-                await stmtSvc.updateStatement(statementUpdateSchema.parse(directive.payload))
+                await stmtSvc.updateStatement(statementPatchSchema.parse(directive.payload))
                 break
             case 'delete-statement':
                 await stmtSvc.deleteStatement(stmtIdSchema.parse(directive.payload.id))

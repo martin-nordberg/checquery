@@ -1,4 +1,4 @@
-import {describe, it, expect} from 'bun:test'
+import {describe, expect, it} from 'bun:test'
 import {createPgLiteDb} from "$shared/database/PgLiteDb";
 import {runChecqueryPgDdl} from "$shared/database/CheckqueryPgDdl";
 import {z} from "zod";
@@ -11,7 +11,8 @@ describe('PGLite Database', () => {
         const tableNames = ['Account', 'Entry', 'Statement', 'Transaxtion', 'Vendor']
         for (let tableName of tableNames) {
             const r1 = await db.transaction(async (txn) =>
-                txn.findOne(`SELECT count(*) as c FROM ${tableName}`, [], z.object({c: z.number()}).readonly())
+                txn.findOne(`SELECT count(*) as c
+                             FROM ${tableName}`, [], z.object({c: z.number()}).readonly())
             )
             expect(r1).toEqual({c: 0})
         }

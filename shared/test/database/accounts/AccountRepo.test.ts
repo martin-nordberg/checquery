@@ -15,7 +15,7 @@ describe('Account Repo', () => {
         const repo = new AccountRepo(db)
 
         const id = genAcctId()
-        const acct0 : Account = {
+        const acct0: Account = {
             id: id,
             name: "Sample",
             acctNumber: "123-456",
@@ -29,10 +29,11 @@ describe('Account Repo', () => {
 
         expect(acct2).toMatchObject(acct0)
 
-        const acct3 = await repo.updateAccount({
+        await repo.patchAccount({
             id,
             name: "Zample"
         })
+        const acct3 = await repo.findAccountById(id)
 
         expect(acct3).toMatchObject({
             ...acct0,
@@ -43,11 +44,12 @@ describe('Account Repo', () => {
 
         expect(accts).toContainValue(acct3!)
 
-        const acct4 = await repo.updateAccount({
+        await repo.patchAccount({
             id,
             acctNumber: "",
             description: ""
         })
+        const acct4 = await repo.findAccountById(id)
 
         expect(acct4).toMatchObject({
             id: id,
@@ -58,7 +60,7 @@ describe('Account Repo', () => {
         const vrepo = new VendorRepo(db)
 
         const vid = genVndrId()
-        const vndr0 : Vendor = {
+        const vndr0: Vendor = {
             id: vid,
             name: "Vendorr",
             description: "An example vendor",
@@ -72,8 +74,8 @@ describe('Account Repo', () => {
 
         expect(inUse).toBeTrue()
 
-        await vrepo.updateVendor({...vndr0, description: "Changed the description"})
-        await vrepo.updateVendor({id:vid, defaultAccount: ""})
+        await vrepo.updateVendor({id: vid, description: "Changed the description"})
+        await vrepo.updateVendor({id: vid, defaultAccount: ""})
 
         await repo.deleteAccount(id)
 

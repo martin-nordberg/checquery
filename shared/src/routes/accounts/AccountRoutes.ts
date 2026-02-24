@@ -1,9 +1,9 @@
 import {Hono} from 'hono'
 import {
-    type AccountCreation,
-    accountCreationSchema,
-    type AccountUpdate,
-    accountUpdateSchema
+    type AccountToWrite,
+    accountWriteSchema,
+    type AccountPatch,
+    accountPatchSchema
 } from "../../domain/accounts/Account";
 import {zxValidator} from "../validation/zxvalidator";
 import {z} from "zod";
@@ -21,9 +21,9 @@ export const accountRoutes = (accountService: IAccountSvc) => {
         )
         .post(
             '/',
-            zxValidator('json', accountCreationSchema),
+            zxValidator('json', accountWriteSchema),
             async (c) => {
-                const account: AccountCreation = c.req.valid('json')
+                const account: AccountToWrite = c.req.valid('json')
                 try {
                     await accountService.createAccount(account)
                     return c.body(null, 201)
@@ -68,12 +68,13 @@ export const accountRoutes = (accountService: IAccountSvc) => {
         .patch(
             '/:accountId',
             zxValidator('param', z.object({accountId: acctIdSchema})),
-            zxValidator('json', accountUpdateSchema),
+            zxValidator('json', accountPatchSchema),
             async (c) => {
                 const {accountId} = c.req.valid('param')
-                const account: AccountUpdate = c.req.valid('json')
+                const account: AccountPatch = c.req.valid('json')
                 try {
-                    return c.json(await accountService.updateAccount({...account, id: accountId}))
+                    await accountService.patchAccount({...account, id: accountId})
+                    return c.body(null, 201)
                 } catch (e: unknown) {
                     const msg = e instanceof Error ? e.message.toUpperCase() : ''
                     if (msg.includes('UNIQUE') || msg.includes('DUPLICATE')) {

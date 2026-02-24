@@ -1,4 +1,4 @@
-import {type Vendor, type VendorCreation, vendorSchema, type VendorUpdate,} from "$shared/domain/vendors/Vendor";
+import {type Vendor, type VendorToWrite, vendorReadSchema, type VendorPatch,} from "$shared/domain/vendors/Vendor";
 import {type VndrId} from "$shared/domain/vendors/VndrId";
 import {z} from "zod";
 import type {PgLiteTxn} from "$shared/database/PgLiteTxn";
@@ -13,7 +13,7 @@ export class VendorTxnRepo implements IVendorSvc {
         this.#txn = txn
     }
 
-    async createVendor(vendor: VendorCreation): Promise<void> {
+    async createVendor(vendor: VendorToWrite): Promise<void> {
         if (vendor.defaultAccount) {
             await this.#txn.exec(
                 `INSERT INTO Vendor (id, name, nameHlc, description, descriptionHlc, defaultAccountId,
@@ -34,7 +34,7 @@ export class VendorTxnRepo implements IVendorSvc {
                 [
                     vendor.id,
                     vendor.name,
-                    vendor.description ?? null,
+                    vendor.description,
                     vendor.defaultAccount ?? null,
                     vendor.isActive,
                 ]
@@ -47,7 +47,7 @@ export class VendorTxnRepo implements IVendorSvc {
                 [
                     vendor.id,
                     vendor.name,
-                    vendor.description ?? null,
+                    vendor.description,
                     vendor.isActive,
                 ]
             )
@@ -77,7 +77,7 @@ export class VendorTxnRepo implements IVendorSvc {
              WHERE Vendor.id = $1
                AND Vendor.isDeleted = false`,
             [vendorId],
-            vendorSchema
+            vendorReadSchema
         )
     }
 
@@ -93,7 +93,7 @@ export class VendorTxnRepo implements IVendorSvc {
              WHERE Vendor.isDeleted = false
              ORDER BY name`,
             [],
-            vendorSchema
+            vendorReadSchema
         )
     }
 
@@ -108,58 +108,87 @@ export class VendorTxnRepo implements IVendorSvc {
         return result !== null && result.count > 0
     }
 
-    async updateVendor(vendorPatch: VendorUpdate): Promise<Vendor | null> {
+    async updateVendor(vendorPatch: VendorPatch): Promise<VendorPatch | null> {
+        let result: VendorPatch | null = null
+
         if (vendorPatch.name !== undefined) {
-            await this.#txn.exec(
+            const count = await this.#txn.exec(
                 `UPDATE Vendor
                  SET name    = $2,
                      nameHlc = $hlc
                  WHERE id = $1
-                   AND nameHlc < $hlc`,
-                [vendorPatch.id, vendorPatch.name])
+                   AND nameHlc <= $hlc
+                   AND name <> $2`,
+                [vendorPatch.id, vendorPatch.name]
+            )
+            if (count) {
+                result = {id: vendorPatch.id, name: vendorPatch.name}
+            }
         }
 
         if (vendorPatch.description !== undefined) {
-            await this.#txn.exec(
+            const count = await this.#txn.exec(
                 `UPDATE Vendor
                  SET description    = $2,
                      descriptionHlc = $hlc
                  WHERE id = $1
-                   AND descriptionHlc < $hlc`,
-                [vendorPatch.id, vendorPatch.description === "" ? null : vendorPatch.description],)
+                   AND descriptionHlc <= $hlc
+                   AND description <> $2`,
+                [vendorPatch.id, vendorPatch.description]
+            )
+            if (count) {
+                result = {...(result ?? {id: vendorPatch.id}), description: vendorPatch.description}
+            }
         }
 
         if (vendorPatch.defaultAccount !== undefined) {
             if (vendorPatch.defaultAccount === "") {
-                await this.#txn.exec(
+                const count = await this.#txn.exec(
                     `UPDATE Vendor
                      SET defaultAccountId    = null,
                          defaultAccountIdHlc = $hlc
                      WHERE id = $1
-                       AND defaultAccountIdHlc < $hlc`,
-                    [vendorPatch.id],)
+                       AND defaultAccountIdHlc < $hlc
+                       AND defaultAccountId IS NOT NULL`,
+                    [vendorPatch.id]
+                )
+                if (count) {
+                    result = {...(result ?? {id: vendorPatch.id}), defaultAccount: ""}
+                }
             } else {
-                await this.#txn.exec(
-                    `UPDATE Vendor
-                     SET defaultAccountId    = (SELECT id FROM Account WHERE name = $2),
-                         defaultAccountIdHlc = $hlc
-                     WHERE id = $1
-                       AND defaultAccountIdHlc < $hlc`,
-                    [vendorPatch.id, vendorPatch.defaultAccount],)
+                const count = await this.#txn.exec(
+                    `WITH DefaultAccount AS (SELECT id FROM Account WHERE name = $2)
+                    UPDATE Vendor
+                    SET defaultAccountId    = DefaultAccount.id,
+                        defaultAccountIdHlc = $hlc FROM DefaultAccount
+                    WHERE Vendor.id = $1
+                      AND defaultAccountIdHlc
+                        < $hlc
+                      AND defaultAccountId <> DefaultAccount.id`,
+                    [vendorPatch.id, vendorPatch.defaultAccount]
+                )
+                if (count) {
+                    result = {...(result ?? {id: vendorPatch.id}), defaultAccount: vendorPatch.defaultAccount}
+                }
             }
         }
 
         if (vendorPatch.isActive !== undefined) {
-            await this.#txn.exec(
+            const count = await this.#txn.exec(
                 `UPDATE Vendor
                  SET isActive    = $2,
                      isActiveHlc = $hlc
                  WHERE id = $1
-                   AND isActiveHlc < $hlc`,
-                [vendorPatch.id, vendorPatch.isActive],)
+                   AND isActiveHlc < $hlc
+                   AND isActive <> $2`,
+                [vendorPatch.id, vendorPatch.isActive]
+            )
+            if (count) {
+                result = {...(result ?? {id: vendorPatch.id}), isActive: vendorPatch.isActive}
+            }
         }
 
-        return this.findVendorById(vendorPatch.id)
+        return result
     }
 
 }

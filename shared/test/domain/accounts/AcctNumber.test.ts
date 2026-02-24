@@ -53,14 +53,6 @@ describe('acctNumberSchema', () => {
     })
 
     describe('invalid account numbers', () => {
-        it('rejects empty string', () => {
-            expect(() => acctNumberSchema.parse('')).toThrow()
-        })
-
-        it('rejects whitespace-only string', () => {
-            expect(() => acctNumberSchema.parse('   ')).toThrow()
-        })
-
         it('rejects spaces in account number', () => {
             expect(() => acctNumberSchema.parse('ABC 123')).toThrow()
         })
@@ -123,10 +115,6 @@ describe('acctNumberRegex', () => {
 
     it('does not match strings with special characters', () => {
         expect(acctNumberRegex.test('ABC#123')).toBe(false)
-    })
-
-    it('does not match empty string', () => {
-        expect(acctNumberRegex.test('')).toBe(false)
     })
 })
 

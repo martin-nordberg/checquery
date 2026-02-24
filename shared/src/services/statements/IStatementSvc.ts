@@ -1,11 +1,11 @@
-import {type Statement, type StatementCreation, type StatementUpdate} from "../../domain/statements/Statement";
+import {type Statement, type StatementToWrite, type StatementPatch} from "../../domain/statements/Statement";
 import {type StmtId} from "../../domain/statements/StmtId";
 
 
 export interface IStatementSvc {
 
     /** Creates a new statement with given attributes. */
-    createStatement(statement: StatementCreation): Promise<void>
+    createStatement(statement: StatementToWrite): Promise<void>
 
     /** Deletes a given statement. */
     deleteStatement(statementId: StmtId): Promise<void>
@@ -17,6 +17,6 @@ export interface IStatementSvc {
     findStatementsAll(): Promise<Statement[]>
 
     /** Updates a statement's attributes. */
-    updateStatement(statementPatch: StatementUpdate): Promise<Statement | null>
+    updateStatement(statementPatch: StatementPatch): Promise<StatementPatch | null>
 
 }

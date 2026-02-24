@@ -6,13 +6,13 @@ import {acctTypeSchema} from "./AcctType";
 import {acctIdSchema} from "./AcctId";
 
 /** Base schema for a Stacquer account's details. */
-export const accountAttributesSchema =
+const accountAttributesSchema =
     z.strictObject({
         /** The unique ID of the account. */
         id: acctIdSchema,
 
         /** The account number of the account. */
-        acctNumber: acctNumberSchema.optional(),
+        acctNumber: acctNumberSchema,
 
         /** The account type of the account. */
         acctType: acctTypeSchema,
@@ -21,34 +21,35 @@ export const accountAttributesSchema =
         name: nameSchema,
 
         /* A short description of the account. */
-        description: descriptionSchema.optional(),
+        description: descriptionSchema,
     })
 
 
 /** Schema for an account. */
-export const accountSchema = accountAttributesSchema.readonly()
+export const accountReadSchema = accountAttributesSchema.readonly()
 
-export type Account = z.infer<typeof accountSchema>
+export type Account = z.infer<typeof accountReadSchema>
 
 
 /** Sub-schema for account creation. */
-export const accountCreationSchema =
-    z.strictObject({
-        ...accountAttributesSchema.shape
+export const accountWriteSchema =
+    accountAttributesSchema.extend({
+        acctNumber: accountAttributesSchema.shape.acctNumber.default(""),
+        description: accountAttributesSchema.shape.description.default(""),
     }).readonly()
 
-export type AccountCreation = z.infer<typeof accountCreationSchema>
+export type AccountToWrite = z.infer<typeof accountWriteSchema>
 
 
-/** Sub-schema for account updates. */
-export const accountUpdateSchema =
-    z.strictObject({
-        ...accountAttributesSchema.partial({
-            acctType: true,
-            name: true
-        }).shape
+/** Sub-schema for account patches. */
+export const accountPatchSchema =
+    accountAttributesSchema.partial({
+        acctNumber: true,
+        acctType: true,
+        name: true,
+        description: true,
     }).readonly()
 
-export type AccountUpdate = z.infer<typeof accountUpdateSchema>
+export type AccountPatch = z.infer<typeof accountPatchSchema>
 
 

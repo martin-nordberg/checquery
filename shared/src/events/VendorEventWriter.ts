@@ -1,16 +1,17 @@
-import {type Vendor, type VendorCreation, type VendorUpdate,} from "$shared/domain/vendors/Vendor";
+import {type Vendor, type VendorToWrite, type VendorPatch,} from "$shared/domain/vendors/Vendor";
 import {type IVendorSvc} from "$shared/services/vendors/IVendorSvc";
 import {type VndrId} from "$shared/domain/vendors/VndrId";
 import {
     appendDirective,
     createVendorCreateDirective,
-    createVendorDeleteDirective, createVendorUpdateDirective
+    createVendorDeleteDirective,
+    createVendorUpdateDirective
 } from "checquery-server/src/util/ChecqueryYamlAppender";
 
 
 export class VendorEventWriter implements IVendorSvc {
 
-    async createVendor(vendor: VendorCreation): Promise<void> {
+    async createVendor(vendor: VendorToWrite): Promise<void> {
         await appendDirective(createVendorCreateDirective({
             id: vendor.id,
             name: vendor.name,
@@ -36,7 +37,7 @@ export class VendorEventWriter implements IVendorSvc {
         throw Error("Unimplemented")
     }
 
-    async updateVendor(vendorPatch: VendorUpdate): Promise<Vendor | null> {
+    async updateVendor(vendorPatch: VendorPatch): Promise<VendorPatch | null> {
         await appendDirective(createVendorUpdateDirective({
             id: vendorPatch.id,
             name: vendorPatch.name,
@@ -44,8 +45,7 @@ export class VendorEventWriter implements IVendorSvc {
             defaultAccount: vendorPatch.defaultAccount,
             isActive: vendorPatch.isActive,
         }))
-
-        return null
+        return vendorPatch
     }
 
 }

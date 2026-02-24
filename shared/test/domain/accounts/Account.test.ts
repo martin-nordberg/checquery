@@ -1,12 +1,12 @@
 import {describe, expect, it} from 'bun:test'
-import {accountCreationSchema, accountSchema, accountUpdateSchema} from "$shared/domain/accounts/Account";
+import {accountWriteSchema, accountReadSchema, accountPatchSchema} from "$shared/domain/accounts/Account";
 import {z} from "zod";
 import {genAcctId} from "$shared/domain/accounts/AcctId";
 
 describe('Sample Accounts', () => {
     it('Should parse without error', () => {
         const id = genAcctId()
-        const acct = accountSchema.parse(
+        const acct = accountReadSchema.parse(
             {
                 id: id,
                 name: 'example',
@@ -25,7 +25,7 @@ describe('Sample Accounts', () => {
 
     it('Should parse without error when optional fields are absent', () => {
         const id = genAcctId()
-        const acct = accountCreationSchema.parse(
+        const acct = accountWriteSchema.parse(
             {
                 id: id,
                 name: 'example',
@@ -38,12 +38,12 @@ describe('Sample Accounts', () => {
         expect(acct.name).toBe('example')
         expect(acct.acctNumber).toBe('1234-4567')
         expect(acct.acctType).toBe('ASSET')
-        expect(acct.description).toBeUndefined()
+        expect(acct.description).toBe('')
     })
 
     it('Should convert to JSON', () => {
         const id = genAcctId()
-        const acct = accountCreationSchema.parse(
+        const acct = accountWriteSchema.parse(
             {
                 id: id,
                 name: 'example',
@@ -61,7 +61,7 @@ describe('Sample Accounts', () => {
 
     it('Should parse without error for a name change', () => {
         const id = genAcctId()
-        const acct = accountUpdateSchema.parse(
+        const acct = accountPatchSchema.parse(
             {
                 id: id,
                 name: 'example'
@@ -76,7 +76,7 @@ describe('Sample Accounts', () => {
 
     it('Should parse without error for a description change', () => {
         const id = genAcctId()
-        const acct = accountUpdateSchema.parse(
+        const acct = accountPatchSchema.parse(
             {
                 id: id,
                 description: 'Revised summary',
@@ -90,15 +90,15 @@ describe('Sample Accounts', () => {
     })
 
     it('Should generate JSON schema', () => {
-        const jsonSchema = z.toJSONSchema(accountSchema)
+        const jsonSchema = z.toJSONSchema(accountWriteSchema)
         expect(jsonSchema).toMatchObject({
             $schema: "https://json-schema.org/draft/2020-12/schema",
             additionalProperties: false,
             properties: {
                 acctNumber: {
+                    default: "",
                     maxLength: 50,
-                    minLength: 1,
-                    pattern: "^[a-zA-Z0-9-$]+$",
+                    pattern: "^[a-zA-Z0-9-$]*$",
                     type: "string",
                 },
                 acctType: {
@@ -120,6 +120,8 @@ describe('Sample Accounts', () => {
                             pattern: "^acct.*",
                         }
                     ],
+                    maxLength: 28,
+                    minLength: 28,
                     format: "cuid2",
                     type: "string",
                 },
@@ -130,6 +132,7 @@ describe('Sample Accounts', () => {
                     type: "string",
                 },
                 description: {
+                    default: "",
                     maxLength: 200,
                     pattern: "^[^\\r\\n]*$",
                     type: "string",
@@ -138,8 +141,10 @@ describe('Sample Accounts', () => {
             readOnly: true,
             required: [
                 "id",
+                "acctNumber",
                 "acctType",
                 "name",
+                "description",
             ],
             type: "object",
         })
@@ -150,14 +155,14 @@ describe('Sample Accounts', () => {
 describe('Invalid Accounts', () => {
     describe('invalid id', () => {
         it('rejects missing id', () => {
-            expect(() => accountSchema.parse({
+            expect(() => accountReadSchema.parse({
                 name: 'example',
                 acctType: 'ASSET'
             })).toThrow()
         })
 
         it('rejects invalid id format', () => {
-            expect(() => accountSchema.parse({
+            expect(() => accountReadSchema.parse({
                 id: 'not-a-cuid2',
                 name: 'example',
                 acctType: 'ASSET'
@@ -165,7 +170,7 @@ describe('Invalid Accounts', () => {
         })
 
         it('rejects id with wrong prefix', () => {
-            expect(() => accountSchema.parse({
+            expect(() => accountReadSchema.parse({
                 id: 'orgabcdefghij1234567890',
                 name: 'example',
                 acctType: 'ASSET'
@@ -175,14 +180,14 @@ describe('Invalid Accounts', () => {
 
     describe('invalid name', () => {
         it('rejects missing name', () => {
-            expect(() => accountSchema.parse({
+            expect(() => accountReadSchema.parse({
                 id: genAcctId(),
                 acctType: 'ASSET'
             })).toThrow()
         })
 
         it('rejects empty name', () => {
-            expect(() => accountSchema.parse({
+            expect(() => accountReadSchema.parse({
                 id: genAcctId(),
                 name: '',
                 acctType: 'ASSET'
@@ -190,7 +195,7 @@ describe('Invalid Accounts', () => {
         })
 
         it('rejects whitespace-only name', () => {
-            expect(() => accountSchema.parse({
+            expect(() => accountReadSchema.parse({
                 id: genAcctId(),
                 name: '   ',
                 acctType: 'ASSET'
@@ -198,7 +203,7 @@ describe('Invalid Accounts', () => {
         })
 
         it('rejects name exceeding max length', () => {
-            expect(() => accountSchema.parse({
+            expect(() => accountReadSchema.parse({
                 id: genAcctId(),
                 name: 'x'.repeat(201),
                 acctType: 'ASSET'
@@ -206,7 +211,7 @@ describe('Invalid Accounts', () => {
         })
 
         it('rejects name with newlines', () => {
-            expect(() => accountSchema.parse({
+            expect(() => accountReadSchema.parse({
                 id: genAcctId(),
                 name: 'Line one\nLine two',
                 acctType: 'ASSET'
@@ -214,7 +219,7 @@ describe('Invalid Accounts', () => {
         })
 
         it('rejects name with carriage return', () => {
-            expect(() => accountSchema.parse({
+            expect(() => accountReadSchema.parse({
                 id: genAcctId(),
                 name: 'Line one\rLine two',
                 acctType: 'ASSET'
@@ -224,14 +229,14 @@ describe('Invalid Accounts', () => {
 
     describe('invalid acctType', () => {
         it('rejects missing acctType', () => {
-            expect(() => accountSchema.parse({
+            expect(() => accountReadSchema.parse({
                 id: genAcctId(),
                 name: 'example'
             })).toThrow()
         })
 
         it('rejects invalid acctType value', () => {
-            expect(() => accountSchema.parse({
+            expect(() => accountReadSchema.parse({
                 id: genAcctId(),
                 name: 'example',
                 acctType: 'INVALID'
@@ -239,7 +244,7 @@ describe('Invalid Accounts', () => {
         })
 
         it('rejects lowercase acctType', () => {
-            expect(() => accountSchema.parse({
+            expect(() => accountReadSchema.parse({
                 id: genAcctId(),
                 name: 'example',
                 acctType: 'asset'
@@ -248,17 +253,8 @@ describe('Invalid Accounts', () => {
     })
 
     describe('invalid acctNumber', () => {
-        it('rejects empty acctNumber', () => {
-            expect(() => accountSchema.parse({
-                id: genAcctId(),
-                name: 'example',
-                acctType: 'ASSET',
-                acctNumber: ''
-            })).toThrow()
-        })
-
         it('rejects acctNumber with invalid characters', () => {
-            expect(() => accountSchema.parse({
+            expect(() => accountReadSchema.parse({
                 id: genAcctId(),
                 name: 'example',
                 acctType: 'ASSET',
@@ -267,7 +263,7 @@ describe('Invalid Accounts', () => {
         })
 
         it('rejects acctNumber with spaces', () => {
-            expect(() => accountSchema.parse({
+            expect(() => accountReadSchema.parse({
                 id: genAcctId(),
                 name: 'example',
                 acctType: 'ASSET',
@@ -276,7 +272,7 @@ describe('Invalid Accounts', () => {
         })
 
         it('rejects acctNumber exceeding max length', () => {
-            expect(() => accountSchema.parse({
+            expect(() => accountReadSchema.parse({
                 id: genAcctId(),
                 name: 'example',
                 acctType: 'ASSET',
@@ -287,7 +283,7 @@ describe('Invalid Accounts', () => {
 
     describe('invalid description', () => {
         it('rejects description exceeding max length', () => {
-            expect(() => accountSchema.parse({
+            expect(() => accountReadSchema.parse({
                 id: genAcctId(),
                 name: 'example',
                 acctType: 'ASSET',
@@ -296,7 +292,7 @@ describe('Invalid Accounts', () => {
         })
 
         it('rejects description with newlines', () => {
-            expect(() => accountSchema.parse({
+            expect(() => accountReadSchema.parse({
                 id: genAcctId(),
                 name: 'example',
                 acctType: 'ASSET',
@@ -307,7 +303,7 @@ describe('Invalid Accounts', () => {
 
     describe('unknown properties', () => {
         it('rejects unknown properties', () => {
-            expect(() => accountSchema.parse({
+            expect(() => accountReadSchema.parse({
                 id: genAcctId(),
                 name: 'example',
                 acctType: 'ASSET',
@@ -318,20 +314,20 @@ describe('Invalid Accounts', () => {
 
     describe('accountUpdateSchema invalid inputs', () => {
         it('rejects missing id', () => {
-            expect(() => accountUpdateSchema.parse({
+            expect(() => accountPatchSchema.parse({
                 name: 'Updated Name'
             })).toThrow()
         })
 
         it('rejects empty name when provided', () => {
-            expect(() => accountUpdateSchema.parse({
+            expect(() => accountPatchSchema.parse({
                 id: genAcctId(),
                 name: ''
             })).toThrow()
         })
 
         it('rejects invalid acctType when provided', () => {
-            expect(() => accountUpdateSchema.parse({
+            expect(() => accountPatchSchema.parse({
                 id: genAcctId(),
                 acctType: 'INVALID'
             })).toThrow()
@@ -340,13 +336,13 @@ describe('Invalid Accounts', () => {
 
     describe('accountCreationSchema invalid inputs', () => {
         it('rejects missing required fields', () => {
-            expect(() => accountCreationSchema.parse({
+            expect(() => accountWriteSchema.parse({
                 id: genAcctId()
             })).toThrow()
         })
 
         it('rejects missing id', () => {
-            expect(() => accountCreationSchema.parse({
+            expect(() => accountWriteSchema.parse({
                 name: 'example',
                 acctType: 'ASSET'
             })).toThrow()

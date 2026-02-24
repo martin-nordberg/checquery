@@ -12,7 +12,7 @@ describe('Vendor Repo', () => {
         const repo = new VendorRepo(db)
 
         const id = genVndrId()
-        const vndr0 : Vendor = {
+        const vndr0: Vendor = {
             id: id,
             name: "Sample",
             description: "An example vendor",
@@ -25,10 +25,11 @@ describe('Vendor Repo', () => {
 
         expect(vndr2).toMatchObject(vndr0)
 
-        const vndr3 = await repo.updateVendor({
+        await repo.updateVendor({
             id,
             name: "Zample"
         })
+        const vndr3 = await repo.findVendorById(id)
 
         expect(vndr3).toMatchObject({
             ...vndr0,
@@ -39,11 +40,12 @@ describe('Vendor Repo', () => {
 
         expect(vndrs).toContainValue(vndr3!)
 
-        const vndr4 = await repo.updateVendor({
+        await repo.updateVendor({
             id,
             description: "",
             isActive: false
         })
+        const vndr4 = await repo.findVendorById(id)
 
         expect(vndr4).toMatchObject({
             id: id,

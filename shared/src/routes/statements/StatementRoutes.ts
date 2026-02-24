@@ -3,7 +3,7 @@ import {z} from 'zod'
 import {type IStatementSvc} from "../../services/statements/IStatementSvc";
 import {zxValidator} from "../validation/zxvalidator";
 import {stmtIdSchema} from "../../domain/statements/StmtId";
-import {statementCreationSchema, type StatementUpdate, statementUpdateSchema} from "../../domain/statements/Statement";
+import {statementWriteSchema, type StatementPatch, statementPatchSchema} from "../../domain/statements/Statement";
 
 /** REST routes for statements. */
 export const statementRoutes = (statementSvc: IStatementSvc) => {
@@ -24,7 +24,7 @@ export const statementRoutes = (statementSvc: IStatementSvc) => {
         )
         .post(
             '/',
-            zxValidator('json', statementCreationSchema),
+            zxValidator('json', statementWriteSchema),
             async (c) => {
                 const statement = c.req.valid('json')
                 await statementSvc.createStatement(statement)
@@ -34,11 +34,12 @@ export const statementRoutes = (statementSvc: IStatementSvc) => {
         .patch(
             '/:statementId',
             zxValidator('param', z.object({statementId: stmtIdSchema})),
-            zxValidator('json', statementUpdateSchema),
+            zxValidator('json', statementPatchSchema),
             async (c) => {
                 const {statementId} = c.req.valid('param')
-                const statement: StatementUpdate = c.req.valid('json')
-                return c.json(await statementSvc.updateStatement({...statement, id: statementId}))
+                const statement: StatementPatch = c.req.valid('json')
+                await statementSvc.updateStatement({...statement, id: statementId})
+                return c.body(null, 204)
             }
         )
         .delete(

@@ -1,4 +1,4 @@
-import {type Statement, type StatementCreation, type StatementUpdate} from "../../domain/statements/Statement";
+import {type Statement, type StatementToWrite, type StatementPatch} from "../../domain/statements/Statement";
 import {type StmtId} from "../../domain/statements/StmtId";
 import type {IStatementSvc} from "$shared/services/statements/IStatementSvc";
 
@@ -11,9 +11,9 @@ export class StatementTeeSvc implements IStatementSvc {
     }
 
     /** Creates a new statement with given attributes. */
-    async createStatement(statement: StatementCreation): Promise<void> {
+    async createStatement(statement: StatementToWrite): Promise<void> {
         for (const svc of this.svcs) {
-           await svc.createStatement(statement)
+            await svc.createStatement(statement)
         }
     }
 
@@ -35,10 +35,10 @@ export class StatementTeeSvc implements IStatementSvc {
     }
 
     /** Updates a statement's attributes. */
-    async updateStatement(statementPatch: StatementUpdate): Promise<Statement | null> {
-        let result: Statement | null = null
+    async updateStatement(statementPatch: StatementPatch): Promise<StatementPatch | null> {
+        let result: StatementPatch | null = statementPatch
         for (const svc of this.svcs) {
-            result = result ?? await svc.updateStatement(statementPatch)
+            result = result ? await svc.updateStatement(result) : null
         }
         return result
     }

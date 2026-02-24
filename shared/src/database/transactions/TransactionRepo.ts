@@ -1,8 +1,8 @@
 import type {TxnId} from "$shared/domain/transactions/TxnId";
 import {
     type Transaction,
-    type TransactionCreation,
-    type TransactionUpdate
+    type TransactionToWrite,
+    type TransactionPatch
 } from "$shared/domain/transactions/Transaction";
 import type {PgLiteDb} from "$shared/database/PgLiteDb";
 import {TransactionTxnRepo} from "$shared/database/transactions/TransactionTxnRepo";
@@ -17,7 +17,7 @@ export class TransactionRepo implements ITransactionSvc {
         this.db = db
     }
 
-    async createTransaction(transaction: TransactionCreation): Promise<void> {
+    async createTransaction(transaction: TransactionToWrite): Promise<void> {
         return this.db.transaction(async (txn) =>
             new TransactionTxnRepo(txn).createTransaction(transaction)
         )
@@ -35,7 +35,7 @@ export class TransactionRepo implements ITransactionSvc {
         )
     }
 
-    async updateTransaction(transactionPatch: TransactionUpdate): Promise<Transaction | null> {
+    async updateTransaction(transactionPatch: TransactionPatch): Promise<TransactionPatch | null> {
         return this.db.transaction(async (txn) =>
             new TransactionTxnRepo(txn).updateTransaction(transactionPatch)
         )

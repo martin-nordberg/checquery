@@ -5,22 +5,8 @@ import {currencyAmtSchema} from "../core/CurrencyAmt";
 import {nameSchema} from "../core/Name";
 import {txnIdSchema} from "../transactions/TxnId";
 
-/** Coerces SQLite integers (0/1) and missing values to boolean, defaulting to false. */
-const booleanDefaultFalse = z.preprocess(
-    (val) => {
-        if (val === undefined || val === null) {
-            return false
-        }
-        if (typeof val === 'number') {
-            return val !== 0
-        }
-        return val
-    },
-    z.boolean()
-)
-
 /** Base schema for a Checquery statement's details. */
-export const statementAttributesSchema =
+const statementAttributesSchema =
     z.strictObject({
         /** The unique ID of the statement. */
         id: stmtIdSchema,
@@ -41,7 +27,7 @@ export const statementAttributesSchema =
         account: nameSchema,
 
         /** Whether the statement has been reconciled. Defaults to false. */
-        isReconciled: booleanDefaultFalse.default(false),
+        isReconciled: z.boolean(),
 
         /** The transactions included in this statement. */
         transactions: z.array(txnIdSchema),
@@ -49,32 +35,32 @@ export const statementAttributesSchema =
 
 
 /** Schema for a statement. */
-export const statementSchema = statementAttributesSchema.readonly()
+export const statementReadSchema = statementAttributesSchema.readonly()
 
-export type Statement = z.infer<typeof statementSchema>
+export type Statement = z.infer<typeof statementReadSchema>
 
 
 /** Sub-schema for statement creation. */
-export const statementCreationSchema =
-    z.strictObject({
-        ...statementAttributesSchema.shape
+export const statementWriteSchema =
+    statementAttributesSchema.extend({
+        beginningBalance: statementAttributesSchema.shape.beginningBalance.default("$0.00"),
+        endingBalance: statementAttributesSchema.shape.endingBalance.default("$0.00"),
+        isReconciled: statementAttributesSchema.shape.isReconciled.default(false),
     }).readonly()
 
-export type StatementCreation = z.infer<typeof statementCreationSchema>
+export type StatementToWrite = z.infer<typeof statementWriteSchema>
 
 
 /** Sub-schema for statement updates. */
-export const statementUpdateSchema =
-    z.strictObject({
-        ...statementAttributesSchema.partial({
-            beginDate: true,
-            endDate: true,
-            beginningBalance: true,
-            endingBalance: true,
-            account: true,
-            isReconciled: true,
-            transactions: true,
-        }).shape
+export const statementPatchSchema =
+    statementAttributesSchema.partial({
+        beginDate: true,
+        endDate: true,
+        beginningBalance: true,
+        endingBalance: true,
+        account: true,
+        isReconciled: true,
+        transactions: true,
     }).readonly()
 
-export type StatementUpdate = z.infer<typeof statementUpdateSchema>
+export type StatementPatch = z.infer<typeof statementPatchSchema>

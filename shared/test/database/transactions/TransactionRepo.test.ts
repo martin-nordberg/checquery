@@ -8,7 +8,9 @@ import {genVndrId} from "$shared/domain/vendors/VndrId";
 import type {Vendor} from "$shared/domain/vendors/Vendor";
 import {TransactionRepo} from "$shared/database/transactions/TransactionRepo";
 import {genTxnId} from "$shared/domain/transactions/TxnId";
-import type {Transaction} from "$shared/domain/transactions/Transaction";
+import type {TransactionToWrite, TransactionPatch} from "$shared/domain/transactions/Transaction";
+import {type EntryToWrite} from "$shared/domain/transactions/Entry";
+import {entriesWriteSchema} from "$shared/domain/transactions/Entries";
 
 describe('Transaction Repo', () => {
     it('Should create, find, update, and delete a transaction', async () => {
@@ -39,7 +41,7 @@ describe('Transaction Repo', () => {
         const vrepo = new VendorRepo(db)
 
         const vid = genVndrId()
-        const vndr0 : Vendor = {
+        const vndr0: Vendor = {
             id: vid,
             name: "Vendorr",
             description: "An example vendor",
@@ -52,25 +54,26 @@ describe('Transaction Repo', () => {
 
         const id = genTxnId()
 
-        const txn0 : Transaction = {
+        const entries0 : EntryToWrite[] = entriesWriteSchema.parse([
+            {
+                account: acct1!.name,
+                comment: "Not sure why entries have comments",
+                debit: "$123.99",
+                credit: "$0.00"
+            },
+            {
+                account: acct2!.name,
+                credit: "$123.99",
+                debit: "$0.00"
+            }
+        ])
+        const txn0: TransactionToWrite = {
             id: id,
             code: "1234",
             description: "Bought something",
             date: "2010-01-02",
             vendor: vndr0.name,
-            entries: [
-                {
-                    account: acct1!.name,
-                    comment: "Not sure why entries have comments",
-                    debit: "$123.99",
-                    credit: "$0.00"
-                },
-                {
-                    account: acct2!.name,
-                    credit: "$123.99",
-                    debit: "$0.00"
-                }
-            ]
+            entries: entries0
         }
         await repo.createTransaction(txn0)
 
@@ -78,24 +81,25 @@ describe('Transaction Repo', () => {
 
         expect(txn1).toMatchObject(txn0)
 
-        const txn2 : Transaction = {
+        const entries2 = entriesWriteSchema.parse([
+            {
+                account: acct1!.name,
+                comment: "Entries have comments",
+                debit: "$123.00",
+                credit: "$0.00"
+            },
+            {
+                account: acct2!.name,
+                credit: "$123.00",
+                debit: "$0.00"
+            }
+        ])
+        const txn2: TransactionPatch = {
             id: id,
             code: "9945",
             description: "Bought sssomething",
             date: "2010-01-03",
-            entries: [
-                {
-                    account: acct1!.name,
-                    comment: "Entries have comments",
-                    debit: "$123.00",
-                    credit: "$0.00"
-                },
-                {
-                    account: acct2!.name,
-                    credit: "$123.00",
-                    debit: "$0.00"
-                }
-            ]
+            entries: entries2
         }
 
         await repo.updateTransaction({...txn2, vendor: ""})

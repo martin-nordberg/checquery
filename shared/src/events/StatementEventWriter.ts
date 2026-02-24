@@ -1,15 +1,16 @@
 import type {IStatementSvc} from "$shared/services/statements/IStatementSvc";
 import type {StmtId} from "$shared/domain/statements/StmtId";
-import {type Statement, type StatementCreation, type StatementUpdate} from "$shared/domain/statements/Statement";
+import {type Statement, type StatementToWrite, type StatementPatch} from "$shared/domain/statements/Statement";
 import {
     appendDirective,
     createStatementCreateDirective,
-    createStatementDeleteDirective, createStatementUpdateDirective
+    createStatementDeleteDirective,
+    createStatementUpdateDirective
 } from "checquery-server/src/util/ChecqueryYamlAppender";
 
 export class StatementEventWriter implements IStatementSvc {
 
-    async createStatement(statement: StatementCreation): Promise<void> {
+    async createStatement(statement: StatementToWrite): Promise<void> {
         await appendDirective(createStatementCreateDirective({
             id: statement.id,
             beginDate: statement.beginDate,
@@ -34,7 +35,7 @@ export class StatementEventWriter implements IStatementSvc {
         throw Error("Not implemented")
     }
 
-    async updateStatement(statementPatch: StatementUpdate): Promise<Statement | null> {
+    async updateStatement(statementPatch: StatementPatch): Promise<Statement | null> {
         await appendDirective(createStatementUpdateDirective({
             id: statementPatch.id,
             beginDate: statementPatch.beginDate,

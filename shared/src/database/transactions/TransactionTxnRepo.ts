@@ -1,9 +1,9 @@
 import type {TxnId} from "$shared/domain/transactions/TxnId";
 import {
     type Transaction,
-    type TransactionCreation,
-    transactionStandAloneSchema,
-    type TransactionUpdate
+    type TransactionToWrite,
+    transactionBeforeEntriesSchema,
+    type TransactionPatch
 } from "$shared/domain/transactions/Transaction";
 import {fromCents, toCents} from "$shared/domain/core/CurrencyAmt";
 import z from "zod";
@@ -21,7 +21,7 @@ export class TransactionTxnRepo implements ITransactionSvc {
         this.#txn = txn
     }
 
-    async createTransaction(transaction: TransactionCreation): Promise<void> {
+    async createTransaction(transaction: TransactionToWrite): Promise<void> {
         if (transaction.vendor) {
             await this.#txn.exec(
                 `INSERT INTO Transaxtion (id, date, dateHlc, code, codeHlc, vendorId, vendorIdHlc, description,
@@ -102,7 +102,7 @@ export class TransactionTxnRepo implements ITransactionSvc {
              WHERE Transaxtion.id = $1
                AND Transaxtion.isDeleted = false`,
             [transactionId],
-            transactionStandAloneSchema
+            transactionBeforeEntriesSchema
         )
 
         if (!txn) {
@@ -114,7 +114,7 @@ export class TransactionTxnRepo implements ITransactionSvc {
                     debitCents             as "debitCents",
                     creditCents            as "creditCents",
                     CASE
-                        WHEN stmtId IS NULL THEN NULL
+                        WHEN stmtId IS NULL THEN ''
                         WHEN Statement.isReconciled THEN 'Reconciled'
                         ELSE 'Pending' END as status,
                     comment
@@ -130,8 +130,8 @@ export class TransactionTxnRepo implements ITransactionSvc {
                 account: z.string(),
                 debitCents: z.int(),
                 creditCents: z.int(),
-                status: txnStatusSchema.optional(),
-                comment: descriptionSchema.optional()
+                status: txnStatusSchema,
+                comment: descriptionSchema
             }).readonly()
         )
 
@@ -151,9 +151,11 @@ export class TransactionTxnRepo implements ITransactionSvc {
         }
     }
 
-    async updateTransaction(transactionPatch: TransactionUpdate): Promise<Transaction | null> {
+    async updateTransaction(transactionPatch: TransactionPatch): Promise<TransactionPatch | null> {
+        let result: TransactionPatch | null = null
+
         if (transactionPatch.date !== undefined) {
-            await this.#txn.exec(
+            const count = await this.#txn.exec(
                 `UPDATE Transaxtion
                  SET date    = $2,
                      dateHlc = $hlc
@@ -161,10 +163,13 @@ export class TransactionTxnRepo implements ITransactionSvc {
                    AND dateHlc < $hlc`,
                 [transactionPatch.id, transactionPatch.date]
             )
+            if (count) {
+                result = {id: transactionPatch.id, date: transactionPatch.date}
+            }
         }
 
         if (transactionPatch.code !== undefined) {
-            await this.#txn.exec(
+            const count = await this.#txn.exec(
                 `UPDATE Transaxtion
                  SET code    = $2,
                      codeHlc = $hlc
@@ -172,10 +177,13 @@ export class TransactionTxnRepo implements ITransactionSvc {
                    AND codeHlc < $hlc`,
                 [transactionPatch.id, transactionPatch.code]
             )
+            if (count) {
+                result = {...(result ?? {id: transactionPatch.id}), code: transactionPatch.code}
+            }
         }
 
         if (transactionPatch.description !== undefined) {
-            await this.#txn.exec(
+            const count = await this.#txn.exec(
                 `UPDATE Transaxtion
                  SET description    = $2,
                      descriptionHlc = $hlc
@@ -183,11 +191,14 @@ export class TransactionTxnRepo implements ITransactionSvc {
                    AND descriptionHlc < $hlc`,
                 [transactionPatch.id, transactionPatch.description]
             )
+            if (count) {
+                result = {...(result ?? {id: transactionPatch.id}), description: transactionPatch.description}
+            }
         }
 
         if (transactionPatch.vendor !== undefined) {
             if (transactionPatch.vendor === "") {
-                await this.#txn.exec(
+                const count = await this.#txn.exec(
                     `UPDATE Transaxtion
                      SET vendorId    = NULL,
                          vendorIdHlc = $hlc
@@ -195,8 +206,11 @@ export class TransactionTxnRepo implements ITransactionSvc {
                        AND vendorIdHlc < $hlc`,
                     [transactionPatch.id]
                 )
+                if (count) {
+                    result = {...(result ?? {id: transactionPatch.id}), vendor: transactionPatch.vendor}
+                }
             } else {
-                await this.#txn.exec(
+                const count = await this.#txn.exec(
                     `UPDATE Transaxtion
                      SET vendorId    = (SELECT id FROM Vendor WHERE name = $2),
                          vendorIdHlc = $hlc
@@ -204,6 +218,9 @@ export class TransactionTxnRepo implements ITransactionSvc {
                        AND vendorIdHlc < $hlc`,
                     [transactionPatch.id, transactionPatch.vendor]
                 )
+                if (count) {
+                    result = {...(result ?? {id: transactionPatch.id}), vendor: transactionPatch.vendor}
+                }
             }
         }
 
@@ -234,9 +251,10 @@ export class TransactionTxnRepo implements ITransactionSvc {
                 )
                 entrySeq += 1
             }
+            result = {...(result ?? {id: transactionPatch.id}), entries: transactionPatch.entries}
         }
 
-        return this.findTransactionById(transactionPatch.id)
+        return result
     }
 
 }

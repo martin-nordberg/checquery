@@ -1,6 +1,6 @@
 import type {StmtId} from "$shared/domain/statements/StmtId";
 import {stmtIdSchema} from "$shared/domain/statements/StmtId";
-import {type Statement, type StatementCreation, type StatementUpdate} from "$shared/domain/statements/Statement";
+import {type Statement, type StatementToWrite, type StatementPatch} from "$shared/domain/statements/Statement";
 import {fromCents, toCents} from "$shared/domain/core/CurrencyAmt";
 import {z} from "zod";
 import {isoDateSchema} from "$shared/domain/core/IsoDate";
@@ -28,7 +28,7 @@ export class StatementTxnRepo implements IStatementSvc {
         this.#txn = txn
     }
 
-    async createStatement(statement: StatementCreation): Promise<void> {
+    async createStatement(statement: StatementToWrite): Promise<void> {
         await this.#txn.exec(
             `INSERT INTO Statement (id, beginDate, beginDateHlc, endDate, endDateHlc, beginBalanceCents,
                                     beginBalanceCentsHlc,
@@ -140,63 +140,84 @@ export class StatementTxnRepo implements IStatementSvc {
         return result
     }
 
-    async updateStatement(statementPatch: StatementUpdate): Promise<Statement | null> {
+    async updateStatement(statementPatch: StatementPatch): Promise<StatementPatch | null> {
+        let result: StatementPatch | null = null
 
         if (statementPatch.beginDate !== undefined) {
-            await this.#txn.exec(
+            const count = await this.#txn.exec(
                 `UPDATE Statement
                  SET beginDate    = $2,
                      beginDateHlc = $hlc
                  WHERE id = $1
-                   AND beginDateHlc < $hlc`,
+                   AND beginDateHlc < $hlc
+                   AND beginDate <> $2`,
                 [statementPatch.id, statementPatch.beginDate]
             )
+            if (count) {
+                result = {id: statementPatch.id, beginDate: statementPatch.beginDate}
+            }
         }
 
         if (statementPatch.endDate !== undefined) {
-            await this.#txn.exec(
+            const count = await this.#txn.exec(
                 `UPDATE Statement
                  SET endDate    = $2,
                      endDateHlc = $hlc
                  WHERE id = $1
-                   AND endDateHlc < $hlc`,
+                   AND endDateHlc < $hlc
+                   AND endDateHlc <> $2`,
                 [statementPatch.id, statementPatch.endDate]
             )
+            if (count) {
+                result = {id: statementPatch.id, endDate: statementPatch.endDate}
+            }
         }
 
         if (statementPatch.beginningBalance !== undefined) {
-            await this.#txn.exec(
+            const count = await this.#txn.exec(
                 `UPDATE Statement
                  SET beginBalanceCents    = $2,
                      beginBalanceCentsHlc = $hlc
                  WHERE id = $1
-                   AND beginBalanceCentsHlc < $hlc`,
+                   AND beginBalanceCentsHlc < $hlc
+                   AND beginBalanceCents <> $2`,
                 [statementPatch.id, toCents(statementPatch.beginningBalance)]
             )
+            if (count) {
+                result = {id: statementPatch.id, beginningBalance: statementPatch.beginningBalance}
+            }
         }
         if (statementPatch.endingBalance !== undefined) {
-            await this.#txn.exec(
+            const count = await this.#txn.exec(
                 `UPDATE Statement
                  SET endBalanceCents    = $2,
                      endBalanceCentsHlc = $hlc
                  WHERE id = $1
-                   AND endBalanceCentsHlc < $hlc`,
+                   AND endBalanceCentsHlc < $hlc
+                   AND endBalanceCents <> $2`,
                 [statementPatch.id, toCents(statementPatch.endingBalance)]
             )
+            if (count) {
+                result = {id: statementPatch.id, endingBalance: statementPatch.endingBalance}
+            }
         }
 
         if (statementPatch.isReconciled !== undefined) {
-            await this.#txn.exec(
+            const count = await this.#txn.exec(
                 `UPDATE Statement
                  SET isReconciled    = $2,
                      isReconciledHlc = $hlc
                  WHERE id = $1
-                   AND isReconciledHlc < $hlc`,
+                   AND isReconciledHlc < $hlc
+                   AND isReconciled <> $2`,
                 [statementPatch.id, statementPatch.isReconciled]
             )
+            if (count) {
+                result = {id: statementPatch.id, isReconciled: statementPatch.isReconciled}
+            }
         }
 
-        return this.findStatementById(statementPatch.id)
+        return result
     }
 
 }
