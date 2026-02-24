@@ -31,8 +31,8 @@ cd server && tsc --noEmit
 ### Monorepo Structure
 
 - **client/**: SolidJS SPA with Vite, TailwindCSS
-- **server/**: Bun runtime with Hono web framework, in-memory SQLite database
-- **shared/**: Domain types, service interfaces, and route definitions used by both client and server
+- **server/**: Bun runtime with Hono web framework
+- **shared/**: Domain types, service interfaces, database repositories, event sourcing, and route definitions used by both client and server
 
 ### Path Alias
 
@@ -44,13 +44,17 @@ The project uses Hono's type-safe client (`hc`) to share route types between cli
 
 1. **Routes** are defined in `shared/src/routes/` using Hono and Zod validation
 2. **Service interfaces** in `shared/src/services/` define the contract (e.g., `IAccountSvc`)
-3. **Server implementations** in `server/src/sqlservices/` implement interfaces using SQLite
-4. **Client services** in `client/src/clients/` implement the same interfaces using Hono's typed client
+3. **Database repositories** in `shared/src/database/` implement interfaces using PGlite
+4. **Event writers** in `shared/src/events/` implement the same interfaces to append YAML directives
+5. **Tee services** in `shared/src/services/` fan out writes to multiple implementations (e.g., DB + event log)
+6. **Client services** in `client/src/clients/` implement the same interfaces using Hono's typed client
 
 Example flow for accounts:
 - `shared/src/routes/accounts/AccountRoutes.ts` - defines REST routes with Zod validation
 - `shared/src/services/accounts/IAccountSvc.ts` - service interface
-- `server/src/sqlservices/accounts/AccountSqlSvc.ts` - SQLite implementation
+- `shared/src/database/accounts/AccountRepo.ts` - PGlite implementation
+- `shared/src/events/AccountEventWriter.ts` - YAML event writer
+- `shared/src/services/accounts/AccountTeeSvc.ts` - tees writes to both repo and event writer
 - `client/src/clients/accounts/AccountClientSvc.ts` - HTTP client using Hono's `hc`
 
 ### Domain Model
@@ -65,18 +69,21 @@ Domain types are in `shared/src/domain/` with Zod schemas for validation:
 
 ### Event Sourcing Pattern
 
-The server loads data from YAML files in a `data/` directory at startup:
-- `server/src/eventsources/AcctEvents.ts` - loads account directives
-- `server/src/eventsources/TxnEvents.ts` - loads transaction directives
-- `server/src/eventsources/OrgEvents.ts` - loads organization directives
+The server loads data from YAML files at startup via `shared/src/events/ChecqueryEventLoader.ts`. YAML files contain action directives (e.g., `{action: 'create-account', payload: {...}}`). At runtime, API mutations are teed to both the database and event writers that append new directives to the YAML log.
 
-YAML files contain action directives (e.g., `{action: 'create', payload: {...}}`).
+Event writers (`shared/src/events/`): `AccountEventWriter`, `TransactionEventWriter`, `VendorEventWriter`, `StatementEventWriter` — each implements the corresponding service interface but only for write operations (reads throw "Not implemented").
+
+### Tee Service Pattern
+
+Tee services (e.g., `AccountTeeSvc`) accept an array of `IAccountSvc` implementations. Write operations (create, update, delete) are forwarded to **all** services in sequence. Read operations (find) delegate to only the **first** service (`svcs[0]`), which is the database repo.
 
 ### Database
 
-- Uses Bun's built-in SQLite with an in-memory database
-- `server/src/sqldb/ChecquerySqlDb.ts` - wrapper with prepared statement caching and Zod parsing
-- `server/src/sqldb/checqueryDdl.ts` - schema definitions
+- Uses [PGlite](https://pglite.dev/docs/) — Postgres compiled to WASM, running in-process
+- `shared/src/database/PgLiteDb.ts` - wrapper with Hybrid Logical Clock (HLC) for distributed timestamps; forces all operations through `transaction()`
+- `shared/src/database/CheckqueryPgDdl.ts` - schema definitions with HLC columns for conflict-free merging
+- Each entity has a Repo (e.g., `AccountRepo`) that delegates to a TxnRepo (e.g., `AccountTxnRepo`) within a transaction
+- `shared/src/database/register/RegisterRepo.ts` - register-specific reads with running balance computation; delegates mutations to `ITransactionSvc`
 
 ### Validation
 
