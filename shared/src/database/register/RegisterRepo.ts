@@ -63,18 +63,9 @@ export class RegisterRepo implements IRegisterSvc {
                     INNER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
                     LEFT OUTER JOIN Vendor ON Transaxtion.vendorId = Vendor.id
                     LEFT JOIN Statement ON Entry.stmtId = Statement.id
-                 WHERE Entry.accountId =
-                $1
-                ORDER
-                BY
-                Transaxtion
-                .
-                date
-                ASC,
-                Transaxtion
-                .
-                insertOrder
-                ASC`,
+                 WHERE Entry.accountId = $1
+                   AND Transaxtion.isDeleted = false
+                 ORDER BY Transaxtion.date ASC, Transaxtion.insertOrder ASC`,
                 [accountId],
                 z.strictObject({
                     txnId: z.string(),
@@ -94,9 +85,11 @@ export class RegisterRepo implements IRegisterSvc {
                         Account.name as "accountName"
                  FROM Entry
                           INNER JOIN Account ON Entry.accountId = Account.id
-                 WHERE Entry.txnId IN (SELECT DISTINCT txnId
+                 WHERE Entry.txnId IN (SELECT DISTINCT Entry.txnId
                                        FROM Entry
-                                       WHERE accountId = $1)
+                                                INNER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
+                                       WHERE Entry.accountId = $1
+                                         AND Transaxtion.isDeleted = false)
                    AND Entry.accountId != $1
                  ORDER BY Entry.txnId, Entry.entrySeq`,
                 [accountId],
@@ -171,7 +164,8 @@ export class RegisterRepo implements IRegisterSvc {
                  FROM Transaxtion
                      LEFT OUTER JOIN Vendor
                  ON Transaxtion.vendorId = Vendor.id
-                 WHERE Transaxtion.id = $1`,
+                 WHERE Transaxtion.id = $1
+                   AND Transaxtion.isDeleted = false`,
                 [txnId],
                 z.strictObject({
                     id: z.string(),
@@ -200,6 +194,7 @@ export class RegisterRepo implements IRegisterSvc {
                     INNER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
                     LEFT JOIN Statement ON Entry.stmtId = Statement.id
                  WHERE Entry.txnId = $1
+                   AND Transaxtion.isDeleted = false
                  ORDER BY Entry.entrySeq`,
                 [txnId],
                 z.strictObject({

@@ -27,7 +27,9 @@ export class BalanceSheetRepo implements IBalanceSheetSvc {
                           LEFT OUTER JOIN Entry ON Account.id = Entry.accountId
                           LEFT OUTER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
                  WHERE Account.acctType IN ('ASSET', 'LIABILITY', 'EQUITY')
+                   AND Account.isDeleted = false
                    AND (Transaxtion.date <= $1 OR Transaxtion.date IS NULL)
+                   AND (Transaxtion.isDeleted = false OR Transaxtion.isDeleted IS NULL)
                  GROUP BY Account.id, Account.acctType, Account.name
                  ORDER BY Account.name`,
                 [

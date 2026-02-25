@@ -34,6 +34,8 @@ export class IncomeStatementRepo implements IIncomeStatementSvc {
                           LEFT OUTER JOIN Entry ON Account.id = Entry.accountId
                           LEFT OUTER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
                  WHERE Account.acctType IN ('INCOME', 'EXPENSE')
+                   AND Account.isDeleted = false
+                   AND Transaxtion.isDeleted = false
                    AND (Transaxtion.date >= $1)
                    AND (Transaxtion.date <= $2)
                  GROUP BY Account.id, Account.acctType, Account.name
@@ -106,8 +108,9 @@ export class IncomeStatementRepo implements IIncomeStatementSvc {
                  ON Account.id = Entry.accountId
                      INNER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
                      LEFT OUTER JOIN Vendor ON Transaxtion.vendorId = Vendor.id
-                 WHERE Account.acctType IN ('INCOME'
-                     , 'EXPENSE')
+                 WHERE Account.acctType IN ('INCOME', 'EXPENSE')
+                   AND Account.isDeleted = false
+                   AND Transaxtion.isDeleted = false
                    AND (Transaxtion.date >= $1)
                    AND (Transaxtion.date <= $2)
                  ORDER BY Account.name, Transaxtion.date`,
