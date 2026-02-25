@@ -54,11 +54,11 @@ describe('BalanceSheet from checquery-test-log-2010', () => {
         })
 
         it('has asset line items', () => {
-            expect(bs.assetLineItems.length).toBe(16)
+            expect(bs.assetLineItems.length).toBe(15)
         })
 
         it('has liability line items', () => {
-            expect(bs.liabilityLineItems.length).toBe(9)
+            expect(bs.liabilityLineItems.length).toBe(8)
         })
 
         it('has a single equity line item for net worth', () => {
@@ -78,7 +78,7 @@ describe('BalanceSheet from checquery-test-log-2010', () => {
         // --- Totals ---
 
         it('has correct total assets', () => {
-            expect(bs.totalAssets).toBe("$352,388.94")
+            expect(bs.totalAssets).toBe("$352,548.94")
         })
 
         it('has correct total liabilities', () => {
@@ -86,14 +86,14 @@ describe('BalanceSheet from checquery-test-log-2010', () => {
         })
 
         it('has correct total equity (net worth)', () => {
-            expect(bs.totalEquity).toBe("$166,161.61")
+            expect(bs.totalEquity).toBe("$166,321.61")
         })
 
         // --- Asset line items ---
 
         it('has correct Banking:Checking balance (negative)', () => {
             const item = findLineItem(bs.assetLineItems, "Banking:Checking")
-            expect(item.amount).toBe("($13,644.06)")
+            expect(item.amount).toBe("($13,484.06)")
         })
 
         it('has correct Banking:Money Market balance', () => {
@@ -161,6 +161,11 @@ describe('BalanceSheet from checquery-test-log-2010', () => {
             expect(findLineItem(bs.assetLineItems, "Receivables:Tax Refund").amount).toBe("$0.00")
         })
 
+        it('excludes deleted account Savings:Vacation Fund', () => {
+            const item = bs.assetLineItems.find(li => li.description === "Savings:Vacation Fund")
+            expect(item).toBeUndefined()
+        })
+
         // --- Liability line items ---
 
         it('has correct Credit Cards:Visa balance', () => {
@@ -197,10 +202,15 @@ describe('BalanceSheet from checquery-test-log-2010', () => {
             expect(findLineItem(bs.liabilityLineItems, "Payable:Estimated Taxes").amount).toBe("$0.00")
         })
 
+        it('excludes deleted account Loans:Personal Loan', () => {
+            const item = bs.liabilityLineItems.find(li => li.description === "Loans:Personal Loan")
+            expect(item).toBeUndefined()
+        })
+
         // --- Equity ---
 
         it('has equity equal to assets minus liabilities', () => {
-            expect(bs.equityLineItems[0]!.amount).toBe("$166,161.61")
+            expect(bs.equityLineItems[0]!.amount).toBe("$166,321.61")
         })
 
         // --- Line item ordering ---

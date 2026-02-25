@@ -92,11 +92,11 @@ describe('IncomeStatement from checquery-test-log-2010', () => {
         })
 
         it('has correct total expenses', () => {
-            expect(is.totalExpenses).toBe("$144,352.73")
+            expect(is.totalExpenses).toBe("$144,192.73")
         })
 
         it('has correct net income', () => {
-            expect(is.netIncome).toBe("$661.61")
+            expect(is.netIncome).toBe("$821.61")
         })
 
         // --- Income line items ---
@@ -132,7 +132,7 @@ describe('IncomeStatement from checquery-test-log-2010', () => {
         })
 
         it('has correct Miscellaneous:General', () => {
-            expect(findLineItem(is.expenseLineItems, "Miscellaneous:General").amount).toBe("$15,263.28")
+            expect(findLineItem(is.expenseLineItems, "Miscellaneous:General").amount).toBe("$15,138.28")
         })
 
         it('has correct Home Maintenance:Repairs', () => {
@@ -262,7 +262,7 @@ describe('IncomeStatement from checquery-test-log-2010', () => {
         })
 
         it('has correct Utilities:Streaming TV', () => {
-            expect(findLineItem(is.expenseLineItems, "Utilities:Streaming TV").amount).toBe("$695.00")
+            expect(findLineItem(is.expenseLineItems, "Utilities:Streaming TV").amount).toBe("$660.00")
         })
 
         it('has correct Utilities:Water and Sewer', () => {
@@ -415,6 +415,10 @@ describe('IncomeStatement from checquery-test-log-2010', () => {
             expect(findDetailLineItem(details.expenseLineItems, "Groceries:General").entries.length).toBe(266)
         })
 
+        it('Miscellaneous:General excludes deleted transactions (243 entries)', () => {
+            expect(findDetailLineItem(details.expenseLineItems, "Miscellaneous:General").entries.length).toBe(243)
+        })
+
         it('Dining:Coffee Shops has 168 entries', () => {
             expect(findDetailLineItem(details.expenseLineItems, "Dining:Coffee Shops").entries.length).toBe(168)
         })
@@ -499,11 +503,11 @@ describe('IncomeStatement from checquery-test-log-2010', () => {
         })
 
         it('has correct Q1 total expenses', () => {
-            expect(q1.totalExpenses).toBe("$37,163.82")
+            expect(q1.totalExpenses).toBe("$37,113.82")
         })
 
         it('has correct Q1 net income (negative)', () => {
-            expect(q1.netIncome).toBe("($1,930.01)")
+            expect(q1.netIncome).toBe("($1,880.01)")
         })
 
         it('Q1 income is less than full-year income', async () => {
