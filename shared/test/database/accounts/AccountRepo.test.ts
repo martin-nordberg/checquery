@@ -74,8 +74,8 @@ describe('Account Repo', () => {
 
         expect(inUse).toBeTrue()
 
-        await vrepo.updateVendor({id: vid, description: "Changed the description"})
-        await vrepo.updateVendor({id: vid, defaultAccount: ""})
+        await vrepo.patchVendor({id: vid, description: "Changed the description"})
+        await vrepo.patchVendor({id: vid, defaultAccount: ""})
 
         await repo.deleteAccount(id)
 

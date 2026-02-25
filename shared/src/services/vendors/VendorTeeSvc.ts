@@ -40,10 +40,10 @@ export class VendorTeeSvc implements IVendorSvc {
     }
 
     /** Updates a vendor's attributes. */
-    async updateVendor(vendorPatch: VendorPatch): Promise<VendorPatch | null> {
+    async patchVendor(vendorPatch: VendorPatch): Promise<VendorPatch | null> {
         let result: VendorPatch | null = vendorPatch
         for (const svc of this.svcs) {
-            result = result ? await svc.updateVendor(result) : null
+            result = result ? await svc.patchVendor(result) : null
         }
         return result
     }

@@ -55,7 +55,7 @@ export class TransactionEventWriter implements ITransactionSvc {
         throw Error("Unimplemented")
     }
 
-    async updateTransaction(transactionPatch: TransactionPatch): Promise<Transaction | null> {
+    async patchTransaction(transactionPatch: TransactionPatch): Promise<Transaction | null> {
         const payload: Record<string, unknown> = {id: transactionPatch.id}
         if (transactionPatch.date !== undefined) {
             payload['date'] = transactionPatch.date

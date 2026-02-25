@@ -31,8 +31,8 @@ export class AccountTxnRepo implements IAccountSvc {
     async deleteAccount(accountId: AcctId): Promise<void> {
         await this.#txn.exec(
             `UPDATE Account
-             SET isDeleted    = true,
-                 isDeletedHlc = $hlc
+               SET isDeleted    = true,
+                   isDeletedHlc = $hlc
              WHERE id = $1
                AND (isDeleted = false or isDeletedHlc > $hlc)`,
             [accountId]
@@ -42,7 +42,7 @@ export class AccountTxnRepo implements IAccountSvc {
     async findAccountById(accountId: AcctId): Promise<Account | null> {
         return this.#txn.findOne(
             `SELECT id, name, acctnumber as "acctNumber", acctType as "acctType", description
-             FROM Account
+              FROM Account
              WHERE id = $1
                AND isDeleted = false`,
             [accountId],
@@ -53,7 +53,7 @@ export class AccountTxnRepo implements IAccountSvc {
     async findAccountsAll(): Promise<Account[]> {
         return this.#txn.findMany(
             `SELECT id, name, acctnumber as "acctNumber", acctType as "acctType", description
-             FROM Account
+              FROM Account
              WHERE isDeleted = false
              ORDER BY name`,
             [],
@@ -65,14 +65,14 @@ export class AccountTxnRepo implements IAccountSvc {
     async isAccountInUse(accountId: AcctId): Promise<boolean> {
         const query1 = this.#txn.findOne(
             `SELECT COUNT(*) as count
-             FROM Entry
+              FROM Entry
              WHERE accountId = $1`,
             [accountId],
             z.object({count: z.number()}).readonly()
         )
         const query2 = this.#txn.findOne(
             `SELECT COUNT(*) as count
-             FROM Vendor
+              FROM Vendor
              WHERE defaultAccountId = $1`,
             [accountId],
             z.object({count: z.number()}).readonly()
@@ -95,8 +95,8 @@ export class AccountTxnRepo implements IAccountSvc {
         if (accountPatch.name !== undefined) {
             const count = await this.#txn.exec(
                 `UPDATE Account
-                 SET name    = $2,
-                     nameHlc = $hlc
+                   SET name    = $2,
+                       nameHlc = $hlc
                  WHERE id = $1
                    AND nameHlc < $hlc
                    AND name <> $2`,
@@ -110,8 +110,8 @@ export class AccountTxnRepo implements IAccountSvc {
         if (accountPatch.description !== undefined) {
             const count = await this.#txn.exec(
                 `UPDATE Account
-                 SET description    = $2,
-                     descriptionHlc = $hlc
+                   SET description    = $2,
+                       descriptionHlc = $hlc
                  WHERE id = $1
                    AND descriptionHlc < $hlc
                    AND description <> $2`,
@@ -125,8 +125,8 @@ export class AccountTxnRepo implements IAccountSvc {
         if (accountPatch.acctNumber !== undefined) {
             const count = await this.#txn.exec(
                 `UPDATE Account
-                 SET acctNumber    = $2,
-                     acctNumberHlc = $hlc
+                   SET acctNumber    = $2,
+                       acctNumberHlc = $hlc
                  WHERE id = $1
                    AND acctNumberHlc < $hlc
                    AND acctNumber <> $2`,
@@ -140,8 +140,8 @@ export class AccountTxnRepo implements IAccountSvc {
         if (accountPatch.acctType !== undefined) {
             const count = await this.#txn.exec(
                 `UPDATE Account
-                 SET acctType    = $2,
-                     acctTypeHlc = $hlc
+                   SET acctType    = $2,
+                       acctTypeHlc = $hlc
                  WHERE id = $1
                    AND acctTypeHlc < $hlc
                    AND acctType <> $2`,

@@ -35,9 +35,9 @@ export class TransactionRepo implements ITransactionSvc {
         )
     }
 
-    async updateTransaction(transactionPatch: TransactionPatch): Promise<TransactionPatch | null> {
+    async patchTransaction(transactionPatch: TransactionPatch): Promise<TransactionPatch | null> {
         return this.db.transaction(async (txn) =>
-            new TransactionTxnRepo(txn).updateTransaction(transactionPatch)
+            new TransactionTxnRepo(txn).patchTransaction(transactionPatch)
         )
     }
 

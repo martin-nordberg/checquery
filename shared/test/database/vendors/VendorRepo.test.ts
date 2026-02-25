@@ -25,7 +25,7 @@ describe('Vendor Repo', () => {
 
         expect(vndr2).toMatchObject(vndr0)
 
-        await repo.updateVendor({
+        await repo.patchVendor({
             id,
             name: "Zample"
         })
@@ -40,7 +40,7 @@ describe('Vendor Repo', () => {
 
         expect(vndrs).toContainValue(vndr3!)
 
-        await repo.updateVendor({
+        await repo.patchVendor({
             id,
             description: "",
             isActive: false

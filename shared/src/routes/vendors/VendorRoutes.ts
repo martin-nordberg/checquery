@@ -58,7 +58,7 @@ export const vendorRoutes = (vendorSvc: IVendorSvc) => {
                     id: vendorId
                 }
                 try {
-                    await vendorSvc.updateVendor(update)
+                    await vendorSvc.patchVendor(update)
                     return c.body(null, 204)
                 } catch (e: unknown) {
                     const msg = e instanceof Error ? e.message.toUpperCase() : ''

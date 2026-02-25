@@ -46,7 +46,7 @@ export const loadChecqueryLog = async (
                 await vendorSvc.createVendor(vendorWriteSchema.parse(directive.payload))
                 break
             case 'update-vendor':
-                await vendorSvc.updateVendor(vendorPatchSchema.parse(directive.payload))
+                await vendorSvc.patchVendor(vendorPatchSchema.parse(directive.payload))
                 break
             case 'delete-vendor':
                 await vendorSvc.deleteVendor(vndrIdSchema.parse(directive.payload.id))
@@ -57,7 +57,7 @@ export const loadChecqueryLog = async (
                 await txnSvc.createTransaction(transactionWriteSchema.parse(directive.payload, {reportInput: true}))
                 break
             case 'update-transaction':
-                await txnSvc.updateTransaction(transactionPatchSchema.parse(directive.payload, {reportInput: true}))
+                await txnSvc.patchTransaction(transactionPatchSchema.parse(directive.payload, {reportInput: true}))
                 break
             case 'delete-transaction':
                 await txnSvc.deleteTransaction(txnIdSchema.parse(directive.payload.id, {reportInput: true}))
@@ -68,7 +68,7 @@ export const loadChecqueryLog = async (
                 await stmtSvc.createStatement(statementWriteSchema.parse(directive.payload))
                 break
             case 'update-statement':
-                await stmtSvc.updateStatement(statementPatchSchema.parse(directive.payload))
+                await stmtSvc.patchStatement(statementPatchSchema.parse(directive.payload))
                 break
             case 'delete-statement':
                 await stmtSvc.deleteStatement(stmtIdSchema.parse(directive.payload.id))

@@ -102,7 +102,7 @@ describe('Transaction Repo', () => {
             entries: entries2
         }
 
-        await repo.updateTransaction({...txn2, vendor: ""})
+        await repo.patchTransaction({...txn2, vendor: ""})
 
         const txn3 = await repo.findTransactionById(id)
 

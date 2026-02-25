@@ -20,6 +20,6 @@ export interface IVendorSvc {
     isVendorInUse(vendorId: VndrId): Promise<boolean>
 
     /** Updates a vendor's attributes. */
-    updateVendor(vendorPatch: VendorPatch): Promise<VendorPatch | null>
+    patchVendor(vendorPatch: VendorPatch): Promise<VendorPatch | null>
 
 }

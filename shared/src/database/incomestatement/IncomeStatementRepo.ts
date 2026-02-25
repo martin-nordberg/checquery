@@ -26,13 +26,13 @@ export class IncomeStatementRepo implements IIncomeStatementSvc {
         return this.db.transaction(async (txn) => {
             const sqlLineItems = await txn.findMany(
                 `SELECT Account.id       as "acctId",
-                        Account.acctType as "acctType",
-                        Account.name     as description,
-                        sum(debitCents)  as "totalDr",
-                        sum(creditCents) as "totalCr"
-                 FROM Account
-                          LEFT OUTER JOIN Entry ON Account.id = Entry.accountId
-                          LEFT OUTER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
+                       Account.acctType as "acctType",
+                       Account.name     as description,
+                       sum(debitCents)  as "totalDr",
+                       sum(creditCents) as "totalCr"
+                  FROM Account
+                  LEFT OUTER JOIN Entry ON Account.id = Entry.accountId
+                  LEFT OUTER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
                  WHERE Account.acctType IN ('INCOME', 'EXPENSE')
                    AND (Transaxtion.date >= $1)
                    AND (Transaxtion.date <= $2)
@@ -94,20 +94,18 @@ export class IncomeStatementRepo implements IIncomeStatementSvc {
             // Get all entries for income and expense accounts in the period
             const sqlEntries = await txn.findMany(
                 `SELECT Account.id       as "acctId",
-                        Account.acctType as "acctType",
-                        Account.name     as "accountName",
-                        Transaxtion.date as date,
-                        Vendor.name        as vendor,
-                        Transaxtion.description as description,
-                        Entry.debitCents   as "debitCents",
-                        Entry.creditCents  as "creditCents"
-                 FROM Entry
-                     INNER JOIN Account
-                 ON Account.id = Entry.accountId
-                     INNER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
-                     LEFT OUTER JOIN Vendor ON Transaxtion.vendorId = Vendor.id
-                 WHERE Account.acctType IN ('INCOME'
-                     , 'EXPENSE')
+                       Account.acctType as "acctType",
+                       Account.name     as "accountName",
+                       Transaxtion.date as date,
+                       Vendor.name        as vendor,
+                       Transaxtion.description as description,
+                       Entry.debitCents   as "debitCents",
+                       Entry.creditCents  as "creditCents"
+                  FROM Entry
+                 INNER JOIN Account ON Account.id = Entry.accountId
+                 INNER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
+                  LEFT OUTER JOIN Vendor ON Transaxtion.vendorId = Vendor.id
+                 WHERE Account.acctType IN ('INCOME', 'EXPENSE')
                    AND (Transaxtion.date >= $1)
                    AND (Transaxtion.date <= $2)
                  ORDER BY Account.name, Transaxtion.date`,

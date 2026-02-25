@@ -6,6 +6,7 @@ import {type AcctTypeStr} from "../accounts/AcctType";
 import {z} from "zod";
 import {nameSchema} from "../core/Name";
 import {descriptionSchema} from "../core/Description";
+import {entriesWriteSchema} from "$shared/domain/transactions/Entries";
 
 /** A single line item in an account register. */
 export type RegisterLineItem = {
@@ -105,7 +106,7 @@ export const registerUpdateSchema = z.strictObject({
     code: z.string().nullish(),
     vendor: nameSchema.nullish(),
     description: descriptionSchema.nullish(),
-    entries: z.array(registerEntrySchema).min(2).optional(),
+    entries: entriesWriteSchema.optional(),
 }).readonly()
 
 export type RegisterUpdate = z.infer<typeof registerUpdateSchema>

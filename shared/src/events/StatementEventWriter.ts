@@ -35,7 +35,7 @@ export class StatementEventWriter implements IStatementSvc {
         throw Error("Not implemented")
     }
 
-    async updateStatement(statementPatch: StatementPatch): Promise<Statement | null> {
+    async patchStatement(statementPatch: StatementPatch): Promise<Statement | null> {
         await appendDirective(createStatementUpdateDirective({
             id: statementPatch.id,
             beginDate: statementPatch.beginDate,

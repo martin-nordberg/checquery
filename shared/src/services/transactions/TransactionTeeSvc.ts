@@ -34,10 +34,10 @@ export class TransactionTeeSvc implements ITransactionSvc {
     }
 
     /** Updates a transaction's attributes. */
-    async updateTransaction(transactionPatch: TransactionPatch): Promise<TransactionPatch | null> {
+    async patchTransaction(transactionPatch: TransactionPatch): Promise<TransactionPatch | null> {
         let result: TransactionPatch | null = transactionPatch
         for (const svc of this.svcs) {
-            result = result ? await svc.updateTransaction(transactionPatch) : null
+            result = result ? await svc.patchTransaction(transactionPatch) : null
         }
         return result
     }

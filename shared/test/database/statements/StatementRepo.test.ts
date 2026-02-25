@@ -46,7 +46,7 @@ describe('Statement Repo', () => {
 
         expect(stmt2).toMatchObject(stmt0)
 
-        await repo.updateStatement({
+        await repo.patchStatement({
             id,
             beginningBalance: "$12,456.78",
             endingBalance: "$12,456.79",

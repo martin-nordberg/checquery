@@ -18,6 +18,6 @@ export interface ITransactionSvc {
     findTransactionById(transactionId: TxnId): Promise<Transaction | null>
 
     /** Updates a transaction's attributes. */
-    updateTransaction(newTransaction: TransactionPatch): Promise<TransactionPatch | null>
+    patchTransaction(newTransaction: TransactionPatch): Promise<TransactionPatch | null>
 
 }
