@@ -3,10 +3,11 @@ import type {IncomeStatement, IncomeStatementDetails} from "$shared/domain/incom
 import type {IncomeStatementRoutes} from "$shared/routes/incomestatement/IncomeStatementRoutes.ts";
 import {webAppHost} from "../config.ts";
 import type {Period} from "$shared/domain/core/Period.ts";
+import type {IIncomeStatementSvc} from "$shared/services/incomestatement/IIncomeStatementSvc.ts";
 
 const client = hc<IncomeStatementRoutes>(`${webAppHost}`)
 
-export class IncomeStatementClientSvc {
+export class IncomeStatementClientSvc implements IIncomeStatementSvc {
 
     async findIncomeStatement(period: Period): Promise<IncomeStatement | null> {
         console.log("findIncomeStatement", period)

@@ -4,10 +4,11 @@ import type {Account, AccountToWrite, AccountPatch} from "$shared/domain/account
 import {HTTPException} from "hono/http-exception";
 import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
 import {webAppHost} from "../config.ts";
+import type {IAccountSvc} from "$shared/services/accounts/IAccountSvc.ts";
 
 const client = hc<AccountRoutes>(`${webAppHost}`)
 
-export class AccountClientSvc {
+export class AccountClientSvc implements IAccountSvc {
 
     async createAccount(account: AccountToWrite): Promise<void> {
         console.log("createAccount", account)
@@ -32,21 +33,20 @@ export class AccountClientSvc {
         throw new Error('Failed to create account')
     }
 
-    async deleteAccount(accountId: AcctId): Promise<{ success: boolean, error?: string }> {
+    async deleteAccount(accountId: AcctId): Promise<void> {
         console.log("deleteAccount", accountId)
         const res = await client.accounts[':accountId'].$delete({param: {accountId}})
 
         if (res.ok) {
-            return {success: true}
+            return
         }
 
         if (res.status === 409) {
             const error = await res.json() as { error: string }
-            return {success: false, error: error.error}
+            throw new Error(error.error)
         }
 
         console.log(res)
-        return {success: false, error: 'Unknown error'}
     }
 
     async findAccountById(accountId: AcctId): Promise<Account | null> {
@@ -75,12 +75,12 @@ export class AccountClientSvc {
         throw new HTTPException(res.status)
     }
 
-    async updateAccount(account: AccountPatch): Promise<void> {
+    async patchAccount(account: AccountPatch): Promise<AccountPatch|null> {
         console.log("updateAccount", account)
         const res = await client.accounts[':accountId'].$patch({param: {accountId: account.id}, json: account})
 
         if (res.ok) {
-            return
+            return account
         }
 
         console.log(res)

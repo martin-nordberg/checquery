@@ -3,10 +3,11 @@ import type {Statement, StatementToWrite, StatementPatch} from "$shared/domain/s
 import type {StatementRoutes} from "$shared/routes/statements/StatementRoutes.ts";
 import type {StmtId} from "$shared/domain/statements/StmtId.ts";
 import {webAppHost} from "../config.ts";
+import type {IStatementSvc} from "$shared/services/statements/IStatementSvc.ts";
 
 const client = hc<StatementRoutes>(`${webAppHost}`)
 
-export class StatementClientSvc {
+export class StatementClientSvc implements IStatementSvc {
 
     async createStatement(statement: StatementToWrite): Promise<void> {
         console.log("createStatement", statement)
@@ -54,7 +55,7 @@ export class StatementClientSvc {
         return null
     }
 
-    async updateStatement(update: StatementPatch): Promise<void> {
+    async patchStatement(update: StatementPatch): Promise<StatementPatch | null> {
         console.log("updateStatement", update)
         const res = await client.statements[':statementId'].$patch({
             param: {statementId: update.id},
@@ -62,7 +63,7 @@ export class StatementClientSvc {
         })
 
         if (res.ok) {
-            return
+            return update
         }
 
         console.log(res)

@@ -143,7 +143,7 @@ const ReconcilePanel = (props: ReconcilePanelProps) => {
             const stmt = existingStatement()
             const transactions = [...props.checkedTxnIds()]
             if (stmt) {
-                await statementClientSvc.updateStatement({
+                await statementClientSvc.patchStatement({
                     id: stmt.id,
                     beginDate: beginDate(),
                     endDate: endDate(),

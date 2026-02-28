@@ -151,7 +151,7 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
         setIsSaving(true)
 
         try {
-            await vendorClientSvc.updateVendor({
+            await vendorClientSvc.patchVendor({
                 id: props.vendor.id,
                 name: editName(),
                 description: editDescription() ?? undefined,
@@ -174,12 +174,8 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
         setShowDeleteConfirm(false)
         setIsSaving(true)
         try {
-            const result = await vendorClientSvc.deleteVendor(props.vendor.id)
-            if (result.success) {
-                props.onDeleted()
-            } else {
-                setError(result.error ?? 'Failed to delete')
-            }
+            await vendorClientSvc.deleteVendor(props.vendor.id)
+            props.onDeleted()
         } catch (e) {
             setError(e instanceof Error ? e.message : 'Failed to delete')
         } finally {
@@ -190,7 +186,7 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
     const handleDeactivate = async () => {
         setIsSaving(true)
         try {
-            await vendorClientSvc.updateVendor({
+            await vendorClientSvc.patchVendor({
                 id: props.vendor.id,
                 isActive: false,
             })
@@ -205,7 +201,7 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
     const handleReactivate = async () => {
         setIsSaving(true)
         try {
-            await vendorClientSvc.updateVendor({
+            await vendorClientSvc.patchVendor({
                 id: props.vendor.id,
                 isActive: true,
             })

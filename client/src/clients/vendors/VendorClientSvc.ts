@@ -3,10 +3,11 @@ import type {Vendor, VendorToWrite, VendorPatch} from "$shared/domain/vendors/Ve
 import type {VendorRoutes} from "$shared/routes/vendors/VendorRoutes.ts";
 import type {VndrId} from "$shared/domain/vendors/VndrId.ts";
 import {webAppHost} from "../config.ts";
+import type {IVendorSvc} from "$shared/services/vendors/IVendorSvc.ts";
 
 const client = hc<VendorRoutes>(`${webAppHost}`)
 
-export class VendorClientSvc {
+export class VendorClientSvc implements IVendorSvc {
 
     async findVendorsAll(): Promise<Vendor[]> {
         console.log("findVendorsAll")
@@ -68,7 +69,7 @@ export class VendorClientSvc {
         }
     }
 
-    async updateVendor(update: VendorPatch): Promise<void> {
+    async patchVendor(update: VendorPatch): Promise<VendorPatch | null> {
         console.log("updateVendor", update)
         const res = await client.vendors[':vendorId'].$patch({
             param: {vendorId: update.id},
@@ -76,7 +77,7 @@ export class VendorClientSvc {
         })
 
         if (res.ok) {
-            return
+            return update
         }
 
         console.log(res)
@@ -94,22 +95,22 @@ export class VendorClientSvc {
         throw new Error('Failed to update vendor')
     }
 
-    async deleteVendor(vendorId: VndrId): Promise<{ success: boolean, error?: string }> {
+    async deleteVendor(vendorId: VndrId): Promise<void> {
         console.log("deleteVendor", vendorId)
         const res = await client.vendors[':vendorId'].$delete({param: {vendorId}})
 
         if (res.ok) {
-            return {success: true}
+            return
         }
 
         if (res.status === 409) {
             const error = await res.json() as { error: string }
-            return {success: false, error: error.error}
+            throw new Error(error.error)
         }
 
         console.log(res)
 
-        return {success: false, error: 'Unknown error'}
+        throw new Error('Unknown error')
     }
 
 }
