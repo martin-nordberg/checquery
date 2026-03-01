@@ -108,7 +108,7 @@ describe('Transaction Repo', () => {
 
         expect(txn3).toMatchObject(txn2)
 
-        await repo.deleteTransaction(id)
+        await repo.deleteTransaction({id})
 
         const txn5 = await repo.findTransactionById(id)
 
