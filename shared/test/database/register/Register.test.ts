@@ -6,7 +6,7 @@ import {AccountRepo} from "$shared/database/accounts/AccountRepo";
 import {VendorRepo} from "$shared/database/vendors/VendorRepo";
 import {TransactionRepo} from "$shared/database/transactions/TransactionRepo";
 import {StatementRepo} from "$shared/database/statements/StatementRepo";
-import {loadChecqueryLog} from "$shared/events/ChecqueryEventLoader";
+import {loadChecqueryLog} from "../../../../server/src/events/ChecqueryEventLoader";
 import {RegisterRepo} from "$shared/database/register/RegisterRepo";
 import {acctIdSchema} from "$shared/domain/accounts/AcctId";
 

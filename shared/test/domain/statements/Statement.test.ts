@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'bun:test'
-import {statementWriteSchema, statementReadSchema, statementPatchSchema} from '$shared/domain/statements/Statement'
+import {statementCreationEventSchema, statementReadSchema, statementPatchEventSchema} from '$shared/domain/statements/Statement'
 import {genStmtId} from '$shared/domain/statements/StmtId'
 import {genTxnId} from '$shared/domain/transactions/TxnId'
 
@@ -122,7 +122,7 @@ describe('statementSchema', () => {
 describe('statementCreationSchema', () => {
     it('parses valid creation input', () => {
         const input = validInput()
-        const result = statementWriteSchema.parse(input)
+        const result = statementCreationEventSchema.parse(input)
 
         expect(result.id).toBe(input.id)
         expect(result.account).toBe(input.account)
@@ -131,39 +131,39 @@ describe('statementCreationSchema', () => {
 
     it('requires id field', () => {
         const {id: _, ...input} = validInput()
-        expect(() => statementWriteSchema.parse(input)).toThrow()
+        expect(() => statementCreationEventSchema.parse(input)).toThrow()
     })
 
     it('requires account field', () => {
         const {account: _, ...input} = validInput()
-        expect(() => statementWriteSchema.parse(input)).toThrow()
+        expect(() => statementCreationEventSchema.parse(input)).toThrow()
     })
 
     it('requires beginDate field', () => {
         const {beginDate: _, ...input} = validInput()
-        expect(() => statementWriteSchema.parse(input)).toThrow()
+        expect(() => statementCreationEventSchema.parse(input)).toThrow()
     })
 
     it('requires endDate field', () => {
         const {endDate: _, ...input} = validInput()
-        expect(() => statementWriteSchema.parse(input)).toThrow()
+        expect(() => statementCreationEventSchema.parse(input)).toThrow()
     })
 
     it('requires transactions field', () => {
         const {transactions: _, ...input} = validInput()
-        expect(() => statementWriteSchema.parse(input)).toThrow()
+        expect(() => statementCreationEventSchema.parse(input)).toThrow()
     })
 
     it('defaults beginningBalance to $0.00 when omitted', () => {
         const {beginningBalance: _, ...input} = validInput()
-        const result = statementWriteSchema.parse(input)
+        const result = statementCreationEventSchema.parse(input)
 
         expect(result.beginningBalance).toBe('$0.00')
     })
 
     it('defaults endingBalance to $0.00 when omitted', () => {
         const {endingBalance: _, ...input} = validInput()
-        const result = statementWriteSchema.parse(input)
+        const result = statementCreationEventSchema.parse(input)
 
         expect(result.endingBalance).toBe('$0.00')
     })
@@ -173,7 +173,7 @@ describe('statementCreationSchema', () => {
 describe('statementUpdateSchema', () => {
     it('parses update with all fields', () => {
         const input = validInput()
-        const result = statementPatchSchema.parse(input)
+        const result = statementPatchEventSchema.parse(input)
 
         expect(result.id).toBe(input.id)
         expect(result.beginDate).toBe(input.beginDate)
@@ -187,7 +187,7 @@ describe('statementUpdateSchema', () => {
 
     it('allows update with only id', () => {
         const input = {id: genStmtId()}
-        const result = statementPatchSchema.parse(input)
+        const result = statementPatchEventSchema.parse(input)
 
         expect(result.id).toBe(input.id)
         expect(result.beginDate).toBeUndefined()
@@ -198,12 +198,12 @@ describe('statementUpdateSchema', () => {
 
     it('requires id field', () => {
         const {id: _, ...input} = validInput()
-        expect(() => statementPatchSchema.parse(input)).toThrow()
+        expect(() => statementPatchEventSchema.parse(input)).toThrow()
     })
 
     it('allows partial update with just isReconciled', () => {
         const input = {id: genStmtId(), isReconciled: true}
-        const result = statementPatchSchema.parse(input)
+        const result = statementPatchEventSchema.parse(input)
 
         expect(result.isReconciled).toBe(true)
     })
@@ -211,23 +211,23 @@ describe('statementUpdateSchema', () => {
     it('allows partial update with just transactions', () => {
         const txns = [genTxnId()]
         const input = {id: genStmtId(), transactions: txns}
-        const result = statementPatchSchema.parse(input)
+        const result = statementPatchEventSchema.parse(input)
 
         expect(result.transactions).toEqual(txns)
     })
 
     it('validates account when provided', () => {
         const input = {id: genStmtId(), account: ''}
-        expect(() => statementPatchSchema.parse(input)).toThrow()
+        expect(() => statementPatchEventSchema.parse(input)).toThrow()
     })
 
     it('validates beginDate when provided', () => {
         const input = {id: genStmtId(), beginDate: 'not-a-date'}
-        expect(() => statementPatchSchema.parse(input)).toThrow()
+        expect(() => statementPatchEventSchema.parse(input)).toThrow()
     })
 
     it('validates endingBalance when provided', () => {
         const input = {id: genStmtId(), endingBalance: 'not-currency'}
-        expect(() => statementPatchSchema.parse(input)).toThrow()
+        expect(() => statementPatchEventSchema.parse(input)).toThrow()
     })
 })

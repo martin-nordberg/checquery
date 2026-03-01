@@ -1,4 +1,9 @@
-import {type Vendor, type VendorToWrite, vendorReadSchema, type VendorPatch,} from "$shared/domain/vendors/Vendor";
+import {
+    type Vendor,
+    type VendorCreationEvent, type VendorDeletionEvent,
+    type VendorPatchEvent,
+    vendorReadSchema,
+} from "$shared/domain/vendors/Vendor";
 import {type VndrId} from "$shared/domain/vendors/VndrId";
 import {z} from "zod";
 import type {PgLiteTxn} from "$shared/database/PgLiteTxn";
@@ -13,46 +18,49 @@ export class VendorTxnRepo implements IVendorSvc {
         this.#txn = txn
     }
 
-    async createVendor(vendor: VendorToWrite): Promise<void> {
-        if (vendor.defaultAccount) {
-            await this.#txn.exec(
+    async createVendor(vendorCreation: VendorCreationEvent): Promise<VendorCreationEvent | null> {
+        if (vendorCreation.defaultAccount) {
+            const count = await this.#txn.exec(
                 `INSERT INTO Vendor (id, name, nameHlc, description, descriptionHlc, defaultAccountId,
                                      defaultAccountIdHlc, isActive, isActiveHlc, isDeleted, isDeletedHlc)
                 SELECT $1, $2, $hlc, $3, $hlc, Account.id, $hlc, $5, $hlc, false, $hlc
                   FROM Account
                  WHERE name = $4`,
                 [
-                    vendor.id,
-                    vendor.name,
-                    vendor.description,
-                    vendor.defaultAccount,
-                    vendor.isActive,
+                    vendorCreation.id,
+                    vendorCreation.name,
+                    vendorCreation.description,
+                    vendorCreation.defaultAccount,
+                    vendorCreation.isActive,
                 ]
             )
-        } else {
-            await this.#txn.exec(
-                `INSERT INTO Vendor (id, name, nameHlc, description, descriptionHlc, defaultAccountId,
+            return count ? vendorCreation : null
+        }
+
+        const count = await this.#txn.exec(
+            `INSERT INTO Vendor (id, name, nameHlc, description, descriptionHlc, defaultAccountId,
                                      defaultAccountIdHlc, isActive, isActiveHlc, isDeleted, isDeletedHlc)
                 VALUES ($1, $2, $hlc, $3, $hlc, null, $hlc, $4, $hlc, false, $hlc)`,
-                [
-                    vendor.id,
-                    vendor.name,
-                    vendor.description,
-                    vendor.isActive,
-                ]
-            )
-        }
+            [
+                vendorCreation.id,
+                vendorCreation.name,
+                vendorCreation.description,
+                vendorCreation.isActive,
+            ]
+        )
+        return count ? vendorCreation : null
     }
 
-    async deleteVendor(vendorId: VndrId): Promise<void> {
-        await this.#txn.exec(
+    async deleteVendor(vendorDeletion: VendorDeletionEvent): Promise<VendorDeletionEvent | null> {
+        const count = await this.#txn.exec(
             `UPDATE Vendor
                SET isDeleted    = true,
                    isDeletedHlc = $hlc
              WHERE id = $1
                AND (isDeleted = false or isDeletedHlc > $hlc)`,
-            [vendorId]
+            [vendorDeletion.id],
         )
+        return count ? vendorDeletion : null
     }
 
     async findVendorById(vendorId: VndrId): Promise<Vendor | null> {
@@ -98,8 +106,8 @@ export class VendorTxnRepo implements IVendorSvc {
         return result !== null && result.count > 0
     }
 
-    async patchVendor(vendorPatch: VendorPatch): Promise<VendorPatch | null> {
-        let result: VendorPatch | null = null
+    async patchVendor(vendorPatch: VendorPatchEvent): Promise<VendorPatchEvent | null> {
+        let result: VendorPatchEvent | null = null
 
         if (vendorPatch.name !== undefined) {
             const count = await this.#txn.exec(

@@ -63,7 +63,7 @@ describe('Statement Repo', () => {
 
         expect(stmts).toContainValue(stmt3!)
 
-        await repo.deleteStatement(id)
+        await repo.deleteStatement({id})
 
         const stmt5 = await repo.findStatementById(id)
 

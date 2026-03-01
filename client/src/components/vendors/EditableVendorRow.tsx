@@ -174,7 +174,7 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
         setShowDeleteConfirm(false)
         setIsSaving(true)
         try {
-            await vendorClientSvc.deleteVendor(props.vendor.id)
+            await vendorClientSvc.deleteVendor({id:props.vendor.id})
             props.onDeleted()
         } catch (e) {
             setError(e instanceof Error ? e.message : 'Failed to delete')

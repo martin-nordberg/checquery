@@ -1,4 +1,9 @@
-import {type Vendor, type VendorToWrite, type VendorPatch,} from "$shared/domain/vendors/Vendor";
+import {
+    type Vendor,
+    type VendorCreationEvent,
+    type VendorDeletionEvent,
+    type VendorPatchEvent,
+} from "$shared/domain/vendors/Vendor";
 import {type IVendorSvc} from "$shared/services/vendors/IVendorSvc";
 import {type VndrId} from "$shared/domain/vendors/VndrId";
 import {
@@ -6,23 +11,25 @@ import {
     createVendorCreateDirective,
     createVendorDeleteDirective,
     createVendorUpdateDirective
-} from "checquery-server/src/util/ChecqueryYamlAppender";
+} from "./ChecqueryYamlAppender";
 
 
 export class VendorEventWriter implements IVendorSvc {
 
-    async createVendor(vendor: VendorToWrite): Promise<void> {
+    async createVendor(vendorCreation: VendorCreationEvent): Promise<VendorCreationEvent | null> {
         await appendDirective(createVendorCreateDirective({
-            id: vendor.id,
-            name: vendor.name,
-            description: vendor.description,
-            defaultAccount: vendor.defaultAccount,
-            isActive: vendor.isActive,
+            id: vendorCreation.id,
+            name: vendorCreation.name,
+            description: vendorCreation.description,
+            defaultAccount: vendorCreation.defaultAccount,
+            isActive: vendorCreation.isActive,
         }))
+        return vendorCreation
     }
 
-    async deleteVendor(vendorId: VndrId): Promise<void> {
-        await appendDirective(createVendorDeleteDirective(vendorId))
+    async deleteVendor(vendorDeletion: VendorDeletionEvent): Promise<VendorDeletionEvent | null> {
+        await appendDirective(createVendorDeleteDirective(vendorDeletion.id))
+        return vendorDeletion
     }
 
     async findVendorById(_vendorId: VndrId): Promise<Vendor | null> {
@@ -37,7 +44,7 @@ export class VendorEventWriter implements IVendorSvc {
         throw Error("Unimplemented")
     }
 
-    async patchVendor(vendorPatch: VendorPatch): Promise<VendorPatch | null> {
+    async patchVendor(vendorPatch: VendorPatchEvent): Promise<VendorPatchEvent | null> {
         await appendDirective(createVendorUpdateDirective({
             id: vendorPatch.id,
             name: vendorPatch.name,

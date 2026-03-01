@@ -6,7 +6,7 @@ import {AccountRepo} from "$shared/database/accounts/AccountRepo";
 import {VendorRepo} from "$shared/database/vendors/VendorRepo";
 import {TransactionRepo} from "$shared/database/transactions/TransactionRepo";
 import {StatementRepo} from "$shared/database/statements/StatementRepo";
-import {loadChecqueryLog} from "$shared/events/ChecqueryEventLoader";
+import {loadChecqueryLog} from "../../../../server/src/events/ChecqueryEventLoader";
 import {toCents} from "$shared/domain/core/CurrencyAmt";
 import {IncomeStatementRepo} from "$shared/database/incomestatement/IncomeStatementRepo";
 import type {

@@ -1,4 +1,9 @@
-import {type Account, type AccountToWrite, type AccountPatch,} from "$shared/domain/accounts/Account";
+import {
+    type Account,
+    type AccountCreationEvent,
+    type AccountDeletionEvent,
+    type AccountPatchEvent,
+} from "$shared/domain/accounts/Account";
 import {type AcctId} from "$shared/domain/accounts/AcctId";
 import type {PgLiteDb} from "$shared/database/PgLiteDb";
 import {AccountTxnRepo} from "$shared/database/accounts/AccountTxnRepo";
@@ -13,15 +18,15 @@ export class AccountRepo implements IAccountSvc {
         this.db = db
     }
 
-    async createAccount(account: AccountToWrite): Promise<void> {
+    async createAccount(accountCreation: AccountCreationEvent): Promise<AccountCreationEvent | null> {
         return this.db.transaction(async (txn) =>
-            new AccountTxnRepo(txn).createAccount(account)
+            new AccountTxnRepo(txn).createAccount(accountCreation)
         )
     }
 
-    async deleteAccount(accountId: AcctId): Promise<void> {
+    async deleteAccount(accountDeletion: AccountDeletionEvent): Promise<AccountDeletionEvent | null> {
         return this.db.transaction(async (txn) =>
-            new AccountTxnRepo(txn).deleteAccount(accountId)
+            new AccountTxnRepo(txn).deleteAccount(accountDeletion)
         )
     }
 
@@ -44,7 +49,7 @@ export class AccountRepo implements IAccountSvc {
         )
     }
 
-    async patchAccount(accountPatch: AccountPatch): Promise<AccountPatch | null> {
+    async patchAccount(accountPatch: AccountPatchEvent): Promise<AccountPatchEvent | null> {
         return this.db.transaction(async (txn) =>
             new AccountTxnRepo(txn).patchAccount(accountPatch)
         )

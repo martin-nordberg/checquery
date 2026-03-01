@@ -1,5 +1,10 @@
 import {hc} from 'hono/client'
-import type {Statement, StatementToWrite, StatementPatch} from "$shared/domain/statements/Statement.ts";
+import type {
+    Statement,
+    StatementCreationEvent,
+    StatementDeletionEvent,
+    StatementPatchEvent
+} from "$shared/domain/statements/Statement.ts";
 import type {StatementRoutes} from "$shared/routes/statements/StatementRoutes.ts";
 import type {StmtId} from "$shared/domain/statements/StmtId.ts";
 import {webAppHost} from "../config.ts";
@@ -9,24 +14,36 @@ const client = hc<StatementRoutes>(`${webAppHost}`)
 
 export class StatementClientSvc implements IStatementSvc {
 
-    async createStatement(statement: StatementToWrite): Promise<void> {
-        console.log("createStatement", statement)
-        const res = await client.statements.$post({json: statement})
+    async createStatement(statementCreation: StatementCreationEvent): Promise<StatementCreationEvent | null> {
+        console.log("createStatement", statementCreation)
+        const res = await client.statements.$post({json: statementCreation})
 
-        if (!res.ok) {
-            console.log(res)
-            throw new Error('Failed to create statement')
+        if (res.ok) {
+            return statementCreation
         }
+
+        console.log(res)
+        const error = await res.json() as { error?: string }
+        if (error.error) {
+            throw new Error(error.error)
+        }
+        throw new Error('Failed to create statement')
     }
 
-    async deleteStatement(statementId: StmtId): Promise<void> {
-        console.log("deleteStatement", statementId)
-        const res = await client.statements[':statementId'].$delete({param: {statementId}})
+    async deleteStatement(statementDeletion: StatementDeletionEvent): Promise<StatementDeletionEvent | null> {
+        console.log("deleteStatement", statementDeletion)
+        const res = await client.statements[':statementId'].$delete({param: {statementId: statementDeletion.id}})
 
-        if (!res.ok) {
-            console.log(res)
-            throw new Error('Failed to delete statement')
+        if (res.ok) {
+            return statementDeletion
         }
+
+        console.log(res)
+        const error = await res.json() as { error?: string }
+        if (error.error) {
+            throw new Error(error.error)
+        }
+        throw new Error('Failed to delete statement')
     }
 
     async findStatementsAll(): Promise<Statement[]> {
@@ -55,7 +72,7 @@ export class StatementClientSvc implements IStatementSvc {
         return null
     }
 
-    async patchStatement(update: StatementPatch): Promise<StatementPatch | null> {
+    async patchStatement(update: StatementPatchEvent): Promise<StatementPatchEvent | null> {
         console.log("updateStatement", update)
         const res = await client.statements[':statementId'].$patch({
             param: {statementId: update.id},
@@ -67,6 +84,10 @@ export class StatementClientSvc implements IStatementSvc {
         }
 
         console.log(res)
+        const error = await res.json() as { error?: string }
+        if (error.error) {
+            throw new Error(error.error)
+        }
         throw new Error('Failed to update statement')
     }
 

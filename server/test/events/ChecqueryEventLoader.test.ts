@@ -6,7 +6,7 @@ import {AccountRepo} from "$shared/database/accounts/AccountRepo";
 import {VendorRepo} from "$shared/database/vendors/VendorRepo";
 import {TransactionRepo} from "$shared/database/transactions/TransactionRepo";
 import {StatementRepo} from "$shared/database/statements/StatementRepo";
-import {loadChecqueryLog} from "$shared/events/ChecqueryEventLoader";
+import {loadChecqueryLog} from "../../src/events/ChecqueryEventLoader";
 import {z} from "zod";
 
 describe('Load test data', () => {

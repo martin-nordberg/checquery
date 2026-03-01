@@ -57,6 +57,19 @@ describe('Account Repo', () => {
             acctType: "ASSET",
         })
 
+        const event5 = await repo.patchAccount({
+            id,
+            acctType: "LIABILITY"
+        })
+        const acct5 = await repo.findAccountById(id)
+
+        expect(event5?.acctType).toEqual("LIABILITY")
+        expect(acct5).toMatchObject({
+            id: id,
+            name: "Zample",
+            acctType: "LIABILITY",
+        })
+
         const vrepo = new VendorRepo(db)
 
         const vid = genVndrId()
@@ -77,11 +90,11 @@ describe('Account Repo', () => {
         await vrepo.patchVendor({id: vid, description: "Changed the description"})
         await vrepo.patchVendor({id: vid, defaultAccount: ""})
 
-        await repo.deleteAccount(id)
+        await repo.deleteAccount({id})
 
-        const acct5 = await repo.findAccountById(id)
+        const acct6 = await repo.findAccountById(id)
 
-        expect(acct5).toBeNull()
+        expect(acct6).toBeNull()
 
         await db.close()
 

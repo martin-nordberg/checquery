@@ -1,14 +1,19 @@
-import {type Statement, type StatementToWrite, type StatementPatch} from "../../domain/statements/Statement";
+import {
+    type Statement,
+    type StatementCreationEvent,
+    type StatementDeletionEvent,
+    type StatementPatchEvent
+} from "../../domain/statements/Statement";
 import {type StmtId} from "../../domain/statements/StmtId";
 
 
 export interface IStatementSvc {
 
     /** Creates a new statement with given attributes. */
-    createStatement(statement: StatementToWrite): Promise<void>
+    createStatement(statement: StatementCreationEvent): Promise<StatementCreationEvent | null>
 
     /** Deletes a given statement. */
-    deleteStatement(statementId: StmtId): Promise<void>
+    deleteStatement(statementId: StatementDeletionEvent): Promise<StatementDeletionEvent | null>
 
     /** Finds the statement with given unique ID. */
     findStatementById(statementId: StmtId): Promise<Statement | null>
@@ -17,6 +22,6 @@ export interface IStatementSvc {
     findStatementsAll(): Promise<Statement[]>
 
     /** Updates a statement's attributes. */
-    patchStatement(statementPatch: StatementPatch): Promise<StatementPatch | null>
+    patchStatement(statementPatch: StatementPatchEvent): Promise<StatementPatchEvent | null>
 
 }

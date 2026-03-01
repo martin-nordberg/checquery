@@ -180,7 +180,7 @@ const ReconcilePanel = (props: ReconcilePanelProps) => {
         }
         setIsSaving(true)
         try {
-            await statementClientSvc.deleteStatement(stmt.id)
+            await statementClientSvc.deleteStatement({id:stmt.id})
             props.onDeleted()
         } finally {
             setIsSaving(false)

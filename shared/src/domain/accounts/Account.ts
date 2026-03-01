@@ -32,17 +32,26 @@ export type Account = z.infer<typeof accountReadSchema>
 
 
 /** Sub-schema for account creation. */
-export const accountWriteSchema =
+export const accountCreationEventSchema =
     accountAttributesSchema.extend({
         acctNumber: accountAttributesSchema.shape.acctNumber.default(""),
         description: accountAttributesSchema.shape.description.default(""),
     }).readonly()
 
-export type AccountToWrite = z.infer<typeof accountWriteSchema>
+export type AccountCreationEvent = z.infer<typeof accountCreationEventSchema>
+
+
+/** Schema for account deletion. */
+export const accountDeletionEventSchema = z.object({
+        /** The unique ID of the account. */
+        id: acctIdSchema,
+})
+
+export type AccountDeletionEvent = z.infer<typeof accountDeletionEventSchema>
 
 
 /** Sub-schema for account patches. */
-export const accountPatchSchema =
+export const accountPatchEventSchema =
     accountAttributesSchema.partial({
         acctNumber: true,
         acctType: true,
@@ -50,6 +59,6 @@ export const accountPatchSchema =
         description: true,
     }).readonly()
 
-export type AccountPatch = z.infer<typeof accountPatchSchema>
+export type AccountPatchEvent = z.infer<typeof accountPatchEventSchema>
 
 

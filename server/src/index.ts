@@ -12,10 +12,10 @@ import {VendorRepo} from "$shared/database/vendors/VendorRepo";
 import {AccountRepo} from "$shared/database/accounts/AccountRepo";
 import {TransactionRepo} from "$shared/database/transactions/TransactionRepo";
 import {StatementRepo} from "$shared/database/statements/StatementRepo";
-import {VendorEventWriter} from "$shared/events/VendorEventWriter";
-import {StatementEventWriter} from "$shared/events/StatementEventWriter";
-import {AccountEventWriter} from "$shared/events/AccountEventWriter";
-import {TransactionEventWriter} from "$shared/events/TransactionEventWriter";
+import {VendorEventWriter} from "./events/VendorEventWriter";
+import {StatementEventWriter} from "./events/StatementEventWriter";
+import {AccountEventWriter} from "./events/AccountEventWriter";
+import {TransactionEventWriter} from "./events/TransactionEventWriter";
 import {AccountTeeSvc} from "$shared/services/accounts/AccountTeeSvc";
 import {VendorTeeSvc} from "$shared/services/vendors/VendorTeeSvc";
 import {TransactionTeeSvc} from "$shared/services/transactions/TransactionTeeSvc";
@@ -23,7 +23,7 @@ import {BalanceSheetRepo} from "$shared/database/balancesheet/BalanceSheetRepo";
 import {StatementTeeSvc} from "$shared/services/statements/StatementTeeSvc";
 import {IncomeStatementRepo} from "$shared/database/incomestatement/IncomeStatementRepo";
 import {RegisterRepo} from "$shared/database/register/RegisterRepo";
-import {loadChecqueryLog} from "$shared/events/ChecqueryEventLoader";
+import {loadChecqueryLog} from "./events/ChecqueryEventLoader";
 
 const app = new Hono()
 

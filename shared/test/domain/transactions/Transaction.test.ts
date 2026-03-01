@@ -1,8 +1,8 @@
 import {describe, expect, it} from 'bun:test'
 import {
-    transactionWriteSchema,
+    transactionCreationEventSchema,
     transactionReadSchema,
-    transactionPatchSchema
+    transactionPatchEventSchema
 } from '$shared/domain/transactions/Transaction'
 import {genTxnId} from '$shared/domain/transactions/TxnId'
 
@@ -14,7 +14,7 @@ const validEntries = [
 describe('transactionSchema', () => {
     describe('valid transactions', () => {
         it('parses transaction with required fields', () => {
-            const txn = transactionWriteSchema.parse({
+            const txn = transactionCreationEventSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
                 vendor: 'Test Vendor',
@@ -27,7 +27,7 @@ describe('transactionSchema', () => {
 
         it('parses transaction with all optional fields', () => {
             const id = genTxnId()
-            const txn = transactionWriteSchema.parse({
+            const txn = transactionCreationEventSchema.parse({
                 id,
                 date: '2026-01-15',
                 code: '1234',
@@ -43,7 +43,7 @@ describe('transactionSchema', () => {
         })
 
         it('parses transaction with multiple entries', () => {
-            const txn = transactionWriteSchema.parse({
+            const txn = transactionCreationEventSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
                 vendor: 'Test Vendor',
@@ -232,7 +232,7 @@ describe('transactionSchema', () => {
 
     describe('vendor or description required', () => {
         it('accepts transaction with vendor only', () => {
-            const txn = transactionWriteSchema.parse({
+            const txn = transactionCreationEventSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
                 vendor: 'Acme Corp',
@@ -242,7 +242,7 @@ describe('transactionSchema', () => {
         })
 
         it('accepts transaction with description only', () => {
-            const txn = transactionWriteSchema.parse({
+            const txn = transactionCreationEventSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
                 description: 'Monthly payment',
@@ -252,7 +252,7 @@ describe('transactionSchema', () => {
         })
 
         it('accepts transaction with both vendor and description', () => {
-            const txn = transactionWriteSchema.parse({
+            const txn = transactionCreationEventSchema.parse({
                 id: genTxnId(),
                 date: '2026-01-15',
                 vendor: 'Acme Corp',
@@ -293,7 +293,7 @@ describe('transactionSchema', () => {
 
 describe('transactionCreationSchema', () => {
     it('parses valid creation input', () => {
-        const txn = transactionWriteSchema.parse({
+        const txn = transactionCreationEventSchema.parse({
             id: genTxnId(),
             date: '2026-01-15',
             vendor: 'Test Vendor',
@@ -304,14 +304,14 @@ describe('transactionCreationSchema', () => {
     })
 
     it('requires all mandatory fields', () => {
-        expect(() => transactionWriteSchema.parse({
+        expect(() => transactionCreationEventSchema.parse({
             id: genTxnId(),
             vendor: 'Test Vendor'
         })).toThrow()
     })
 
     it('requires vendor or description', () => {
-        expect(() => transactionWriteSchema.parse({
+        expect(() => transactionCreationEventSchema.parse({
             id: genTxnId(),
             date: '2026-01-15',
             entries: validEntries
@@ -321,7 +321,7 @@ describe('transactionCreationSchema', () => {
 
 describe('transactionUpdateSchema', () => {
     it('parses update with all fields', () => {
-        const txn = transactionPatchSchema.parse({
+        const txn = transactionPatchEventSchema.parse({
             id: genTxnId(),
             date: '2026-02-15',
             entries: validEntries
@@ -331,7 +331,7 @@ describe('transactionUpdateSchema', () => {
     })
 
     it('allows update without date (date is optional in updates)', () => {
-        const txn = transactionPatchSchema.parse({
+        const txn = transactionPatchEventSchema.parse({
             id: genTxnId(),
             entries: validEntries
         })
@@ -340,14 +340,14 @@ describe('transactionUpdateSchema', () => {
     })
 
     it('requires id field', () => {
-        expect(() => transactionPatchSchema.parse({
+        expect(() => transactionPatchEventSchema.parse({
             date: '2026-01-15',
             entries: validEntries
         })).toThrow()
     })
 
     it('allows update without entries', () => {
-        const txn = transactionPatchSchema.parse({
+        const txn = transactionPatchEventSchema.parse({
             id: genTxnId()
         })
         expect(txn.entries).toBeUndefined()

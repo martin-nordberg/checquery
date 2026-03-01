@@ -1,6 +1,11 @@
 import {hc} from 'hono/client'
 import {type AccountRoutes} from "$shared/routes/accounts/AccountRoutes.ts";
-import type {Account, AccountToWrite, AccountPatch} from "$shared/domain/accounts/Account";
+import type {
+    Account,
+    AccountCreationEvent,
+    AccountDeletionEvent,
+    AccountPatchEvent
+} from "$shared/domain/accounts/Account";
 import {HTTPException} from "hono/http-exception";
 import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
 import {webAppHost} from "../config.ts";
@@ -10,43 +15,39 @@ const client = hc<AccountRoutes>(`${webAppHost}`)
 
 export class AccountClientSvc implements IAccountSvc {
 
-    async createAccount(account: AccountToWrite): Promise<void> {
-        console.log("createAccount", account)
-        const res = await client.accounts.$post({json: account})
+    async createAccount(accountCreation: AccountCreationEvent): Promise<AccountCreationEvent|null> {
+        console.log("createAccount", accountCreation)
+        const res = await client.accounts.$post({json: accountCreation})
 
         if (res.ok) {
-            return
+            return accountCreation
         }
 
         console.log(res)
 
-        try {
-            const error = await res.json() as { error?: string }
-            if (error.error) {
-                throw new Error(error.error)
-            }
-        } catch (e) {
-            if (e instanceof Error && e.message !== 'Failed to create account') {
-                throw e
-            }
+        const error = await res.json() as { error?: string }
+        if (error.error) {
+            throw new Error(error.error)
         }
         throw new Error('Failed to create account')
     }
 
-    async deleteAccount(accountId: AcctId): Promise<void> {
-        console.log("deleteAccount", accountId)
-        const res = await client.accounts[':accountId'].$delete({param: {accountId}})
+    async deleteAccount(accountDeletion: AccountDeletionEvent): Promise<AccountDeletionEvent | null> {
+        console.log("deleteAccount", accountDeletion)
+        const res = await client.accounts[':accountId'].$delete({param: {accountId: accountDeletion.id}})
 
         if (res.ok) {
-            return
+            return accountDeletion
         }
+
+        console.log(res)
 
         if (res.status === 409) {
             const error = await res.json() as { error: string }
             throw new Error(error.error)
         }
 
-        console.log(res)
+        return null
     }
 
     async findAccountById(accountId: AcctId): Promise<Account | null> {
@@ -75,29 +76,6 @@ export class AccountClientSvc implements IAccountSvc {
         throw new HTTPException(res.status)
     }
 
-    async patchAccount(account: AccountPatch): Promise<AccountPatch|null> {
-        console.log("updateAccount", account)
-        const res = await client.accounts[':accountId'].$patch({param: {accountId: account.id}, json: account})
-
-        if (res.ok) {
-            return account
-        }
-
-        console.log(res)
-
-        try {
-            const error = await res.json() as { error?: string }
-            if (error.error) {
-                throw new Error(error.error)
-            }
-        } catch (e) {
-            if (e instanceof Error && e.message !== 'Failed to update account') {
-                throw e
-            }
-        }
-        throw new Error('Failed to update account')
-    }
-
     async isAccountInUse(accountId: AcctId): Promise<boolean> {
         console.log("isAccountInUse", accountId)
         try {
@@ -114,6 +92,23 @@ export class AccountClientSvc implements IAccountSvc {
         }
         // Default to true (in use) on error to prevent accidental deletion
         return true
+    }
+
+    async patchAccount(account: AccountPatchEvent): Promise<AccountPatchEvent|null> {
+        console.log("updateAccount", account)
+        const res = await client.accounts[':accountId'].$patch({param: {accountId: account.id}, json: account})
+
+        if (res.ok) {
+            return account
+        }
+
+        console.log(res)
+
+        const error = await res.json() as { error?: string }
+        if (error.error) {
+            throw new Error(error.error)
+        }
+        throw new Error('Failed to update account')
     }
 
 }

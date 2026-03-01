@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'bun:test'
-import {vendorWriteSchema, vendorReadSchema, vendorPatchSchema} from '$shared/domain/vendors/Vendor'
+import {vendorCreationEventSchema, vendorReadSchema, vendorPatchEventSchema} from '$shared/domain/vendors/Vendor'
 import {genVndrId} from '$shared/domain/vendors/VndrId'
 
 describe('vendorSchema', () => {
@@ -125,7 +125,7 @@ describe('vendorCreationSchema', () => {
             description: 'Created for testing'
         }
 
-        const result = vendorWriteSchema.parse(input)
+        const result = vendorCreationEventSchema.parse(input)
 
         expect(result.id).toBe(input.id)
         expect(result.name).toBe(input.name)
@@ -137,7 +137,7 @@ describe('vendorCreationSchema', () => {
             name: 'New Vendor'
         }
 
-        expect(() => vendorWriteSchema.parse(input)).toThrow()
+        expect(() => vendorCreationEventSchema.parse(input)).toThrow()
     })
 
     it('requires name field', () => {
@@ -145,7 +145,7 @@ describe('vendorCreationSchema', () => {
             id: genVndrId()
         }
 
-        expect(() => vendorWriteSchema.parse(input)).toThrow()
+        expect(() => vendorCreationEventSchema.parse(input)).toThrow()
     })
 })
 
@@ -157,7 +157,7 @@ describe('vendorUpdateSchema', () => {
             description: 'Updated description'
         }
 
-        const result = vendorPatchSchema.parse(input)
+        const result = vendorPatchEventSchema.parse(input)
 
         expect(result.id).toBe(input.id)
         expect(result.name).toBe(input.name)
@@ -170,7 +170,7 @@ describe('vendorUpdateSchema', () => {
             description: 'Updated description only'
         }
 
-        const result = vendorPatchSchema.parse(input)
+        const result = vendorPatchEventSchema.parse(input)
 
         expect(result.id).toBe(input.id)
         expect(result.name).toBeUndefined()
@@ -182,7 +182,7 @@ describe('vendorUpdateSchema', () => {
             name: 'Updated Name'
         }
 
-        expect(() => vendorPatchSchema.parse(input)).toThrow()
+        expect(() => vendorPatchEventSchema.parse(input)).toThrow()
     })
 
     it('validates name when provided', () => {
@@ -191,6 +191,6 @@ describe('vendorUpdateSchema', () => {
             name: ''
         }
 
-        expect(() => vendorPatchSchema.parse(input)).toThrow()
+        expect(() => vendorPatchEventSchema.parse(input)).toThrow()
     })
 })

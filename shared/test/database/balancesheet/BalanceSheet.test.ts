@@ -6,7 +6,7 @@ import {AccountRepo} from "$shared/database/accounts/AccountRepo";
 import {VendorRepo} from "$shared/database/vendors/VendorRepo";
 import {TransactionRepo} from "$shared/database/transactions/TransactionRepo";
 import {StatementRepo} from "$shared/database/statements/StatementRepo";
-import {loadChecqueryLog} from "$shared/events/ChecqueryEventLoader";
+import {loadChecqueryLog} from "../../../../server/src/events/ChecqueryEventLoader";
 import {BalanceSheetRepo} from "$shared/database/balancesheet/BalanceSheetRepo";
 import {toCents} from "$shared/domain/core/CurrencyAmt";
 import type {BalanceSheet, BalSheetLineItem} from "$shared/domain/balancesheet/BalanceSheet";

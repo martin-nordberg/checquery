@@ -163,7 +163,7 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
         setShowDeleteConfirm(false)
         setIsSaving(true)
         try {
-            await accountClientSvc.deleteAccount(props.account.id)
+            await accountClientSvc.deleteAccount({id:props.account.id})
             props.onDeleted()
         } catch (e) {
             setError(e instanceof Error ? e.message : 'Failed to delete')

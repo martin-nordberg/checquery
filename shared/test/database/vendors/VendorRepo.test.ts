@@ -53,7 +53,7 @@ describe('Vendor Repo', () => {
             isActive: false
         })
 
-        await repo.deleteVendor(id)
+        await repo.deleteVendor({id})
 
         const vndr5 = await repo.findVendorById(id)
 

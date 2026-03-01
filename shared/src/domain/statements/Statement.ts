@@ -41,18 +41,27 @@ export type Statement = z.infer<typeof statementReadSchema>
 
 
 /** Sub-schema for statement creation. */
-export const statementWriteSchema =
+export const statementCreationEventSchema =
     statementAttributesSchema.extend({
         beginningBalance: statementAttributesSchema.shape.beginningBalance.default("$0.00"),
         endingBalance: statementAttributesSchema.shape.endingBalance.default("$0.00"),
         isReconciled: statementAttributesSchema.shape.isReconciled.default(false),
     }).readonly()
 
-export type StatementToWrite = z.infer<typeof statementWriteSchema>
+export type StatementCreationEvent = z.infer<typeof statementCreationEventSchema>
+
+
+/** Schema for statement deletion. */
+export const statementDeletionEventSchema = z.object({
+        /** The unique ID of the statement. */
+        id: stmtIdSchema,
+})
+
+export type StatementDeletionEvent = z.infer<typeof statementDeletionEventSchema>
 
 
 /** Sub-schema for statement updates. */
-export const statementPatchSchema =
+export const statementPatchEventSchema =
     statementAttributesSchema.partial({
         beginDate: true,
         endDate: true,
@@ -63,4 +72,4 @@ export const statementPatchSchema =
         transactions: true,
     }).readonly()
 
-export type StatementPatch = z.infer<typeof statementPatchSchema>
+export type StatementPatchEvent = z.infer<typeof statementPatchEventSchema>

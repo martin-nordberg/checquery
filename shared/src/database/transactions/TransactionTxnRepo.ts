@@ -1,9 +1,9 @@
 import type {TxnId} from "$shared/domain/transactions/TxnId";
 import {
     type Transaction,
-    type TransactionToWrite,
+    type TransactionCreationEvent,
     transactionBeforeEntriesSchema,
-    type TransactionPatch
+    type TransactionPatchEvent, type TransactionDeletionEvent
 } from "$shared/domain/transactions/Transaction";
 import {fromCents, toCents} from "$shared/domain/core/CurrencyAmt";
 import z from "zod";
@@ -21,45 +21,50 @@ export class TransactionTxnRepo implements ITransactionSvc {
         this.#txn = txn
     }
 
-    async createTransaction(transaction: TransactionToWrite): Promise<void> {
-        if (transaction.vendor) {
-            await this.#txn.exec(
+    async createTransaction(transactionCreation: TransactionCreationEvent): Promise<TransactionCreationEvent | null> {
+        let count: number | undefined
+        if (transactionCreation.vendor) {
+            count = await this.#txn.exec(
                 `INSERT INTO Transaxtion (id, date, dateHlc, code, codeHlc, vendorId, vendorIdHlc, description,
                                           descriptionHlc, isDeleted, isDeletedHlc)
                  SELECT $1, $2, $hlc, $3, $hlc, Vendor.id, $hlc, $5, $hlc, false, $hlc
                    FROM Vendor
                   WHERE name = $4;`,
                 [
-                    transaction.id,
-                    transaction.date,
-                    transaction.code,
-                    transaction.vendor,
-                    transaction.description,
+                    transactionCreation.id,
+                    transactionCreation.date,
+                    transactionCreation.code,
+                    transactionCreation.vendor,
+                    transactionCreation.description,
                 ]
             )
         } else {
-            await this.#txn.exec(
+            count = await this.#txn.exec(
                 `INSERT INTO Transaxtion (id, date, dateHlc, code, codeHlc, vendorId, vendorIdHlc, description,
                                           descriptionHlc, isDeleted, isDeletedHlc)
                  VALUES ($1, $2, $hlc, $3, $hlc, null, $hlc, $4, $hlc, false, $hlc)`,
                 [
-                    transaction.id,
-                    transaction.date,
-                    transaction.code,
-                    transaction.description,
+                    transactionCreation.id,
+                    transactionCreation.date,
+                    transactionCreation.code,
+                    transactionCreation.description,
                 ]
             )
         }
 
+        if (!count) {
+            return null
+        }
+
         let entrySeq = 1
-        for (let entry of transaction.entries) {
+        for (let entry of transactionCreation.entries) {
             await this.#txn.exec(
                 `INSERT INTO Entry (txnId, entrySeq, accountId, debitCents, creditCents, comment)
                  SELECT $1, $2, Account.id, $4, $5, $6
                    FROM Account
                   WHERE name = $3;`,
                 [
-                    transaction.id,
+                    transactionCreation.id,
                     entrySeq,
                     entry.account,
                     toCents(entry.debit),
@@ -70,17 +75,20 @@ export class TransactionTxnRepo implements ITransactionSvc {
 
             entrySeq += 1
         }
+
+        return transactionCreation
     }
 
-    async deleteTransaction(transactionId: TxnId): Promise<void> {
-        this.#txn.exec(
+    async deleteTransaction(transactionDeletion: TransactionDeletionEvent): Promise<TransactionDeletionEvent | null> {
+        const count = await this.#txn.exec(
             `UPDATE Transaxtion
                SET isDeleted    = true,
                    isDeletedHlc = $hlc
              WHERE id = $1
                AND (isDeleted = false or isDeletedHlc > $hlc)`,
-            [transactionId]
+            [transactionDeletion]
         )
+        return count ? transactionDeletion : null
     }
 
     async findTransactionById(transactionId: TxnId): Promise<Transaction | null> {
@@ -141,8 +149,8 @@ export class TransactionTxnRepo implements ITransactionSvc {
         }
     }
 
-    async patchTransaction(transactionPatch: TransactionPatch): Promise<TransactionPatch | null> {
-        let result: TransactionPatch | null = null
+    async patchTransaction(transactionPatch: TransactionPatchEvent): Promise<TransactionPatchEvent | null> {
+        let result: TransactionPatchEvent | null = null
 
         if (transactionPatch.date !== undefined) {
             const count = await this.#txn.exec(

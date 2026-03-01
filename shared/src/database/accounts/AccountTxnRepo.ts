@@ -1,4 +1,10 @@
-import {type Account, type AccountToWrite, accountReadSchema, type AccountPatch,} from "$shared/domain/accounts/Account";
+import {
+    type Account,
+    type AccountCreationEvent,
+    accountReadSchema,
+    type AccountPatchEvent,
+    type AccountDeletionEvent,
+} from "$shared/domain/accounts/Account";
 import {type AcctId} from "$shared/domain/accounts/AcctId";
 import {z} from "zod";
 import type {PgLiteTxn} from "$shared/database/PgLiteTxn";
@@ -13,30 +19,33 @@ export class AccountTxnRepo implements IAccountSvc {
         this.#txn = txn
     }
 
-    async createAccount(account: AccountToWrite): Promise<void> {
-        await this.#txn.exec(
+    async createAccount(accountCreation: AccountCreationEvent): Promise<AccountCreationEvent | null> {
+        const count = await this.#txn.exec(
             `INSERT INTO Account (id, name, nameHlc, acctNumber, acctNumberHlc, acctType, acctTypeHlc, description,
                                   descriptionHlc, isDeleted, isDeletedHlc)
              VALUES ($1, $2, $hlc, $3, $hlc, $4, $hlc, $5, $hlc, false, $hlc);`,
             [
-                account.id,
-                account.name,
-                account.acctNumber,
-                account.acctType,
-                account.description,
+                accountCreation.id,
+                accountCreation.name,
+                accountCreation.acctNumber,
+                accountCreation.acctType,
+                accountCreation.description,
             ]
         )
+        return count ? accountCreation : null
     }
 
-    async deleteAccount(accountId: AcctId): Promise<void> {
-        await this.#txn.exec(
+    async deleteAccount(accountDeletion: AccountDeletionEvent): Promise<AccountDeletionEvent|null> {
+        const count = await this.#txn.exec(
             `UPDATE Account
                SET isDeleted    = true,
                    isDeletedHlc = $hlc
              WHERE id = $1
-               AND (isDeleted = false or isDeletedHlc > $hlc)`,
-            [accountId]
+               AND (isDeleted = false OR isDeletedHlc > $hlc)`,
+            [accountDeletion.id]
         )
+
+        return count ? accountDeletion : null
     }
 
     async findAccountById(accountId: AcctId): Promise<Account | null> {
@@ -89,8 +98,8 @@ export class AccountTxnRepo implements IAccountSvc {
         return true
     }
 
-    async patchAccount(accountPatch: AccountPatch): Promise<AccountPatch | null> {
-        let result: AccountPatch | null = null
+    async patchAccount(accountPatch: AccountPatchEvent): Promise<AccountPatchEvent | null> {
+        let result: AccountPatchEvent | null = null
 
         if (accountPatch.name !== undefined) {
             const count = await this.#txn.exec(

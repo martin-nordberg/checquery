@@ -1,0 +1,84 @@
+import type {IAccountSvc} from "$shared/services/accounts/IAccountSvc";
+import type {ITransactionSvc} from "$shared/services/transactions/ITransactionSvc";
+import type {IVendorSvc} from "$shared/services/vendors/IVendorSvc";
+import type {IStatementSvc} from "$shared/services/statements/IStatementSvc";
+import {accountCreationEventSchema, accountPatchEventSchema} from "$shared/domain/accounts/Account";
+import {acctIdSchema} from "$shared/domain/accounts/AcctId";
+import {transactionCreationEventSchema, transactionPatchEventSchema} from "$shared/domain/transactions/Transaction";
+import {txnIdSchema} from "$shared/domain/transactions/TxnId";
+import {vendorCreationEventSchema, vendorPatchEventSchema} from "$shared/domain/vendors/Vendor";
+import {vndrIdSchema} from "$shared/domain/vendors/VndrId";
+import {statementCreationEventSchema, statementPatchEventSchema} from "$shared/domain/statements/Statement";
+import {stmtIdSchema} from "$shared/domain/statements/StmtId";
+
+/**
+ * Loads all entities from a YAML log file.
+ */
+export const loadChecqueryLog = async (
+    yamlFileName: string,
+    acctSvc: IAccountSvc,
+    txnSvc: ITransactionSvc,
+    vendorSvc: IVendorSvc,
+    stmtSvc: IStatementSvc
+) => {
+    // Read the file content as a string.
+    const yaml = await Bun.file(yamlFileName).text()
+
+    // Parse the YAML string into a JavaScript object.
+    const directives = Bun.YAML.parse(yaml) as any[]
+
+    // Handle each directive in order.
+    for (const directive of directives) {
+        try {
+            switch (directive.action) {
+                // Account actions
+                case 'create-account':
+                    await acctSvc.createAccount(accountCreationEventSchema.parse(directive.payload))
+                    break
+                case 'update-account':
+                    await acctSvc.patchAccount(accountPatchEventSchema.parse(directive.payload))
+                    break
+                case 'delete-account':
+                    await acctSvc.deleteAccount({id: acctIdSchema.parse(directive.payload.id)})
+                    break
+
+                // Vendor actions
+                case 'create-vendor':
+                    await vendorSvc.createVendor(vendorCreationEventSchema.parse(directive.payload))
+                    break
+                case 'update-vendor':
+                    await vendorSvc.patchVendor(vendorPatchEventSchema.parse(directive.payload))
+                    break
+                case 'delete-vendor':
+                    await vendorSvc.deleteVendor({id: vndrIdSchema.parse(directive.payload.id)})
+                    break
+
+                // Transaction actions
+                case 'create-transaction':
+                    await txnSvc.createTransaction(transactionCreationEventSchema.parse(directive.payload, {reportInput: true}))
+                    break
+                case 'update-transaction':
+                    await txnSvc.patchTransaction(transactionPatchEventSchema.parse(directive.payload, {reportInput: true}))
+                    break
+                case 'delete-transaction':
+                    await txnSvc.deleteTransaction(txnIdSchema.parse(directive.payload.id, {reportInput: true}))
+                    break
+
+                // Statement actions
+                case 'create-statement':
+                    await stmtSvc.createStatement(statementCreationEventSchema.parse(directive.payload))
+                    break
+                case 'update-statement':
+                    await stmtSvc.patchStatement(statementPatchEventSchema.parse(directive.payload))
+                    break
+                case 'delete-statement':
+                    await stmtSvc.deleteStatement({id: stmtIdSchema.parse(directive.payload.id)})
+                    break
+            }
+        } catch (error) {
+            console.error({error})
+            console.error({directive})
+            throw error
+        }
+    }
+}
