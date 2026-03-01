@@ -1,5 +1,10 @@
 import type {StmtId} from "$shared/domain/statements/StmtId";
-import {type Statement, type StatementToWrite, type StatementPatch} from "$shared/domain/statements/Statement";
+import {
+    type Statement,
+    type StatementCreationEvent,
+    type StatementDeletionEvent,
+    type StatementPatchEvent
+} from "$shared/domain/statements/Statement";
 import type {PgLiteDb} from "$shared/database/PgLiteDb";
 import {StatementTxnRepo} from "$shared/database/statements/StatementTxnRepo";
 import type {IStatementSvc} from "$shared/services/statements/IStatementSvc";
@@ -13,15 +18,15 @@ export class StatementRepo implements IStatementSvc {
         this.db = db
     }
 
-    async createStatement(statement: StatementToWrite): Promise<void> {
+    async createStatement(statement: StatementCreationEvent): Promise<StatementCreationEvent | null> {
         return this.db.transaction(async (txn) =>
             new StatementTxnRepo(txn).createStatement(statement)
         )
     }
 
-    async deleteStatement(statementId: StmtId): Promise<void> {
+    async deleteStatement(statementDeletion: StatementDeletionEvent): Promise<StatementDeletionEvent | null> {
         return this.db.transaction(async (txn) =>
-            new StatementTxnRepo(txn).deleteStatement(statementId)
+            new StatementTxnRepo(txn).deleteStatement(statementDeletion)
         )
     }
 
@@ -37,9 +42,9 @@ export class StatementRepo implements IStatementSvc {
         )
     }
 
-    async updateStatement(statementPatch: StatementPatch): Promise<StatementPatch | null> {
+    async patchStatement(statementPatch: StatementPatchEvent): Promise<StatementPatchEvent | null> {
         return this.db.transaction(async (txn) =>
-            new StatementTxnRepo(txn).updateStatement(statementPatch)
+            new StatementTxnRepo(txn).patchStatement(statementPatch)
         )
     }
 

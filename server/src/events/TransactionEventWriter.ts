@@ -2,35 +2,34 @@ import type {ITransactionSvc} from "$shared/services/transactions/ITransactionSv
 import type {TxnId} from "$shared/domain/transactions/TxnId";
 import {
     type Transaction,
-    type TransactionToWrite,
-    type TransactionPatch
+    type TransactionCreationEvent, type TransactionDeletionEvent,
+    type TransactionPatchEvent
 } from "$shared/domain/transactions/Transaction";
 import {
     appendDirective,
     createTransactionCreateDirective,
     createTransactionDeleteDirective,
     createTransactionUpdateDirective
-} from "checquery-server/src/util/ChecqueryYamlAppender";
+} from "./ChecqueryYamlAppender";
 
 
 export class TransactionEventWriter implements ITransactionSvc {
 
-    async createTransaction(transaction: TransactionToWrite): Promise<void> {
-
+    async createTransaction(transactionCreation: TransactionCreationEvent): Promise<TransactionCreationEvent | null> {
         const payload: Record<string, unknown> = {
-            id: transaction.id,
-            date: transaction.date,
+            id: transactionCreation.id,
+            date: transactionCreation.date,
         }
-        if (transaction.code) {
-            payload['code'] = transaction.code
+        if (transactionCreation.code) {
+            payload['code'] = transactionCreation.code
         }
-        if (transaction.description) {
-            payload['description'] = transaction.description
+        if (transactionCreation.description) {
+            payload['description'] = transactionCreation.description
         }
-        if (transaction.vendor) {
-            payload['vendor'] = transaction.vendor
+        if (transactionCreation.vendor) {
+            payload['vendor'] = transactionCreation.vendor
         }
-        payload['entries'] = transaction.entries.map(e => {
+        payload['entries'] = transactionCreation.entries.map(e => {
             const entry: Record<string, string> = {account: e.account}
             if (e.debit && e.debit !== '$0.00') {
                 entry['debit'] = e.debit
@@ -41,10 +40,12 @@ export class TransactionEventWriter implements ITransactionSvc {
             return entry
         })
         await appendDirective(createTransactionCreateDirective(payload))
+        return transactionCreation
     }
 
-    async deleteTransaction(transactionId: TxnId): Promise<void> {
-        await appendDirective(createTransactionDeleteDirective(transactionId))
+    async deleteTransaction(transactionDeletion: TransactionDeletionEvent): Promise<TransactionDeletionEvent | null> {
+        await appendDirective(createTransactionDeleteDirective(transactionDeletion.id))
+        return transactionDeletion
     }
 
     async findTransactionById(_transactionId: TxnId): Promise<Transaction | null> {
@@ -55,7 +56,7 @@ export class TransactionEventWriter implements ITransactionSvc {
         throw Error("Unimplemented")
     }
 
-    async updateTransaction(transactionPatch: TransactionPatch): Promise<Transaction | null> {
+    async patchTransaction(transactionPatch: TransactionPatchEvent): Promise<Transaction | null> {
         const payload: Record<string, unknown> = {id: transactionPatch.id}
         if (transactionPatch.date !== undefined) {
             payload['date'] = transactionPatch.date

@@ -1,4 +1,9 @@
-import {type Account, type AccountToWrite, type AccountPatch} from "../../domain/accounts/Account";
+import {
+    type Account,
+    type AccountCreationEvent,
+    type AccountDeletionEvent,
+    type AccountPatchEvent
+} from "../../domain/accounts/Account";
 import {type AcctId} from "../../domain/accounts/AcctId";
 import type {IAccountSvc} from "$shared/services/accounts/IAccountSvc";
 
@@ -11,17 +16,21 @@ export class AccountTeeSvc implements IAccountSvc {
     }
 
     /** Creates a new account with given attributes. */
-    async createAccount(account: AccountToWrite): Promise<void> {
+    async createAccount(accountCreation: AccountCreationEvent): Promise<AccountCreationEvent | null> {
+        let result: AccountCreationEvent | null = accountCreation
         for (const svc of this.svcs) {
-            await svc.createAccount(account)
+            result = result ? await svc.createAccount(result) : null
         }
+        return result
     }
 
     /** Deletes a given account. */
-    async deleteAccount(accountId: AcctId): Promise<void> {
+    async deleteAccount(accountDeletion: AccountDeletionEvent): Promise<AccountDeletionEvent|null> {
+        let result: AccountDeletionEvent | null = accountDeletion
         for (const svc of this.svcs) {
-            await svc.deleteAccount(accountId)
+            result = result ? await svc.deleteAccount(result) : null
         }
+        return result
     }
 
     /** Finds the account with given unique ID */
@@ -40,8 +49,8 @@ export class AccountTeeSvc implements IAccountSvc {
     }
 
     /** Updates an account's attributes. */
-    async patchAccount(accountPatch: AccountPatch): Promise<AccountPatch | null> {
-        let result: AccountPatch | null = accountPatch
+    async patchAccount(accountPatch: AccountPatchEvent): Promise<AccountPatchEvent | null> {
+        let result: AccountPatchEvent | null = accountPatch
         for (const svc of this.svcs) {
             result = result ? await svc.patchAccount(result) : null
         }

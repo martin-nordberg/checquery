@@ -1,12 +1,52 @@
 import {hc} from 'hono/client'
-import type {Vendor, VendorToWrite, VendorPatch} from "$shared/domain/vendors/Vendor.ts";
+import type {
+    Vendor,
+    VendorCreationEvent,
+    VendorDeletionEvent,
+    VendorPatchEvent
+} from "$shared/domain/vendors/Vendor.ts";
 import type {VendorRoutes} from "$shared/routes/vendors/VendorRoutes.ts";
 import type {VndrId} from "$shared/domain/vendors/VndrId.ts";
 import {webAppHost} from "../config.ts";
+import type {IVendorSvc} from "$shared/services/vendors/IVendorSvc.ts";
 
 const client = hc<VendorRoutes>(`${webAppHost}`)
 
-export class VendorClientSvc {
+export class VendorClientSvc implements IVendorSvc {
+
+    async createVendor(vendorCreation: VendorCreationEvent): Promise<VendorCreationEvent | null> {
+        console.log("createVendor", vendorCreation)
+        const res = await client.vendors.$post({json: vendorCreation})
+
+        if (res.ok) {
+            return vendorCreation
+        }
+
+        console.log(res)
+        const error = await res.json() as { error?: string }
+        if (error.error) {
+            throw new Error(error.error)
+        }
+        throw new Error('Failed to create vendor')
+    }
+
+    async deleteVendor(vendorDeletion: VendorDeletionEvent): Promise<VendorDeletionEvent> {
+        console.log("deleteVendor", vendorDeletion)
+        const res = await client.vendors[':vendorId'].$delete({param: {vendorId: vendorDeletion.id}})
+
+        if (res.ok) {
+            return vendorDeletion
+        }
+
+        console.log(res)
+
+        if (res.status === 409) {
+            const error = await res.json() as { error: string }
+            throw new Error(error.error)
+        }
+
+        throw new Error('Error deleting vendor')
+    }
 
     async findVendorsAll(): Promise<Vendor[]> {
         console.log("findVendorsAll")
@@ -48,27 +88,7 @@ export class VendorClientSvc {
         return false
     }
 
-    async createVendor(vendor: VendorToWrite): Promise<void> {
-        console.log("createVendor", vendor)
-        const res = await client.vendors.$post({json: vendor})
-
-        if (!res.ok) {
-            console.log(res)
-            try {
-                const error = await res.json() as { error?: string }
-                if (error.error) {
-                    throw new Error(error.error)
-                }
-            } catch (e) {
-                if (e instanceof Error && e.message !== 'Failed to create vendor') {
-                    throw e
-                }
-            }
-            throw new Error('Failed to create vendor')
-        }
-    }
-
-    async updateVendor(update: VendorPatch): Promise<void> {
+    async patchVendor(update: VendorPatchEvent): Promise<VendorPatchEvent | null> {
         console.log("updateVendor", update)
         const res = await client.vendors[':vendorId'].$patch({
             param: {vendorId: update.id},
@@ -76,7 +96,7 @@ export class VendorClientSvc {
         })
 
         if (res.ok) {
-            return
+            return update
         }
 
         console.log(res)
@@ -92,24 +112,6 @@ export class VendorClientSvc {
             }
         }
         throw new Error('Failed to update vendor')
-    }
-
-    async deleteVendor(vendorId: VndrId): Promise<{ success: boolean, error?: string }> {
-        console.log("deleteVendor", vendorId)
-        const res = await client.vendors[':vendorId'].$delete({param: {vendorId}})
-
-        if (res.ok) {
-            return {success: true}
-        }
-
-        if (res.status === 409) {
-            const error = await res.json() as { error: string }
-            return {success: false, error: error.error}
-        }
-
-        console.log(res)
-
-        return {success: false, error: 'Unknown error'}
     }
 
 }

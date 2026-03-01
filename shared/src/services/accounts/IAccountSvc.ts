@@ -1,14 +1,19 @@
-import {type Account, type AccountToWrite, type AccountPatch} from "../../domain/accounts/Account";
+import {
+    type Account,
+    type AccountCreationEvent,
+    type AccountDeletionEvent,
+    type AccountPatchEvent
+} from "../../domain/accounts/Account";
 import {type AcctId} from "../../domain/accounts/AcctId";
 
 
 export interface IAccountSvc {
 
     /** Creates a new account with given attributes. */
-    createAccount(account: AccountToWrite): Promise<void>
+    createAccount(account: AccountCreationEvent): Promise<AccountCreationEvent | null>
 
     /** Deletes a given account. */
-    deleteAccount(accountId: AcctId): Promise<void>
+    deleteAccount(accountDeletion: AccountDeletionEvent): Promise<AccountDeletionEvent | null>
 
     /** Finds the account with given unique ID */
     findAccountById(accountId: AcctId): Promise<Account | null>
@@ -20,6 +25,6 @@ export interface IAccountSvc {
     isAccountInUse(accountId: AcctId): Promise<boolean>
 
     /** Updates an account's attributes. */
-    patchAccount(accountPatch: AccountPatch): Promise<AccountPatch | null>
+    patchAccount(accountPatch: AccountPatchEvent): Promise<AccountPatchEvent | null>
 
 }

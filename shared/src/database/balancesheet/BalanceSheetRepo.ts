@@ -19,13 +19,13 @@ export class BalanceSheetRepo implements IBalanceSheetSvc {
         return this.db.transaction(async (txn) => {
             const sqlLineItems = await txn.findMany(
                 `SELECT Account.id                    as "acctId",
-                        Account.acctType              as "acctType",
-                        Account.name                  as description,
-                        COALESCE(sum(debitCents), 0)  as "totalDr",
-                        COALESCE(sum(creditCents), 0) as "totalCr"
-                 FROM Account
-                          LEFT OUTER JOIN Entry ON Account.id = Entry.accountId
-                          LEFT OUTER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
+                       Account.acctType              as "acctType",
+                       Account.name                  as description,
+                       COALESCE(sum(debitCents), 0)  as "totalDr",
+                       COALESCE(sum(creditCents), 0) as "totalCr"
+                  FROM Account
+                  LEFT OUTER JOIN Entry ON Account.id = Entry.accountId
+                  LEFT OUTER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
                  WHERE Account.acctType IN ('ASSET', 'LIABILITY', 'EQUITY')
                    AND Account.isDeleted = false
                    AND (Transaxtion.date <= $1 OR Transaxtion.date IS NULL)

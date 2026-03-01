@@ -1,30 +1,37 @@
 import type {IStatementSvc} from "$shared/services/statements/IStatementSvc";
 import type {StmtId} from "$shared/domain/statements/StmtId";
-import {type Statement, type StatementToWrite, type StatementPatch} from "$shared/domain/statements/Statement";
+import {
+    type Statement,
+    type StatementCreationEvent,
+    type StatementDeletionEvent,
+    type StatementPatchEvent
+} from "$shared/domain/statements/Statement";
 import {
     appendDirective,
     createStatementCreateDirective,
     createStatementDeleteDirective,
     createStatementUpdateDirective
-} from "checquery-server/src/util/ChecqueryYamlAppender";
+} from "./ChecqueryYamlAppender";
 
 export class StatementEventWriter implements IStatementSvc {
 
-    async createStatement(statement: StatementToWrite): Promise<void> {
+    async createStatement(statementCreation: StatementCreationEvent): Promise<StatementCreationEvent | null> {
         await appendDirective(createStatementCreateDirective({
-            id: statement.id,
-            beginDate: statement.beginDate,
-            endDate: statement.endDate,
-            beginningBalance: statement.beginningBalance,
-            endingBalance: statement.endingBalance,
-            account: statement.account,
-            isReconciled: statement.isReconciled,
-            transactions: statement.transactions,
+            id: statementCreation.id,
+            beginDate: statementCreation.beginDate,
+            endDate: statementCreation.endDate,
+            beginningBalance: statementCreation.beginningBalance,
+            endingBalance: statementCreation.endingBalance,
+            account: statementCreation.account,
+            isReconciled: statementCreation.isReconciled,
+            transactions: statementCreation.transactions,
         }))
+        return statementCreation
     }
 
-    async deleteStatement(statementId: StmtId): Promise<void> {
-        await appendDirective(createStatementDeleteDirective(statementId))
+    async deleteStatement(statementDeletion: StatementDeletionEvent): Promise<StatementDeletionEvent | null> {
+        await appendDirective(createStatementDeleteDirective(statementDeletion.id))
+        return statementDeletion
     }
 
     async findStatementById(_statementId: StmtId): Promise<Statement | null> {
@@ -35,7 +42,7 @@ export class StatementEventWriter implements IStatementSvc {
         throw Error("Not implemented")
     }
 
-    async updateStatement(statementPatch: StatementPatch): Promise<Statement | null> {
+    async patchStatement(statementPatch: StatementPatchEvent): Promise<Statement | null> {
         await appendDirective(createStatementUpdateDirective({
             id: statementPatch.id,
             beginDate: statementPatch.beginDate,

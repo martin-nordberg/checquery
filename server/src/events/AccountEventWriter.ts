@@ -1,4 +1,9 @@
-import {type Account, type AccountToWrite, type AccountPatch,} from "$shared/domain/accounts/Account";
+import {
+    type Account,
+    type AccountCreationEvent,
+    type AccountDeletionEvent,
+    type AccountPatchEvent,
+} from "$shared/domain/accounts/Account";
 import {type IAccountSvc} from "$shared/services/accounts/IAccountSvc";
 import {type AcctId} from "$shared/domain/accounts/AcctId";
 import {
@@ -6,47 +11,48 @@ import {
     createAccountCreateDirective,
     createAccountDeleteDirective,
     createAccountUpdateDirective
-} from "checquery-server/src/util/ChecqueryYamlAppender";
+} from "./ChecqueryYamlAppender";
 
 
 export class AccountEventWriter implements IAccountSvc {
 
-    async createAccount(account: AccountToWrite): Promise<void> {
+    async createAccount(accountCreation: AccountCreationEvent): Promise<AccountCreationEvent | null> {
         await appendDirective(createAccountCreateDirective({
-            id: account.id,
-            name: account.name,
-            acctType: account.acctType,
-            acctNumber: account.acctNumber,
-            description: account.description,
+            id: accountCreation.id,
+            name: accountCreation.name,
+            acctType: accountCreation.acctType,
+            acctNumber: accountCreation.acctNumber,
+            description: accountCreation.description,
         }))
+        return accountCreation
     }
 
-    async deleteAccount(accountId: AcctId): Promise<void> {
+    async deleteAccount(accountDeletion: AccountDeletionEvent): Promise<AccountDeletionEvent | null> {
         await appendDirective(createAccountDeleteDirective({
-            id: accountId,
+            id: accountDeletion.id,
         }))
+        return accountDeletion
     }
 
     async findAccountById(_accountId: AcctId): Promise<Account | null> {
-        throw Error("Not implemented")
+        throw new Error("Not implemented")
     }
 
     async findAccountsAll(): Promise<Account[]> {
-        throw Error("Not implemented")
+        throw new Error("Not implemented")
     }
 
     async isAccountInUse(_accountId: AcctId): Promise<boolean> {
-        throw Error("Not implemented")
+        throw new Error("Not implemented")
     }
 
-    async patchAccount(accountPatch: AccountPatch): Promise<AccountPatch | null> {
+    async patchAccount(accountPatch: AccountPatchEvent): Promise<AccountPatchEvent | null> {
         await appendDirective(createAccountUpdateDirective({
             id: accountPatch.id,
             name: accountPatch.name,
             acctNumber: accountPatch.acctNumber,
             description: accountPatch.description,
         }))
-
         return accountPatch
     }
 

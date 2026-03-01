@@ -1,4 +1,9 @@
-import {type Vendor, type VendorToWrite, vendorReadSchema, type VendorPatch,} from "$shared/domain/vendors/Vendor";
+import {
+    type Vendor,
+    type VendorCreationEvent, type VendorDeletionEvent,
+    type VendorPatchEvent,
+    vendorReadSchema,
+} from "$shared/domain/vendors/Vendor";
 import {type VndrId} from "$shared/domain/vendors/VndrId";
 import {z} from "zod";
 import type {PgLiteTxn} from "$shared/database/PgLiteTxn";
@@ -13,67 +18,60 @@ export class VendorTxnRepo implements IVendorSvc {
         this.#txn = txn
     }
 
-    async createVendor(vendor: VendorToWrite): Promise<void> {
-        if (vendor.defaultAccount) {
-            await this.#txn.exec(
+    async createVendor(vendorCreation: VendorCreationEvent): Promise<VendorCreationEvent | null> {
+        if (vendorCreation.defaultAccount) {
+            const count = await this.#txn.exec(
                 `INSERT INTO Vendor (id, name, nameHlc, description, descriptionHlc, defaultAccountId,
                                      defaultAccountIdHlc, isActive, isActiveHlc, isDeleted, isDeletedHlc)
-                 SELECT $1,
-                        $2,
-                        $hlc,
-                        $3,
-                        $hlc,
-                        Account.id,
-                        $hlc,
-                        $5,
-                        $hlc,
-                        false,
-                        $hlc
-                 FROM Account
+                SELECT $1, $2, $hlc, $3, $hlc, Account.id, $hlc, $5, $hlc, false, $hlc
+                  FROM Account
                  WHERE name = $4`,
                 [
-                    vendor.id,
-                    vendor.name,
-                    vendor.description,
-                    vendor.defaultAccount ?? null,
-                    vendor.isActive,
+                    vendorCreation.id,
+                    vendorCreation.name,
+                    vendorCreation.description,
+                    vendorCreation.defaultAccount,
+                    vendorCreation.isActive,
                 ]
             )
-        } else {
-            await this.#txn.exec(
-                `INSERT INTO Vendor (id, name, nameHlc, description, descriptionHlc, defaultAccountId,
-                                     defaultAccountIdHlc, isActive, isActiveHlc, isDeleted, isDeletedHlc)
-                 VALUES ($1, $2, $hlc, $3, $hlc, null, $hlc, $4, $hlc, false, $hlc)`,
-                [
-                    vendor.id,
-                    vendor.name,
-                    vendor.description,
-                    vendor.isActive,
-                ]
-            )
+            return count ? vendorCreation : null
         }
+
+        const count = await this.#txn.exec(
+            `INSERT INTO Vendor (id, name, nameHlc, description, descriptionHlc, defaultAccountId,
+                                     defaultAccountIdHlc, isActive, isActiveHlc, isDeleted, isDeletedHlc)
+                VALUES ($1, $2, $hlc, $3, $hlc, null, $hlc, $4, $hlc, false, $hlc)`,
+            [
+                vendorCreation.id,
+                vendorCreation.name,
+                vendorCreation.description,
+                vendorCreation.isActive,
+            ]
+        )
+        return count ? vendorCreation : null
     }
 
-    async deleteVendor(vendorId: VndrId): Promise<void> {
-        await this.#txn.exec(
+    async deleteVendor(vendorDeletion: VendorDeletionEvent): Promise<VendorDeletionEvent | null> {
+        const count = await this.#txn.exec(
             `UPDATE Vendor
-             SET isDeleted    = true,
-                 isDeletedHlc = $hlc
+               SET isDeleted    = true,
+                   isDeletedHlc = $hlc
              WHERE id = $1
                AND (isDeleted = false or isDeletedHlc > $hlc)`,
-            [vendorId]
+            [vendorDeletion.id],
         )
+        return count ? vendorDeletion : null
     }
 
     async findVendorById(vendorId: VndrId): Promise<Vendor | null> {
         return this.#txn.findOne(
             `SELECT Vendor.id    as "id",
-                    Vendor.name,
-                    Vendor.description,
-                    Account.name as "defaultAccount",
-                    isActive     as "isActive"
-             FROM Vendor
-                      LEFT OUTER JOIN Account ON Vendor.defaultAccountId = Account.id
+                   Vendor.name,
+                   Vendor.description,
+                   Account.name as "defaultAccount",
+                   isActive     as "isActive"
+              FROM Vendor
+              LEFT OUTER JOIN Account ON Vendor.defaultAccountId = Account.id
              WHERE Vendor.id = $1
                AND Vendor.isDeleted = false`,
             [vendorId],
@@ -84,12 +82,12 @@ export class VendorTxnRepo implements IVendorSvc {
     async findVendorsAll(): Promise<Vendor[]> {
         return this.#txn.findMany(
             `SELECT Vendor.id    as "id",
-                    Vendor.name,
-                    Vendor.description,
-                    Account.name as "defaultAccount",
-                    isActive     as "isActive"
-             FROM Vendor
-                      LEFT OUTER JOIN Account ON Vendor.defaultAccountId = Account.id
+                   Vendor.name,
+                   Vendor.description,
+                   Account.name as "defaultAccount",
+                   isActive     as "isActive"
+              FROM Vendor
+              LEFT OUTER JOIN Account ON Vendor.defaultAccountId = Account.id
              WHERE Vendor.isDeleted = false
              ORDER BY name`,
             [],
@@ -108,14 +106,14 @@ export class VendorTxnRepo implements IVendorSvc {
         return result !== null && result.count > 0
     }
 
-    async updateVendor(vendorPatch: VendorPatch): Promise<VendorPatch | null> {
-        let result: VendorPatch | null = null
+    async patchVendor(vendorPatch: VendorPatchEvent): Promise<VendorPatchEvent | null> {
+        let result: VendorPatchEvent | null = null
 
         if (vendorPatch.name !== undefined) {
             const count = await this.#txn.exec(
                 `UPDATE Vendor
-                 SET name    = $2,
-                     nameHlc = $hlc
+                   SET name    = $2,
+                       nameHlc = $hlc
                  WHERE id = $1
                    AND nameHlc <= $hlc
                    AND name <> $2`,
@@ -129,8 +127,8 @@ export class VendorTxnRepo implements IVendorSvc {
         if (vendorPatch.description !== undefined) {
             const count = await this.#txn.exec(
                 `UPDATE Vendor
-                 SET description    = $2,
-                     descriptionHlc = $hlc
+                   SET description    = $2,
+                       descriptionHlc = $hlc
                  WHERE id = $1
                    AND descriptionHlc <= $hlc
                    AND description <> $2`,
@@ -145,8 +143,8 @@ export class VendorTxnRepo implements IVendorSvc {
             if (vendorPatch.defaultAccount === "") {
                 const count = await this.#txn.exec(
                     `UPDATE Vendor
-                     SET defaultAccountId    = null,
-                         defaultAccountIdHlc = $hlc
+                       SET defaultAccountId    = null,
+                           defaultAccountIdHlc = $hlc
                      WHERE id = $1
                        AND defaultAccountIdHlc < $hlc
                        AND defaultAccountId IS NOT NULL`,
@@ -159,11 +157,10 @@ export class VendorTxnRepo implements IVendorSvc {
                 const count = await this.#txn.exec(
                     `WITH DefaultAccount AS (SELECT id FROM Account WHERE name = $2)
                     UPDATE Vendor
-                    SET defaultAccountId    = DefaultAccount.id,
-                        defaultAccountIdHlc = $hlc FROM DefaultAccount
+                      SET defaultAccountId    = DefaultAccount.id,
+                          defaultAccountIdHlc = $hlc FROM DefaultAccount
                     WHERE Vendor.id = $1
-                      AND defaultAccountIdHlc
-                        < $hlc
+                      AND defaultAccountIdHlc < $hlc
                       AND defaultAccountId <> DefaultAccount.id`,
                     [vendorPatch.id, vendorPatch.defaultAccount]
                 )
@@ -176,8 +173,8 @@ export class VendorTxnRepo implements IVendorSvc {
         if (vendorPatch.isActive !== undefined) {
             const count = await this.#txn.exec(
                 `UPDATE Vendor
-                 SET isActive    = $2,
-                     isActiveHlc = $hlc
+                   SET isActive    = $2,
+                       isActiveHlc = $hlc
                  WHERE id = $1
                    AND isActiveHlc < $hlc
                    AND isActive <> $2`,

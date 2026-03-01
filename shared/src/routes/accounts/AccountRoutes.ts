@@ -1,9 +1,9 @@
 import {Hono} from 'hono'
 import {
-    type AccountToWrite,
-    accountWriteSchema,
-    type AccountPatch,
-    accountPatchSchema
+    type AccountCreationEvent,
+    accountCreationEventSchema,
+    type AccountPatchEvent,
+    accountPatchEventSchema
 } from "../../domain/accounts/Account";
 import {zxValidator} from "../validation/zxvalidator";
 import {z} from "zod";
@@ -21,9 +21,9 @@ export const accountRoutes = (accountService: IAccountSvc) => {
         )
         .post(
             '/',
-            zxValidator('json', accountWriteSchema),
+            zxValidator('json', accountCreationEventSchema),
             async (c) => {
-                const account: AccountToWrite = c.req.valid('json')
+                const account: AccountCreationEvent = c.req.valid('json')
                 try {
                     await accountService.createAccount(account)
                     return c.body(null, 201)
@@ -61,17 +61,17 @@ export const accountRoutes = (accountService: IAccountSvc) => {
                 if (inUse) {
                     return c.json({error: 'Account is used in transactions and cannot be deleted'}, 409)
                 }
-                await accountService.deleteAccount(accountId)
+                await accountService.deleteAccount({id:accountId})
                 return c.body(null, 204)
             }
         )
         .patch(
             '/:accountId',
             zxValidator('param', z.object({accountId: acctIdSchema})),
-            zxValidator('json', accountPatchSchema),
+            zxValidator('json', accountPatchEventSchema),
             async (c) => {
                 const {accountId} = c.req.valid('param')
-                const account: AccountPatch = c.req.valid('json')
+                const account: AccountPatchEvent = c.req.valid('json')
                 try {
                     await accountService.patchAccount({...account, id: accountId})
                     return c.body(null, 201)

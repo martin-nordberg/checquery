@@ -3,7 +3,7 @@ import {z} from 'zod'
 import {type IStatementSvc} from "../../services/statements/IStatementSvc";
 import {zxValidator} from "../validation/zxvalidator";
 import {stmtIdSchema} from "../../domain/statements/StmtId";
-import {statementWriteSchema, type StatementPatch, statementPatchSchema} from "../../domain/statements/Statement";
+import {statementCreationEventSchema, type StatementPatchEvent, statementPatchEventSchema} from "../../domain/statements/Statement";
 
 /** REST routes for statements. */
 export const statementRoutes = (statementSvc: IStatementSvc) => {
@@ -24,7 +24,7 @@ export const statementRoutes = (statementSvc: IStatementSvc) => {
         )
         .post(
             '/',
-            zxValidator('json', statementWriteSchema),
+            zxValidator('json', statementCreationEventSchema),
             async (c) => {
                 const statement = c.req.valid('json')
                 await statementSvc.createStatement(statement)
@@ -34,11 +34,11 @@ export const statementRoutes = (statementSvc: IStatementSvc) => {
         .patch(
             '/:statementId',
             zxValidator('param', z.object({statementId: stmtIdSchema})),
-            zxValidator('json', statementPatchSchema),
+            zxValidator('json', statementPatchEventSchema),
             async (c) => {
                 const {statementId} = c.req.valid('param')
-                const statement: StatementPatch = c.req.valid('json')
-                await statementSvc.updateStatement({...statement, id: statementId})
+                const statement: StatementPatchEvent = c.req.valid('json')
+                await statementSvc.patchStatement({...statement, id: statementId})
                 return c.body(null, 204)
             }
         )
@@ -47,7 +47,7 @@ export const statementRoutes = (statementSvc: IStatementSvc) => {
             zxValidator('param', z.object({statementId: stmtIdSchema})),
             async (c) => {
                 const {statementId} = c.req.valid('param')
-                await statementSvc.deleteStatement(statementId)
+                await statementSvc.deleteStatement({id: statementId})
                 return c.body(null, 204)
             }
         )

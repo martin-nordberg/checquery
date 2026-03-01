@@ -46,7 +46,7 @@ describe('Statement Repo', () => {
 
         expect(stmt2).toMatchObject(stmt0)
 
-        await repo.updateStatement({
+        await repo.patchStatement({
             id,
             beginningBalance: "$12,456.78",
             endingBalance: "$12,456.79",
@@ -63,7 +63,7 @@ describe('Statement Repo', () => {
 
         expect(stmts).toContainValue(stmt3!)
 
-        await repo.deleteStatement(id)
+        await repo.deleteStatement({id})
 
         const stmt5 = await repo.findStatementById(id)
 

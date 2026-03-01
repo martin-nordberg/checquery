@@ -1,14 +1,19 @@
-import {type Vendor, type VendorToWrite, type VendorPatch} from "../../domain/vendors/Vendor";
+import {
+    type Vendor,
+    type VendorCreationEvent,
+    type VendorDeletionEvent,
+    type VendorPatchEvent
+} from "../../domain/vendors/Vendor";
 import {type VndrId} from "../../domain/vendors/VndrId";
 
 
 export interface IVendorSvc {
 
     /** Creates a new vendor with given attributes. */
-    createVendor(vendor: VendorToWrite): Promise<void>
+    createVendor(vendorCreation: VendorCreationEvent): Promise<VendorCreationEvent | null>
 
     /** Deletes a given vendor. */
-    deleteVendor(vendorId: VndrId): Promise<void>
+    deleteVendor(vendorDeletion: VendorDeletionEvent): Promise<VendorDeletionEvent | null>
 
     /** Finds the vendor with given unique ID */
     findVendorById(vendorId: VndrId): Promise<Vendor | null>
@@ -20,6 +25,6 @@ export interface IVendorSvc {
     isVendorInUse(vendorId: VndrId): Promise<boolean>
 
     /** Updates a vendor's attributes. */
-    updateVendor(vendorPatch: VendorPatch): Promise<VendorPatch | null>
+    patchVendor(vendorPatch: VendorPatchEvent): Promise<VendorPatchEvent | null>
 
 }

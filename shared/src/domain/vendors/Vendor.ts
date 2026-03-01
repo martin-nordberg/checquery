@@ -30,23 +30,32 @@ export type Vendor = z.infer<typeof vendorReadSchema>
 
 
 /** Sub-schema for vendor creation. */
-export const vendorWriteSchema =
+export const vendorCreationEventSchema =
     vendorAttributesSchema.extend({
         description: vendorAttributesSchema.shape.description.default(""),
         isActive: vendorAttributesSchema.shape.isActive.default(true)
     }).readonly()
 
-export type VendorToWrite = z.infer<typeof vendorWriteSchema>
+export type VendorCreationEvent = z.infer<typeof vendorCreationEventSchema>
+
+
+/** Schema for vendor deletion. */
+export const vendorDeletionEventSchema = z.object({
+        /** The unique ID of the vendor. */
+        id: vndrIdSchema,
+})
+
+export type VendorDeletionEvent = z.infer<typeof vendorDeletionEventSchema>
 
 
 /** Sub-schema for vendor updates. */
-export const vendorPatchSchema =
+export const vendorPatchEventSchema =
     vendorAttributesSchema.partial({
         name: true,
         description: true,
         isActive: true,
     }).readonly()
 
-export type VendorPatch = z.infer<typeof vendorPatchSchema>
+export type VendorPatchEvent = z.infer<typeof vendorPatchEventSchema>
 
 

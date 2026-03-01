@@ -3,7 +3,7 @@ import {z} from 'zod'
 import {type IVendorSvc} from "../../services/vendors/IVendorSvc";
 import {zxValidator} from "../validation/zxvalidator";
 import {vndrIdSchema} from "../../domain/vendors/VndrId";
-import {vendorWriteSchema, vendorPatchSchema} from "../../domain/vendors/Vendor";
+import {vendorCreationEventSchema, vendorPatchEventSchema} from "../../domain/vendors/Vendor";
 
 /** REST routes for vendors. */
 export const vendorRoutes = (vendorSvc: IVendorSvc) => {
@@ -32,7 +32,7 @@ export const vendorRoutes = (vendorSvc: IVendorSvc) => {
         )
         .post(
             '/',
-            zxValidator('json', vendorWriteSchema),
+            zxValidator('json', vendorCreationEventSchema),
             async (c) => {
                 const vendor = c.req.valid('json')
                 try {
@@ -50,7 +50,7 @@ export const vendorRoutes = (vendorSvc: IVendorSvc) => {
         .patch(
             '/:vendorId',
             zxValidator('param', z.object({vendorId: vndrIdSchema})),
-            zxValidator('json', vendorPatchSchema),
+            zxValidator('json', vendorPatchEventSchema),
             async (c) => {
                 const {vendorId} = c.req.valid('param')
                 const update = {
@@ -58,7 +58,7 @@ export const vendorRoutes = (vendorSvc: IVendorSvc) => {
                     id: vendorId
                 }
                 try {
-                    await vendorSvc.updateVendor(update)
+                    await vendorSvc.patchVendor(update)
                     return c.body(null, 204)
                 } catch (e: unknown) {
                     const msg = e instanceof Error ? e.message.toUpperCase() : ''
@@ -79,7 +79,7 @@ export const vendorRoutes = (vendorSvc: IVendorSvc) => {
                 if (inUse) {
                     return c.json({error: 'Vendor is used in transactions and cannot be deleted'}, 409)
                 }
-                await vendorSvc.deleteVendor(vendorId)
+                await vendorSvc.deleteVendor({id: vendorId})
                 return c.body(null, 204)
             }
         )

@@ -8,7 +8,7 @@ import {genVndrId} from "$shared/domain/vendors/VndrId";
 import type {Vendor} from "$shared/domain/vendors/Vendor";
 import {TransactionRepo} from "$shared/database/transactions/TransactionRepo";
 import {genTxnId} from "$shared/domain/transactions/TxnId";
-import type {TransactionToWrite, TransactionPatch} from "$shared/domain/transactions/Transaction";
+import type {TransactionCreationEvent, TransactionPatchEvent} from "$shared/domain/transactions/Transaction";
 import {type EntryToWrite} from "$shared/domain/transactions/Entry";
 import {entriesWriteSchema} from "$shared/domain/transactions/Entries";
 
@@ -67,7 +67,7 @@ describe('Transaction Repo', () => {
                 debit: "$0.00"
             }
         ])
-        const txn0: TransactionToWrite = {
+        const txn0: TransactionCreationEvent = {
             id: id,
             code: "1234",
             description: "Bought something",
@@ -94,7 +94,7 @@ describe('Transaction Repo', () => {
                 debit: "$0.00"
             }
         ])
-        const txn2: TransactionPatch = {
+        const txn2: TransactionPatchEvent = {
             id: id,
             code: "9945",
             description: "Bought sssomething",
@@ -102,7 +102,7 @@ describe('Transaction Repo', () => {
             entries: entries2
         }
 
-        await repo.updateTransaction({...txn2, vendor: ""})
+        await repo.patchTransaction({...txn2, vendor: ""})
 
         const txn3 = await repo.findTransactionById(id)
 

@@ -26,13 +26,13 @@ export class IncomeStatementRepo implements IIncomeStatementSvc {
         return this.db.transaction(async (txn) => {
             const sqlLineItems = await txn.findMany(
                 `SELECT Account.id       as "acctId",
-                        Account.acctType as "acctType",
-                        Account.name     as description,
-                        sum(debitCents)  as "totalDr",
-                        sum(creditCents) as "totalCr"
-                 FROM Account
-                          LEFT OUTER JOIN Entry ON Account.id = Entry.accountId
-                          LEFT OUTER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
+                       Account.acctType as "acctType",
+                       Account.name     as description,
+                       sum(debitCents)  as "totalDr",
+                       sum(creditCents) as "totalCr"
+                  FROM Account
+                  LEFT OUTER JOIN Entry ON Account.id = Entry.accountId
+                  LEFT OUTER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
                  WHERE Account.acctType IN ('INCOME', 'EXPENSE')
                    AND Account.isDeleted = false
                    AND Transaxtion.isDeleted = false

@@ -1,9 +1,9 @@
 import type {TxnId} from "$shared/domain/transactions/TxnId";
 import {
     type Transaction,
-    type TransactionToWrite,
+    type TransactionCreationEvent,
     transactionBeforeEntriesSchema,
-    type TransactionPatch
+    type TransactionPatchEvent, type TransactionDeletionEvent
 } from "$shared/domain/transactions/Transaction";
 import {fromCents, toCents} from "$shared/domain/core/CurrencyAmt";
 import z from "zod";
@@ -21,55 +21,50 @@ export class TransactionTxnRepo implements ITransactionSvc {
         this.#txn = txn
     }
 
-    async createTransaction(transaction: TransactionToWrite): Promise<void> {
-        if (transaction.vendor) {
-            await this.#txn.exec(
+    async createTransaction(transactionCreation: TransactionCreationEvent): Promise<TransactionCreationEvent | null> {
+        let count: number | undefined
+        if (transactionCreation.vendor) {
+            count = await this.#txn.exec(
                 `INSERT INTO Transaxtion (id, date, dateHlc, code, codeHlc, vendorId, vendorIdHlc, description,
                                           descriptionHlc, isDeleted, isDeletedHlc)
-                 SELECT $1,
-                        $2,
-                        $hlc,
-                        $3,
-                        $hlc,
-                        Vendor.id,
-                        $hlc,
-                        $5,
-                        $hlc,
-                        false,
-                        $hlc
-                 FROM Vendor
-                 WHERE name = $4;`,
+                 SELECT $1, $2, $hlc, $3, $hlc, Vendor.id, $hlc, $5, $hlc, false, $hlc
+                   FROM Vendor
+                  WHERE name = $4;`,
                 [
-                    transaction.id,
-                    transaction.date,
-                    transaction.code,
-                    transaction.vendor,
-                    transaction.description,
+                    transactionCreation.id,
+                    transactionCreation.date,
+                    transactionCreation.code,
+                    transactionCreation.vendor,
+                    transactionCreation.description,
                 ]
             )
         } else {
-            await this.#txn.exec(
+            count = await this.#txn.exec(
                 `INSERT INTO Transaxtion (id, date, dateHlc, code, codeHlc, vendorId, vendorIdHlc, description,
                                           descriptionHlc, isDeleted, isDeletedHlc)
                  VALUES ($1, $2, $hlc, $3, $hlc, null, $hlc, $4, $hlc, false, $hlc)`,
                 [
-                    transaction.id,
-                    transaction.date,
-                    transaction.code,
-                    transaction.description,
+                    transactionCreation.id,
+                    transactionCreation.date,
+                    transactionCreation.code,
+                    transactionCreation.description,
                 ]
             )
         }
 
+        if (!count) {
+            return null
+        }
+
         let entrySeq = 1
-        for (let entry of transaction.entries) {
+        for (let entry of transactionCreation.entries) {
             await this.#txn.exec(
                 `INSERT INTO Entry (txnId, entrySeq, accountId, debitCents, creditCents, comment)
                  SELECT $1, $2, Account.id, $4, $5, $6
-                 FROM Account
-                 WHERE name = $3;`,
+                   FROM Account
+                  WHERE name = $3;`,
                 [
-                    transaction.id,
+                    transactionCreation.id,
                     entrySeq,
                     entry.account,
                     toCents(entry.debit),
@@ -80,27 +75,29 @@ export class TransactionTxnRepo implements ITransactionSvc {
 
             entrySeq += 1
         }
+
+        return transactionCreation
     }
 
-    async deleteTransaction(transactionId: TxnId): Promise<void> {
-        this.#txn.exec(
+    async deleteTransaction(transactionDeletion: TransactionDeletionEvent): Promise<TransactionDeletionEvent | null> {
+        const count = await this.#txn.exec(
             `UPDATE Transaxtion
-             SET isDeleted    = true,
-                 isDeletedHlc = $hlc
+               SET isDeleted    = true,
+                   isDeletedHlc = $hlc
              WHERE id = $1
                AND (isDeleted = false or isDeletedHlc > $hlc)`,
-            [transactionId]
+            [transactionDeletion]
         )
+        return count ? transactionDeletion : null
     }
 
     async findTransactionById(transactionId: TxnId): Promise<Transaction | null> {
         const txn = await this.#txn.findOne(
             `SELECT Transaxtion.id, date, code, Vendor.name as vendor, Transaxtion.description
-             FROM Transaxtion
-                 LEFT OUTER JOIN Vendor
-             ON Transaxtion.vendorId = Vendor.id
-             WHERE Transaxtion.id = $1
-               AND Transaxtion.isDeleted = false`,
+               FROM Transaxtion
+               LEFT OUTER JOIN Vendor ON Transaxtion.vendorId = Vendor.id
+              WHERE Transaxtion.id = $1
+                AND Transaxtion.isDeleted = false`,
             [transactionId],
             transactionBeforeEntriesSchema
         )
@@ -110,18 +107,19 @@ export class TransactionTxnRepo implements ITransactionSvc {
         }
 
         const entryRecords = await this.#txn.findMany(
-            `SELECT Account.name           as account,
-                    debitCents             as "debitCents",
-                    creditCents            as "creditCents",
-                    CASE
-                        WHEN stmtId IS NULL THEN ''
-                        WHEN Statement.isReconciled THEN 'Reconciled'
-                        ELSE 'Pending' END as status,
-                    comment
-             FROM Entry
-                      JOIN Account ON Entry.accountId = Account.id
-                      JOIN Transaxtion ON Entry.txnId = Transaxtion.id
-                      LEFT JOIN Statement ON Entry.stmtId = Statement.id
+            `SELECT Account.name as account,
+                   debitCents as "debitCents",
+                   creditCents as "creditCents",
+                   CASE
+                     WHEN stmtId IS NULL THEN ''
+                     WHEN Statement.isReconciled THEN 'Reconciled'
+                     ELSE 'Pending' 
+                   END as status,
+                   comment
+              FROM Entry
+              JOIN Account ON Entry.accountId = Account.id
+              JOIN Transaxtion ON Entry.txnId = Transaxtion.id
+              LEFT JOIN Statement ON Entry.stmtId = Statement.id
              WHERE Entry.txnId = $1
                AND Entry.isDeleted = false
              ORDER BY entrySeq`,
@@ -151,14 +149,14 @@ export class TransactionTxnRepo implements ITransactionSvc {
         }
     }
 
-    async updateTransaction(transactionPatch: TransactionPatch): Promise<TransactionPatch | null> {
-        let result: TransactionPatch | null = null
+    async patchTransaction(transactionPatch: TransactionPatchEvent): Promise<TransactionPatchEvent | null> {
+        let result: TransactionPatchEvent | null = null
 
         if (transactionPatch.date !== undefined) {
             const count = await this.#txn.exec(
                 `UPDATE Transaxtion
-                 SET date    = $2,
-                     dateHlc = $hlc
+                   SET date    = $2,
+                       dateHlc = $hlc
                  WHERE id = $1
                    AND dateHlc < $hlc`,
                 [transactionPatch.id, transactionPatch.date]
@@ -171,8 +169,8 @@ export class TransactionTxnRepo implements ITransactionSvc {
         if (transactionPatch.code !== undefined) {
             const count = await this.#txn.exec(
                 `UPDATE Transaxtion
-                 SET code    = $2,
-                     codeHlc = $hlc
+                   SET code    = $2,
+                       codeHlc = $hlc
                  WHERE id = $1
                    AND codeHlc < $hlc`,
                 [transactionPatch.id, transactionPatch.code]
@@ -185,8 +183,8 @@ export class TransactionTxnRepo implements ITransactionSvc {
         if (transactionPatch.description !== undefined) {
             const count = await this.#txn.exec(
                 `UPDATE Transaxtion
-                 SET description    = $2,
-                     descriptionHlc = $hlc
+                   SET description    = $2,
+                       descriptionHlc = $hlc
                  WHERE id = $1
                    AND descriptionHlc < $hlc`,
                 [transactionPatch.id, transactionPatch.description]
@@ -200,8 +198,8 @@ export class TransactionTxnRepo implements ITransactionSvc {
             if (transactionPatch.vendor === "") {
                 const count = await this.#txn.exec(
                     `UPDATE Transaxtion
-                     SET vendorId    = NULL,
-                         vendorIdHlc = $hlc
+                       SET vendorId    = NULL,
+                           vendorIdHlc = $hlc
                      WHERE id = $1
                        AND vendorIdHlc < $hlc`,
                     [transactionPatch.id]
@@ -212,8 +210,8 @@ export class TransactionTxnRepo implements ITransactionSvc {
             } else {
                 const count = await this.#txn.exec(
                     `UPDATE Transaxtion
-                     SET vendorId    = (SELECT id FROM Vendor WHERE name = $2),
-                         vendorIdHlc = $hlc
+                       SET vendorId    = (SELECT id FROM Vendor WHERE name = $2),
+                           vendorIdHlc = $hlc
                      WHERE id = $1
                        AND vendorIdHlc < $hlc`,
                     [transactionPatch.id, transactionPatch.vendor]
@@ -230,11 +228,10 @@ export class TransactionTxnRepo implements ITransactionSvc {
             for (const entry of transactionPatch.entries) {
                 await this.#txn.exec(
                     `INSERT INTO Entry (txnId, entrySeq, accountId, debitCents, creditCents, comment)
-                     SELECT $1, $2, Account.id, $4, $5, $6
-                     FROM Account
-                     WHERE name = $3 ON CONFLICT
-                     ON CONSTRAINT Entry_PK
-                         DO
+                    SELECT $1, $2, Account.id, $4, $5, $6
+                      FROM Account
+                     WHERE name = $3 
+                     ON CONFLICT ON CONSTRAINT Entry_PK DO
                     UPDATE SET
                         accountId = EXCLUDED.accountId,
                         debitCents = EXCLUDED.debitCents,

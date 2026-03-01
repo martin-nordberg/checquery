@@ -41,8 +41,8 @@ export const transactionReadSchema =
 export type Transaction = z.infer<typeof transactionReadSchema>
 
 
-/** Sub-schema for transaction creation. */
-export const transactionWriteSchema =
+/** Schema for transaction creation. */
+export const transactionCreationEventSchema =
     transactionAttributesSchema.extend({
         code: transactionAttributesSchema.shape.code.default(''),
         description: transactionAttributesSchema.shape.description.default(''),
@@ -53,11 +53,20 @@ export const transactionWriteSchema =
         message: "A transaction must have a vendor or a description (or both)."
     }).readonly()
 
-export type TransactionToWrite = z.infer<typeof transactionWriteSchema>
+export type TransactionCreationEvent = z.infer<typeof transactionCreationEventSchema>
 
 
-/** Sub-schema for transaction patches. */
-export const transactionPatchSchema =
+/** Schema for transaction deletion. */
+export const transactionDeletionEventSchema = z.object({
+    /** The unique ID of the transaction. */
+    id: txnIdSchema,
+})
+
+export type TransactionDeletionEvent = z.infer<typeof transactionDeletionEventSchema>
+
+
+/** Schema for transaction patches. */
+export const transactionPatchEventSchema =
     transactionAttributesSchema.extend({
         /** The two or more entries in the transaction. */
         entries: entriesWriteSchema
@@ -69,7 +78,7 @@ export const transactionPatchSchema =
         vendor: true,
     }).readonly()
 
-export type TransactionPatch = z.infer<typeof transactionPatchSchema>
+export type TransactionPatchEvent = z.infer<typeof transactionPatchEventSchema>
 
 
 /** Validates that a transaction has either vendor or description (or both). */

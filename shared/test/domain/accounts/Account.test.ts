@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'bun:test'
-import {accountWriteSchema, accountReadSchema, accountPatchSchema} from "$shared/domain/accounts/Account";
+import {accountCreationEventSchema, accountReadSchema, accountPatchEventSchema} from "$shared/domain/accounts/Account";
 import {z} from "zod";
 import {genAcctId} from "$shared/domain/accounts/AcctId";
 
@@ -25,7 +25,7 @@ describe('Sample Accounts', () => {
 
     it('Should parse without error when optional fields are absent', () => {
         const id = genAcctId()
-        const acct = accountWriteSchema.parse(
+        const acct = accountCreationEventSchema.parse(
             {
                 id: id,
                 name: 'example',
@@ -43,7 +43,7 @@ describe('Sample Accounts', () => {
 
     it('Should convert to JSON', () => {
         const id = genAcctId()
-        const acct = accountWriteSchema.parse(
+        const acct = accountCreationEventSchema.parse(
             {
                 id: id,
                 name: 'example',
@@ -61,7 +61,7 @@ describe('Sample Accounts', () => {
 
     it('Should parse without error for a name change', () => {
         const id = genAcctId()
-        const acct = accountPatchSchema.parse(
+        const acct = accountPatchEventSchema.parse(
             {
                 id: id,
                 name: 'example'
@@ -76,7 +76,7 @@ describe('Sample Accounts', () => {
 
     it('Should parse without error for a description change', () => {
         const id = genAcctId()
-        const acct = accountPatchSchema.parse(
+        const acct = accountPatchEventSchema.parse(
             {
                 id: id,
                 description: 'Revised summary',
@@ -90,7 +90,7 @@ describe('Sample Accounts', () => {
     })
 
     it('Should generate JSON schema', () => {
-        const jsonSchema = z.toJSONSchema(accountWriteSchema)
+        const jsonSchema = z.toJSONSchema(accountCreationEventSchema)
         expect(jsonSchema).toMatchObject({
             $schema: "https://json-schema.org/draft/2020-12/schema",
             additionalProperties: false,
@@ -314,20 +314,20 @@ describe('Invalid Accounts', () => {
 
     describe('accountUpdateSchema invalid inputs', () => {
         it('rejects missing id', () => {
-            expect(() => accountPatchSchema.parse({
+            expect(() => accountPatchEventSchema.parse({
                 name: 'Updated Name'
             })).toThrow()
         })
 
         it('rejects empty name when provided', () => {
-            expect(() => accountPatchSchema.parse({
+            expect(() => accountPatchEventSchema.parse({
                 id: genAcctId(),
                 name: ''
             })).toThrow()
         })
 
         it('rejects invalid acctType when provided', () => {
-            expect(() => accountPatchSchema.parse({
+            expect(() => accountPatchEventSchema.parse({
                 id: genAcctId(),
                 acctType: 'INVALID'
             })).toThrow()
@@ -336,13 +336,13 @@ describe('Invalid Accounts', () => {
 
     describe('accountCreationSchema invalid inputs', () => {
         it('rejects missing required fields', () => {
-            expect(() => accountWriteSchema.parse({
+            expect(() => accountCreationEventSchema.parse({
                 id: genAcctId()
             })).toThrow()
         })
 
         it('rejects missing id', () => {
-            expect(() => accountWriteSchema.parse({
+            expect(() => accountCreationEventSchema.parse({
                 name: 'example',
                 acctType: 'ASSET'
             })).toThrow()

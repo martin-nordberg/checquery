@@ -10,6 +10,24 @@ const client = hc<RegisterRoutes>(`${webAppHost}`)
 
 export class RegisterClientSvc implements IRegisterSvc {
 
+    async createTransaction(create: RegisterCreate): Promise<void> {
+        console.log("createTransaction", create)
+        const res = await client.register.transaction.$post({json: create})
+
+        if (!res.ok) {
+            console.log(res)
+        }
+    }
+
+    async deleteTransaction(txnId: TxnId): Promise<void> {
+        console.log("deleteTransaction", txnId)
+        const res = await client.register.transaction[':txnId'].$delete({param: {txnId}})
+
+        if (!res.ok) {
+            console.log(res)
+        }
+    }
+
     async findRegister(accountId: AcctId): Promise<Register | null> {
         console.log("findRegister", accountId)
         const res = await client.register[':accountId'].$get({param: {accountId}})
@@ -50,24 +68,6 @@ export class RegisterClientSvc implements IRegisterSvc {
         console.log(res)
 
         return null
-    }
-
-    async createTransaction(create: RegisterCreate): Promise<void> {
-        console.log("createTransaction", create)
-        const res = await client.register.transaction.$post({json: create})
-
-        if (!res.ok) {
-            console.log(res)
-        }
-    }
-
-    async deleteTransaction(txnId: TxnId): Promise<void> {
-        console.log("deleteTransaction", txnId)
-        const res = await client.register.transaction[':txnId'].$delete({param: {txnId}})
-
-        if (!res.ok) {
-            console.log(res)
-        }
     }
 
 }

@@ -1,7 +1,7 @@
 import {
     type Transaction,
-    type TransactionToWrite,
-    type TransactionPatch
+    type TransactionCreationEvent, type TransactionDeletionEvent,
+    type TransactionPatchEvent
 } from "../../domain/transactions/Transaction";
 import {type TxnId} from "../../domain/transactions/TxnId";
 import type {ITransactionSvc} from "$shared/services/transactions/ITransactionSvc";
@@ -15,17 +15,21 @@ export class TransactionTeeSvc implements ITransactionSvc {
     }
 
     /** Creates a new transaction with given attributes. */
-    async createTransaction(transaction: TransactionToWrite): Promise<void> {
+    async createTransaction(transactionCreation: TransactionCreationEvent): Promise<TransactionCreationEvent | null> {
+        let result: TransactionCreationEvent | null = transactionCreation
         for (const svc of this.svcs) {
-            await svc.createTransaction(transaction)
+            result = result ? await svc.createTransaction(result) : null
         }
+        return result
     }
 
     /** Deletes a given transaction. */
-    async deleteTransaction(transactionId: TxnId): Promise<void> {
+    async deleteTransaction(transactionDeletion: TransactionDeletionEvent): Promise<TransactionDeletionEvent | null> {
+        let result: TransactionDeletionEvent | null = transactionDeletion
         for (const svc of this.svcs) {
-            await svc.deleteTransaction(transactionId)
+            result = result ? await svc.deleteTransaction(result) : null
         }
+        return result
     }
 
     /** Finds the transaction with given unique ID. */
@@ -34,10 +38,10 @@ export class TransactionTeeSvc implements ITransactionSvc {
     }
 
     /** Updates a transaction's attributes. */
-    async updateTransaction(transactionPatch: TransactionPatch): Promise<TransactionPatch | null> {
-        let result: TransactionPatch | null = transactionPatch
+    async patchTransaction(transactionPatch: TransactionPatchEvent): Promise<TransactionPatchEvent | null> {
+        let result: TransactionPatchEvent | null = transactionPatch
         for (const svc of this.svcs) {
-            result = result ? await svc.updateTransaction(transactionPatch) : null
+            result = result ? await svc.patchTransaction(result) : null
         }
         return result
     }

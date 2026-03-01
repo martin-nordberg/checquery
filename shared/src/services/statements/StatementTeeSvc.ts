@@ -1,4 +1,8 @@
-import {type Statement, type StatementToWrite, type StatementPatch} from "../../domain/statements/Statement";
+import {
+    type Statement,
+    type StatementCreationEvent, type StatementDeletionEvent,
+    type StatementPatchEvent
+} from "../../domain/statements/Statement";
 import {type StmtId} from "../../domain/statements/StmtId";
 import type {IStatementSvc} from "$shared/services/statements/IStatementSvc";
 
@@ -11,17 +15,21 @@ export class StatementTeeSvc implements IStatementSvc {
     }
 
     /** Creates a new statement with given attributes. */
-    async createStatement(statement: StatementToWrite): Promise<void> {
+    async createStatement(statementCreation: StatementCreationEvent): Promise<StatementCreationEvent | null> {
+        let result: StatementCreationEvent | null = statementCreation
         for (const svc of this.svcs) {
-            await svc.createStatement(statement)
+            result = result ? await svc.createStatement(result) : null
         }
+        return result
     }
 
     /** Deletes a given statement. */
-    async deleteStatement(statementId: StmtId): Promise<void> {
+    async deleteStatement(statementDeletion: StatementDeletionEvent): Promise<StatementDeletionEvent | null> {
+        let result: StatementDeletionEvent | null = statementDeletion
         for (const svc of this.svcs) {
-            await svc.deleteStatement(statementId)
+            result = result ? await svc.deleteStatement(result) : null
         }
+        return result
     }
 
     /** Finds the statement with given unique ID. */
@@ -35,10 +43,10 @@ export class StatementTeeSvc implements IStatementSvc {
     }
 
     /** Updates a statement's attributes. */
-    async updateStatement(statementPatch: StatementPatch): Promise<StatementPatch | null> {
-        let result: StatementPatch | null = statementPatch
+    async patchStatement(statementPatch: StatementPatchEvent): Promise<StatementPatchEvent | null> {
+        let result: StatementPatchEvent | null = statementPatch
         for (const svc of this.svcs) {
-            result = result ? await svc.updateStatement(result) : null
+            result = result ? await svc.patchStatement(result) : null
         }
         return result
     }

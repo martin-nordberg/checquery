@@ -1,6 +1,11 @@
 import type {StmtId} from "$shared/domain/statements/StmtId";
 import {stmtIdSchema} from "$shared/domain/statements/StmtId";
-import {type Statement, type StatementToWrite, type StatementPatch} from "$shared/domain/statements/Statement";
+import {
+    type Statement,
+    type StatementCreationEvent,
+    type StatementDeletionEvent,
+    type StatementPatchEvent
+} from "$shared/domain/statements/Statement";
 import {fromCents, toCents} from "$shared/domain/core/CurrencyAmt";
 import {z} from "zod";
 import {isoDateSchema} from "$shared/domain/core/IsoDate";
@@ -28,49 +33,37 @@ export class StatementTxnRepo implements IStatementSvc {
         this.#txn = txn
     }
 
-    async createStatement(statement: StatementToWrite): Promise<void> {
-        await this.#txn.exec(
+    async createStatement(statementCreation: StatementCreationEvent): Promise<StatementCreationEvent | null> {
+        const count = await this.#txn.exec(
             `INSERT INTO Statement (id, beginDate, beginDateHlc, endDate, endDateHlc, beginBalanceCents,
-                                    beginBalanceCentsHlc,
-                                    endBalanceCents, endBalanceCentsHlc, accountId, isReconciled, isReconciledHlc,
-                                    isDeleted, isDeletedHlc)
-             SELECT $1,
-                    $2,
-                    $hlc,
-                    $3,
-                    $hlc,
-                    $4,
-                    $hlc,
-                    $5,
-                    $hlc,
-                    Account.id,
-                    $7,
-                    $hlc,
-                    false,
-                    $hlc
-             FROM Account
-             WHERE name = $6;`,
+                                    beginBalanceCentsHlc, endBalanceCents, endBalanceCentsHlc, accountId, isReconciled,
+                                    isReconciledHlc, isDeleted, isDeletedHlc)
+             SELECT $1, $2, $hlc, $3, $hlc, $4, $hlc, $5, $hlc, Account.id, $7, $hlc, false, $hlc
+               FROM Account
+              WHERE name = $6`,
             [
-                statement.id,
-                statement.beginDate,
-                statement.endDate,
-                toCents(statement.beginningBalance),
-                toCents(statement.endingBalance),
-                statement.account,
-                statement.isReconciled,
+                statementCreation.id,
+                statementCreation.beginDate,
+                statementCreation.endDate,
+                toCents(statementCreation.beginningBalance),
+                toCents(statementCreation.endingBalance),
+                statementCreation.account,
+                statementCreation.isReconciled,
             ]
         )
+        return count ? statementCreation : null
     }
 
-    async deleteStatement(statementId: StmtId): Promise<void> {
-        await this.#txn.exec(
+    async deleteStatement(statementDeletion: StatementDeletionEvent): Promise<StatementDeletionEvent | null> {
+        const count = await this.#txn.exec(
             `UPDATE Statement
-             SET isDeleted    = true,
-                 isDeletedHlc = $hlc
+               SET isDeleted    = true,
+                   isDeletedHlc = $hlc
              WHERE id = $1
                AND (isDeleted = false or isDeletedHlc > $hlc)`,
-            [statementId]
+            [statementDeletion.id]
         )
+        return count ? statementDeletion : null
     }
 
     async findStatementById(statementId: StmtId): Promise<Statement | null> {
@@ -82,10 +75,10 @@ export class StatementTxnRepo implements IStatementSvc {
                     endBalanceCents   as "endBalanceCents",
                     Account.name      as account,
                     isReconciled      as "isReconciled"
-             FROM Statement
-                      JOIN Account ON Statement.accountId = Account.id
-             WHERE Statement.id = $1
-               AND Statement.isDeleted = false`,
+               FROM Statement
+               JOIN Account ON Statement.accountId = Account.id
+              WHERE Statement.id = $1
+                AND Statement.isDeleted = false`,
             [statementId],
             statementRowSchema
         )
@@ -115,10 +108,10 @@ export class StatementTxnRepo implements IStatementSvc {
                     endBalanceCents   as "endBalanceCents",
                     Account.name      as account,
                     isReconciled      as "isReconciled"
-             FROM Statement
-                      JOIN Account ON Statement.accountId = Account.id
-             WHERE Statement.isDeleted = false
-             ORDER BY endDate, account`,
+               FROM Statement
+               JOIN Account ON Statement.accountId = Account.id
+              WHERE Statement.isDeleted = false
+              ORDER BY endDate, account`,
             [],
             statementRowSchema
         )
@@ -140,14 +133,14 @@ export class StatementTxnRepo implements IStatementSvc {
         return result
     }
 
-    async updateStatement(statementPatch: StatementPatch): Promise<StatementPatch | null> {
-        let result: StatementPatch | null = null
+    async patchStatement(statementPatch: StatementPatchEvent): Promise<StatementPatchEvent | null> {
+        let result: StatementPatchEvent | null = null
 
         if (statementPatch.beginDate !== undefined) {
             const count = await this.#txn.exec(
                 `UPDATE Statement
-                 SET beginDate    = $2,
-                     beginDateHlc = $hlc
+                   SET beginDate    = $2,
+                       beginDateHlc = $hlc
                  WHERE id = $1
                    AND beginDateHlc < $hlc
                    AND beginDate <> $2`,
@@ -161,8 +154,8 @@ export class StatementTxnRepo implements IStatementSvc {
         if (statementPatch.endDate !== undefined) {
             const count = await this.#txn.exec(
                 `UPDATE Statement
-                 SET endDate    = $2,
-                     endDateHlc = $hlc
+                   SET endDate    = $2,
+                       endDateHlc = $hlc
                  WHERE id = $1
                    AND endDateHlc < $hlc
                    AND endDateHlc <> $2`,
@@ -176,8 +169,8 @@ export class StatementTxnRepo implements IStatementSvc {
         if (statementPatch.beginningBalance !== undefined) {
             const count = await this.#txn.exec(
                 `UPDATE Statement
-                 SET beginBalanceCents    = $2,
-                     beginBalanceCentsHlc = $hlc
+                   SET beginBalanceCents    = $2,
+                       beginBalanceCentsHlc = $hlc
                  WHERE id = $1
                    AND beginBalanceCentsHlc < $hlc
                    AND beginBalanceCents <> $2`,
@@ -190,8 +183,8 @@ export class StatementTxnRepo implements IStatementSvc {
         if (statementPatch.endingBalance !== undefined) {
             const count = await this.#txn.exec(
                 `UPDATE Statement
-                 SET endBalanceCents    = $2,
-                     endBalanceCentsHlc = $hlc
+                   SET endBalanceCents    = $2,
+                       endBalanceCentsHlc = $hlc
                  WHERE id = $1
                    AND endBalanceCentsHlc < $hlc
                    AND endBalanceCents <> $2`,
@@ -205,8 +198,8 @@ export class StatementTxnRepo implements IStatementSvc {
         if (statementPatch.isReconciled !== undefined) {
             const count = await this.#txn.exec(
                 `UPDATE Statement
-                 SET isReconciled    = $2,
-                     isReconciledHlc = $hlc
+                   SET isReconciled    = $2,
+                       isReconciledHlc = $hlc
                  WHERE id = $1
                    AND isReconciledHlc < $hlc
                    AND isReconciled <> $2`,
