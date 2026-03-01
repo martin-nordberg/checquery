@@ -44,6 +44,7 @@ export class AccountEventWriter implements IAccountSvc {
     async patchAccount(accountPatch: AccountPatchEvent): Promise<AccountPatchEvent | null> {
         await appendDirective({action: 'update-account', payload: {
             id: accountPatch.id,
+            acctType: accountPatch.acctType,
             name: accountPatch.name,
             acctNumber: accountPatch.acctNumber,
             description: accountPatch.description,
