@@ -6,17 +6,12 @@ import {
     type StatementDeletionEvent,
     type StatementPatchEvent
 } from "$shared/domain/statements/Statement";
-import {
-    appendDirective,
-    createStatementCreateDirective,
-    createStatementDeleteDirective,
-    createStatementUpdateDirective
-} from "./ChecqueryYamlAppender";
+import {appendDirective} from "./ChecqueryYamlAppender";
 
 export class StatementEventWriter implements IStatementSvc {
 
     async createStatement(statementCreation: StatementCreationEvent): Promise<StatementCreationEvent | null> {
-        await appendDirective(createStatementCreateDirective({
+        await appendDirective({action: 'create-statement', payload: {
             id: statementCreation.id,
             beginDate: statementCreation.beginDate,
             endDate: statementCreation.endDate,
@@ -25,12 +20,12 @@ export class StatementEventWriter implements IStatementSvc {
             account: statementCreation.account,
             isReconciled: statementCreation.isReconciled,
             transactions: statementCreation.transactions,
-        }))
+        }})
         return statementCreation
     }
 
     async deleteStatement(statementDeletion: StatementDeletionEvent): Promise<StatementDeletionEvent | null> {
-        await appendDirective(createStatementDeleteDirective(statementDeletion.id))
+        await appendDirective({action: 'delete-statement', payload: {id: statementDeletion.id}})
         return statementDeletion
     }
 
@@ -43,7 +38,7 @@ export class StatementEventWriter implements IStatementSvc {
     }
 
     async patchStatement(statementPatch: StatementPatchEvent): Promise<Statement | null> {
-        await appendDirective(createStatementUpdateDirective({
+        await appendDirective({action: 'update-statement', payload: {
             id: statementPatch.id,
             beginDate: statementPatch.beginDate,
             endDate: statementPatch.endDate,
@@ -52,7 +47,7 @@ export class StatementEventWriter implements IStatementSvc {
             account: statementPatch.account,
             isReconciled: statementPatch.isReconciled,
             transactions: statementPatch.transactions,
-        }))
+        }})
 
         return null
     }

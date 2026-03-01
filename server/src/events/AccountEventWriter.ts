@@ -6,31 +6,26 @@ import {
 } from "$shared/domain/accounts/Account";
 import {type IAccountSvc} from "$shared/services/accounts/IAccountSvc";
 import {type AcctId} from "$shared/domain/accounts/AcctId";
-import {
-    appendDirective,
-    createAccountCreateDirective,
-    createAccountDeleteDirective,
-    createAccountUpdateDirective
-} from "./ChecqueryYamlAppender";
+import {appendDirective} from "./ChecqueryYamlAppender";
 
 
 export class AccountEventWriter implements IAccountSvc {
 
     async createAccount(accountCreation: AccountCreationEvent): Promise<AccountCreationEvent | null> {
-        await appendDirective(createAccountCreateDirective({
+        await appendDirective({action: 'create-account', payload: {
             id: accountCreation.id,
             name: accountCreation.name,
             acctType: accountCreation.acctType,
             acctNumber: accountCreation.acctNumber,
             description: accountCreation.description,
-        }))
+        }})
         return accountCreation
     }
 
     async deleteAccount(accountDeletion: AccountDeletionEvent): Promise<AccountDeletionEvent | null> {
-        await appendDirective(createAccountDeleteDirective({
+        await appendDirective({action: 'delete-account', payload: {
             id: accountDeletion.id,
-        }))
+        }})
         return accountDeletion
     }
 
@@ -47,12 +42,12 @@ export class AccountEventWriter implements IAccountSvc {
     }
 
     async patchAccount(accountPatch: AccountPatchEvent): Promise<AccountPatchEvent | null> {
-        await appendDirective(createAccountUpdateDirective({
+        await appendDirective({action: 'update-account', payload: {
             id: accountPatch.id,
             name: accountPatch.name,
             acctNumber: accountPatch.acctNumber,
             description: accountPatch.description,
-        }))
+        }})
         return accountPatch
     }
 

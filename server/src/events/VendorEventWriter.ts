@@ -6,29 +6,24 @@ import {
 } from "$shared/domain/vendors/Vendor";
 import {type IVendorSvc} from "$shared/services/vendors/IVendorSvc";
 import {type VndrId} from "$shared/domain/vendors/VndrId";
-import {
-    appendDirective,
-    createVendorCreateDirective,
-    createVendorDeleteDirective,
-    createVendorUpdateDirective
-} from "./ChecqueryYamlAppender";
+import {appendDirective} from "./ChecqueryYamlAppender";
 
 
 export class VendorEventWriter implements IVendorSvc {
 
     async createVendor(vendorCreation: VendorCreationEvent): Promise<VendorCreationEvent | null> {
-        await appendDirective(createVendorCreateDirective({
+        await appendDirective({action: 'create-vendor', payload: {
             id: vendorCreation.id,
             name: vendorCreation.name,
             description: vendorCreation.description,
             defaultAccount: vendorCreation.defaultAccount,
             isActive: vendorCreation.isActive,
-        }))
+        }})
         return vendorCreation
     }
 
     async deleteVendor(vendorDeletion: VendorDeletionEvent): Promise<VendorDeletionEvent | null> {
-        await appendDirective(createVendorDeleteDirective(vendorDeletion.id))
+        await appendDirective({action: 'delete-vendor', payload: {id: vendorDeletion.id}})
         return vendorDeletion
     }
 
@@ -45,13 +40,13 @@ export class VendorEventWriter implements IVendorSvc {
     }
 
     async patchVendor(vendorPatch: VendorPatchEvent): Promise<VendorPatchEvent | null> {
-        await appendDirective(createVendorUpdateDirective({
+        await appendDirective({action: 'update-vendor', payload: {
             id: vendorPatch.id,
             name: vendorPatch.name,
             description: vendorPatch.description,
             defaultAccount: vendorPatch.defaultAccount,
             isActive: vendorPatch.isActive,
-        }))
+        }})
         return vendorPatch
     }
 
