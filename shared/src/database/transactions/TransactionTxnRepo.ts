@@ -86,7 +86,7 @@ export class TransactionTxnRepo implements ITransactionSvc {
                    isDeletedHlc = $hlc
              WHERE id = $1
                AND (isDeleted = false or isDeletedHlc > $hlc)`,
-            [transactionDeletion]
+            [transactionDeletion.id]
         )
         return count ? transactionDeletion : null
     }
