@@ -69,8 +69,8 @@ const NewAccountRow = (props: NewAccountRowProps) => {
                 id: genAcctId(),
                 name: name,
                 acctType: acctType,
-                acctNumber: editAcctNumber()?.trim() || undefined,
-                description: editDescription()?.trim() || undefined,
+                acctNumber: editAcctNumber()?.trim() ?? "",
+                description: editDescription()?.trim() ?? "",
             })
 
             props.onSaved()

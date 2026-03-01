@@ -254,6 +254,6 @@ export class RegisterRepo implements IRegisterSvc {
     }
 
     async deleteTransaction(txnId: TxnId): Promise<void> {
-        await this.txnSvc.deleteTransaction(txnId)
+        await this.txnSvc.deleteTransaction({ id: txnId })
     }
 }

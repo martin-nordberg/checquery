@@ -180,6 +180,7 @@ const useTransactionForm = (options: UseTransactionFormOptions) => {
             await vendorClientSvc.createVendor({
                 id: genVndrId(),
                 name: vendor,
+                description: "",
                 isActive: true,
             })
         }

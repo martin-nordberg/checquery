@@ -220,7 +220,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                 code: form.editCode(),
                 vendor: form.editVendor(),
                 description: form.editDescription(),
-                entries: result.entries,
+                entries: result.entries.map(e => ({ account: e.account, debit: e.debit, credit: e.credit, comment: "" })),
             })
 
             setTransaction(null)

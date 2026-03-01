@@ -77,7 +77,7 @@ const NewVendorRow = (props: NewVendorRowProps) => {
             await vendorClientSvc.createVendor({
                 id: genVndrId(),
                 name: name,
-                description: editDescription()?.trim() || undefined,
+                description: editDescription()?.trim() ?? "",
                 defaultAccount: defaultAccount || undefined,
                 isActive: true,
             })

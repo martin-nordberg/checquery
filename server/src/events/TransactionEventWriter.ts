@@ -5,12 +5,7 @@ import {
     type TransactionCreationEvent, type TransactionDeletionEvent,
     type TransactionPatchEvent
 } from "$shared/domain/transactions/Transaction";
-import {
-    appendDirective,
-    createTransactionCreateDirective,
-    createTransactionDeleteDirective,
-    createTransactionUpdateDirective
-} from "./ChecqueryYamlAppender";
+import {appendDirective} from "./ChecqueryYamlAppender";
 
 
 export class TransactionEventWriter implements ITransactionSvc {
@@ -39,12 +34,12 @@ export class TransactionEventWriter implements ITransactionSvc {
             }
             return entry
         })
-        await appendDirective(createTransactionCreateDirective(payload))
+        await appendDirective({action: 'create-transaction', payload})
         return transactionCreation
     }
 
     async deleteTransaction(transactionDeletion: TransactionDeletionEvent): Promise<TransactionDeletionEvent | null> {
-        await appendDirective(createTransactionDeleteDirective(transactionDeletion.id))
+        await appendDirective({action: 'delete-transaction', payload: {id: transactionDeletion.id}})
         return transactionDeletion
     }
 
@@ -82,7 +77,7 @@ export class TransactionEventWriter implements ITransactionSvc {
                 return entry
             })
         }
-        await appendDirective(createTransactionUpdateDirective(payload))
+        await appendDirective({action: 'update-transaction', payload})
 
         return null
     }

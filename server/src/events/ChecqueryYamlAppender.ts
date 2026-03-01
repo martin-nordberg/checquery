@@ -1,3 +1,5 @@
+import {appendFile, stat} from 'fs/promises'
+
 export type DirectiveAction =
     | 'create-account' | 'update-account' | 'delete-account'
     | 'create-vendor' | 'update-vendor' | 'delete-vendor'
@@ -8,9 +10,6 @@ export type ChecqueryDirective = {
     action: DirectiveAction
     payload: Record<string, unknown>
 }
-
-/** The file containing all directives. */
-const checqueryLogFile = process.env['CHECQUERY_LOG_FILE']!
 
 type TransactionEntry = {
     account: string
@@ -50,14 +49,14 @@ const formatDirective = (directive: ChecqueryDirective): string => {
 
     // Account directives
     if (action === 'create-account' || action === 'update-account' || action === 'delete-account') {
+        if (payload['acctType']) {
+            lines.push(`    acctType: ${payload['acctType']}`)
+        }
         if (payload['id']) {
             lines.push(`    id: ${payload['id']}`)
         }
         if (payload['name']) {
             lines.push(`    name: ${maybeQuoteYaml(payload['name'])}`)
-        }
-        if (payload['acctType']) {
-            lines.push(`    acctType: ${payload['acctType']}`)
         }
         if (payload['acctNumber']) {
             lines.push(`    acctNumber: ${maybeQuoteYaml(payload['acctNumber'])}`)
@@ -80,8 +79,8 @@ const formatDirective = (directive: ChecqueryDirective): string => {
         if (payload['defaultAccount']) {
             lines.push(`    defaultAccount: ${payload['defaultAccount']}`)
         }
-        if (payload['isActive'] !== undefined) {
-            lines.push(`    isActive: ${payload['isActive']}`)
+        if (payload['isActive'] === false) {
+            lines.push(`    isActive: false`)
         }
     }
     // Transaction directives
@@ -95,11 +94,11 @@ const formatDirective = (directive: ChecqueryDirective): string => {
         if (payload['code']) {
             lines.push(`    code: ${maybeQuoteYaml(payload['code'])}`)
         }
-        if (payload['description']) {
-            lines.push(`    description: ${payload['description']}`)
-        }
         if (payload['vendor']) {
             lines.push(`    vendor: ${payload['vendor']}`)
+        }
+        if (payload['description']) {
+            lines.push(`    description: ${payload['description']}`)
         }
 
         // Add entries
@@ -124,6 +123,9 @@ const formatDirective = (directive: ChecqueryDirective): string => {
         if (payload['id']) {
             lines.push(`    id: ${payload['id']}`)
         }
+        if (payload['account']) {
+            lines.push(`    account: ${payload['account']}`)
+        }
         if (payload['beginDate']) {
             lines.push(`    beginDate: ${payload['beginDate']}`)
         }
@@ -135,9 +137,6 @@ const formatDirective = (directive: ChecqueryDirective): string => {
         }
         if (payload['endingBalance']) {
             lines.push(`    endingBalance: ${payload['endingBalance']}`)
-        }
-        if (payload['account']) {
-            lines.push(`    account: ${payload['account']}`)
         }
         if (payload['isReconciled'] !== undefined) {
             lines.push(`    isReconciled: ${payload['isReconciled']}`)
@@ -164,74 +163,11 @@ const formatDirective = (directive: ChecqueryDirective): string => {
  * @param directive the directive to append
  */
 export const appendDirective = async (directive: ChecqueryDirective): Promise<void> => {
+    const logFile = process.env['CHECQUERY_LOG_FILE']!
     const yamlStr = formatDirective(directive)
-    const file = Bun.file(checqueryLogFile)
-    const existingContent = await file.text()
-    // Blank line before new directive
-    const newContent = existingContent.trimEnd() + '\n\n' + yamlStr + '\n'
-    await Bun.write(checqueryLogFile, newContent)
+    // Blank line before each subsequent directive; no leading blank line for the first
+    const {size} = await stat(logFile)
+    const prefix = size > 0 ? '\n' : ''
+    await appendFile(logFile, prefix + yamlStr + '\n', 'utf8')
 }
 
-// Account directive factories
-export const createAccountCreateDirective = (payload: Record<string, unknown>): ChecqueryDirective => ({
-    action: 'create-account',
-    payload
-})
-
-export const createAccountUpdateDirective = (payload: Record<string, unknown>): ChecqueryDirective => ({
-    action: 'update-account',
-    payload
-})
-
-export const createAccountDeleteDirective = (payload: Record<string, unknown>): ChecqueryDirective => ({
-    action: 'delete-account',
-    payload
-})
-
-// Vendor directive factories
-export const createVendorCreateDirective = (payload: Record<string, unknown>): ChecqueryDirective => ({
-    action: 'create-vendor',
-    payload
-})
-
-export const createVendorUpdateDirective = (payload: Record<string, unknown>): ChecqueryDirective => ({
-    action: 'update-vendor',
-    payload
-})
-
-export const createVendorDeleteDirective = (id: string): ChecqueryDirective => ({
-    action: 'delete-vendor',
-    payload: {id}
-})
-
-// Transaction directive factories
-export const createTransactionCreateDirective = (payload: Record<string, unknown>): ChecqueryDirective => ({
-    action: 'create-transaction',
-    payload
-})
-
-export const createTransactionUpdateDirective = (payload: Record<string, unknown>): ChecqueryDirective => ({
-    action: 'update-transaction',
-    payload
-})
-
-export const createTransactionDeleteDirective = (id: string): ChecqueryDirective => ({
-    action: 'delete-transaction',
-    payload: {id}
-})
-
-// Statement directive factories
-export const createStatementCreateDirective = (payload: Record<string, unknown>): ChecqueryDirective => ({
-    action: 'create-statement',
-    payload
-})
-
-export const createStatementUpdateDirective = (payload: Record<string, unknown>): ChecqueryDirective => ({
-    action: 'update-statement',
-    payload
-})
-
-export const createStatementDeleteDirective = (id: string): ChecqueryDirective => ({
-    action: 'delete-statement',
-    payload: {id}
-})
