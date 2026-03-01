@@ -22,8 +22,8 @@ cd server && bun run dev
 cd client && bun run build
 
 # Type check (no emit)
-cd client && tsc -b
-cd server && tsc --noEmit
+cd client && bunx tsc -b
+cd server && bunx tsc --noEmit
 ```
 
 ## Architecture
@@ -45,7 +45,7 @@ The project uses Hono's type-safe client (`hc`) to share route types between cli
 1. **Routes** are defined in `shared/src/routes/` using Hono and Zod validation
 2. **Service interfaces** in `shared/src/services/` define the contract (e.g., `IAccountSvc`)
 3. **Database repositories** in `shared/src/database/` implement interfaces using PGlite
-4. **Event writers** in `shared/src/events/` implement the same interfaces to append YAML directives
+4. **Event writers** in `server/src/events/` implement the same interfaces to append YAML directives
 5. **Tee services** in `shared/src/services/` fan out writes to multiple implementations (e.g., DB + event log)
 6. **Client services** in `client/src/clients/` implement the same interfaces using Hono's typed client
 
@@ -53,7 +53,7 @@ Example flow for accounts:
 - `shared/src/routes/accounts/AccountRoutes.ts` - defines REST routes with Zod validation
 - `shared/src/services/accounts/IAccountSvc.ts` - service interface
 - `shared/src/database/accounts/AccountRepo.ts` - PGlite implementation
-- `shared/src/events/AccountEventWriter.ts` - YAML event writer
+- `server/src/events/AccountEventWriter.ts` - YAML event writer
 - `shared/src/services/accounts/AccountTeeSvc.ts` - tees writes to both repo and event writer
 - `client/src/clients/accounts/AccountClientSvc.ts` - HTTP client using Hono's `hc`
 
@@ -61,17 +61,19 @@ Example flow for accounts:
 
 Domain types are in `shared/src/domain/` with Zod schemas for validation:
 - **accounts/**: Account, AcctId, AcctType, AcctNumber
-- **transactions/**: Transaction, Entry, TxnId, TxnStatus
-- **organizations/**: Organization, OrgId
+- **transactions/**: Transaction, Entry, Entries, TxnId, TxnStatus
+- **vendors/**: Vendor, VndrId
+- **statements/**: Statement, StmtId
+- **register/**: Register
 - **balancesheet/**: BalanceSheet
 - **incomestatement/**: IncomeStatement
-- **core/**: Name, Summary, IsoDate, Period, CurrencyAmt, Branded types
+- **core/**: Name, Description, IsoDate, Period, CurrencyAmt, HybridLogicalClock, Branded types
 
 ### Event Sourcing Pattern
 
-The server loads data from YAML files at startup via `shared/src/events/ChecqueryEventLoader.ts`. YAML files contain action directives (e.g., `{action: 'create-account', payload: {...}}`). At runtime, API mutations are teed to both the database and event writers that append new directives to the YAML log.
+The server loads data from YAML files at startup via `server/src/events/ChecqueryEventLoader.ts`. YAML files contain action directives (e.g., `{action: 'create-account', payload: {...}}`). At runtime, API mutations are teed to both the database and event writers that append new directives to the YAML log.
 
-Event writers (`shared/src/events/`): `AccountEventWriter`, `TransactionEventWriter`, `VendorEventWriter`, `StatementEventWriter` — each implements the corresponding service interface but only for write operations (reads throw "Not implemented").
+Event writers (`server/src/events/`): `AccountEventWriter`, `TransactionEventWriter`, `VendorEventWriter`, `StatementEventWriter` — each implements the corresponding service interface but only for write operations (reads throw "Not implemented"). The YAML file path is set via the `CHECQUERY_LOG_FILE` environment variable.
 
 ### Tee Service Pattern
 
@@ -96,3 +98,4 @@ Custom Zod validator at `shared/src/routes/validation/zxvalidator.ts` bridges Ho
 ## Code Style
 
 - **Always use block statements with braces for `if` statements.** Never use single-line `if` statements without braces (e.g., `if (x) return` or `if (x) y = z`). Always wrap the body in `{ }`, even for one-liners.
+- **Always use `??` instead of `||` for default values.** `??` only falls back on `null` or `undefined`, whereas `||` also treats `0`, `false`, and `""` as falsy. Use `??` when the intent is "use this value unless it's absent".
