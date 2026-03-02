@@ -158,7 +158,7 @@ export class StatementTxnRepo implements IStatementSvc {
                        endDateHlc = $hlc
                  WHERE id = $1
                    AND endDateHlc < $hlc
-                   AND endDateHlc <> $2`,
+                   AND endDate <> $2`,
                 [statementPatch.id, statementPatch.endDate]
             )
             if (count) {

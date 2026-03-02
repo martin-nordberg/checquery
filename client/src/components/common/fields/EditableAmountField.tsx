@@ -41,7 +41,7 @@ const EditableAmountField = (props: EditableAmountFieldProps) => {
             return
         }
 
-        const parsed = parseFloat(value)
+        const parsed = parseFloat(value.replace(/[$,]/g, ''))
         if (isNaN(parsed)) {
             setError("Invalid number")
             return
