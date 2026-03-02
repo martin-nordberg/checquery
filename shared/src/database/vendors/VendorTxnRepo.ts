@@ -161,7 +161,7 @@ export class VendorTxnRepo implements IVendorSvc {
                           defaultAccountIdHlc = $hlc FROM DefaultAccount
                     WHERE Vendor.id = $1
                       AND defaultAccountIdHlc < $hlc
-                      AND defaultAccountId <> DefaultAccount.id`,
+                      AND defaultAccountId IS DISTINCT FROM DefaultAccount.id`,
                     [vendorPatch.id, vendorPatch.defaultAccount]
                 )
                 if (count) {

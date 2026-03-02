@@ -60,7 +60,7 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
             return
         }
 
-        if (offsetEntry.account === '' || offsetEntry.account !== vendor.defaultAccount) {
+        if (offsetEntry.account === '') {
             form.setEditEntries([
                 entries[0]!,
                 {
