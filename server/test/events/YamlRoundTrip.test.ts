@@ -29,6 +29,6 @@ describe('YAML round-trip', () => {
         const input = await Bun.file(inputFile).text()
         const output = await Bun.file(outputFile).text()
 
-        expect(output).toBe(input)
+        expect(output).toBe(input.replaceAll("\r",""))
     })
 })
