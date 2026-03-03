@@ -95,7 +95,7 @@ export class TransactionTxnRepo implements ITransactionSvc {
         const txn = await this.#txn.findOne(
             `SELECT Transaxtion.id, date, code, Vendor.name as vendor, Transaxtion.description
                FROM Transaxtion
-               LEFT OUTER JOIN Vendor ON Transaxtion.vendorId = Vendor.id
+               LEFT JOIN Vendor ON Transaxtion.vendorId = Vendor.id
               WHERE Transaxtion.id = $1
                 AND Transaxtion.isDeleted = false`,
             [transactionId],

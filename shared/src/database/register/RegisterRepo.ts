@@ -59,8 +59,8 @@ export class RegisterRepo implements IRegisterSvc {
                        Entry.debitCents as "debitCents",
                        Entry.creditCents as "creditCents"
                   FROM Entry
-                  INNER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
-                  LEFT OUTER JOIN Vendor ON Transaxtion.vendorId = Vendor.id
+                  JOIN Transaxtion ON Entry.txnId = Transaxtion.id
+                  LEFT JOIN Vendor ON Transaxtion.vendorId = Vendor.id
                   LEFT JOIN Statement ON Entry.stmtId = Statement.id
                  WHERE Entry.accountId = $1
                    AND Transaxtion.isDeleted = false
@@ -83,9 +83,9 @@ export class RegisterRepo implements IRegisterSvc {
                 `SELECT Entry.txnId  as "txnId",
                        Account.name as "accountName"
                   FROM Entry
-                 INNER JOIN Account ON Entry.accountId = Account.id
+                 JOIN Account ON Entry.accountId = Account.id
                  WHERE Entry.txnId IN (SELECT DISTINCT Entry.txnId
-                                       FROM Entry INNER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
+                                       FROM Entry JOIN Transaxtion ON Entry.txnId = Transaxtion.id
                                        WHERE Entry.accountId = $1
                                          AND Transaxtion.isDeleted = false)
                    AND Entry.accountId != $1
@@ -160,7 +160,7 @@ export class RegisterRepo implements IRegisterSvc {
                        Transaxtion.description as description,
                        Vendor.name as vendor
                   FROM Transaxtion
-                  LEFT OUTER JOIN Vendor ON Transaxtion.vendorId = Vendor.id
+                  LEFT JOIN Vendor ON Transaxtion.vendorId = Vendor.id
                  WHERE Transaxtion.id = $1
                    AND Transaxtion.isDeleted = false`,
                 [txnId],
@@ -188,8 +188,8 @@ export class RegisterRepo implements IRegisterSvc {
                        Entry.debitCents as "debitCents",
                        Entry.creditCents as "creditCents"
                   FROM Entry
-                 INNER JOIN Account ON Entry.accountId = Account.id
-                 INNER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
+                 JOIN Account ON Entry.accountId = Account.id
+                 JOIN Transaxtion ON Entry.txnId = Transaxtion.id
                   LEFT JOIN Statement ON Entry.stmtId = Statement.id
                  WHERE Entry.txnId = $1
                    AND Transaxtion.isDeleted = false
