@@ -4,7 +4,7 @@ import type {CurrencyAmt} from "$shared/domain/core/CurrencyAmt.ts";
 import type {IsoDate} from "$shared/domain/core/IsoDate.ts";
 import {isoDateToday} from "$shared/domain/core/IsoDate.ts";
 import {genTxnId} from "$shared/domain/transactions/TxnId.ts";
-import {registerClientSvc} from "../../clients/register/RegisterClientSvc.ts";
+import {transactionClientSvc} from "../../clients/transactions/TransactionClientSvc.ts";
 import EditableDateField from "../common/fields/EditableDateField.tsx";
 import EditableTextField from "../common/fields/EditableTextField.tsx";
 import EditableVendorField from "../common/fields/EditableVendorField.tsx";
@@ -119,13 +119,18 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
             }
 
             const usedDate = form.editDate()
-            await registerClientSvc.createTransaction({
+            await transactionClientSvc.createTransaction({
                 id: genTxnId(),
                 date: usedDate,
-                code: form.editCode(),
+                code: form.editCode() ?? '',
                 vendor: form.editVendor(),
-                description: form.editDescription(),
-                entries: result.entries,
+                description: form.editDescription() ?? '',
+                entries: result.entries.map(e => ({
+                    account: e.account,
+                    debit: e.debit,
+                    credit: e.credit,
+                    comment: '',
+                })),
             })
 
             props.onSaved(usedDate)

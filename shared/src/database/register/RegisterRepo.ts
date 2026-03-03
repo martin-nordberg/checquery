@@ -2,28 +2,23 @@ import {z} from "zod";
 import type {IRegisterSvc} from "$shared/services/register/IRegisterSvc";
 import type {
     Register,
-    RegisterCreate,
     RegisterLineItem,
     RegisterTransaction,
-    RegisterUpdate
 } from "$shared/domain/register/Register";
 import {fromCents} from "$shared/domain/core/CurrencyAmt";
 import type {AcctId} from "$shared/domain/accounts/AcctId";
 import {type TxnId, txnIdSchema} from "$shared/domain/transactions/TxnId";
 import {txnStatusSchema} from "$shared/domain/transactions/TxnStatus";
 import {acctTypeSchema} from "$shared/domain/accounts/AcctType";
-import type {ITransactionSvc} from "$shared/services/transactions/ITransactionSvc";
 import type {PgLiteDb} from "$shared/database/PgLiteDb";
 
 
 export class RegisterRepo implements IRegisterSvc {
 
     readonly db: PgLiteDb
-    readonly txnSvc: ITransactionSvc
 
-    constructor(db: PgLiteDb, txnSvc: ITransactionSvc) {
+    constructor(db: PgLiteDb) {
         this.db = db
-        this.txnSvc = txnSvc
     }
 
     async findRegister(accountId: AcctId): Promise<Register | null> {
@@ -219,41 +214,4 @@ export class RegisterRepo implements IRegisterSvc {
         })
     }
 
-    async updateTransaction(update: RegisterUpdate): Promise<RegisterTransaction | null> {
-        await this.txnSvc.patchTransaction({
-            id: update.id,
-            date: update.date,
-            code: update.code ?? "",
-            vendor: update.vendor ?? undefined,
-            description: update.description ?? "",
-            entries: update.entries?.map(e => ({
-                account: e.account,
-                debit: e.debit,
-                credit: e.credit,
-                comment: "",
-            })),
-        })
-
-        return this.findTransaction(update.id)
-    }
-
-    async createTransaction(create: RegisterCreate): Promise<void> {
-        await this.txnSvc.createTransaction({
-            id: create.id,
-            date: create.date,
-            code: create.code ?? "",
-            vendor: create.vendor ?? undefined,
-            description: create.description ?? "",
-            entries: create.entries.map(e => ({
-                account: e.account,
-                debit: e.debit,
-                credit: e.credit,
-                comment: "",
-            })),
-        })
-    }
-
-    async deleteTransaction(txnId: TxnId): Promise<void> {
-        await this.txnSvc.deleteTransaction({ id: txnId })
-    }
 }

@@ -4,6 +4,7 @@ import {accountRoutes} from "$shared/routes/accounts/AccountRoutes";
 import {balanceSheetRoutes} from "$shared/routes/balancesheet/BalanceSheetRoutes";
 import {incomeStatementRoutes} from "$shared/routes/incomestatement/IncomeStatementRoutes";
 import {registerRoutes} from "$shared/routes/register/RegisterRoutes";
+import {transactionRoutes} from "$shared/routes/transactions/TransactionRoutes";
 import {vendorRoutes} from "$shared/routes/vendors/VendorRoutes";
 import {statementRoutes} from "$shared/routes/statements/StatementRoutes";
 import {createPgLiteDb} from "$shared/database/PgLiteDb";
@@ -53,7 +54,7 @@ const txnSvc = new TransactionTeeSvc([transactionRepo, transactionEventWriter])
 const stmtSvc = new StatementTeeSvc([statementRepo, statementEventWriter])
 const bsSvc = new BalanceSheetRepo(db)
 const isSvc = new IncomeStatementRepo(db)
-const regSvc = new RegisterRepo(db, txnSvc)
+const regSvc = new RegisterRepo(db)
 
 /** Returns the file containing all directives. */
 const checqueryLogFile = () => process.env['CHECQUERY_LOG_FILE']!
@@ -86,6 +87,7 @@ const routes =
         .route('/balancesheet', balanceSheetRoutes(bsSvc))
         .route('/incomestatement', incomeStatementRoutes(isSvc))
         .route('/register', registerRoutes(regSvc))
+        .route('/transactions', transactionRoutes(txnSvc))
         .route('/statements', statementRoutes(stmtSvc))
         .route('/vendors', vendorRoutes(vndrSvc))
 

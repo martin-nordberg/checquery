@@ -4,6 +4,7 @@ import type {RegisterEntry, RegisterLineItem, RegisterTransaction} from "$shared
 import type {IsoDate} from "$shared/domain/core/IsoDate.ts";
 import type {AcctTypeStr} from "$shared/domain/accounts/AcctType.ts";
 import {registerClientSvc} from "../../clients/register/RegisterClientSvc.ts";
+import {transactionClientSvc} from "../../clients/transactions/TransactionClientSvc.ts";
 import EditableDateField from "../common/fields/EditableDateField.tsx";
 import EditableTextField from "../common/fields/EditableTextField.tsx";
 import EditableVendorField from "../common/fields/EditableVendorField.tsx";
@@ -214,13 +215,13 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                 return
             }
 
-            await registerClientSvc.updateTransaction({
+            await transactionClientSvc.patchTransaction({
                 id: props.lineItem.txnId,
                 date: form.editDate(),
                 code: form.editCode(),
                 vendor: form.editVendor(),
                 description: form.editDescription(),
-                entries: result.entries.map(e => ({ account: e.account, debit: e.debit, credit: e.credit, comment: "" })),
+                entries: result.entries.map(e => ({account: e.account, debit: e.debit, credit: e.credit, comment: ''})),
             })
 
             setTransaction(null)
@@ -240,7 +241,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
         setShowDeleteConfirm(false)
         form.setIsSaving(true)
         try {
-            await registerClientSvc.deleteTransaction(props.lineItem.txnId)
+            await transactionClientSvc.deleteTransaction({id: props.lineItem.txnId})
             setTransaction(null)
             props.onDeleted()
         } catch (e) {

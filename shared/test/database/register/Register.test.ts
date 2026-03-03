@@ -25,7 +25,7 @@ describe('Create register', () => {
 
         await loadChecqueryLog(testFile, acctSvc, txnSvc, vendorSvc, stmtSvc)
 
-        const registerRepo = new RegisterRepo(db, txnSvc)
+        const registerRepo = new RegisterRepo(db)
 
         const reg = await registerRepo.findRegister(acctIdSchema.parse("accttruistchecking0000000000"))
 
