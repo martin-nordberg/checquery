@@ -19,13 +19,13 @@ export class AccountRepo implements IAccountSvc {
     }
 
     async createAccount(accountCreation: AccountCreationEvent): Promise<AccountCreationEvent | null> {
-        return this.db.transaction(async (txn) =>
+        return this.db.transactionx(accountCreation.hlc, async (txn) =>
             new AccountTxnRepo(txn).createAccount(accountCreation)
         )
     }
 
     async deleteAccount(accountDeletion: AccountDeletionEvent): Promise<AccountDeletionEvent | null> {
-        return this.db.transaction(async (txn) =>
+        return this.db.transactionx(accountDeletion.hlc, async (txn) =>
             new AccountTxnRepo(txn).deleteAccount(accountDeletion)
         )
     }
@@ -50,7 +50,7 @@ export class AccountRepo implements IAccountSvc {
     }
 
     async patchAccount(accountPatch: AccountPatchEvent): Promise<AccountPatchEvent | null> {
-        return this.db.transaction(async (txn) =>
+        return this.db.transactionx(accountPatch.hlc, async (txn) =>
             new AccountTxnRepo(txn).patchAccount(accountPatch)
         )
     }

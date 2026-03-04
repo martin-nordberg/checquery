@@ -18,14 +18,14 @@ export class VendorRepo implements IVendorSvc {
         this.db = db
     }
 
-    async createVendor(vendor: VendorCreationEvent): Promise<VendorCreationEvent | null> {
-        return this.db.transaction(async (txn) =>
-            new VendorTxnRepo(txn).createVendor(vendor)
+    async createVendor(vendorCreation: VendorCreationEvent): Promise<VendorCreationEvent | null> {
+        return this.db.transactionx(vendorCreation.hlc, async (txn) =>
+            new VendorTxnRepo(txn).createVendor(vendorCreation)
         )
     }
 
     async deleteVendor(vendorDeletion: VendorDeletionEvent): Promise<VendorDeletionEvent | null> {
-        return this.db.transaction(async (txn) =>
+        return this.db.transactionx(vendorDeletion.hlc, async (txn) =>
             new VendorTxnRepo(txn).deleteVendor(vendorDeletion)
         )
     }
@@ -49,7 +49,7 @@ export class VendorRepo implements IVendorSvc {
     }
 
     async patchVendor(vendorPatch: VendorPatchEvent): Promise<VendorPatchEvent | null> {
-        return this.db.transaction(async (txn) =>
+        return this.db.transactionx(vendorPatch.hlc, async (txn) =>
             new VendorTxnRepo(txn).patchVendor(vendorPatch)
         )
     }

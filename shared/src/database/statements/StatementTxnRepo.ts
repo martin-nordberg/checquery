@@ -51,7 +51,7 @@ export class StatementTxnRepo implements IStatementSvc {
                 statementCreation.isReconciled,
             ]
         )
-        return count ? statementCreation : null
+        return count ? {...statementCreation, hlc: this.#txn.hlc} : null
     }
 
     async deleteStatement(statementDeletion: StatementDeletionEvent): Promise<StatementDeletionEvent | null> {
@@ -63,7 +63,7 @@ export class StatementTxnRepo implements IStatementSvc {
                AND (isDeleted = false or isDeletedHlc > $hlc)`,
             [statementDeletion.id]
         )
-        return count ? statementDeletion : null
+        return count ? {...statementDeletion, hlc: this.#txn.hlc} : null
     }
 
     async findStatementById(statementId: StmtId): Promise<Statement | null> {
@@ -210,7 +210,7 @@ export class StatementTxnRepo implements IStatementSvc {
             }
         }
 
-        return result
+        return result ? {...result, hlc: this.#txn.hlc} : null
     }
 
 }

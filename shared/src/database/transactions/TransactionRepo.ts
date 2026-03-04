@@ -18,13 +18,13 @@ export class TransactionRepo implements ITransactionSvc {
     }
 
     async createTransaction(transactionCreation: TransactionCreationEvent): Promise<TransactionCreationEvent | null> {
-        return this.db.transaction(async (txn) =>
+        return this.db.transactionx(transactionCreation.hlc, async (txn) =>
             new TransactionTxnRepo(txn).createTransaction(transactionCreation)
         )
     }
 
     async deleteTransaction(transactionDeletion: TransactionDeletionEvent): Promise<TransactionDeletionEvent | null> {
-        return this.db.transaction(async (txn) =>
+        return this.db.transactionx(transactionDeletion.hlc, async (txn) =>
             new TransactionTxnRepo(txn).deleteTransaction(transactionDeletion)
         )
     }
@@ -36,7 +36,7 @@ export class TransactionRepo implements ITransactionSvc {
     }
 
     async patchTransaction(transactionPatch: TransactionPatchEvent): Promise<TransactionPatchEvent | null> {
-        return this.db.transaction(async (txn) =>
+        return this.db.transactionx(transactionPatch.hlc, async (txn) =>
             new TransactionTxnRepo(txn).patchTransaction(transactionPatch)
         )
     }

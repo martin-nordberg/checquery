@@ -4,6 +4,7 @@ import {descriptionSchema} from "../core/Description";
 import {acctNumberSchema} from "./AcctNumber";
 import {acctTypeSchema} from "./AcctType";
 import {acctIdSchema} from "./AcctId";
+import {hlcSchema} from "$shared/domain/core/HybridLogicalClock";
 
 /** Base schema for a Stacquer account's details. */
 const accountAttributesSchema =
@@ -36,6 +37,7 @@ export const accountCreationEventSchema =
     accountAttributesSchema.extend({
         acctNumber: accountAttributesSchema.shape.acctNumber.default(""),
         description: accountAttributesSchema.shape.description.default(""),
+        hlc: hlcSchema.optional(),
     }).readonly()
 
 export type AccountCreationEvent = z.infer<typeof accountCreationEventSchema>
@@ -43,8 +45,9 @@ export type AccountCreationEvent = z.infer<typeof accountCreationEventSchema>
 
 /** Schema for account deletion. */
 export const accountDeletionEventSchema = z.object({
-        /** The unique ID of the account. */
-        id: acctIdSchema,
+    /** The unique ID of the account. */
+    id: acctIdSchema,
+    hlc: hlcSchema.optional(),
 })
 
 export type AccountDeletionEvent = z.infer<typeof accountDeletionEventSchema>
@@ -52,7 +55,9 @@ export type AccountDeletionEvent = z.infer<typeof accountDeletionEventSchema>
 
 /** Sub-schema for account patches. */
 export const accountPatchEventSchema =
-    accountAttributesSchema.partial({
+    accountAttributesSchema.extend({
+        hlc: hlcSchema.optional()
+    }).partial({
         acctNumber: true,
         acctType: true,
         name: true,

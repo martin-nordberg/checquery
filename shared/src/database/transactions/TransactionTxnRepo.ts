@@ -76,7 +76,7 @@ export class TransactionTxnRepo implements ITransactionSvc {
             entrySeq += 1
         }
 
-        return transactionCreation
+        return {...transactionCreation, hlc: this.#txn.hlc}
     }
 
     async deleteTransaction(transactionDeletion: TransactionDeletionEvent): Promise<TransactionDeletionEvent | null> {
@@ -88,7 +88,7 @@ export class TransactionTxnRepo implements ITransactionSvc {
                AND (isDeleted = false or isDeletedHlc > $hlc)`,
             [transactionDeletion.id]
         )
-        return count ? transactionDeletion : null
+        return count ? {...transactionDeletion, hlc: this.#txn.hlc} : null
     }
 
     async findTransactionById(transactionId: TxnId): Promise<Transaction | null> {
@@ -251,7 +251,7 @@ export class TransactionTxnRepo implements ITransactionSvc {
             result = {...(result ?? {id: transactionPatch.id}), entries: transactionPatch.entries}
         }
 
-        return result
+        return result ? {...result, hlc: this.#txn.hlc} : null
     }
 
 }

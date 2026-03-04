@@ -4,6 +4,7 @@ import {isoDateSchema} from "../core/IsoDate";
 import {currencyAmtSchema} from "../core/CurrencyAmt";
 import {nameSchema} from "../core/Name";
 import {txnIdSchema} from "../transactions/TxnId";
+import {hlcSchema} from "$shared/domain/core/HybridLogicalClock";
 
 /** Base schema for a Checquery statement's details. */
 const statementAttributesSchema =
@@ -46,6 +47,7 @@ export const statementCreationEventSchema =
         beginningBalance: statementAttributesSchema.shape.beginningBalance.default("$0.00"),
         endingBalance: statementAttributesSchema.shape.endingBalance.default("$0.00"),
         isReconciled: statementAttributesSchema.shape.isReconciled.default(false),
+        hlc: hlcSchema.optional(),
     }).readonly()
 
 export type StatementCreationEvent = z.infer<typeof statementCreationEventSchema>
@@ -53,8 +55,9 @@ export type StatementCreationEvent = z.infer<typeof statementCreationEventSchema
 
 /** Schema for statement deletion. */
 export const statementDeletionEventSchema = z.object({
-        /** The unique ID of the statement. */
-        id: stmtIdSchema,
+    /** The unique ID of the statement. */
+    id: stmtIdSchema,
+    hlc: hlcSchema.optional(),
 })
 
 export type StatementDeletionEvent = z.infer<typeof statementDeletionEventSchema>
@@ -62,7 +65,9 @@ export type StatementDeletionEvent = z.infer<typeof statementDeletionEventSchema
 
 /** Sub-schema for statement updates. */
 export const statementPatchEventSchema =
-    statementAttributesSchema.partial({
+    statementAttributesSchema.extend({
+        hlc: hlcSchema.optional(),
+    }).partial({
         beginDate: true,
         endDate: true,
         beginningBalance: true,
