@@ -71,7 +71,7 @@ export class VendorTxnRepo implements IVendorSvc {
                    Account.name as "defaultAccount",
                    isActive     as "isActive"
               FROM Vendor
-              LEFT OUTER JOIN Account ON Vendor.defaultAccountId = Account.id
+              LEFT JOIN Account ON Vendor.defaultAccountId = Account.id
              WHERE Vendor.id = $1
                AND Vendor.isDeleted = false`,
             [vendorId],
@@ -87,7 +87,7 @@ export class VendorTxnRepo implements IVendorSvc {
                    Account.name as "defaultAccount",
                    isActive     as "isActive"
               FROM Vendor
-              LEFT OUTER JOIN Account ON Vendor.defaultAccountId = Account.id
+              LEFT JOIN Account ON Vendor.defaultAccountId = Account.id
              WHERE Vendor.isDeleted = false
              ORDER BY name`,
             [],

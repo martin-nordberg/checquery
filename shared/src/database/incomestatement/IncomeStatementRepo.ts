@@ -31,8 +31,8 @@ export class IncomeStatementRepo implements IIncomeStatementSvc {
                        sum(debitCents)  as "totalDr",
                        sum(creditCents) as "totalCr"
                   FROM Account
-                  LEFT OUTER JOIN Entry ON Account.id = Entry.accountId
-                  LEFT OUTER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
+                  LEFT JOIN Entry ON Account.id = Entry.accountId
+                  LEFT JOIN Transaxtion ON Entry.txnId = Transaxtion.id
                  WHERE Account.acctType IN ('INCOME', 'EXPENSE')
                    AND Account.isDeleted = false
                    AND Transaxtion.isDeleted = false
@@ -104,10 +104,10 @@ export class IncomeStatementRepo implements IIncomeStatementSvc {
                         Entry.debitCents   as "debitCents",
                         Entry.creditCents  as "creditCents"
                  FROM Entry
-                     INNER JOIN Account
+                     JOIN Account
                  ON Account.id = Entry.accountId
-                     INNER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
-                     LEFT OUTER JOIN Vendor ON Transaxtion.vendorId = Vendor.id
+                     JOIN Transaxtion ON Entry.txnId = Transaxtion.id
+                     LEFT JOIN Vendor ON Transaxtion.vendorId = Vendor.id
                  WHERE Account.acctType IN ('INCOME', 'EXPENSE')
                    AND Account.isDeleted = false
                    AND Transaxtion.isDeleted = false

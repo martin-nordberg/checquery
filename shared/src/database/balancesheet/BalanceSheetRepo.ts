@@ -24,8 +24,8 @@ export class BalanceSheetRepo implements IBalanceSheetSvc {
                        COALESCE(sum(debitCents), 0)  as "totalDr",
                        COALESCE(sum(creditCents), 0) as "totalCr"
                   FROM Account
-                  LEFT OUTER JOIN Entry ON Account.id = Entry.accountId
-                  LEFT OUTER JOIN Transaxtion ON Entry.txnId = Transaxtion.id
+                  LEFT JOIN Entry ON Account.id = Entry.accountId
+                  LEFT JOIN Transaxtion ON Entry.txnId = Transaxtion.id
                  WHERE Account.acctType IN ('ASSET', 'LIABILITY', 'EQUITY')
                    AND Account.isDeleted = false
                    AND (Transaxtion.date <= $1 OR Transaxtion.date IS NULL)
