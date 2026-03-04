@@ -18,14 +18,14 @@ export class StatementRepo implements IStatementSvc {
         this.db = db
     }
 
-    async createStatement(statement: StatementCreationEvent): Promise<StatementCreationEvent | null> {
-        return this.db.transaction(async (txn) =>
-            new StatementTxnRepo(txn).createStatement(statement)
+    async createStatement(statementCreation: StatementCreationEvent): Promise<StatementCreationEvent | null> {
+        return this.db.transactionx(statementCreation.hlc, async (txn) =>
+            new StatementTxnRepo(txn).createStatement(statementCreation)
         )
     }
 
     async deleteStatement(statementDeletion: StatementDeletionEvent): Promise<StatementDeletionEvent | null> {
-        return this.db.transaction(async (txn) =>
+        return this.db.transactionx(statementDeletion.hlc, async (txn) =>
             new StatementTxnRepo(txn).deleteStatement(statementDeletion)
         )
     }
@@ -43,7 +43,7 @@ export class StatementRepo implements IStatementSvc {
     }
 
     async patchStatement(statementPatch: StatementPatchEvent): Promise<StatementPatchEvent | null> {
-        return this.db.transaction(async (txn) =>
+        return this.db.transactionx(statementPatch.hlc, async (txn) =>
             new StatementTxnRepo(txn).patchStatement(statementPatch)
         )
     }

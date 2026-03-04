@@ -4,6 +4,7 @@ import {txnIdSchema} from "./TxnId";
 import {isoDateSchema} from "../core/IsoDate";
 import {nameSchema} from "../core/Name";
 import {entriesWriteSchema, entriesReadSchema} from "$shared/domain/transactions/Entries";
+import {hlcSchema} from "$shared/domain/core/HybridLogicalClock";
 
 /** Base schema for a Stacquer transaction's details. */
 const transactionAttributesSchema =
@@ -46,6 +47,7 @@ export const transactionCreationEventSchema =
     transactionAttributesSchema.extend({
         code: transactionAttributesSchema.shape.code.default(''),
         description: transactionAttributesSchema.shape.description.default(''),
+        hlc: hlcSchema.optional(),
 
         /** The two or more entries in the transaction. */
         entries: entriesWriteSchema
@@ -60,6 +62,7 @@ export type TransactionCreationEvent = z.infer<typeof transactionCreationEventSc
 export const transactionDeletionEventSchema = z.object({
     /** The unique ID of the transaction. */
     id: txnIdSchema,
+    hlc: hlcSchema.optional(),
 })
 
 export type TransactionDeletionEvent = z.infer<typeof transactionDeletionEventSchema>
@@ -68,6 +71,7 @@ export type TransactionDeletionEvent = z.infer<typeof transactionDeletionEventSc
 /** Schema for transaction patches. */
 export const transactionPatchEventSchema =
     transactionAttributesSchema.extend({
+        hlc: hlcSchema.optional(),
         /** The two or more entries in the transaction. */
         entries: entriesWriteSchema
     }).partial({

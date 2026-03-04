@@ -2,6 +2,7 @@ import {z} from "zod";
 import {nameSchema} from "../core/Name";
 import {vndrIdSchema} from "./VndrId";
 import {descriptionSchema} from "../core/Description";
+import {hlcSchema} from "$shared/domain/core/HybridLogicalClock";
 
 /** Base schema for a Checquery vendor's details. */
 export const vendorAttributesSchema =
@@ -33,7 +34,8 @@ export type Vendor = z.infer<typeof vendorReadSchema>
 export const vendorCreationEventSchema =
     vendorAttributesSchema.extend({
         description: vendorAttributesSchema.shape.description.default(""),
-        isActive: vendorAttributesSchema.shape.isActive.default(true)
+        isActive: vendorAttributesSchema.shape.isActive.default(true),
+        hlc: hlcSchema.optional(),
     }).readonly()
 
 export type VendorCreationEvent = z.infer<typeof vendorCreationEventSchema>
@@ -41,8 +43,9 @@ export type VendorCreationEvent = z.infer<typeof vendorCreationEventSchema>
 
 /** Schema for vendor deletion. */
 export const vendorDeletionEventSchema = z.object({
-        /** The unique ID of the vendor. */
-        id: vndrIdSchema,
+    /** The unique ID of the vendor. */
+    id: vndrIdSchema,
+    hlc: hlcSchema.optional(),
 })
 
 export type VendorDeletionEvent = z.infer<typeof vendorDeletionEventSchema>
@@ -50,7 +53,9 @@ export type VendorDeletionEvent = z.infer<typeof vendorDeletionEventSchema>
 
 /** Sub-schema for vendor updates. */
 export const vendorPatchEventSchema =
-    vendorAttributesSchema.partial({
+    vendorAttributesSchema.extend({
+        hlc: hlcSchema.optional(),
+    }).partial({
         name: true,
         description: true,
         isActive: true,

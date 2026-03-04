@@ -32,7 +32,7 @@ export class AccountTxnRepo implements IAccountSvc {
                 accountCreation.description,
             ]
         )
-        return count ? accountCreation : null
+        return count ? {...accountCreation, hlc:this.#txn.hlc} : null
     }
 
     async deleteAccount(accountDeletion: AccountDeletionEvent): Promise<AccountDeletionEvent|null> {
@@ -45,7 +45,7 @@ export class AccountTxnRepo implements IAccountSvc {
             [accountDeletion.id]
         )
 
-        return count ? accountDeletion : null
+        return count ? {...accountDeletion, hlc: this.#txn.hlc} : null
     }
 
     async findAccountById(accountId: AcctId): Promise<Account | null> {
@@ -161,7 +161,7 @@ export class AccountTxnRepo implements IAccountSvc {
             }
         }
 
-        return result
+        return result ? {...result, hlc: this.#txn.hlc} : null
     }
 
 }

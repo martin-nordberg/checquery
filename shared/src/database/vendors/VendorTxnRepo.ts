@@ -34,7 +34,7 @@ export class VendorTxnRepo implements IVendorSvc {
                     vendorCreation.isActive,
                 ]
             )
-            return count ? vendorCreation : null
+            return count ? {...vendorCreation, hlc: this.#txn.hlc} : null
         }
 
         const count = await this.#txn.exec(
@@ -48,7 +48,7 @@ export class VendorTxnRepo implements IVendorSvc {
                 vendorCreation.isActive,
             ]
         )
-        return count ? vendorCreation : null
+        return count ? {...vendorCreation, hlc: this.#txn.hlc} : null
     }
 
     async deleteVendor(vendorDeletion: VendorDeletionEvent): Promise<VendorDeletionEvent | null> {
@@ -60,7 +60,7 @@ export class VendorTxnRepo implements IVendorSvc {
                AND (isDeleted = false or isDeletedHlc > $hlc)`,
             [vendorDeletion.id],
         )
-        return count ? vendorDeletion : null
+        return count ? {...vendorDeletion, hlc: this.#txn.hlc} : null
     }
 
     async findVendorById(vendorId: VndrId): Promise<Vendor | null> {
@@ -185,7 +185,7 @@ export class VendorTxnRepo implements IVendorSvc {
             }
         }
 
-        return result
+        return result ? {...result, hlc: this.#txn.hlc} : null
     }
 
 }

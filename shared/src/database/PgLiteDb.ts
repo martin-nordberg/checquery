@@ -23,17 +23,18 @@ export class PgLiteDb {
         await this.#db.close()
     }
 
-    getLastHlc() {
-        return this.#hlc
-    }
-
-    mergeHlc(externalHlc: HLClock) {
-        this.#hlc = mergeHLClock(this.#hlc, externalHlc)
-    }
-
     async transaction<T>(callback: (txn: PgLiteTxn) => Promise<T>): Promise<T> {
         this.#hlc = advanceHLClock(this.#hlc)
         return this.#db.transaction((tx) => callback(new PgLiteTxn(tx, this.#hlc)))
+    }
+
+    async transactionx<T>(externalHlc: HLClock|undefined, callback: (txn: PgLiteTxn) => Promise<T>): Promise<T> {
+        if (externalHlc) {
+            this.#hlc = mergeHLClock(this.#hlc, externalHlc)
+            return this.#db.transaction((tx) => callback(new PgLiteTxn(tx, externalHlc)))
+        }
+
+        return this.transaction(callback)
     }
 
 }
