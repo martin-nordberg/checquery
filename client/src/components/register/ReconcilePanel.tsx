@@ -4,7 +4,7 @@ import type {IsoDate} from "$shared/domain/core/IsoDate.ts";
 import {type CurrencyAmt, fromCents, toCents} from "$shared/domain/core/CurrencyAmt.ts";
 import type {TxnId} from "$shared/domain/transactions/TxnId.ts";
 import {genStmtId} from "$shared/domain/statements/StmtId.ts";
-import {statementClientSvc} from "../../clients/statements/StatementClientSvc.ts";
+import {useServices} from "../../services/ServicesContext.ts";
 import EditableDateField from "../common/fields/EditableDateField.tsx";
 import EditableAmountField from "../common/fields/EditableAmountField.tsx";
 import ConfirmDialog from "../common/dialogs/ConfirmDialog.tsx";
@@ -49,6 +49,7 @@ type ReconcilePanelProps = {
 }
 
 const ReconcilePanel = (props: ReconcilePanelProps) => {
+    const {stmtSvc} = useServices()
 
     const [existingStatement, setExistingStatement] = createSignal<Statement | null>(null)
     const [isLoading, setIsLoading] = createSignal(true)
@@ -114,7 +115,7 @@ const ReconcilePanel = (props: ReconcilePanelProps) => {
 
     onMount(async () => {
         try {
-            const statements = await statementClientSvc.findStatementsAll()
+            const statements = await stmtSvc.findStatementsAll()
             const unreconciled = statements.find(
                 s => s.account === props.accountName && !s.isReconciled
             )
@@ -143,7 +144,7 @@ const ReconcilePanel = (props: ReconcilePanelProps) => {
             const stmt = existingStatement()
             const transactions = [...props.checkedTxnIds()]
             if (stmt) {
-                await statementClientSvc.patchStatement({
+                await stmtSvc.patchStatement({
                     id: stmt.id,
                     beginDate: beginDate(),
                     endDate: endDate(),
@@ -153,7 +154,7 @@ const ReconcilePanel = (props: ReconcilePanelProps) => {
                     transactions,
                 })
             } else {
-                await statementClientSvc.createStatement({
+                await stmtSvc.createStatement({
                     id: genStmtId(),
                     account: props.accountName,
                     beginDate: beginDate()!,
@@ -180,7 +181,7 @@ const ReconcilePanel = (props: ReconcilePanelProps) => {
         }
         setIsSaving(true)
         try {
-            await statementClientSvc.deleteStatement({id:stmt.id})
+            await stmtSvc.deleteStatement({id:stmt.id})
             props.onDeleted()
         } finally {
             setIsSaving(false)

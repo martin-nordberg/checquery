@@ -4,8 +4,7 @@ import type {CurrencyAmt} from "$shared/domain/core/CurrencyAmt.ts";
 import {fromCents, toCents} from "$shared/domain/core/CurrencyAmt.ts";
 import type {IsoDate} from "$shared/domain/core/IsoDate.ts";
 import {genVndrId} from "$shared/domain/vendors/VndrId.ts";
-import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
-import {vendorClientSvc} from "../../clients/vendors/VendorClientSvc.ts";
+import {useServices} from "../../services/ServicesContext.ts";
 
 type UseTransactionFormOptions = {
     initialDate: IsoDate,
@@ -18,6 +17,7 @@ type UseTransactionFormOptions = {
 export type TransactionFormResult = ReturnType<typeof useTransactionForm>
 
 const useTransactionForm = (options: UseTransactionFormOptions) => {
+    const {acctSvc, vndrSvc} = useServices()
     // Form signals
     const [editDate, setEditDate] = createSignal<IsoDate>(options.initialDate)
     const [editCode, setEditCode] = createSignal<string | undefined>(options.initialCode)
@@ -32,10 +32,10 @@ const useTransactionForm = (options: UseTransactionFormOptions) => {
     const [addNewVendorChecked, setAddNewVendorChecked] = createSignal(false)
 
     // Resources
-    const [accounts] = createResource(() => accountClientSvc.findAccountsAll())
+    const [accounts] = createResource(() => acctSvc.findAccountsAll())
     const validAccountNames = createMemo(() => new Set(accounts()?.map(a => a.name) ?? []))
 
-    const [vendors] = createResource(() => vendorClientSvc.findVendorsAll())
+    const [vendors] = createResource(() => vndrSvc.findVendorsAll())
     const validVendorNames = createMemo(() => new Set(vendors()?.map(v => v.name) ?? []))
 
     // Balanced entries computation
@@ -177,7 +177,7 @@ const useTransactionForm = (options: UseTransactionFormOptions) => {
                 setIsSaving(false)
                 return null
             }
-            await vendorClientSvc.createVendor({
+            await vndrSvc.createVendor({
                 id: genVndrId(),
                 name: vendor,
                 description: "",

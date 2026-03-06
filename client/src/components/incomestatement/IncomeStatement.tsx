@@ -1,5 +1,5 @@
 import {createResource, For, Show} from "solid-js";
-import {incomeStatementClientSvc} from "../../clients/incomestatement/IncomeStatementClientSvc.ts";
+import {useServices} from "../../services/ServicesContext.ts";
 import type {Period} from "$shared/domain/core/Period.ts";
 
 type IncomeStatementProps = {
@@ -7,12 +7,13 @@ type IncomeStatementProps = {
 }
 
 const IncomeStatement = (props: IncomeStatementProps) => {
+    const {isSvc} = useServices()
 
     const fetchIncomeStatement = async (period: Period) => {
         if (!period) {
             return null
         }
-        return incomeStatementClientSvc.findIncomeStatement(period)
+        return isSvc.findIncomeStatement(period)
     }
 
     const [incomeStatement] = createResource(() => props.period, fetchIncomeStatement)

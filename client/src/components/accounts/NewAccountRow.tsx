@@ -1,7 +1,7 @@
 import {createEffect, createMemo, createSignal, For, Show} from "solid-js";
 import ConfirmDialog from "../common/dialogs/ConfirmDialog.tsx";
 import useAbandonConfirm from "../common/hooks/useAbandonConfirm.ts";
-import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
+import {useServices} from "../../services/ServicesContext.ts";
 import {genAcctId} from "$shared/domain/accounts/AcctId.ts";
 import {acctTypeCodes, type AcctTypeStr, acctTypeText} from "$shared/domain/accounts/AcctType.ts";
 import EditableTextField from "../common/fields/EditableTextField.tsx";
@@ -13,6 +13,7 @@ type NewAccountRowProps = {
 }
 
 const NewAccountRow = (props: NewAccountRowProps) => {
+    const {acctSvc} = useServices()
     const [editName, setEditName] = createSignal<string | undefined>(undefined)
     const [editAcctType, setEditAcctType] = createSignal<AcctTypeStr | undefined>(undefined)
     const [editAcctNumber, setEditAcctNumber] = createSignal<string | undefined>(undefined)
@@ -65,7 +66,7 @@ const NewAccountRow = (props: NewAccountRowProps) => {
         setIsSaving(true)
 
         try {
-            await accountClientSvc.createAccount({
+            await acctSvc.createAccount({
                 id: genAcctId(),
                 name: name,
                 acctType: acctType,

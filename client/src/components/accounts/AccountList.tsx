@@ -1,5 +1,5 @@
 import {createEffect, createResource, createSignal, For, Show} from "solid-js";
-import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
+import {useServices} from "../../services/ServicesContext.ts";
 import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
 import EditableAccountRow, {type AccountField} from "./EditableAccountRow.tsx";
 import NewAccountRow from "./NewAccountRow.tsx";
@@ -11,10 +11,11 @@ type AccountListProps = {
 }
 
 const AccountList = (props: AccountListProps) => {
+    const {acctSvc} = useServices()
 
     let tableContainerRef: HTMLDivElement | undefined
 
-    const [accounts, {refetch}] = createResource(() => accountClientSvc.findAccountsAll())
+    const [accounts, {refetch}] = createResource(() => acctSvc.findAccountsAll())
     const [editingAccountId, setEditingAccountId] = createSignal<AcctId | null>(null)
     const [focusField, setFocusField] = createSignal<AccountField | undefined>(undefined)
     const [isAddingNew, setIsAddingNew] = createSignal(false)

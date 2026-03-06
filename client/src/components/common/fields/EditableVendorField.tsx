@@ -1,6 +1,6 @@
 import {createResource} from "solid-js";
 import AutocompleteField from "./AutocompleteField.tsx";
-import {vendorClientSvc} from "../../../clients/vendors/VendorClientSvc.ts";
+import {useServices} from "../../../services/ServicesContext.ts";
 
 type EditableVendorFieldProps = {
     value: string | undefined,
@@ -11,7 +11,8 @@ type EditableVendorFieldProps = {
 }
 
 const EditableVendorField = (props: EditableVendorFieldProps) => {
-    const [vendors] = createResource(() => vendorClientSvc.findVendorsAll())
+    const {vndrSvc} = useServices()
+    const [vendors] = createResource(() => vndrSvc.findVendorsAll())
 
     const options = () => {
         const vndrs = vendors() ?? []

@@ -24,4 +24,3 @@ export class BalanceSheetClientSvc implements IBalanceSheetSvc {
 
 }
 
-export const balanceSheetClientSvc = new BalanceSheetClientSvc()

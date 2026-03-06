@@ -93,4 +93,3 @@ export class StatementClientSvc implements IStatementSvc {
 
 }
 
-export const statementClientSvc = new StatementClientSvc()

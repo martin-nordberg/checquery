@@ -1,6 +1,6 @@
 import {createResource, For, Show} from "solid-js";
 import {A} from "@solidjs/router";
-import {balanceSheetClientSvc} from "../../clients/balancesheet/BalanceSheetClientSvc.ts";
+import {useServices} from "../../services/ServicesContext.ts";
 import type {IsoDate} from "$shared/domain/core/IsoDate.ts";
 import type {BalSheetLineItem} from "$shared/domain/balancesheet/BalanceSheet.ts";
 
@@ -20,12 +20,13 @@ const AccountName = (props: { lineItem: BalSheetLineItem }) => {
 }
 
 const BalanceSheet = (props: BalanceSheetProps) => {
+    const {bsSvc} = useServices()
 
     const fetchBalanceSheet = async (endingDate: IsoDate) => {
         if (!endingDate) {
             return null
         }
-        return balanceSheetClientSvc.findBalanceSheet(endingDate)
+        return bsSvc.findBalanceSheet(endingDate)
     }
 
     const [balanceSheet] = createResource(() => props.endingDate, fetchBalanceSheet)

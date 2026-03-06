@@ -14,6 +14,23 @@ import {AccountRepo} from "$shared/database/accounts/AccountRepo.ts";
 import {StatementRepo} from "$shared/database/statements/StatementRepo.ts";
 import {TransactionRepo} from "$shared/database/transactions/TransactionRepo.ts";
 import {VendorRepo} from "$shared/database/vendors/VendorRepo.ts";
+import {BalanceSheetRepo} from "$shared/database/balancesheet/BalanceSheetRepo.ts";
+import {IncomeStatementRepo} from "$shared/database/incomestatement/IncomeStatementRepo.ts";
+import {RegisterRepo} from "$shared/database/register/RegisterRepo.ts";
+import {AccountClientSvc} from "./clients/accounts/AccountClientSvc.ts";
+import {VendorClientSvc} from "./clients/vendors/VendorClientSvc.ts";
+import {TransactionClientSvc} from "./clients/transactions/TransactionClientSvc.ts";
+import {StatementClientSvc} from "./clients/statements/StatementClientSvc.ts";
+import {AccountTeeSvc} from "$shared/services/accounts/AccountTeeSvc.ts";
+import {TransactionTeeSvc} from "$shared/services/transactions/TransactionTeeSvc.ts";
+import {VendorTeeSvc} from "$shared/services/vendors/VendorTeeSvc.ts";
+import {StatementTeeSvc} from "$shared/services/statements/StatementTeeSvc.ts";
+import {AccountWsHandlerSvc} from "./ws/AccountWsHandlerSvc.ts";
+import {TransactionWsHandlerSvc} from "./ws/TransactionWsHandlerSvc.ts";
+import {VendorWsHandlerSvc} from "./ws/VendorWsHandlerSvc.ts";
+import {StatementWsHandlerSvc} from "./ws/StatementWsHandlerSvc.ts";
+import {WsClient} from "./ws/WsClient.ts";
+import {ServicesContext} from "./services/ServicesContext.ts";
 
 const BalanceSheetPage = lazy(() => import("./pages/balancesheet/BalanceSheetPage"));
 const RegisterPage = lazy(() => import("./pages/register/RegisterPage"));
@@ -25,24 +42,54 @@ const root = document.getElementById('root')
 const db = await createPgLiteDb("001")
 runChecqueryPgDdl(db)
 
-// Services for the database
+// Database repos
 const accountRepo = new AccountRepo(db)
 const statementRepo = new StatementRepo(db)
 const transactionRepo = new TransactionRepo(db)
 const vendorRepo = new VendorRepo(db)
 
+// HTTP client services
+const accountHttpSvc = new AccountClientSvc()
+const vendorHttpSvc = new VendorClientSvc()
+const transactionHttpSvc = new TransactionClientSvc()
+const statementHttpSvc = new StatementClientSvc()
+
+// UI services: reads from local DB, writes to DB then HTTP server
+const acctSvc = new AccountTeeSvc([accountRepo, accountHttpSvc])
+const vndrSvc = new VendorTeeSvc([vendorRepo, vendorHttpSvc])
+const txnSvc = new TransactionTeeSvc([transactionRepo, transactionHttpSvc])
+const stmtSvc = new StatementTeeSvc([statementRepo, statementHttpSvc])
+const regSvc = new RegisterRepo(db)
+const bsSvc = new BalanceSheetRepo(db)
+const isSvc = new IncomeStatementRepo(db)
+
+// WS handler services (log received events)
+const accountWsHandler = new AccountWsHandlerSvc()
+const transactionWsHandler = new TransactionWsHandlerSvc()
+const vendorWsHandler = new VendorWsHandlerSvc()
+const statementWsHandler = new StatementWsHandlerSvc()
+
+// Tee services for WS dispatch: DB repo first, then handler
+const wsAcctSvc = new AccountTeeSvc([accountRepo, accountWsHandler])
+const wsTransactionSvc = new TransactionTeeSvc([transactionRepo, transactionWsHandler])
+const wsVndrSvc = new VendorTeeSvc([vendorRepo, vendorWsHandler])
+const wsStmtSvc = new StatementTeeSvc([statementRepo, statementWsHandler])
+
+const wsClient = new WsClient(wsAcctSvc, wsTransactionSvc, wsVndrSvc, wsStmtSvc)
+wsClient.connect('ws://localhost:3001/ws')
 
 render(() => (
-    <Router root={App}>
-        <Route path="/" component={HomePage}/>
-        <Route path="/balancesheet" component={() => <Navigate href={"./" + isoDateToday}/>}/>
-        <Route path="/balancesheet/:endingDate" component={BalanceSheetPage}/>
-        <Route path="/incomestatement" component={() => <Navigate href={"./2026-01/summary"}/>}/>
-        <Route path="/incomestatement/:period" component={() => <Navigate href={"./summary"}/>}/>
-        <Route path="/incomestatement/:period/:view" component={IncomeStatementPage}/>
-        <Route path="/register/:accountId" component={RegisterPage}/>
-        <Route path="/vendors" component={VendorsPage}/>
-        <Route path="/accounts" component={AccountsPage}/>
-    </Router>
+    <ServicesContext.Provider value={{acctSvc, vndrSvc, txnSvc, stmtSvc, regSvc, bsSvc, isSvc}}>
+        <Router root={App}>
+            <Route path="/" component={HomePage}/>
+            <Route path="/balancesheet" component={() => <Navigate href={"./" + isoDateToday}/>}/>
+            <Route path="/balancesheet/:endingDate" component={BalanceSheetPage}/>
+            <Route path="/incomestatement" component={() => <Navigate href={"./2026-01/summary"}/>}/>
+            <Route path="/incomestatement/:period" component={() => <Navigate href={"./summary"}/>}/>
+            <Route path="/incomestatement/:period/:view" component={IncomeStatementPage}/>
+            <Route path="/register/:accountId" component={RegisterPage}/>
+            <Route path="/vendors" component={VendorsPage}/>
+            <Route path="/accounts" component={AccountsPage}/>
+        </Router>
+    </ServicesContext.Provider>
 ), root!)
-

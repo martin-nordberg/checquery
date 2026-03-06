@@ -1,5 +1,5 @@
 import {createEffect, createMemo, createResource, createSignal, For, Show} from "solid-js";
-import {vendorClientSvc} from "../../clients/vendors/VendorClientSvc.ts";
+import {useServices} from "../../services/ServicesContext.ts";
 import type {VndrId} from "$shared/domain/vendors/VndrId.ts";
 import EditableVendorRow, {type VendorField} from "./EditableVendorRow.tsx";
 import NewVendorRow from "./NewVendorRow.tsx";
@@ -13,10 +13,11 @@ type VendorListProps = {
 }
 
 const VendorList = (props: VendorListProps) => {
+    const {vndrSvc} = useServices()
 
     let tableContainerRef: HTMLDivElement | undefined
 
-    const [allVendors, {refetch}] = createResource(() => vendorClientSvc.findVendorsAll())
+    const [allVendors, {refetch}] = createResource(() => vndrSvc.findVendorsAll())
 
     const vendors = createMemo(() => {
         const all = allVendors()

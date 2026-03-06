@@ -1,8 +1,7 @@
 import {createEffect, createMemo, createResource, createSignal, Show} from "solid-js";
 import ConfirmDialog from "../common/dialogs/ConfirmDialog.tsx";
 import useAbandonConfirm from "../common/hooks/useAbandonConfirm.ts";
-import {vendorClientSvc} from "../../clients/vendors/VendorClientSvc.ts";
-import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
+import {useServices} from "../../services/ServicesContext.ts";
 import {genVndrId} from "$shared/domain/vendors/VndrId.ts";
 import EditableTextField from "../common/fields/EditableTextField.tsx";
 import AutocompleteField from "../common/fields/AutocompleteField.tsx";
@@ -14,6 +13,7 @@ type NewVendorRowProps = {
 }
 
 const NewVendorRow = (props: NewVendorRowProps) => {
+    const {vndrSvc, acctSvc} = useServices()
     const [editName, setEditName] = createSignal<string | undefined>(undefined)
     const [editDefaultAccount, setEditDefaultAccount] = createSignal<string | undefined>(undefined)
     const [editDescription, setEditDescription] = createSignal<string | undefined>(undefined)
@@ -21,7 +21,7 @@ const NewVendorRow = (props: NewVendorRowProps) => {
     const [error, setError] = createSignal<string | null>(null)
 
     // Load expense and income accounts for default account selector
-    const [accounts] = createResource(() => accountClientSvc.findAccountsAll())
+    const [accounts] = createResource(() => acctSvc.findAccountsAll())
     const expenseIncomeAccounts = createMemo(() => {
         const all = accounts() ?? []
         return all
@@ -74,7 +74,7 @@ const NewVendorRow = (props: NewVendorRowProps) => {
         setIsSaving(true)
 
         try {
-            await vendorClientSvc.createVendor({
+            await vndrSvc.createVendor({
                 id: genVndrId(),
                 name: name,
                 description: editDescription()?.trim() ?? "",

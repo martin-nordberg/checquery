@@ -3,8 +3,7 @@ import ConfirmDialog from "../common/dialogs/ConfirmDialog.tsx";
 import type {RegisterEntry, RegisterLineItem, RegisterTransaction} from "$shared/domain/register/Register.ts";
 import type {IsoDate} from "$shared/domain/core/IsoDate.ts";
 import type {AcctTypeStr} from "$shared/domain/accounts/AcctType.ts";
-import {registerClientSvc} from "../../clients/register/RegisterClientSvc.ts";
-import {transactionClientSvc} from "../../clients/transactions/TransactionClientSvc.ts";
+import {useServices} from "../../services/ServicesContext.ts";
 import EditableDateField from "../common/fields/EditableDateField.tsx";
 import EditableTextField from "../common/fields/EditableTextField.tsx";
 import EditableVendorField from "../common/fields/EditableVendorField.tsx";
@@ -34,6 +33,7 @@ type EditableRegisterRowProps = {
 }
 
 const EditableRegisterRow = (props: EditableRegisterRowProps) => {
+    const {regSvc, txnSvc} = useServices()
     const [transaction, setTransaction] = createSignal<RegisterTransaction | null>(null)
     const [showDeleteConfirm, setShowDeleteConfirm] = createSignal(false)
     let editRowRef: HTMLTableRowElement | undefined
@@ -110,7 +110,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
     // Load full transaction when entering edit mode
     createEffect(async () => {
         if (props.isEditing && !transaction()) {
-            const txn = await registerClientSvc.findTransaction(props.lineItem.txnId)
+            const txn = await regSvc.findTransaction(props.lineItem.txnId)
             if (txn) {
                 setTransaction(txn)
                 form.setEditDate(txn.date)
@@ -215,7 +215,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                 return
             }
 
-            await transactionClientSvc.patchTransaction({
+            await txnSvc.patchTransaction({
                 id: props.lineItem.txnId,
                 date: form.editDate(),
                 code: form.editCode(),
@@ -241,7 +241,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
         setShowDeleteConfirm(false)
         form.setIsSaving(true)
         try {
-            await transactionClientSvc.deleteTransaction({id: props.lineItem.txnId})
+            await txnSvc.deleteTransaction({id: props.lineItem.txnId})
             setTransaction(null)
             props.onDeleted()
         } catch (e) {
