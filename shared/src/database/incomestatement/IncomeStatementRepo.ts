@@ -9,8 +9,8 @@ import type {
 } from "$shared/domain/incomestatement/IncomeStatement";
 import {fromCents} from "$shared/domain/core/CurrencyAmt";
 import {acctIdSchema} from "$shared/domain/accounts/AcctId";
-import type {IsoDate} from "$shared/domain/core/IsoDate";
 import {isoDateSchema} from "$shared/domain/core/IsoDate";
+import {type Period, getStartDate, getEndDate} from "$shared/domain/core/Period";
 import type {PgLiteDb} from "$shared/database/PgLiteDb";
 
 
@@ -22,7 +22,9 @@ export class IncomeStatementRepo implements IIncomeStatementSvc {
         this.db = db
     }
 
-    async findIncomeStatement(startDate: IsoDate, endDate: IsoDate): Promise<IncomeStatement> {
+    async findIncomeStatement(period: Period): Promise<IncomeStatement> {
+        const startDate = getStartDate(period)
+        const endDate = getEndDate(period)
         return this.db.transaction(async (txn) => {
             const sqlLineItems = await txn.findMany(
                 `SELECT Account.id       as "acctId",
@@ -91,7 +93,9 @@ export class IncomeStatementRepo implements IIncomeStatementSvc {
         })
     }
 
-    async findIncomeStatementDetails(startDate: IsoDate, endDate: IsoDate): Promise<IncomeStatementDetails> {
+    async findIncomeStatementDetails(period: Period): Promise<IncomeStatementDetails> {
+        const startDate = getStartDate(period)
+        const endDate = getEndDate(period)
         return this.db.transaction(async (txn) => {
             // Get all entries for income and expense accounts in the period
             const sqlEntries = await txn.findMany(

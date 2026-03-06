@@ -91,7 +91,7 @@ await loadChecqueryLog(
 )
 
 console.log(await bsSvc.findBalanceSheet('2026-01-11'))
-console.log(await isSvc.findIncomeStatement('2026-01-01', '2026-01-31'))
+console.log(await isSvc.findIncomeStatement('2026-01'))
 
 const routes =
     app
