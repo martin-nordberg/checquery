@@ -116,4 +116,3 @@ export class VendorClientSvc implements IVendorSvc {
 
 }
 
-export const vendorClientSvc = new VendorClientSvc()

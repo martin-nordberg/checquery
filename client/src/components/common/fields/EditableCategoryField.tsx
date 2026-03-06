@@ -1,6 +1,6 @@
 import {createResource} from "solid-js";
 import AutocompleteField from "./AutocompleteField.tsx";
-import {accountClientSvc} from "../../../clients/accounts/AccountClientSvc.ts";
+import {useServices} from "../../../services/ServicesContext.ts";
 
 type EditableCategoryFieldProps = {
     value: string | undefined,
@@ -11,7 +11,8 @@ type EditableCategoryFieldProps = {
 }
 
 const EditableCategoryField = (props: EditableCategoryFieldProps) => {
-    const [accounts] = createResource(() => accountClientSvc.findAccountsAll())
+    const {acctSvc} = useServices()
+    const [accounts] = createResource(() => acctSvc.findAccountsAll())
 
     const options = () => {
         const accts = accounts() ?? []

@@ -7,7 +7,7 @@ import MessageDialog from "../../components/common/dialogs/MessageDialog.tsx";
 import SearchField from "../../components/common/search/SearchField.tsx";
 import {useParams} from "@solidjs/router";
 import {createMemo, createResource, createSignal, Show} from "solid-js";
-import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
+import {useServices} from "../../services/ServicesContext.ts";
 import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
 import type {TxnId} from "$shared/domain/transactions/TxnId.ts";
 import type {RegisterLineItem} from "$shared/domain/register/Register.ts";
@@ -16,13 +16,14 @@ import {type CurrencyAmt, fromCents, toCents} from "$shared/domain/core/Currency
 import {stmtNavOptions} from "../../nav/stmtNavOptions.ts";
 
 const RegisterPage = () => {
+    const {acctSvc} = useServices()
 
     const params = useParams()
     const accountId = () => params['accountId'] as AcctId
 
-    const [account] = createResource(accountId, (id) => accountClientSvc.findAccountById(id))
+    const [account] = createResource(accountId, (id) => acctSvc.findAccountById(id))
 
-    const [allAccounts] = createResource(() => accountClientSvc.findAccountsAll())
+    const [allAccounts] = createResource(() => acctSvc.findAccountsAll())
 
     const formatAccountName = (name: string) => name.replaceAll(':', ' : ')
 

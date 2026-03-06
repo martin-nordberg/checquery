@@ -113,4 +113,3 @@ export class AccountClientSvc implements IAccountSvc {
 
 }
 
-export const accountClientSvc = new AccountClientSvc()

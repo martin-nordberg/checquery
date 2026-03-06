@@ -47,4 +47,3 @@ export class TransactionClientSvc implements ITransactionSvc {
 
 }
 
-export const transactionClientSvc = new TransactionClientSvc()

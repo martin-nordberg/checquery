@@ -2,7 +2,7 @@ import {createEffect, createMemo, createResource, createSignal, For, onCleanup, 
 import ConfirmDialog from "../common/dialogs/ConfirmDialog.tsx";
 import useAbandonConfirm from "../common/hooks/useAbandonConfirm.ts";
 import type {Account} from "$shared/domain/accounts/Account.ts";
-import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
+import {useServices} from "../../services/ServicesContext.ts";
 import EditableTextField from "../common/fields/EditableTextField.tsx";
 import {acctTypeCodes, type AcctTypeStr, acctTypeText} from "$shared/domain/accounts/AcctType.ts";
 
@@ -21,6 +21,7 @@ type EditableAccountRowProps = {
 }
 
 const EditableAccountRow = (props: EditableAccountRowProps) => {
+    const {acctSvc} = useServices()
     const [editName, setEditName] = createSignal<string>(props.account.name)
     const [editAcctType, setEditAcctType] = createSignal<AcctTypeStr>(props.account.acctType)
     const [editAcctNumber, setEditAcctNumber] = createSignal<string | undefined>(props.account.acctNumber)
@@ -38,7 +39,7 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
     // Check if account is in use (for edit restrictions and delete button)
     const [isInUse] = createResource(
         () => props.isEditing ? props.account.id : null,
-        (id) => id ? accountClientSvc.isAccountInUse(id) : false
+        (id) => id ? acctSvc.isAccountInUse(id) : false
     )
 
     // Store initial values for dirty checking
@@ -139,7 +140,7 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
         setIsSaving(true)
 
         try {
-            await accountClientSvc.patchAccount({
+            await acctSvc.patchAccount({
                 id: props.account.id,
                 name: editName(),
                 acctType: editAcctType(),
@@ -163,7 +164,7 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
         setShowDeleteConfirm(false)
         setIsSaving(true)
         try {
-            await accountClientSvc.deleteAccount({id:props.account.id})
+            await acctSvc.deleteAccount({id:props.account.id})
             props.onDeleted()
         } catch (e) {
             setError(e instanceof Error ? e.message : 'Failed to delete')

@@ -37,4 +37,3 @@ export class IncomeStatementClientSvc implements IIncomeStatementSvc {
 
 }
 
-export const incomeStatementClientSvc = new IncomeStatementClientSvc()

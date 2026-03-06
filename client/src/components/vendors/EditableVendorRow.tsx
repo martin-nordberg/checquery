@@ -2,8 +2,7 @@ import {createEffect, createMemo, createResource, createSignal, onCleanup, Show}
 import ConfirmDialog from "../common/dialogs/ConfirmDialog.tsx";
 import useAbandonConfirm from "../common/hooks/useAbandonConfirm.ts";
 import type {Vendor} from "$shared/domain/vendors/Vendor.ts";
-import {vendorClientSvc} from "../../clients/vendors/VendorClientSvc.ts";
-import {accountClientSvc} from "../../clients/accounts/AccountClientSvc.ts";
+import {useServices} from "../../services/ServicesContext.ts";
 import EditableTextField from "../common/fields/EditableTextField.tsx";
 import AutocompleteField from "../common/fields/AutocompleteField.tsx";
 
@@ -22,6 +21,7 @@ type EditableVendorRowProps = {
 }
 
 const EditableVendorRow = (props: EditableVendorRowProps) => {
+    const {vndrSvc, acctSvc} = useServices()
     const [editName, setEditName] = createSignal<string>(props.vendor.name)
     const [editDescription, setEditDescription] = createSignal<string | undefined>(props.vendor.description)
     const [editDefaultAccount, setEditDefaultAccount] = createSignal<string | undefined>(props.vendor.defaultAccount)
@@ -38,11 +38,11 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
     // Check if vendor is in use (for delete button)
     const [isInUse] = createResource(
         () => props.isEditing ? props.vendor.id : null,
-        (id) => id ? vendorClientSvc.isVendorInUse(id) : false
+        (id) => id ? vndrSvc.isVendorInUse(id) : false
     )
 
     // Load expense and income accounts for default account selector
-    const [accounts] = createResource(() => accountClientSvc.findAccountsAll())
+    const [accounts] = createResource(() => acctSvc.findAccountsAll())
     const expenseIncomeAccounts = createMemo(() => {
         const all = accounts() ?? []
         return all
@@ -151,7 +151,7 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
         setIsSaving(true)
 
         try {
-            await vendorClientSvc.patchVendor({
+            await vndrSvc.patchVendor({
                 id: props.vendor.id,
                 name: editName(),
                 description: editDescription() ?? undefined,
@@ -174,7 +174,7 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
         setShowDeleteConfirm(false)
         setIsSaving(true)
         try {
-            await vendorClientSvc.deleteVendor({id:props.vendor.id})
+            await vndrSvc.deleteVendor({id:props.vendor.id})
             props.onDeleted()
         } catch (e) {
             setError(e instanceof Error ? e.message : 'Failed to delete')
@@ -186,7 +186,7 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
     const handleDeactivate = async () => {
         setIsSaving(true)
         try {
-            await vendorClientSvc.patchVendor({
+            await vndrSvc.patchVendor({
                 id: props.vendor.id,
                 isActive: false,
             })
@@ -201,7 +201,7 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
     const handleReactivate = async () => {
         setIsSaving(true)
         try {
-            await vendorClientSvc.patchVendor({
+            await vndrSvc.patchVendor({
                 id: props.vendor.id,
                 isActive: true,
             })

@@ -1,5 +1,5 @@
 import {createEffect, createResource, createSignal, For, on, Show} from "solid-js";
-import {registerClientSvc} from "../../clients/register/RegisterClientSvc.ts";
+import {useServices} from "../../services/ServicesContext.ts";
 import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
 import type {TxnId} from "$shared/domain/transactions/TxnId.ts";
 import type {IsoDate} from "$shared/domain/core/IsoDate.ts";
@@ -21,10 +21,11 @@ type RegisterProps = {
 }
 
 const Register = (props: RegisterProps) => {
+    const {regSvc} = useServices()
 
     let tableContainerRef: HTMLDivElement | undefined
 
-    const [register, {refetch}] = createResource(() => props.accountId, (id) => registerClientSvc.findRegister(id))
+    const [register, {refetch}] = createResource(() => props.accountId, (id) => regSvc.findRegister(id))
     const [editingTxnId, setEditingTxnId] = createSignal<TxnId | null>(null)
     const [focusField, setFocusField] = createSignal<RegisterField | undefined>(undefined)
     const [focusEntryIndex, setFocusEntryIndex] = createSignal<number | undefined>(undefined)

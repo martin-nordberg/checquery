@@ -38,4 +38,3 @@ export class RegisterClientSvc implements IRegisterSvc {
 
 }
 
-export const registerClientSvc = new RegisterClientSvc()
