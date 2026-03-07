@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'bun:test'
-import {advanceHLClock, getHLClock, hlcSchema, mergeHLClock} from "$shared/domain/core/HybridLogicalClock";
+import {advanceHLClock, getHLClock, hlcLength, hlcRegex, hlcSchema, mergeHLClock} from "$shared/domain/core/HybridLogicalClock";
 
 const check = (hlc: string) => {
     expect(() => hlcSchema.parse(hlc)).not.toThrow();
@@ -9,6 +9,42 @@ describe('Hybrid Logical Clocks', () => {
 
     it('Should parse without error', () => {
         check("0123456789ABCDEF")
+    })
+
+    it('Should accept all zeros', () => {
+        check("0000000000000000")
+    })
+
+    it('Should accept all Fs', () => {
+        check("FFFFFFFFFFFFFFFF")
+    })
+
+    it('Should reject string shorter than 16 characters', () => {
+        expect(() => hlcSchema.parse("0123456789ABCDE")).toThrow()
+    })
+
+    it('Should reject string longer than 16 characters', () => {
+        expect(() => hlcSchema.parse("0123456789ABCDEF0")).toThrow()
+    })
+
+    it('Should reject empty string', () => {
+        expect(() => hlcSchema.parse("")).toThrow()
+    })
+
+    it('Should reject lowercase hex characters', () => {
+        expect(() => hlcSchema.parse("0123456789abcdef")).toThrow()
+    })
+
+    it('Should reject mixed case hex characters', () => {
+        expect(() => hlcSchema.parse("0123456789ABCDEf")).toThrow()
+    })
+
+    it('Should reject non-hex characters', () => {
+        expect(() => hlcSchema.parse("0123456789ABCXYZ")).toThrow()
+    })
+
+    it('Should reject strings with spaces', () => {
+        expect(() => hlcSchema.parse("0123456789ABCD  ")).toThrow()
     })
 
     it('Should generate and advance an HLC', () => {
@@ -46,6 +82,33 @@ describe('Hybrid Logical Clocks', () => {
 
             priorHlc = mergedHlc
         }
+    })
+
+})
+
+describe('hlcLength and hlcRegex', () => {
+
+    it('hlcLength is 16', () => {
+        expect(hlcLength).toBe(16)
+    })
+
+    it('hlcRegex matches valid uppercase hex of 16 chars', () => {
+        expect(hlcRegex.test("0123456789ABCDEF")).toBe(true)
+        expect(hlcRegex.test("FFFFFFFFFFFFFFFF")).toBe(true)
+        expect(hlcRegex.test("0000000000000000")).toBe(true)
+    })
+
+    it('hlcRegex rejects lowercase hex', () => {
+        expect(hlcRegex.test("0123456789abcdef")).toBe(false)
+    })
+
+    it('hlcRegex rejects wrong length', () => {
+        expect(hlcRegex.test("0123456789ABCDE")).toBe(false)
+        expect(hlcRegex.test("0123456789ABCDEF0")).toBe(false)
+    })
+
+    it('hlcRegex rejects non-hex characters', () => {
+        expect(hlcRegex.test("0123456789ABCXYZ")).toBe(false)
     })
 
 })

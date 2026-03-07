@@ -1,7 +1,8 @@
 import {describe, expect, it} from 'bun:test'
-import {accountCreationEventSchema, accountReadSchema, accountPatchEventSchema} from "$shared/domain/accounts/Account";
+import {accountCreationEventSchema, accountDeletionEventSchema, accountReadSchema, accountPatchEventSchema} from "$shared/domain/accounts/Account";
 import {z} from "zod";
 import {genAcctId} from "$shared/domain/accounts/AcctId";
+import {getHLClock} from "$shared/domain/core/HybridLogicalClock";
 
 describe('Sample Accounts', () => {
     it('Should parse without error', () => {
@@ -348,4 +349,99 @@ describe('Invalid Accounts', () => {
             })).toThrow()
         })
     })
+})
+
+describe('hlc field in account event schemas', () => {
+
+    describe('accountCreationEventSchema', () => {
+        it('accepts a valid hlc', () => {
+            const hlc = getHLClock("ABC")
+            const acct = accountCreationEventSchema.parse({
+                id: genAcctId(),
+                name: 'example',
+                acctNumber: '1234',
+                acctType: 'ASSET',
+                hlc,
+            })
+            expect(acct.hlc).toBe(hlc)
+        })
+
+        it('hlc is undefined when absent', () => {
+            const acct = accountCreationEventSchema.parse({
+                id: genAcctId(),
+                name: 'example',
+                acctNumber: '1234',
+                acctType: 'ASSET',
+            })
+            expect(acct.hlc).toBeUndefined()
+        })
+
+        it('rejects an invalid hlc', () => {
+            expect(() => accountCreationEventSchema.parse({
+                id: genAcctId(),
+                name: 'example',
+                acctNumber: '1234',
+                acctType: 'ASSET',
+                hlc: 'not-valid',
+            })).toThrow()
+        })
+    })
+
+    describe('accountDeletionEventSchema', () => {
+        it('parses with required id only', () => {
+            const id = genAcctId()
+            const event = accountDeletionEventSchema.parse({id})
+            expect(event.id).toBe(id)
+            expect(event.hlc).toBeUndefined()
+        })
+
+        it('accepts a valid hlc', () => {
+            const hlc = getHLClock("ABC")
+            const event = accountDeletionEventSchema.parse({
+                id: genAcctId(),
+                hlc,
+            })
+            expect(event.hlc).toBe(hlc)
+        })
+
+        it('rejects an invalid hlc', () => {
+            expect(() => accountDeletionEventSchema.parse({
+                id: genAcctId(),
+                hlc: 'not-valid',
+            })).toThrow()
+        })
+
+        it('rejects a missing id', () => {
+            expect(() => accountDeletionEventSchema.parse({})).toThrow()
+        })
+    })
+
+    describe('accountPatchEventSchema', () => {
+        it('accepts a valid hlc', () => {
+            const hlc = getHLClock("ABC")
+            const acct = accountPatchEventSchema.parse({
+                id: genAcctId(),
+                name: 'example',
+                hlc,
+            })
+            expect(acct.hlc).toBe(hlc)
+        })
+
+        it('hlc is undefined when absent', () => {
+            const acct = accountPatchEventSchema.parse({
+                id: genAcctId(),
+                name: 'example',
+            })
+            expect(acct.hlc).toBeUndefined()
+        })
+
+        it('rejects an invalid hlc', () => {
+            expect(() => accountPatchEventSchema.parse({
+                id: genAcctId(),
+                name: 'example',
+                hlc: 'not-valid',
+            })).toThrow()
+        })
+    })
+
 })

@@ -1,10 +1,12 @@
 import {describe, expect, it} from 'bun:test'
 import {
     transactionCreationEventSchema,
+    transactionDeletionEventSchema,
     transactionReadSchema,
     transactionPatchEventSchema
 } from '$shared/domain/transactions/Transaction'
 import {genTxnId} from '$shared/domain/transactions/TxnId'
+import {getHLClock} from '$shared/domain/core/HybridLogicalClock'
 
 const validEntries = [
     {account: 'Assets:Checking', debit: '$100.00', credit: '$0.00'},
@@ -352,4 +354,96 @@ describe('transactionUpdateSchema', () => {
         })
         expect(txn.entries).toBeUndefined()
     })
+})
+
+describe('hlc field in transaction event schemas', () => {
+
+    describe('transactionCreationEventSchema', () => {
+        it('accepts a valid hlc', () => {
+            const hlc = getHLClock("ABC")
+            const txn = transactionCreationEventSchema.parse({
+                id: genTxnId(),
+                date: '2026-01-15',
+                vendor: 'Acme Corp',
+                entries: validEntries,
+                hlc,
+            })
+            expect(txn.hlc).toBe(hlc)
+        })
+
+        it('hlc is undefined when absent', () => {
+            const txn = transactionCreationEventSchema.parse({
+                id: genTxnId(),
+                date: '2026-01-15',
+                vendor: 'Acme Corp',
+                entries: validEntries,
+            })
+            expect(txn.hlc).toBeUndefined()
+        })
+
+        it('rejects an invalid hlc', () => {
+            expect(() => transactionCreationEventSchema.parse({
+                id: genTxnId(),
+                date: '2026-01-15',
+                vendor: 'Acme Corp',
+                entries: validEntries,
+                hlc: 'not-valid',
+            })).toThrow()
+        })
+    })
+
+    describe('transactionDeletionEventSchema', () => {
+        it('parses with required id only', () => {
+            const id = genTxnId()
+            const event = transactionDeletionEventSchema.parse({id})
+            expect(event.id).toBe(id)
+            expect(event.hlc).toBeUndefined()
+        })
+
+        it('accepts a valid hlc', () => {
+            const hlc = getHLClock("ABC")
+            const event = transactionDeletionEventSchema.parse({
+                id: genTxnId(),
+                hlc,
+            })
+            expect(event.hlc).toBe(hlc)
+        })
+
+        it('rejects an invalid hlc', () => {
+            expect(() => transactionDeletionEventSchema.parse({
+                id: genTxnId(),
+                hlc: 'not-valid',
+            })).toThrow()
+        })
+
+        it('rejects a missing id', () => {
+            expect(() => transactionDeletionEventSchema.parse({})).toThrow()
+        })
+    })
+
+    describe('transactionPatchEventSchema', () => {
+        it('accepts a valid hlc', () => {
+            const hlc = getHLClock("ABC")
+            const txn = transactionPatchEventSchema.parse({
+                id: genTxnId(),
+                hlc,
+            })
+            expect(txn.hlc).toBe(hlc)
+        })
+
+        it('hlc is undefined when absent', () => {
+            const txn = transactionPatchEventSchema.parse({
+                id: genTxnId(),
+            })
+            expect(txn.hlc).toBeUndefined()
+        })
+
+        it('rejects an invalid hlc', () => {
+            expect(() => transactionPatchEventSchema.parse({
+                id: genTxnId(),
+                hlc: 'not-valid',
+            })).toThrow()
+        })
+    })
+
 })

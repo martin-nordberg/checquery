@@ -1,7 +1,8 @@
 import {describe, expect, it} from 'bun:test'
-import {statementCreationEventSchema, statementReadSchema, statementPatchEventSchema} from '$shared/domain/statements/Statement'
+import {statementCreationEventSchema, statementDeletionEventSchema, statementReadSchema, statementPatchEventSchema} from '$shared/domain/statements/Statement'
 import {genStmtId} from '$shared/domain/statements/StmtId'
 import {genTxnId} from '$shared/domain/transactions/TxnId'
+import {getHLClock} from '$shared/domain/core/HybridLogicalClock'
 
 const validInput = () => ({
     id: genStmtId(),
@@ -230,4 +231,83 @@ describe('statementUpdateSchema', () => {
         const input = {id: genStmtId(), endingBalance: 'not-currency'}
         expect(() => statementPatchEventSchema.parse(input)).toThrow()
     })
+})
+
+describe('hlc field in statement event schemas', () => {
+
+    describe('statementCreationEventSchema', () => {
+        it('accepts a valid hlc', () => {
+            const hlc = getHLClock("ABC")
+            const stmt = statementCreationEventSchema.parse({
+                ...validInput(),
+                hlc,
+            })
+            expect(stmt.hlc).toBe(hlc)
+        })
+
+        it('hlc is undefined when absent', () => {
+            const stmt = statementCreationEventSchema.parse(validInput())
+            expect(stmt.hlc).toBeUndefined()
+        })
+
+        it('rejects an invalid hlc', () => {
+            expect(() => statementCreationEventSchema.parse({
+                ...validInput(),
+                hlc: 'not-valid',
+            })).toThrow()
+        })
+    })
+
+    describe('statementDeletionEventSchema', () => {
+        it('parses with required id only', () => {
+            const id = genStmtId()
+            const event = statementDeletionEventSchema.parse({id})
+            expect(event.id).toBe(id)
+            expect(event.hlc).toBeUndefined()
+        })
+
+        it('accepts a valid hlc', () => {
+            const hlc = getHLClock("ABC")
+            const event = statementDeletionEventSchema.parse({
+                id: genStmtId(),
+                hlc,
+            })
+            expect(event.hlc).toBe(hlc)
+        })
+
+        it('rejects an invalid hlc', () => {
+            expect(() => statementDeletionEventSchema.parse({
+                id: genStmtId(),
+                hlc: 'not-valid',
+            })).toThrow()
+        })
+
+        it('rejects a missing id', () => {
+            expect(() => statementDeletionEventSchema.parse({})).toThrow()
+        })
+    })
+
+    describe('statementPatchEventSchema', () => {
+        it('accepts a valid hlc', () => {
+            const hlc = getHLClock("ABC")
+            const stmt = statementPatchEventSchema.parse({
+                id: genStmtId(),
+                hlc,
+            })
+            expect(stmt.hlc).toBe(hlc)
+        })
+
+        it('hlc is undefined when absent', () => {
+            const stmt = statementPatchEventSchema.parse({id: genStmtId()})
+            expect(stmt.hlc).toBeUndefined()
+        })
+
+        it('rejects an invalid hlc', () => {
+            expect(() => statementPatchEventSchema.parse({
+                id: genStmtId(),
+                hlc: 'not-valid',
+            })).toThrow()
+        })
+    })
+
 })
