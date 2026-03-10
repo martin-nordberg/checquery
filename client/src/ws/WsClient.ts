@@ -2,6 +2,10 @@ import type {IAccountSvc} from "$shared/services/accounts/IAccountSvc";
 import type {ITransactionSvc} from "$shared/services/transactions/ITransactionSvc";
 import type {IVendorSvc} from "$shared/services/vendors/IVendorSvc";
 import type {IStatementSvc} from "$shared/services/statements/IStatementSvc";
+import {accountCreationEventSchema, accountDeletionEventSchema, accountPatchEventSchema} from "$shared/domain/accounts/Account.ts";
+import {transactionCreationEventSchema, transactionDeletionEventSchema, transactionPatchEventSchema} from "$shared/domain/transactions/Transaction.ts";
+import {vendorCreationEventSchema, vendorDeletionEventSchema, vendorPatchEventSchema} from "$shared/domain/vendors/Vendor.ts";
+import {statementCreationEventSchema, statementDeletionEventSchema, statementPatchEventSchema} from "$shared/domain/statements/Statement.ts";
 
 type WsMessage = {
     action: string
@@ -37,40 +41,40 @@ export class WsClient {
     private dispatch(message: WsMessage): void {
         switch (message.action) {
             case 'create-account':
-                this.acctSvc.createAccount(message.payload as any)
+                this.acctSvc.createAccount(accountCreationEventSchema.parse(message.payload))
                 break
             case 'update-account':
-                this.acctSvc.patchAccount(message.payload as any)
+                this.acctSvc.patchAccount(accountPatchEventSchema.parse(message.payload))
                 break
             case 'delete-account':
-                this.acctSvc.deleteAccount(message.payload as any)
+                this.acctSvc.deleteAccount(accountDeletionEventSchema.parse(message.payload))
                 break
             case 'create-transaction':
-                this.txnSvc.createTransaction(message.payload as any)
+                this.txnSvc.createTransaction(transactionCreationEventSchema.parse(message.payload))
                 break
             case 'update-transaction':
-                this.txnSvc.patchTransaction(message.payload as any)
+                this.txnSvc.patchTransaction(transactionPatchEventSchema.parse(message.payload))
                 break
             case 'delete-transaction':
-                this.txnSvc.deleteTransaction(message.payload as any)
+                this.txnSvc.deleteTransaction(transactionDeletionEventSchema.parse(message.payload))
                 break
             case 'create-vendor':
-                this.vndrSvc.createVendor(message.payload as any)
+                this.vndrSvc.createVendor(vendorCreationEventSchema.parse(message.payload))
                 break
             case 'update-vendor':
-                this.vndrSvc.patchVendor(message.payload as any)
+                this.vndrSvc.patchVendor(vendorPatchEventSchema.parse(message.payload))
                 break
             case 'delete-vendor':
-                this.vndrSvc.deleteVendor(message.payload as any)
+                this.vndrSvc.deleteVendor(vendorDeletionEventSchema.parse(message.payload))
                 break
             case 'create-statement':
-                this.stmtSvc.createStatement(message.payload as any)
+                this.stmtSvc.createStatement(statementCreationEventSchema.parse(message.payload))
                 break
             case 'update-statement':
-                this.stmtSvc.patchStatement(message.payload as any)
+                this.stmtSvc.patchStatement(statementPatchEventSchema.parse(message.payload))
                 break
             case 'delete-statement':
-                this.stmtSvc.deleteStatement(message.payload as any)
+                this.stmtSvc.deleteStatement(statementDeletionEventSchema.parse(message.payload))
                 break
             default:
                 console.warn('[WS] Unknown action:', message.action, message.payload)

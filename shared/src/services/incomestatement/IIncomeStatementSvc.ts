@@ -1,13 +1,13 @@
 import {type IncomeStatement, type IncomeStatementDetails} from "../../domain/incomestatement/IncomeStatement";
-import {type IsoDate} from "../../domain/core/IsoDate";
+import {type Period} from "../../domain/core/Period";
 
 
 export interface IIncomeStatementSvc {
 
     /** Finds the summary income statement. */
-    findIncomeStatement(startDate: IsoDate, endDate: IsoDate): Promise<IncomeStatement | null>
+    findIncomeStatement(period: Period): Promise<IncomeStatement | null>
 
     /** Finds the detailed income statement with individual entries. */
-    findIncomeStatementDetails(startDate: IsoDate, endDate: IsoDate): Promise<IncomeStatementDetails | null>
+    findIncomeStatementDetails(period: Period): Promise<IncomeStatementDetails | null>
 
 }

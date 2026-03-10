@@ -2,8 +2,7 @@ import {Hono} from 'hono'
 import {zxValidator} from "../validation/zxvalidator";
 import {z} from "zod";
 import {type IIncomeStatementSvc} from "../../services/incomestatement/IIncomeStatementSvc";
-import {type IsoDate} from "../../domain/core/IsoDate";
-import {getEndDate, getStartDate, periodSchema} from "../../domain/core/Period";
+import {periodSchema} from "../../domain/core/Period";
 
 /** REST routes for balance sheets. */
 export const incomeStatementRoutes = (incomeStatementSvc: IIncomeStatementSvc) => {
@@ -13,9 +12,7 @@ export const incomeStatementRoutes = (incomeStatementSvc: IIncomeStatementSvc) =
             zxValidator('param', z.object({period: periodSchema})),
             async (c) => {
                 const {period} = c.req.valid('param')
-                const startDate: IsoDate = getStartDate(period)
-                const endDate: IsoDate = getEndDate(period)
-                return c.json(await incomeStatementSvc.findIncomeStatement(startDate, endDate))
+                return c.json(await incomeStatementSvc.findIncomeStatement(period))
             }
         )
         .get(
@@ -23,9 +20,7 @@ export const incomeStatementRoutes = (incomeStatementSvc: IIncomeStatementSvc) =
             zxValidator('param', z.object({period: periodSchema})),
             async (c) => {
                 const {period} = c.req.valid('param')
-                const startDate: IsoDate = getStartDate(period)
-                const endDate: IsoDate = getEndDate(period)
-                return c.json(await incomeStatementSvc.findIncomeStatementDetails(startDate, endDate))
+                return c.json(await incomeStatementSvc.findIncomeStatementDetails(period))
             }
         )
 }

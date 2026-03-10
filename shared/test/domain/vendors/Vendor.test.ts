@@ -1,6 +1,7 @@
 import {describe, expect, it} from 'bun:test'
-import {vendorCreationEventSchema, vendorReadSchema, vendorPatchEventSchema} from '$shared/domain/vendors/Vendor'
+import {vendorCreationEventSchema, vendorDeletionEventSchema, vendorReadSchema, vendorPatchEventSchema} from '$shared/domain/vendors/Vendor'
 import {genVndrId} from '$shared/domain/vendors/VndrId'
+import {getHLClock} from '$shared/domain/core/HybridLogicalClock'
 
 describe('vendorSchema', () => {
     it('parses a valid vendor', () => {
@@ -193,4 +194,90 @@ describe('vendorUpdateSchema', () => {
 
         expect(() => vendorPatchEventSchema.parse(input)).toThrow()
     })
+})
+
+describe('hlc field in vendor event schemas', () => {
+
+    describe('vendorCreationEventSchema', () => {
+        it('accepts a valid hlc', () => {
+            const hlc = getHLClock("ABC")
+            const vendor = vendorCreationEventSchema.parse({
+                id: genVndrId(),
+                name: 'Acme Corp',
+                hlc,
+            })
+            expect(vendor.hlc).toBe(hlc)
+        })
+
+        it('hlc is undefined when absent', () => {
+            const vendor = vendorCreationEventSchema.parse({
+                id: genVndrId(),
+                name: 'Acme Corp',
+            })
+            expect(vendor.hlc).toBeUndefined()
+        })
+
+        it('rejects an invalid hlc', () => {
+            expect(() => vendorCreationEventSchema.parse({
+                id: genVndrId(),
+                name: 'Acme Corp',
+                hlc: 'not-valid',
+            })).toThrow()
+        })
+    })
+
+    describe('vendorDeletionEventSchema', () => {
+        it('parses with required id only', () => {
+            const id = genVndrId()
+            const event = vendorDeletionEventSchema.parse({id})
+            expect(event.id).toBe(id)
+            expect(event.hlc).toBeUndefined()
+        })
+
+        it('accepts a valid hlc', () => {
+            const hlc = getHLClock("ABC")
+            const event = vendorDeletionEventSchema.parse({
+                id: genVndrId(),
+                hlc,
+            })
+            expect(event.hlc).toBe(hlc)
+        })
+
+        it('rejects an invalid hlc', () => {
+            expect(() => vendorDeletionEventSchema.parse({
+                id: genVndrId(),
+                hlc: 'not-valid',
+            })).toThrow()
+        })
+
+        it('rejects a missing id', () => {
+            expect(() => vendorDeletionEventSchema.parse({})).toThrow()
+        })
+    })
+
+    describe('vendorPatchEventSchema', () => {
+        it('accepts a valid hlc', () => {
+            const hlc = getHLClock("ABC")
+            const vendor = vendorPatchEventSchema.parse({
+                id: genVndrId(),
+                hlc,
+            })
+            expect(vendor.hlc).toBe(hlc)
+        })
+
+        it('hlc is undefined when absent', () => {
+            const vendor = vendorPatchEventSchema.parse({
+                id: genVndrId(),
+            })
+            expect(vendor.hlc).toBeUndefined()
+        })
+
+        it('rejects an invalid hlc', () => {
+            expect(() => vendorPatchEventSchema.parse({
+                id: genVndrId(),
+                hlc: 'not-valid',
+            })).toThrow()
+        })
+    })
+
 })
