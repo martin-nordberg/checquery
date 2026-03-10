@@ -24,8 +24,9 @@ async function runChecqueryPgDdlTxn(txn: PgLiteTxn) {
     await txn.exec(
         `CREATE TABLE AcctType
          (
-             code VARCHAR(10) PRIMARY KEY,
-             text VARCHAR(${nameMaxLength})
+             code VARCHAR(10)               NOT NULL,
+             text VARCHAR(${nameMaxLength}) NOT NULL,
+             CONSTRAINT AcctType_PK PRIMARY KEY (code)
          );`
     )
 
@@ -45,7 +46,7 @@ async function runChecqueryPgDdlTxn(txn: PgLiteTxn) {
     await txn.exec(
         `CREATE TABLE Account
          (
-             id             CHAR(${acctIdLength}) PRIMARY KEY,
+             id             CHAR(${acctIdLength})            NOT NULL,
              acctType       VARCHAR(10)                      NOT NULL REFERENCES AcctType (code),
              acctTypeHlc    CHAR(${hlcLength})               NOT NULL,
              acctNumber     VARCHAR(${acctNumberMaxLength})  NOT NULL,
@@ -55,7 +56,8 @@ async function runChecqueryPgDdlTxn(txn: PgLiteTxn) {
              description    VARCHAR(${descriptionMaxLength}) NOT NULL,
              descriptionHlc CHAR(${hlcLength})               NOT NULL,
              isDeleted      BOOLEAN                          NOT NULL DEFAULT FALSE,
-             isDeletedHlc   CHAR(${hlcLength})               NOT NULL
+             isDeletedHlc   CHAR(${hlcLength})               NOT NULL,
+             CONSTRAINT Account_PK PRIMARY KEY (id)
          );`
     )
 
@@ -63,7 +65,7 @@ async function runChecqueryPgDdlTxn(txn: PgLiteTxn) {
     await txn.exec(
         `CREATE TABLE Vendor
          (
-             id                  CHAR(${vndrIdLength}) PRIMARY KEY,
+             id                  CHAR(${vndrIdLength})            NOT NULL,
              name                VARCHAR(${nameMaxLength}) UNIQUE NOT NULL,
              nameHlc             CHAR(${hlcLength})               NOT NULL,
              description         VARCHAR(${descriptionMaxLength}) NOT NULL,
@@ -73,7 +75,8 @@ async function runChecqueryPgDdlTxn(txn: PgLiteTxn) {
              isActive            BOOLEAN                          NOT NULL DEFAULT TRUE,
              isActiveHlc         CHAR(${hlcLength})               NOT NULL,
              isDeleted           BOOLEAN                          NOT NULL DEFAULT FALSE,
-             isDeletedHlc        CHAR(${hlcLength})               NOT NULL
+             isDeletedHlc        CHAR(${hlcLength})               NOT NULL,
+             CONSTRAINT Vendor_PK PRIMARY KEY (id)
          );`
     )
 
@@ -81,26 +84,27 @@ async function runChecqueryPgDdlTxn(txn: PgLiteTxn) {
     await txn.exec(
         `CREATE TABLE Statement
          (
-             id                   CHAR(${stmtIdLength}) PRIMARY KEY,
+             id                   CHAR(${stmtIdLength})     NOT NULL,
              beginDate            VARCHAR(${isoDateLength}) NOT NULL,
              beginDateHlc         CHAR(${hlcLength})        NOT NULL,
              endDate              VARCHAR(${isoDateLength}) NOT NULL,
              endDateHlc           CHAR(${hlcLength})        NOT NULL,
              beginBalanceCents    INTEGER                   NOT NULL,
              beginBalanceCentsHlc CHAR(${hlcLength})        NOT NULL,
-             endbalanceCents      INTEGER                   NOT NULL,
-             endbalanceCentsHlc   CHAR(${hlcLength})        NOT NULL,
+             endBalanceCents      INTEGER                   NOT NULL,
+             endBalanceCentsHlc   CHAR(${hlcLength})        NOT NULL,
              accountId            CHAR(${acctIdLength})     NOT NULL REFERENCES Account (id),
              isReconciled         BOOLEAN                   NOT NULL DEFAULT FALSE,
              isReconciledHlc      CHAR(${hlcLength})        NOT NULL,
              isDeleted            BOOLEAN                   NOT NULL DEFAULT FALSE,
-             isDeletedHlc         CHAR(${hlcLength})        NOT NULL
+             isDeletedHlc         CHAR(${hlcLength})        NOT NULL,
+             CONSTRAINT Statement_PK PRIMARY KEY (id)
          );`
     )
 
     // Statement - partial unique index excluding soft-deleted rows
     await txn.exec(
-        `CREATE UNIQUE INDEX statement_enddate_accountid_key
+        `CREATE UNIQUE INDEX Statement_endDate_accountId_UQ
          ON Statement (endDate, accountId)
          WHERE isDeleted = false;`
     )
@@ -109,7 +113,7 @@ async function runChecqueryPgDdlTxn(txn: PgLiteTxn) {
     await txn.exec(
         `CREATE TABLE Transaxtion
          (
-             id             CHAR(${txnIdLength}) PRIMARY KEY,
+             id             CHAR(${txnIdLength})      NOT NULL,
              date           VARCHAR(${isoDateLength}) NOT NULL,
              dateHlc        CHAR(${hlcLength})        NOT NULL,
              code           VARCHAR(50),
@@ -120,7 +124,8 @@ async function runChecqueryPgDdlTxn(txn: PgLiteTxn) {
              descriptionHlc CHAR(${hlcLength})        NOT NULL,
              insertOrder    SERIAL,
              isDeleted      BOOLEAN                   NOT NULL DEFAULT FALSE,
-             isDeletedHlc   CHAR(${hlcLength})        NOT NULL
+             isDeletedHlc   CHAR(${hlcLength})        NOT NULL,
+             CONSTRAINT Transaction_PK PRIMARY KEY (id)
          );`
     )
 

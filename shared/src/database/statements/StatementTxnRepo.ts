@@ -40,7 +40,8 @@ export class StatementTxnRepo implements IStatementSvc {
                                     isReconciledHlc, isDeleted, isDeletedHlc)
              SELECT $1, $2, $hlc, $3, $hlc, $4, $hlc, $5, $hlc, Account.id, $7, $hlc, false, $hlc
                FROM Account
-              WHERE name = $6`,
+              WHERE name = $6
+             ON CONFLICT ON CONSTRAINT Statement_PK DO NOTHING`,
             [
                 statementCreation.id,
                 statementCreation.beginDate,
