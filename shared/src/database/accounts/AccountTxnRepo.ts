@@ -23,7 +23,8 @@ export class AccountTxnRepo implements IAccountSvc {
         const count = await this.#txn.exec(
             `INSERT INTO Account (id, name, nameHlc, acctNumber, acctNumberHlc, acctType, acctTypeHlc, description,
                                   descriptionHlc, isDeleted, isDeletedHlc)
-             VALUES ($1, $2, $hlc, $3, $hlc, $4, $hlc, $5, $hlc, false, $hlc);`,
+             VALUES ($1, $2, $hlc, $3, $hlc, $4, $hlc, $5, $hlc, false, $hlc)
+             ON CONFLICT ON CONSTRAINT Account_PK DO NOTHING`,
             [
                 accountCreation.id,
                 accountCreation.name,

@@ -25,7 +25,8 @@ export class VendorTxnRepo implements IVendorSvc {
                                      defaultAccountIdHlc, isActive, isActiveHlc, isDeleted, isDeletedHlc)
                 SELECT $1, $2, $hlc, $3, $hlc, Account.id, $hlc, $5, $hlc, false, $hlc
                   FROM Account
-                 WHERE name = $4`,
+                 WHERE name = $4
+                ON CONFLICT ON CONSTRAINT Vendor_PK DO NOTHING`,
                 [
                     vendorCreation.id,
                     vendorCreation.name,
@@ -40,7 +41,8 @@ export class VendorTxnRepo implements IVendorSvc {
         const count = await this.#txn.exec(
             `INSERT INTO Vendor (id, name, nameHlc, description, descriptionHlc, defaultAccountId,
                                      defaultAccountIdHlc, isActive, isActiveHlc, isDeleted, isDeletedHlc)
-                VALUES ($1, $2, $hlc, $3, $hlc, null, $hlc, $4, $hlc, false, $hlc)`,
+                VALUES ($1, $2, $hlc, $3, $hlc, null, $hlc, $4, $hlc, false, $hlc)
+                ON CONFLICT ON CONSTRAINT Vendor_PK DO NOTHING`,
             [
                 vendorCreation.id,
                 vendorCreation.name,

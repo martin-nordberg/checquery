@@ -29,7 +29,8 @@ export class TransactionTxnRepo implements ITransactionSvc {
                                           descriptionHlc, isDeleted, isDeletedHlc)
                  SELECT $1, $2, $hlc, $3, $hlc, Vendor.id, $hlc, $5, $hlc, false, $hlc
                    FROM Vendor
-                  WHERE name = $4;`,
+                  WHERE name = $4
+                 ON CONFLICT ON CONSTRAINT Transaction_PK DO NOTHING`,
                 [
                     transactionCreation.id,
                     transactionCreation.date,
@@ -42,7 +43,8 @@ export class TransactionTxnRepo implements ITransactionSvc {
             count = await this.#txn.exec(
                 `INSERT INTO Transaxtion (id, date, dateHlc, code, codeHlc, vendorId, vendorIdHlc, description,
                                           descriptionHlc, isDeleted, isDeletedHlc)
-                 VALUES ($1, $2, $hlc, $3, $hlc, null, $hlc, $4, $hlc, false, $hlc)`,
+                 VALUES ($1, $2, $hlc, $3, $hlc, null, $hlc, $4, $hlc, false, $hlc)
+                 ON CONFLICT ON CONSTRAINT Transaction_PK DO NOTHING`,
                 [
                     transactionCreation.id,
                     transactionCreation.date,
