@@ -2,7 +2,7 @@ import {type IncomeStatement, type IncomeStatementDetails} from "../../domain/in
 import {type Period} from "../../domain/core/Period";
 
 
-export interface IIncomeStatementSvc {
+export interface IIncomeStatementQrySvc {
 
     /** Finds the summary income statement. */
     findIncomeStatement(period: Period): Promise<IncomeStatement | null>

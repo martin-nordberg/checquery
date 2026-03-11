@@ -1,14 +1,12 @@
-import type {IStatementSvc} from "$shared/services/statements/IStatementSvc";
-import type {StmtId} from "$shared/domain/statements/StmtId";
+import type {IStatementCmdSvc} from "$shared/services/statements/IStatementCmdSvc";
 import {
-    type Statement,
     type StatementCreationEvent,
     type StatementDeletionEvent,
     type StatementPatchEvent
 } from "$shared/domain/statements/Statement";
 import {appendDirective} from "./ChecqueryYamlAppender";
 
-export class StatementEventWriter implements IStatementSvc {
+export class StatementEventWriter implements IStatementCmdSvc {
 
     async createStatement(statementCreation: StatementCreationEvent): Promise<StatementCreationEvent | null> {
         await appendDirective({action: 'create-statement', payload: {
@@ -29,15 +27,7 @@ export class StatementEventWriter implements IStatementSvc {
         return statementDeletion
     }
 
-    async findStatementById(_statementId: StmtId): Promise<Statement | null> {
-        throw Error("Not implemented")
-    }
-
-    async findStatementsAll(): Promise<Statement[]> {
-        throw Error("Not implemented")
-    }
-
-    async patchStatement(statementPatch: StatementPatchEvent): Promise<Statement | null> {
+    async patchStatement(statementPatch: StatementPatchEvent): Promise<StatementPatchEvent | null> {
         await appendDirective({action: 'update-statement', payload: {
             id: statementPatch.id,
             beginDate: statementPatch.beginDate,
@@ -48,7 +38,6 @@ export class StatementEventWriter implements IStatementSvc {
             isReconciled: statementPatch.isReconciled,
             transactions: statementPatch.transactions,
         }})
-
         return null
     }
 

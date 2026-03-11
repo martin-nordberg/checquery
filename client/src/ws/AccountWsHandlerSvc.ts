@@ -1,9 +1,8 @@
-import type {IAccountSvc} from "$shared/services/accounts/IAccountSvc";
-import type {Account, AccountCreationEvent, AccountDeletionEvent, AccountPatchEvent} from "$shared/domain/accounts/Account";
-import type {AcctId} from "$shared/domain/accounts/AcctId";
+import type {IAccountCmdSvc} from "$shared/services/accounts/IAccountCmdSvc";
+import type {AccountCreationEvent, AccountDeletionEvent, AccountPatchEvent} from "$shared/domain/accounts/Account";
 
 
-export class AccountWsHandlerSvc implements IAccountSvc {
+export class AccountWsHandlerSvc implements IAccountCmdSvc {
 
     async createAccount(accountCreation: AccountCreationEvent): Promise<AccountCreationEvent | null> {
         console.log('[WS] create-account', accountCreation)
@@ -13,18 +12,6 @@ export class AccountWsHandlerSvc implements IAccountSvc {
     async deleteAccount(accountDeletion: AccountDeletionEvent): Promise<AccountDeletionEvent | null> {
         console.log('[WS] delete-account', accountDeletion)
         return accountDeletion
-    }
-
-    async findAccountById(_accountId: AcctId): Promise<Account | null> {
-        throw new Error("Not implemented")
-    }
-
-    async findAccountsAll(): Promise<Account[]> {
-        throw new Error("Not implemented")
-    }
-
-    async isAccountInUse(_accountId: AcctId): Promise<boolean> {
-        throw new Error("Not implemented")
     }
 
     async patchAccount(accountPatch: AccountPatchEvent): Promise<AccountPatchEvent | null> {

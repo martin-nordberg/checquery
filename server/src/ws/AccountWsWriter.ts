@@ -1,10 +1,9 @@
-import type {IAccountSvc} from "$shared/services/accounts/IAccountSvc";
-import type {Account, AccountCreationEvent, AccountDeletionEvent, AccountPatchEvent} from "$shared/domain/accounts/Account";
-import type {AcctId} from "$shared/domain/accounts/AcctId";
+import type {IAccountCmdSvc} from "$shared/services/accounts/IAccountCmdSvc";
+import type {AccountCreationEvent, AccountDeletionEvent, AccountPatchEvent} from "$shared/domain/accounts/Account";
 import {WsManager} from "./WsManager";
 
 
-export class AccountWsWriter implements IAccountSvc {
+export class AccountWsWriter implements IAccountCmdSvc {
 
     constructor(private wsMgr: WsManager) {
     }
@@ -17,18 +16,6 @@ export class AccountWsWriter implements IAccountSvc {
     async deleteAccount(accountDeletion: AccountDeletionEvent): Promise<AccountDeletionEvent | null> {
         this.wsMgr.broadcast({action: 'delete-account', payload: accountDeletion})
         return accountDeletion
-    }
-
-    async findAccountById(_accountId: AcctId): Promise<Account | null> {
-        throw new Error("Not implemented")
-    }
-
-    async findAccountsAll(): Promise<Account[]> {
-        throw new Error("Not implemented")
-    }
-
-    async isAccountInUse(_accountId: AcctId): Promise<boolean> {
-        throw new Error("Not implemented")
     }
 
     async patchAccount(accountPatch: AccountPatchEvent): Promise<AccountPatchEvent | null> {

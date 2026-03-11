@@ -1,5 +1,5 @@
 import {z} from "zod";
-import type {IIncomeStatementSvc} from "$shared/services/incomestatement/IIncomeStatementSvc";
+import type {IIncomeStatementQrySvc} from "$shared/services/incomestatement/IIncomeStatementQrySvc";
 import type {
     IncomeStatement,
     IncomeStatementDetails,
@@ -14,7 +14,7 @@ import {type Period, getStartDate, getEndDate} from "$shared/domain/core/Period"
 import type {PgLiteDb} from "$shared/database/PgLiteDb";
 
 
-export class IncomeStatementRepo implements IIncomeStatementSvc {
+export class IncomeStatementRepo implements IIncomeStatementQrySvc {
 
     readonly db: PgLiteDb
 

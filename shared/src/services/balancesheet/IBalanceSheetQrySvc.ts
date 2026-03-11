@@ -2,7 +2,7 @@ import {type BalanceSheet} from "../../domain/balancesheet/BalanceSheet";
 import {type IsoDate} from "../../domain/core/IsoDate";
 
 
-export interface IBalanceSheetSvc {
+export interface IBalanceSheetQrySvc {
 
     /** Finds the entire balance sheet. */
     findBalanceSheet(endingDate: IsoDate): Promise<BalanceSheet | null>

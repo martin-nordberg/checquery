@@ -1,19 +1,16 @@
 import {hc} from 'hono/client'
 import {type AccountRoutes} from "$shared/routes/accounts/AccountRoutes.ts";
 import type {
-    Account,
     AccountCreationEvent,
     AccountDeletionEvent,
     AccountPatchEvent
 } from "$shared/domain/accounts/Account";
-import {HTTPException} from "hono/http-exception";
-import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
 import {webAppHost} from "../config.ts";
-import type {IAccountSvc} from "$shared/services/accounts/IAccountSvc.ts";
+import type {IAccountCmdSvc} from "$shared/services/accounts/IAccountCmdSvc.ts";
 
 const client = hc<AccountRoutes>(`${webAppHost}`)
 
-export class AccountClientSvc implements IAccountSvc {
+export class AccountClientSvc implements IAccountCmdSvc {
 
     async createAccount(accountCreation: AccountCreationEvent): Promise<AccountCreationEvent|null> {
         console.log("createAccount", accountCreation)
@@ -50,50 +47,6 @@ export class AccountClientSvc implements IAccountSvc {
         return null
     }
 
-    async findAccountById(accountId: AcctId): Promise<Account | null> {
-        console.log("findAccountById", accountId)
-        const res = await client.accounts[':accountId'].$get({param: {accountId}})
-
-        if (res.ok) {
-            return res.json()
-        }
-
-        console.log(res)
-
-        return null
-    }
-
-    async findAccountsAll(): Promise<Account[]> {
-        console.log("findAccountsAll")
-        const res = await client.accounts.$get()
-
-        if (res.ok) {
-            return res.json()
-        }
-
-        console.log(res)
-
-        throw new HTTPException(res.status)
-    }
-
-    async isAccountInUse(accountId: AcctId): Promise<boolean> {
-        console.log("isAccountInUse", accountId)
-        try {
-            const res = await client.accounts[':accountId']['in-use'].$get({param: {accountId}})
-
-            if (res.ok) {
-                const result = await res.json()
-                return result.inUse
-            }
-
-            console.log("isAccountInUse failed:", res.status, res)
-        } catch (e) {
-            console.log("isAccountInUse error:", e)
-        }
-        // Default to true (in use) on error to prevent accidental deletion
-        return true
-    }
-
     async patchAccount(account: AccountPatchEvent): Promise<AccountPatchEvent|null> {
         console.log("updateAccount", account)
         const res = await client.accounts[':accountId'].$patch({param: {accountId: account.id}, json: account})
@@ -112,4 +65,3 @@ export class AccountClientSvc implements IAccountSvc {
     }
 
 }
-

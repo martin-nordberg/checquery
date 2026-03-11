@@ -13,12 +13,6 @@ import {acctIdSchema} from "../../domain/accounts/AcctId";
 /** REST routes for accounts. */
 export const accountRoutes = (accountService: IAccountSvc) => {
     return new Hono()
-        .get(
-            '/',
-            async (c) => {
-                return c.json(await accountService.findAccountsAll())
-            }
-        )
         .post(
             '/',
             zxValidator('json', accountCreationEventSchema),
@@ -34,22 +28,6 @@ export const accountRoutes = (accountService: IAccountSvc) => {
                     }
                     throw e
                 }
-            }
-        )
-        .get(
-            '/:accountId',
-            zxValidator('param', z.object({accountId: acctIdSchema})),
-            async (c) => {
-                const {accountId} = c.req.valid('param')
-                return c.json(await accountService.findAccountById(accountId))
-            }
-        )
-        .get(
-            '/:accountId/in-use',
-            zxValidator('param', z.object({accountId: acctIdSchema})),
-            async (c) => {
-                const {accountId} = c.req.valid('param')
-                return c.json({inUse: await accountService.isAccountInUse(accountId)})
             }
         )
         .delete(

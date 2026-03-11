@@ -1,5 +1,5 @@
 import {z} from "zod";
-import type {IBalanceSheetSvc} from "$shared/services/balancesheet/IBalanceSheetSvc";
+import type {IBalanceSheetQrySvc} from "$shared/services/balancesheet/IBalanceSheetQrySvc";
 import type {BalanceSheet, BalSheetLineItem} from "$shared/domain/balancesheet/BalanceSheet";
 import {fromCents} from "$shared/domain/core/CurrencyAmt";
 import {acctIdSchema} from "$shared/domain/accounts/AcctId";
@@ -7,7 +7,7 @@ import type {IsoDate} from "$shared/domain/core/IsoDate";
 import type {PgLiteDb} from "$shared/database/PgLiteDb";
 
 
-export class BalanceSheetRepo implements IBalanceSheetSvc {
+export class BalanceSheetRepo implements IBalanceSheetQrySvc {
 
     readonly db: PgLiteDb
 

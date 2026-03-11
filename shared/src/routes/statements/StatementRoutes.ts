@@ -1,27 +1,13 @@
 import {Hono} from 'hono'
 import {z} from 'zod'
-import {type IStatementSvc} from "../../services/statements/IStatementSvc";
+import {type IStatementCmdSvc} from "../../services/statements/IStatementCmdSvc";
 import {zxValidator} from "../validation/zxvalidator";
 import {stmtIdSchema} from "../../domain/statements/StmtId";
 import {statementCreationEventSchema, type StatementPatchEvent, statementPatchEventSchema} from "../../domain/statements/Statement";
 
 /** REST routes for statements. */
-export const statementRoutes = (statementSvc: IStatementSvc) => {
+export const statementRoutes = (statementSvc: IStatementCmdSvc) => {
     return new Hono()
-        .get(
-            '/',
-            async (c) => {
-                return c.json(await statementSvc.findStatementsAll())
-            }
-        )
-        .get(
-            '/:statementId',
-            zxValidator('param', z.object({statementId: stmtIdSchema})),
-            async (c) => {
-                const {statementId} = c.req.valid('param')
-                return c.json(await statementSvc.findStatementById(statementId))
-            }
-        )
         .post(
             '/',
             zxValidator('json', statementCreationEventSchema),

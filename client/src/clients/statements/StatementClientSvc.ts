@@ -1,18 +1,16 @@
 import {hc} from 'hono/client'
 import type {
-    Statement,
     StatementCreationEvent,
     StatementDeletionEvent,
     StatementPatchEvent
 } from "$shared/domain/statements/Statement.ts";
 import type {StatementRoutes} from "$shared/routes/statements/StatementRoutes.ts";
-import type {StmtId} from "$shared/domain/statements/StmtId.ts";
 import {webAppHost} from "../config.ts";
-import type {IStatementSvc} from "$shared/services/statements/IStatementSvc.ts";
+import type {IStatementCmdSvc} from "$shared/services/statements/IStatementCmdSvc.ts";
 
 const client = hc<StatementRoutes>(`${webAppHost}`)
 
-export class StatementClientSvc implements IStatementSvc {
+export class StatementClientSvc implements IStatementCmdSvc {
 
     async createStatement(statementCreation: StatementCreationEvent): Promise<StatementCreationEvent | null> {
         console.log("createStatement", statementCreation)
@@ -46,32 +44,6 @@ export class StatementClientSvc implements IStatementSvc {
         throw new Error('Failed to delete statement')
     }
 
-    async findStatementsAll(): Promise<Statement[]> {
-        console.log("findStatementsAll")
-        const res = await client.statements.$get()
-
-        if (res.ok) {
-            return res.json()
-        }
-
-        console.log(res)
-
-        return []
-    }
-
-    async findStatementById(statementId: StmtId): Promise<Statement | null> {
-        console.log("findStatementById", statementId)
-        const res = await client.statements[':statementId'].$get({param: {statementId}})
-
-        if (res.ok) {
-            return res.json()
-        }
-
-        console.log(res)
-
-        return null
-    }
-
     async patchStatement(update: StatementPatchEvent): Promise<StatementPatchEvent | null> {
         console.log("updateStatement", update)
         const res = await client.statements[':statementId'].$patch({
@@ -92,4 +64,3 @@ export class StatementClientSvc implements IStatementSvc {
     }
 
 }
-

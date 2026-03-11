@@ -1,7 +1,7 @@
-import type {IAccountSvc} from "$shared/services/accounts/IAccountSvc";
-import type {ITransactionSvc} from "$shared/services/transactions/ITransactionSvc";
-import type {IVendorSvc} from "$shared/services/vendors/IVendorSvc";
-import type {IStatementSvc} from "$shared/services/statements/IStatementSvc";
+import type {IAccountCmdSvc} from "$shared/services/accounts/IAccountCmdSvc";
+import type {ITransactionCmdSvc} from "$shared/services/transactions/ITransactionCmdSvc";
+import type {IVendorCmdSvc} from "$shared/services/vendors/IVendorCmdSvc";
+import type {IStatementCmdSvc} from "$shared/services/statements/IStatementCmdSvc";
 import {accountCreationEventSchema, accountPatchEventSchema} from "$shared/domain/accounts/Account";
 import {acctIdSchema} from "$shared/domain/accounts/AcctId";
 import {transactionCreationEventSchema, transactionPatchEventSchema} from "$shared/domain/transactions/Transaction";
@@ -16,10 +16,10 @@ import {stmtIdSchema} from "$shared/domain/statements/StmtId";
  */
 export const loadChecqueryLog = async (
     yamlFileName: string,
-    acctSvc: IAccountSvc,
-    txnSvc: ITransactionSvc,
-    vendorSvc: IVendorSvc,
-    stmtSvc: IStatementSvc
+    acctSvc: IAccountCmdSvc,
+    txnSvc: ITransactionCmdSvc,
+    vendorSvc: IVendorCmdSvc,
+    stmtSvc: IStatementCmdSvc
 ) => {
     // Read the file content as a string.
     const yaml = await Bun.file(yamlFileName).text()

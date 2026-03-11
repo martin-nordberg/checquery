@@ -3,9 +3,6 @@ import {cors} from 'hono/cors'
 import {createBunWebSocket} from 'hono/bun'
 import type {ServerWebSocket} from 'bun'
 import {accountRoutes} from "$shared/routes/accounts/AccountRoutes";
-import {balanceSheetRoutes} from "$shared/routes/balancesheet/BalanceSheetRoutes";
-import {incomeStatementRoutes} from "$shared/routes/incomestatement/IncomeStatementRoutes";
-import {registerRoutes} from "$shared/routes/register/RegisterRoutes";
 import {transactionRoutes} from "$shared/routes/transactions/TransactionRoutes";
 import {vendorRoutes} from "$shared/routes/vendors/VendorRoutes";
 import {statementRoutes} from "$shared/routes/statements/StatementRoutes";
@@ -28,10 +25,7 @@ import {StatementWsWriter} from "./ws/StatementWsWriter";
 import {AccountTeeSvc} from "$shared/services/accounts/AccountTeeSvc";
 import {VendorTeeSvc} from "$shared/services/vendors/VendorTeeSvc";
 import {TransactionTeeSvc} from "$shared/services/transactions/TransactionTeeSvc";
-import {BalanceSheetRepo} from "$shared/database/balancesheet/BalanceSheetRepo";
 import {StatementTeeSvc} from "$shared/services/statements/StatementTeeSvc";
-import {IncomeStatementRepo} from "$shared/database/incomestatement/IncomeStatementRepo";
-import {RegisterRepo} from "$shared/database/register/RegisterRepo";
 import {loadChecqueryLog} from "./events/ChecqueryEventLoader";
 
 const {upgradeWebSocket, websocket} = createBunWebSocket<ServerWebSocket>()
@@ -74,13 +68,10 @@ const transactionWsWriter = new TransactionWsWriter(wsMgr)
 const vendorWsWriter = new VendorWsWriter(wsMgr)
 
 // Services for API (with persistence to YAML and broadcast to WebSocket)
-const vndrSvc = new VendorTeeSvc([vendorRepo, vendorEventWriter, vendorWsWriter])
-const acctSvc = new AccountTeeSvc([accountRepo, accountEventWriter, accountWsWriter])
-const txnSvc = new TransactionTeeSvc([transactionRepo, transactionEventWriter, transactionWsWriter])
-const stmtSvc = new StatementTeeSvc([statementRepo, statementEventWriter, statementWsWriter])
-const bsSvc = new BalanceSheetRepo(db)
-const isSvc = new IncomeStatementRepo(db)
-const regSvc = new RegisterRepo(db)
+const vndrSvc = new VendorTeeSvc(vendorRepo, [vendorRepo, vendorEventWriter, vendorWsWriter])
+const acctSvc = new AccountTeeSvc(accountRepo, [accountRepo, accountEventWriter, accountWsWriter])
+const txnSvc = new TransactionTeeSvc(transactionRepo, [transactionRepo, transactionEventWriter, transactionWsWriter])
+const stmtSvc = new StatementTeeSvc(statementRepo, [statementRepo, statementEventWriter, statementWsWriter])
 
 await loadChecqueryLog(
     checqueryLogFile(),
@@ -90,8 +81,6 @@ await loadChecqueryLog(
     statementRepo
 )
 
-console.log(await bsSvc.findBalanceSheet('2026-01-11'))
-console.log(await isSvc.findIncomeStatement('2026-01'))
 
 const routes =
     app
@@ -116,9 +105,6 @@ const routes =
         })))
 
         .route('/accounts', accountRoutes(acctSvc))
-        .route('/balancesheet', balanceSheetRoutes(bsSvc))
-        .route('/incomestatement', incomeStatementRoutes(isSvc))
-        .route('/register', registerRoutes(regSvc))
         .route('/transactions', transactionRoutes(txnSvc))
         .route('/statements', statementRoutes(stmtSvc))
         .route('/vendors', vendorRoutes(vndrSvc))

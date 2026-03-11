@@ -8,28 +8,6 @@ import {vendorCreationEventSchema, vendorPatchEventSchema} from "../../domain/ve
 /** REST routes for vendors. */
 export const vendorRoutes = (vendorSvc: IVendorSvc) => {
     return new Hono()
-        .get(
-            '/',
-            async (c) => {
-                return c.json(await vendorSvc.findVendorsAll())
-            }
-        )
-        .get(
-            '/:vendorId',
-            zxValidator('param', z.object({vendorId: vndrIdSchema})),
-            async (c) => {
-                const {vendorId} = c.req.valid('param')
-                return c.json(await vendorSvc.findVendorById(vendorId))
-            }
-        )
-        .get(
-            '/:vendorId/in-use',
-            zxValidator('param', z.object({vendorId: vndrIdSchema})),
-            async (c) => {
-                const {vendorId} = c.req.valid('param')
-                return c.json({inUse: await vendorSvc.isVendorInUse(vendorId)})
-            }
-        )
         .post(
             '/',
             zxValidator('json', vendorCreationEventSchema),
@@ -74,7 +52,6 @@ export const vendorRoutes = (vendorSvc: IVendorSvc) => {
             zxValidator('param', z.object({vendorId: vndrIdSchema})),
             async (c) => {
                 const {vendorId} = c.req.valid('param')
-                // Check if in use first
                 const inUse = await vendorSvc.isVendorInUse(vendorId)
                 if (inUse) {
                     return c.json({error: 'Vendor is used in transactions and cannot be deleted'}, 409)

@@ -1,18 +1,16 @@
 import {hc} from 'hono/client'
 import type {
-    Vendor,
     VendorCreationEvent,
     VendorDeletionEvent,
     VendorPatchEvent
 } from "$shared/domain/vendors/Vendor.ts";
 import type {VendorRoutes} from "$shared/routes/vendors/VendorRoutes.ts";
-import type {VndrId} from "$shared/domain/vendors/VndrId.ts";
 import {webAppHost} from "../config.ts";
-import type {IVendorSvc} from "$shared/services/vendors/IVendorSvc.ts";
+import type {IVendorCmdSvc} from "$shared/services/vendors/IVendorCmdSvc.ts";
 
 const client = hc<VendorRoutes>(`${webAppHost}`)
 
-export class VendorClientSvc implements IVendorSvc {
+export class VendorClientSvc implements IVendorCmdSvc {
 
     async createVendor(vendorCreation: VendorCreationEvent): Promise<VendorCreationEvent | null> {
         console.log("createVendor", vendorCreation)
@@ -48,46 +46,6 @@ export class VendorClientSvc implements IVendorSvc {
         throw new Error('Error deleting vendor')
     }
 
-    async findVendorsAll(): Promise<Vendor[]> {
-        console.log("findVendorsAll")
-        const res = await client.vendors.$get()
-
-        if (res.ok) {
-            return res.json()
-        }
-
-        console.log(res)
-
-        return []
-    }
-
-    async findVendorById(vendorId: VndrId): Promise<Vendor | null> {
-        console.log("findVendorById", vendorId)
-        const res = await client.vendors[':vendorId'].$get({param: {vendorId}})
-
-        if (res.ok) {
-            return res.json()
-        }
-
-        console.log(res)
-
-        return null
-    }
-
-    async isVendorInUse(vendorId: VndrId): Promise<boolean> {
-        console.log("isVendorInUse", vendorId)
-        const res = await client.vendors[':vendorId']['in-use'].$get({param: {vendorId}})
-
-        if (res.ok) {
-            const result = await res.json()
-            return result.inUse
-        }
-
-        console.log(res)
-
-        return false
-    }
-
     async patchVendor(update: VendorPatchEvent): Promise<VendorPatchEvent | null> {
         console.log("updateVendor", update)
         const res = await client.vendors[':vendorId'].$patch({
@@ -115,4 +73,3 @@ export class VendorClientSvc implements IVendorSvc {
     }
 
 }
-

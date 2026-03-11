@@ -1,9 +1,9 @@
-import type {IIncomeStatementSvc} from "$shared/services/incomestatement/IIncomeStatementSvc";
+import type {IIncomeStatementQrySvc} from "$shared/services/incomestatement/IIncomeStatementQrySvc";
 import type {IncomeStatement, IncomeStatementDetails} from "$shared/domain/incomestatement/IncomeStatement";
 import type {Period} from "$shared/domain/core/Period";
 
 
-export class IncomeStatementSvcLogger implements IIncomeStatementSvc {
+export class IncomeStatementSvcLogger implements IIncomeStatementQrySvc {
 
     async findIncomeStatement(period: Period): Promise<IncomeStatement | null> {
         console.info('IncomeStatementSvcLogger.findIncomeStatement', JSON.stringify({period}, null, 2))

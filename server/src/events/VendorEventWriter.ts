@@ -1,15 +1,13 @@
 import {
-    type Vendor,
     type VendorCreationEvent,
     type VendorDeletionEvent,
     type VendorPatchEvent,
 } from "$shared/domain/vendors/Vendor";
-import {type IVendorSvc} from "$shared/services/vendors/IVendorSvc";
-import {type VndrId} from "$shared/domain/vendors/VndrId";
+import {type IVendorCmdSvc} from "$shared/services/vendors/IVendorCmdSvc";
 import {appendDirective} from "./ChecqueryYamlAppender";
 
 
-export class VendorEventWriter implements IVendorSvc {
+export class VendorEventWriter implements IVendorCmdSvc {
 
     async createVendor(vendorCreation: VendorCreationEvent): Promise<VendorCreationEvent | null> {
         await appendDirective({action: 'create-vendor', payload: {
@@ -25,18 +23,6 @@ export class VendorEventWriter implements IVendorSvc {
     async deleteVendor(vendorDeletion: VendorDeletionEvent): Promise<VendorDeletionEvent | null> {
         await appendDirective({action: 'delete-vendor', payload: {id: vendorDeletion.id}})
         return vendorDeletion
-    }
-
-    async findVendorById(_vendorId: VndrId): Promise<Vendor | null> {
-        throw Error("Unimplemented")
-    }
-
-    async findVendorsAll(): Promise<Vendor[]> {
-        throw Error("Unimplemented")
-    }
-
-    async isVendorInUse(_vendorId: VndrId): Promise<boolean> {
-        throw Error("Unimplemented")
     }
 
     async patchVendor(vendorPatch: VendorPatchEvent): Promise<VendorPatchEvent | null> {

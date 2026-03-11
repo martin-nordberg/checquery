@@ -1,15 +1,13 @@
 import {
-    type Account,
     type AccountCreationEvent,
     type AccountDeletionEvent,
     type AccountPatchEvent,
 } from "$shared/domain/accounts/Account";
-import {type IAccountSvc} from "$shared/services/accounts/IAccountSvc";
-import {type AcctId} from "$shared/domain/accounts/AcctId";
+import {type IAccountCmdSvc} from "$shared/services/accounts/IAccountCmdSvc";
 import {appendDirective} from "./ChecqueryYamlAppender";
 
 
-export class AccountEventWriter implements IAccountSvc {
+export class AccountEventWriter implements IAccountCmdSvc {
 
     async createAccount(accountCreation: AccountCreationEvent): Promise<AccountCreationEvent | null> {
         await appendDirective({action: 'create-account', payload: {
@@ -27,18 +25,6 @@ export class AccountEventWriter implements IAccountSvc {
             id: accountDeletion.id,
         }})
         return accountDeletion
-    }
-
-    async findAccountById(_accountId: AcctId): Promise<Account | null> {
-        throw new Error("Not implemented")
-    }
-
-    async findAccountsAll(): Promise<Account[]> {
-        throw new Error("Not implemented")
-    }
-
-    async isAccountInUse(_accountId: AcctId): Promise<boolean> {
-        throw new Error("Not implemented")
     }
 
     async patchAccount(accountPatch: AccountPatchEvent): Promise<AccountPatchEvent | null> {

@@ -1,14 +1,12 @@
-import type {ITransactionSvc} from "$shared/services/transactions/ITransactionSvc";
-import type {TxnId} from "$shared/domain/transactions/TxnId";
+import type {ITransactionCmdSvc} from "$shared/services/transactions/ITransactionCmdSvc";
 import {
-    type Transaction,
     type TransactionCreationEvent, type TransactionDeletionEvent,
     type TransactionPatchEvent
 } from "$shared/domain/transactions/Transaction";
 import {appendDirective} from "./ChecqueryYamlAppender";
 
 
-export class TransactionEventWriter implements ITransactionSvc {
+export class TransactionEventWriter implements ITransactionCmdSvc {
 
     async createTransaction(transactionCreation: TransactionCreationEvent): Promise<TransactionCreationEvent | null> {
         const payload: Record<string, unknown> = {
@@ -43,15 +41,7 @@ export class TransactionEventWriter implements ITransactionSvc {
         return transactionDeletion
     }
 
-    async findTransactionById(_transactionId: TxnId): Promise<Transaction | null> {
-        throw Error("Unimplemented")
-    }
-
-    async findTransactionsAll(): Promise<Transaction[]> {
-        throw Error("Unimplemented")
-    }
-
-    async patchTransaction(transactionPatch: TransactionPatchEvent): Promise<Transaction | null> {
+    async patchTransaction(transactionPatch: TransactionPatchEvent): Promise<TransactionPatchEvent | null> {
         const payload: Record<string, unknown> = {id: transactionPatch.id}
         if (transactionPatch.date !== undefined) {
             payload['date'] = transactionPatch.date
@@ -78,7 +68,6 @@ export class TransactionEventWriter implements ITransactionSvc {
             })
         }
         await appendDirective({action: 'update-transaction', payload})
-
         return null
     }
 

@@ -1,10 +1,9 @@
-import type {ITransactionSvc} from "$shared/services/transactions/ITransactionSvc";
-import type {Transaction, TransactionCreationEvent, TransactionDeletionEvent, TransactionPatchEvent} from "$shared/domain/transactions/Transaction";
-import type {TxnId} from "$shared/domain/transactions/TxnId";
+import type {ITransactionCmdSvc} from "$shared/services/transactions/ITransactionCmdSvc";
+import type {TransactionCreationEvent, TransactionDeletionEvent, TransactionPatchEvent} from "$shared/domain/transactions/Transaction";
 import {WsManager} from "./WsManager";
 
 
-export class TransactionWsWriter implements ITransactionSvc {
+export class TransactionWsWriter implements ITransactionCmdSvc {
 
     constructor(private wsMgr: WsManager) {
     }
@@ -17,14 +16,6 @@ export class TransactionWsWriter implements ITransactionSvc {
     async deleteTransaction(transactionDeletion: TransactionDeletionEvent): Promise<TransactionDeletionEvent | null> {
         this.wsMgr.broadcast({action: 'delete-transaction', payload: transactionDeletion})
         return transactionDeletion
-    }
-
-    async findTransactionById(_transactionId: TxnId): Promise<Transaction | null> {
-        throw new Error("Not implemented")
-    }
-
-    async findTransactionsAll(): Promise<Transaction[]> {
-        throw new Error("Not implemented")
     }
 
     async patchTransaction(transactionPatch: TransactionPatchEvent): Promise<TransactionPatchEvent | null> {

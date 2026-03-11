@@ -3,18 +3,18 @@ import type {IAccountSvc} from '$shared/services/accounts/IAccountSvc.ts'
 import type {IVendorSvc} from '$shared/services/vendors/IVendorSvc.ts'
 import type {ITransactionSvc} from '$shared/services/transactions/ITransactionSvc.ts'
 import type {IStatementSvc} from '$shared/services/statements/IStatementSvc.ts'
-import type {IRegisterSvc} from '$shared/services/register/IRegisterSvc.ts'
-import type {IBalanceSheetSvc} from '$shared/services/balancesheet/IBalanceSheetSvc.ts'
-import type {IIncomeStatementSvc} from '$shared/services/incomestatement/IIncomeStatementSvc.ts'
+import type {IRegisterQrySvc} from '$shared/services/register/IRegisterQrySvc.ts'
+import type {IBalanceSheetQrySvc} from '$shared/services/balancesheet/IBalanceSheetQrySvc.ts'
+import type {IIncomeStatementQrySvc} from '$shared/services/incomestatement/IIncomeStatementQrySvc.ts'
 
 export type Services = {
     acctSvc: IAccountSvc
     vndrSvc: IVendorSvc
     txnSvc: ITransactionSvc
     stmtSvc: IStatementSvc
-    regSvc: IRegisterSvc
-    bsSvc: IBalanceSheetSvc
-    isSvc: IIncomeStatementSvc
+    regSvc: IRegisterQrySvc
+    bsSvc: IBalanceSheetQrySvc
+    isSvc: IIncomeStatementQrySvc
 }
 
 export const ServicesContext = createContext<Services>()

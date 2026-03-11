@@ -1,9 +1,8 @@
-import type {IStatementSvc} from "$shared/services/statements/IStatementSvc";
-import type {Statement, StatementCreationEvent, StatementDeletionEvent, StatementPatchEvent} from "$shared/domain/statements/Statement";
-import type {StmtId} from "$shared/domain/statements/StmtId";
+import type {IStatementCmdSvc} from "$shared/services/statements/IStatementCmdSvc";
+import type {StatementCreationEvent, StatementDeletionEvent, StatementPatchEvent} from "$shared/domain/statements/Statement";
 
 
-export class StatementWsHandlerSvc implements IStatementSvc {
+export class StatementWsHandlerSvc implements IStatementCmdSvc {
 
     async createStatement(statementCreation: StatementCreationEvent): Promise<StatementCreationEvent | null> {
         console.log('[WS] create-statement', statementCreation)
@@ -13,14 +12,6 @@ export class StatementWsHandlerSvc implements IStatementSvc {
     async deleteStatement(statementDeletion: StatementDeletionEvent): Promise<StatementDeletionEvent | null> {
         console.log('[WS] delete-statement', statementDeletion)
         return statementDeletion
-    }
-
-    async findStatementById(_statementId: StmtId): Promise<Statement | null> {
-        throw new Error("Not implemented")
-    }
-
-    async findStatementsAll(): Promise<Statement[]> {
-        throw new Error("Not implemented")
     }
 
     async patchStatement(statementPatch: StatementPatchEvent): Promise<StatementPatchEvent | null> {

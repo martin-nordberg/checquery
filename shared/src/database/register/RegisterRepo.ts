@@ -1,5 +1,5 @@
 import {z} from "zod";
-import type {IRegisterSvc} from "$shared/services/register/IRegisterSvc";
+import type {IRegisterQrySvc} from "$shared/services/register/IRegisterQrySvc";
 import type {
     Register,
     RegisterLineItem,
@@ -13,7 +13,7 @@ import {acctTypeSchema} from "$shared/domain/accounts/AcctType";
 import type {PgLiteDb} from "$shared/database/PgLiteDb";
 
 
-export class RegisterRepo implements IRegisterSvc {
+export class RegisterRepo implements IRegisterQrySvc {
 
     readonly db: PgLiteDb
 
