@@ -28,11 +28,11 @@ const IncomeStatementDetailed = (props: IncomeStatementDetailedProps) => {
 
     const AccountSection = (props: { lineItem: IncStmtDetailLineItem }) => (
         <>
-            <tr class="hover:bg-gray-50">
-                <td class="px-6 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+            <tr class="bg-gray-50">
+                <td class="px-6 py-2 whitespace-nowrap text-sm font-semibold text-gray-700">
                     {props.lineItem.accountName.replaceAll(':', ' : ')}
                 </td>
-                <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-500 text-right">
+                <td class="px-6 py-2 whitespace-nowrap text-sm font-semibold text-gray-700 text-right">
                     {props.lineItem.totalAmount}
                 </td>
             </tr>
@@ -59,19 +59,28 @@ const IncomeStatementDetailed = (props: IncomeStatementDetailedProps) => {
             </Show>
             <Show when={incomeStatement()}>
                 <div class="p-4 md:p-8 max-w-5xl mx-auto">
-                    <div class="bg-white shadow-lg rounded-lg p-6">
-                        <section class="mb-8">
-                            <h2 class="text-xl font-bold mb-2 border-b pb-1">Expenses</h2>
+                    <div class="flex flex-col gap-4">
+                        <section class="bg-white shadow-lg rounded-lg overflow-hidden">
                             <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-blue-100 sticky top-0 z-10">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                        Expenses
+                                    </th>
+                                    <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                        Amount
+                                    </th>
+                                </tr>
+                                </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                 <For each={incomeStatement()?.expenseLineItems}>
                                     {(lineItem) => <AccountSection lineItem={lineItem}/>}
                                 </For>
-                                <tr class="hover:bg-gray-50 font-semibold">
-                                    <td class="border-t-2 border-gray-300 py-2 whitespace-nowrap text-sm text-gray-900">
+                                <tr class="bg-blue-50">
+                                    <td class="border-t-2 border-blue-200 px-6 py-2 whitespace-nowrap text-sm font-semibold text-gray-900">
                                         Total Expenses
                                     </td>
-                                    <td class="border-t-2 border-gray-300 px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
+                                    <td class="border-t-2 border-blue-200 px-6 py-2 whitespace-nowrap text-sm font-semibold text-gray-900 text-right">
                                         {incomeStatement()?.totalExpenses}
                                     </td>
                                 </tr>
@@ -79,18 +88,27 @@ const IncomeStatementDetailed = (props: IncomeStatementDetailedProps) => {
                             </table>
                         </section>
 
-                        <section class="mb-8">
-                            <h2 class="text-xl font-bold mb-2 border-b pb-1">Income</h2>
+                        <section class="bg-white shadow-lg rounded-lg overflow-hidden">
                             <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-blue-100">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                        Income
+                                    </th>
+                                    <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                        Amount
+                                    </th>
+                                </tr>
+                                </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                 <For each={incomeStatement()?.incomeLineItems}>
                                     {(lineItem) => <AccountSection lineItem={lineItem}/>}
                                 </For>
-                                <tr class="hover:bg-gray-50 font-semibold">
-                                    <td class="border-t-2 border-gray-300 py-2 whitespace-nowrap text-sm text-gray-900">
+                                <tr class="bg-blue-50">
+                                    <td class="border-t-2 border-blue-200 px-6 py-2 whitespace-nowrap text-sm font-semibold text-gray-900">
                                         Total Income
                                     </td>
-                                    <td class="border-t-2 border-gray-300 px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
+                                    <td class="border-t-2 border-blue-200 px-6 py-2 whitespace-nowrap text-sm font-semibold text-gray-900 text-right">
                                         {incomeStatement()?.totalIncome}
                                     </td>
                                 </tr>
@@ -98,15 +116,22 @@ const IncomeStatementDetailed = (props: IncomeStatementDetailedProps) => {
                             </table>
                         </section>
 
-                        <section>
-                            <h2 class="text-xl font-bold mb-2 border-b pb-1">Net Income</h2>
+                        <section class="bg-white shadow-lg rounded-lg overflow-hidden">
                             <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-blue-100">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider"
+                                        colspan="2">
+                                        Net Income
+                                    </th>
+                                </tr>
+                                </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
-                                <tr class="hover:bg-gray-50 font-semibold">
-                                    <td class="py-2 whitespace-nowrap text-sm text-gray-900">
+                                <tr class="bg-blue-50">
+                                    <td class="px-6 py-2 whitespace-nowrap text-sm font-semibold text-gray-900">
                                         Net Income
                                     </td>
-                                    <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
+                                    <td class="px-6 py-2 whitespace-nowrap text-sm font-semibold text-gray-900 text-right">
                                         {incomeStatement()?.netIncome}
                                     </td>
                                 </tr>
