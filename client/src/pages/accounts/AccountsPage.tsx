@@ -5,7 +5,7 @@ import HoverableDropDown from "../../components/nav/HoverableDropDown.tsx";
 import AccountList from "../../components/accounts/AccountList.tsx";
 import MessageDialog from "../../components/common/dialogs/MessageDialog.tsx";
 import SearchField from "../../components/common/search/SearchField.tsx";
-import {stmtNavOptions} from "../../nav/stmtNavOptions.ts";
+import {stmtNavOptions, stmtNavIconPaths} from "../../nav/stmtNavOptions.ts";
 
 const AccountsPage = () => {
 
@@ -47,7 +47,7 @@ const AccountsPage = () => {
             <div class="flex-none flex items-center justify-between pr-4 bg-white">
                 <TopNav>
                     <Breadcrumb>
-                        <HoverableDropDown options={stmtOptions} selectedOption="Accounts"/>
+                        <HoverableDropDown options={stmtOptions} selectedOption="Accounts" iconPaths={stmtNavIconPaths}/>
                     </Breadcrumb>
                 </TopNav>
                 <SearchField

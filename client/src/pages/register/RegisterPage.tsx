@@ -13,7 +13,7 @@ import type {TxnId} from "$shared/domain/transactions/TxnId.ts";
 import type {RegisterLineItem} from "$shared/domain/register/Register.ts";
 import type {AcctTypeStr} from "$shared/domain/accounts/AcctType.ts";
 import {type CurrencyAmt, fromCents, toCents} from "$shared/domain/core/CurrencyAmt.ts";
-import {stmtNavOptions} from "../../nav/stmtNavOptions.ts";
+import {stmtNavOptions, stmtNavIconPaths} from "../../nav/stmtNavOptions.ts";
 
 const RegisterPage = () => {
     const {acctSvc} = useServices()
@@ -139,7 +139,7 @@ const RegisterPage = () => {
             <div class="flex-none flex items-center justify-between pr-4 bg-white">
                 <TopNav>
                     <Breadcrumb>
-                        <HoverableDropDown options={stmtOptions} selectedOption="Register"/>
+                        <HoverableDropDown options={stmtOptions} selectedOption="Register" iconPaths={stmtNavIconPaths}/>
                     </Breadcrumb>
                     <Breadcrumb>
                         <Show when={account()} fallback="Loading...">

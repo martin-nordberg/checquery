@@ -8,7 +8,7 @@ import {useParams} from "@solidjs/router";
 import {createMemo, createResource, createSignal, Show} from "solid-js";
 import {useServices} from "../../services/ServicesContext.ts";
 import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
-import {stmtNavOptions} from "../../nav/stmtNavOptions.ts";
+import {stmtNavOptions, stmtNavIconPaths} from "../../nav/stmtNavOptions.ts";
 
 const IncomeLogPage = () => {
     const {acctSvc} = useServices()
@@ -69,7 +69,7 @@ const IncomeLogPage = () => {
             <div class="flex-none flex items-center justify-between pr-4 bg-white">
                 <TopNav>
                     <Breadcrumb>
-                        <HoverableDropDown options={stmtOptions} selectedOption="Income Log"/>
+                        <HoverableDropDown options={stmtOptions} selectedOption="Income Log" iconPaths={stmtNavIconPaths}/>
                     </Breadcrumb>
                     <Breadcrumb>
                         <Show when={account()} fallback="Loading...">
