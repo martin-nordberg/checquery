@@ -9,7 +9,9 @@
       "Bash(timeout 5 bun run dev:*)",
       "Bash(npx tsc:*)",
       "Bash(bun run:*)",
-      "Bash(bun x tsc:*)"
+      "Bash(bun x tsc:*)",
+      "Bash(grep -r \"Household.*Miscellaneous\\\\|Miscellaneous.*Household\" \"C:/Data/Documents/checquery/server\" --include=\"*.yaml\" --include=\"*.yml\" -l 2>/dev/null | head -5)",
+      "Bash(find \"C:/Data/Documents/checquery\" -name \"*.yaml\" -o -name \"*.yml\" 2>/dev/null | head -10)"
     ]
   }
 }

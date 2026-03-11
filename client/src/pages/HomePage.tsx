@@ -6,7 +6,7 @@ export const HomePage = () => {
         <>
             <TopNav/>
             <main class="p-1">
-                <ul>
+                <ul class="ml-6">
                     <li>
                         <A class="hover:underline" href="./accounts">
                             Accounts
@@ -15,6 +15,11 @@ export const HomePage = () => {
                     <li>
                         <A class="hover:underline" href="./balancesheet">
                             Balance Sheet
+                        </A>
+                    </li>
+                    <li>
+                        <A class="hover:underline" href="/expenselog/accthouseholdmiscellaneous00">
+                            Expense Log
                         </A>
                     </li>
                     <li>

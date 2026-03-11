@@ -7,6 +7,7 @@ import {isoDateToday} from "$shared/domain/core/IsoDate.ts";
 export const baseStmtOptions = {
     "Accounts": "/accounts",
     "Balance Sheet": `/balancesheet/${isoDateToday}`,
+    "Expense Log": "/expenselog/accthouseholdmiscellaneous00",
     "Income Statement": `/incomestatement/${isoDateToday?.substring(0, 7)}/summary`,
     "Register": "/register/accttruistchecking0000000000",
     "Vendors": "/vendors",

@@ -17,6 +17,7 @@ import {VendorRepo} from "$shared/database/vendors/VendorRepo.ts";
 import {BalanceSheetRepo} from "$shared/database/balancesheet/BalanceSheetRepo.ts";
 import {IncomeStatementRepo} from "$shared/database/incomestatement/IncomeStatementRepo.ts";
 import {RegisterRepo} from "$shared/database/register/RegisterRepo.ts";
+import {ExpenseLogRepo} from "$shared/database/expenselog/ExpenseLogRepo.ts";
 import {AccountClientSvc} from "./clients/accounts/AccountClientSvc.ts";
 import {VendorClientSvc} from "./clients/vendors/VendorClientSvc.ts";
 import {TransactionClientSvc} from "./clients/transactions/TransactionClientSvc.ts";
@@ -34,6 +35,7 @@ import {ServicesContext} from "./services/ServicesContext.ts";
 
 const BalanceSheetPage = lazy(() => import("./pages/balancesheet/BalanceSheetPage"));
 const RegisterPage = lazy(() => import("./pages/register/RegisterPage"));
+const ExpenseLogPage = lazy(() => import("./pages/expenselog/ExpenseLogPage"));
 const VendorsPage = lazy(() => import("./pages/vendors/VendorsPage"));
 const AccountsPage = lazy(() => import("./pages/accounts/AccountsPage"));
 
@@ -60,6 +62,7 @@ const vndrSvc = new VendorTeeSvc(vendorRepo, [vendorRepo, vendorHttpSvc])
 const txnSvc = new TransactionTeeSvc(transactionRepo, [transactionRepo, transactionHttpSvc])
 const stmtSvc = new StatementTeeSvc(statementRepo, [statementRepo, statementHttpSvc])
 const regSvc = new RegisterRepo(db)
+const expSvc = new ExpenseLogRepo(db)
 const bsSvc = new BalanceSheetRepo(db)
 const isSvc = new IncomeStatementRepo(db)
 
@@ -79,7 +82,7 @@ const wsClient = new WsClient(wsAcctSvc, wsTransactionSvc, wsVndrSvc, wsStmtSvc)
 wsClient.connect('ws://localhost:3001/ws')
 
 render(() => (
-    <ServicesContext.Provider value={{acctSvc, vndrSvc, txnSvc, stmtSvc, regSvc, bsSvc, isSvc}}>
+    <ServicesContext.Provider value={{acctSvc, vndrSvc, txnSvc, stmtSvc, regSvc, expSvc, bsSvc, isSvc}}>
         <Router root={App}>
             <Route path="/" component={HomePage}/>
             <Route path="/balancesheet" component={() => <Navigate href={"./" + isoDateToday}/>}/>
@@ -88,6 +91,7 @@ render(() => (
             <Route path="/incomestatement/:period" component={() => <Navigate href={"./summary"}/>}/>
             <Route path="/incomestatement/:period/:view" component={IncomeStatementPage}/>
             <Route path="/register/:accountId" component={RegisterPage}/>
+            <Route path="/expenselog/:accountId" component={ExpenseLogPage}/>
             <Route path="/vendors" component={VendorsPage}/>
             <Route path="/accounts" component={AccountsPage}/>
         </Router>
