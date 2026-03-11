@@ -5,6 +5,7 @@ import type {ITransactionSvc} from '$shared/services/transactions/ITransactionSv
 import type {IStatementSvc} from '$shared/services/statements/IStatementSvc.ts'
 import type {IRegisterQrySvc} from '$shared/services/register/IRegisterQrySvc.ts'
 import type {IExpenseLogQrySvc} from '$shared/services/expenselog/IExpenseLogQrySvc.ts'
+import type {IIncomeLogQrySvc} from '$shared/services/incomelog/IIncomeLogQrySvc.ts'
 import type {IBalanceSheetQrySvc} from '$shared/services/balancesheet/IBalanceSheetQrySvc.ts'
 import type {IIncomeStatementQrySvc} from '$shared/services/incomestatement/IIncomeStatementQrySvc.ts'
 
@@ -15,6 +16,7 @@ export type Services = {
     stmtSvc: IStatementSvc
     regSvc: IRegisterQrySvc
     expSvc: IExpenseLogQrySvc
+    incSvc: IIncomeLogQrySvc
     bsSvc: IBalanceSheetQrySvc
     isSvc: IIncomeStatementQrySvc
 }

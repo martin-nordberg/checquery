@@ -23,6 +23,11 @@ export const HomePage = () => {
                         </A>
                     </li>
                     <li>
+                        <A class="hover:underline" href="/incomelog/acctmartinsalaryincome000000">
+                            Income Log
+                        </A>
+                    </li>
+                    <li>
                         <A class="hover:underline" href="./incomestatement">
                             Income Statement
                         </A>
