@@ -42,9 +42,15 @@ export class ExpenseLogRepo implements IExpenseLogQrySvc {
             const sqlLineItems = await txn.findMany(
                 `SELECT Transaxtion.id as "txnId",
                        Transaxtion.date as date,
-                       CASE WHEN Entry.stmtId IS NULL THEN NULL
-                         WHEN Statement.isReconciled = true THEN 'Reconciled'
-                         ELSE 'Pending'
+                       CASE WHEN NOT EXISTS (
+                         SELECT 1 FROM Entry e2 WHERE e2.txnId = Transaxtion.id AND e2.stmtId IS NOT NULL
+                       ) THEN NULL
+                       WHEN EXISTS (
+                         SELECT 1 FROM Entry e2
+                         JOIN Statement s ON e2.stmtId = s.id
+                         WHERE e2.txnId = Transaxtion.id AND s.isReconciled = true
+                       ) THEN 'Reconciled'
+                       ELSE 'Pending'
                        END as status,
                        Vendor.name as vendor,
                        Transaxtion.description as description,
@@ -53,7 +59,6 @@ export class ExpenseLogRepo implements IExpenseLogQrySvc {
                   FROM Entry
                   JOIN Transaxtion ON Entry.txnId = Transaxtion.id
                   LEFT JOIN Vendor ON Transaxtion.vendorId = Vendor.id
-                  LEFT JOIN Statement ON Entry.stmtId = Statement.id
                  WHERE Entry.accountId = $1
                    AND Transaxtion.isDeleted = false
                  ORDER BY Transaxtion.date, Transaxtion.insertOrder`,
