@@ -1,10 +1,20 @@
 import {createResource, For, Show} from "solid-js";
+import {A} from "@solidjs/router";
 import {useServices} from "../../services/ServicesContext.ts";
 import type {Period} from "$shared/domain/core/Period.ts";
+import type {IncStmtLineItem} from "$shared/domain/incomestatement/IncomeStatement.ts";
 
 type IncomeStatementProps = {
     period: string,
 }
+
+const AccountName = (props: {lineItem: IncStmtLineItem, logPath: string}) => (
+    <Show when={props.lineItem.acctId} fallback={<span>{props.lineItem.description.replaceAll(':', ' : ')}</span>}>
+        <A href={`${props.logPath}/${props.lineItem.acctId}`} class="hover:text-blue-600 hover:underline">
+            {props.lineItem.description.replaceAll(':', ' : ')}
+        </A>
+    </Show>
+)
 
 const IncomeStatement = (props: IncomeStatementProps) => {
     const {isSvc} = useServices()
@@ -43,7 +53,7 @@ const IncomeStatement = (props: IncomeStatementProps) => {
                                     {(lineItem) => (
                                         <tr class="hover:bg-gray-50">
                                             <td class="px-6 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                {lineItem.description.replaceAll(':', ' : ')}
+                                                <AccountName lineItem={lineItem} logPath="/expenselog"/>
                                             </td>
                                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-500 text-right">
                                                 {lineItem.amount}
@@ -80,7 +90,7 @@ const IncomeStatement = (props: IncomeStatementProps) => {
                                     {(lineItem) => (
                                         <tr class="hover:bg-gray-50">
                                             <td class="px-6 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                {lineItem.description.replaceAll(':', ' : ')}
+                                                <AccountName lineItem={lineItem} logPath="/incomelog"/>
                                             </td>
                                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-500 text-right">
                                                 {lineItem.amount}
@@ -112,7 +122,7 @@ const IncomeStatement = (props: IncomeStatementProps) => {
                                     <tbody class="bg-white divide-y divide-gray-200">
                                     <tr class="bg-blue-50">
                                         <td class="px-6 py-2 whitespace-nowrap text-sm font-semibold text-gray-900">
-                                            Net Income
+                                            Total Net Income
                                         </td>
                                         <td class="px-6 py-2 whitespace-nowrap text-sm font-semibold text-gray-900 text-right">
                                             {incomeStatement()?.netIncome}

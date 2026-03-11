@@ -1,4 +1,5 @@
 import {createResource, For, Show} from "solid-js";
+import {A} from "@solidjs/router";
 import {useServices} from "../../services/ServicesContext.ts";
 import type {Period} from "$shared/domain/core/Period.ts";
 import type {IncStmtDetailLineItem, IncStmtEntryDetail} from "$shared/domain/incomestatement/IncomeStatement.ts";
@@ -26,11 +27,15 @@ const IncomeStatementDetailed = (props: IncomeStatementDetailedProps) => {
 
     const [incomeStatement] = createResource(() => props.period, fetchIncomeStatement)
 
-    const AccountSection = (props: { lineItem: IncStmtDetailLineItem }) => (
+    const AccountSection = (props: { lineItem: IncStmtDetailLineItem, logPath: string }) => (
         <>
             <tr class="bg-gray-50">
                 <td class="px-6 py-2 whitespace-nowrap text-sm font-semibold text-gray-700">
-                    {props.lineItem.accountName.replaceAll(':', ' : ')}
+                    <Show when={props.lineItem.acctId} fallback={<span>{props.lineItem.accountName.replaceAll(':', ' : ')}</span>}>
+                        <A href={`${props.logPath}/${props.lineItem.acctId}`} class="hover:text-blue-600 hover:underline">
+                            {props.lineItem.accountName.replaceAll(':', ' : ')}
+                        </A>
+                    </Show>
                 </td>
                 <td class="px-6 py-2 whitespace-nowrap text-sm font-semibold text-gray-700 text-right">
                     {props.lineItem.totalAmount}
@@ -74,7 +79,7 @@ const IncomeStatementDetailed = (props: IncomeStatementDetailedProps) => {
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                 <For each={incomeStatement()?.expenseLineItems}>
-                                    {(lineItem) => <AccountSection lineItem={lineItem}/>}
+                                    {(lineItem) => <AccountSection lineItem={lineItem} logPath="/expenselog"/>}
                                 </For>
                                 <tr class="bg-blue-50">
                                     <td class="border-t-2 border-blue-200 px-6 py-2 whitespace-nowrap text-sm font-semibold text-gray-900">
@@ -102,7 +107,7 @@ const IncomeStatementDetailed = (props: IncomeStatementDetailedProps) => {
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                 <For each={incomeStatement()?.incomeLineItems}>
-                                    {(lineItem) => <AccountSection lineItem={lineItem}/>}
+                                    {(lineItem) => <AccountSection lineItem={lineItem} logPath="/incomelog"/>}
                                 </For>
                                 <tr class="bg-blue-50">
                                     <td class="border-t-2 border-blue-200 px-6 py-2 whitespace-nowrap text-sm font-semibold text-gray-900">
@@ -129,7 +134,7 @@ const IncomeStatementDetailed = (props: IncomeStatementDetailedProps) => {
                                 <tbody class="bg-white divide-y divide-gray-200">
                                 <tr class="bg-blue-50">
                                     <td class="px-6 py-2 whitespace-nowrap text-sm font-semibold text-gray-900">
-                                        Net Income
+                                        Total Net Income
                                     </td>
                                     <td class="px-6 py-2 whitespace-nowrap text-sm font-semibold text-gray-900 text-right">
                                         {incomeStatement()?.netIncome}
