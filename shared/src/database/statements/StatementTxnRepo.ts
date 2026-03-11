@@ -52,7 +52,21 @@ export class StatementTxnRepo implements IStatementSvc {
                 statementCreation.isReconciled,
             ]
         )
-        return count ? {...statementCreation, hlc: this.#txn.hlc} : null
+        if (!count) {
+            return null
+        }
+
+        if (statementCreation.transactions.length > 0) {
+            await this.#txn.exec(
+                `UPDATE Entry
+                    SET stmtId = $1
+                  WHERE txnId = ANY($2)
+                    AND accountId = (SELECT id FROM Account WHERE name = $3)`,
+                [statementCreation.id, statementCreation.transactions, statementCreation.account]
+            )
+        }
+
+        return {...statementCreation, hlc: this.#txn.hlc}
     }
 
     async deleteStatement(statementDeletion: StatementDeletionEvent): Promise<StatementDeletionEvent | null> {
@@ -209,6 +223,25 @@ export class StatementTxnRepo implements IStatementSvc {
             if (count) {
                 result = {id: statementPatch.id, isReconciled: statementPatch.isReconciled}
             }
+        }
+
+        if (statementPatch.transactions !== undefined) {
+            await this.#txn.exec(
+                `UPDATE Entry
+                    SET stmtId = NULL
+                  WHERE stmtId = $1`,
+                [statementPatch.id]
+            )
+            if (statementPatch.transactions.length > 0) {
+                await this.#txn.exec(
+                    `UPDATE Entry
+                        SET stmtId = $1
+                      WHERE txnId = ANY($2)
+                        AND accountId = (SELECT accountId FROM Statement WHERE id = $1)`,
+                    [statementPatch.id, statementPatch.transactions]
+                )
+            }
+            result = {...(result ?? {id: statementPatch.id}), transactions: statementPatch.transactions}
         }
 
         return result ? {...result, hlc: this.#txn.hlc} : null
