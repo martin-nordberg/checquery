@@ -6,7 +6,7 @@ import {genStmtId} from "$shared/domain/statements/StmtId";
 import type {Statement} from "$shared/domain/statements/Statement";
 import {AccountRepo} from "$shared/database/accounts/AccountRepo";
 import {genAcctId} from "$shared/domain/accounts/AcctId";
-import type {Account} from "$shared/domain/accounts/Account";
+import type {AccountCreationEvent} from "$shared/domain/accounts/Account";
 
 describe('Statement Repo', () => {
     it('Should create, find, update, and delete a statement', async () => {
@@ -16,12 +16,13 @@ describe('Statement Repo', () => {
         const arepo = new AccountRepo(db)
 
         const aid = genAcctId()
-        const acct0: Account = {
+        const acct0: AccountCreationEvent = {
             id: aid,
             name: "Sample",
             acctNumber: "123-456",
             acctType: "ASSET",
             description: "An example account",
+            isPrimary: false
         }
 
         await arepo.createAccount(acct0)

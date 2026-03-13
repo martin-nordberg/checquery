@@ -55,6 +55,8 @@ async function runChecqueryPgDdlTxn(txn: PgLiteTxn) {
              nameHlc        CHAR(${hlcLength})               NOT NULL,
              description    VARCHAR(${descriptionMaxLength}) NOT NULL,
              descriptionHlc CHAR(${hlcLength})               NOT NULL,
+             isPrimary      BOOLEAN                          NOT NULL DEFAULT FALSE,
+             isPrimaryHlc   CHAR(${hlcLength})               NOT NULL,
              isDeleted      BOOLEAN                          NOT NULL DEFAULT FALSE,
              isDeletedHlc   CHAR(${hlcLength})               NOT NULL,
              CONSTRAINT Account_PK PRIMARY KEY (id)

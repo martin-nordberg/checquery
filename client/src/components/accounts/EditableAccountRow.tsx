@@ -26,6 +26,7 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
     const [editAcctType, setEditAcctType] = createSignal<AcctTypeStr>(props.account.acctType)
     const [editAcctNumber, setEditAcctNumber] = createSignal<string | undefined>(props.account.acctNumber)
     const [editDescription, setEditDescription] = createSignal<string | undefined>(props.account.description)
+    const [editIsPrimary, setEditIsPrimary] = createSignal<boolean>(props.account.isPrimary ?? false)
     const [isSaving, setIsSaving] = createSignal(false)
     const [error, setError] = createSignal<string | null>(null)
     const [showDeleteConfirm, setShowDeleteConfirm] = createSignal(false)
@@ -47,6 +48,7 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
     const [initialAcctType, setInitialAcctType] = createSignal<AcctTypeStr>(props.account.acctType)
     const [initialAcctNumber, setInitialAcctNumber] = createSignal<string | undefined>(props.account.acctNumber)
     const [initialDescription, setInitialDescription] = createSignal<string | undefined>(props.account.description)
+    const [initialIsPrimary, setInitialIsPrimary] = createSignal<boolean>(props.account.isPrimary ?? false)
 
     // Compute dirty state
     const isDirty = createMemo(() => {
@@ -62,7 +64,10 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
         if (editAcctNumber() !== initialAcctNumber()) {
             return true
         }
-        return editDescription() !== initialDescription();
+        if (editDescription() !== initialDescription()) {
+            return true
+        }
+        return editIsPrimary() !== initialIsPrimary();
     })
 
     // Report dirty state changes to parent
@@ -81,6 +86,8 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
             setInitialAcctNumber(props.account.acctNumber)
             setEditDescription(props.account.description)
             setInitialDescription(props.account.description)
+            setEditIsPrimary(props.account.isPrimary ?? false)
+            setInitialIsPrimary(props.account.isPrimary ?? false)
             setError(null)
 
             // Focus the specified field and scroll into view after a short delay to allow DOM to update
@@ -146,6 +153,7 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
                 acctType: editAcctType(),
                 acctNumber: editAcctNumber() ?? undefined,
                 description: editDescription() ?? undefined,
+                isPrimary: editIsPrimary(),
             })
 
             props.onSaved()
@@ -200,6 +208,9 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
             </td>
             <td class="px-4 py-2 text-sm text-gray-500">
                 {props.account.description ?? ''}
+            </td>
+            <td class="px-4 py-2 text-sm text-gray-500 text-center">
+                {props.account.isPrimary ? '✓' : ''}
             </td>
         </tr>
     )
@@ -263,6 +274,16 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
                                         </For>
                                     </select>
                                 </Show>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <input
+                                        id={`account-isPrimary-${props.account.id}`}
+                                        type="checkbox"
+                                        checked={editIsPrimary()}
+                                        onChange={(e) => setEditIsPrimary(e.currentTarget.checked)}
+                                        class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                    />
+                                    <label for={`account-isPrimary-${props.account.id}`} class="text-sm text-gray-700">Primary account</label>
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-gray-500 mb-1">Account Number</label>

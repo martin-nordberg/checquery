@@ -18,6 +18,7 @@ const NewAccountRow = (props: NewAccountRowProps) => {
     const [editAcctType, setEditAcctType] = createSignal<AcctTypeStr | undefined>(undefined)
     const [editAcctNumber, setEditAcctNumber] = createSignal<string | undefined>(undefined)
     const [editDescription, setEditDescription] = createSignal<string | undefined>(undefined)
+    const [editIsPrimary, setEditIsPrimary] = createSignal<boolean>(false)
     const [isSaving, setIsSaving] = createSignal(false)
     const [error, setError] = createSignal<string | null>(null)
 
@@ -72,6 +73,7 @@ const NewAccountRow = (props: NewAccountRowProps) => {
                 acctType: acctType,
                 acctNumber: editAcctNumber()?.trim() ?? "",
                 description: editDescription()?.trim() ?? "",
+                isPrimary: editIsPrimary(),
             })
 
             props.onSaved()
@@ -129,6 +131,16 @@ const NewAccountRow = (props: NewAccountRowProps) => {
                                         )}
                                     </For>
                                 </select>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <input
+                                        id="new-account-isPrimary"
+                                        type="checkbox"
+                                        checked={editIsPrimary()}
+                                        onChange={(e) => setEditIsPrimary(e.currentTarget.checked)}
+                                        class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                    />
+                                    <label for="new-account-isPrimary" class="text-sm text-gray-700">Primary account</label>
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-gray-500 mb-1">Account Number</label>

@@ -156,6 +156,9 @@ const AccountList = (props: AccountListProps) => {
                             <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                                 Description
                             </th>
+                            <th class="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Primary
+                            </th>
                         </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">

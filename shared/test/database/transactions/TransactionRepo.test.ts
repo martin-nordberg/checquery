@@ -25,6 +25,7 @@ describe('Transaction Repo', () => {
             acctNumber: "123-456",
             acctType: "ASSET",
             description: "An example asset account",
+            isPrimary: false,
         })
         const acct1 = await arepo.findAccountById(aid1)
 
@@ -35,6 +36,7 @@ describe('Transaction Repo', () => {
             acctNumber: "321-654",
             acctType: "EXPENSE",
             description: "An example expense account",
+            isPrimary: false,
         })
         const acct2 = await arepo.findAccountById(aid2)
 

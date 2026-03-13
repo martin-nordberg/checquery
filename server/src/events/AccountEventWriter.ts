@@ -16,6 +16,7 @@ export class AccountEventWriter implements IAccountCmdSvc {
             acctType: accountCreation.acctType,
             acctNumber: accountCreation.acctNumber,
             description: accountCreation.description,
+            isPrimary: accountCreation.isPrimary,
         }})
         return accountCreation
     }
@@ -34,6 +35,7 @@ export class AccountEventWriter implements IAccountCmdSvc {
             name: accountPatch.name,
             acctNumber: accountPatch.acctNumber,
             description: accountPatch.description,
+            isPrimary: accountPatch.isPrimary,
         }})
         return accountPatch
     }

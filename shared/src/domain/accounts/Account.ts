@@ -23,6 +23,9 @@ const accountAttributesSchema =
 
         /* A short description of the account. */
         description: descriptionSchema,
+
+        /** Whether this is a primary account. */
+        isPrimary: z.boolean(),
     })
 
 
@@ -37,6 +40,7 @@ export const accountCreationEventSchema =
     accountAttributesSchema.extend({
         acctNumber: accountAttributesSchema.shape.acctNumber.default(""),
         description: accountAttributesSchema.shape.description.default(""),
+        isPrimary: accountAttributesSchema.shape.isPrimary.default(false),
         hlc: hlcSchema.optional(),
     }).readonly()
 
@@ -62,6 +66,7 @@ export const accountPatchEventSchema =
         acctType: true,
         name: true,
         description: true,
+        isPrimary: true,
     }).readonly()
 
 export type AccountPatchEvent = z.infer<typeof accountPatchEventSchema>

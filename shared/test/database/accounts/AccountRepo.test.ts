@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'bun:test'
-import {type Account} from "$shared/domain/accounts/Account";
+import {type AccountCreationEvent} from "$shared/domain/accounts/Account";
 import {genAcctId} from "$shared/domain/accounts/AcctId";
 import {createPgLiteDb} from "$shared/database/PgLiteDb";
 import {runChecqueryPgDdl} from "$shared/database/CheckqueryPgDdl";
@@ -15,12 +15,13 @@ describe('Account Repo', () => {
         const repo = new AccountRepo(db)
 
         const id = genAcctId()
-        const acct0: Account = {
+        const acct0: AccountCreationEvent = {
             id: id,
             name: "Sample",
             acctNumber: "123-456",
             acctType: "ASSET",
             description: "An example account",
+            isPrimary: false,
         }
 
         await repo.createAccount(acct0)

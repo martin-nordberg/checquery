@@ -14,6 +14,7 @@ describe('Sample Accounts', () => {
                 acctNumber: '1234-4567',
                 acctType: 'ASSET',
                 description: "an example of an account",
+                isPrimary: true,
             }
         )
 
@@ -22,6 +23,7 @@ describe('Sample Accounts', () => {
         expect(acct.acctNumber).toBe('1234-4567')
         expect(acct.acctType).toBe('ASSET')
         expect(acct.description).toBe('an example of an account')
+        expect(acct.isPrimary).toBe(true)
     })
 
     it('Should parse without error when optional fields are absent', () => {
@@ -40,6 +42,7 @@ describe('Sample Accounts', () => {
         expect(acct.acctNumber).toBe('1234-4567')
         expect(acct.acctType).toBe('ASSET')
         expect(acct.description).toBe('')
+        expect(acct.isPrimary).toBe(false)
     })
 
     it('Should convert to JSON', () => {
@@ -56,7 +59,7 @@ describe('Sample Accounts', () => {
         const accountJson = JSON.stringify(acct)
 
         expect(accountJson).toBe(
-            `{"id":"${id}","acctNumber":"1234-4567","acctType":"LIABILITY","name":"example","description":"an example of an account"}`
+            `{"id":"${id}","acctNumber":"1234-4567","acctType":"LIABILITY","name":"example","description":"an example of an account","isPrimary":false}`
         )
     })
 
@@ -138,6 +141,10 @@ describe('Sample Accounts', () => {
                     pattern: "^[^\\r\\n]*$",
                     type: "string",
                 },
+                isPrimary: {
+                    default: false,
+                    type: "boolean",
+                }
             },
             readOnly: true,
             required: [
@@ -146,6 +153,7 @@ describe('Sample Accounts', () => {
                 "acctType",
                 "name",
                 "description",
+                "isPrimary",
             ],
             type: "object",
         })

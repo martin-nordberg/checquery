@@ -22,8 +22,8 @@ export class AccountTxnRepo implements IAccountSvc {
     async createAccount(accountCreation: AccountCreationEvent): Promise<AccountCreationEvent | null> {
         const count = await this.#txn.exec(
             `INSERT INTO Account (id, name, nameHlc, acctNumber, acctNumberHlc, acctType, acctTypeHlc, description,
-                                  descriptionHlc, isDeleted, isDeletedHlc)
-             VALUES ($1, $2, $hlc, $3, $hlc, $4, $hlc, $5, $hlc, false, $hlc)
+                                  descriptionHlc, isPrimary, isPrimaryHlc, isDeleted, isDeletedHlc)
+             VALUES ($1, $2, $hlc, $3, $hlc, $4, $hlc, $5, $hlc, $6, $hlc, false, $hlc)
              ON CONFLICT ON CONSTRAINT Account_PK DO NOTHING`,
             [
                 accountCreation.id,
@@ -31,6 +31,7 @@ export class AccountTxnRepo implements IAccountSvc {
                 accountCreation.acctNumber,
                 accountCreation.acctType,
                 accountCreation.description,
+                accountCreation.isPrimary,
             ]
         )
         return count ? {...accountCreation, hlc:this.#txn.hlc} : null
@@ -51,7 +52,7 @@ export class AccountTxnRepo implements IAccountSvc {
 
     async findAccountById(accountId: AcctId): Promise<Account | null> {
         return this.#txn.findOne(
-            `SELECT id, name, acctnumber as "acctNumber", acctType as "acctType", description
+            `SELECT id, name, acctnumber as "acctNumber", acctType as "acctType", description, isPrimary as "isPrimary"
               FROM Account
              WHERE id = $1
                AND isDeleted = false`,
@@ -62,7 +63,7 @@ export class AccountTxnRepo implements IAccountSvc {
 
     async findAccountsAll(): Promise<Account[]> {
         return this.#txn.findMany(
-            `SELECT id, name, acctnumber as "acctNumber", acctType as "acctType", description
+            `SELECT id, name, acctnumber as "acctNumber", acctType as "acctType", description, isPrimary as "isPrimary"
               FROM Account
              WHERE isDeleted = false
              ORDER BY name`,
@@ -159,6 +160,21 @@ export class AccountTxnRepo implements IAccountSvc {
             )
             if (count) {
                 result = {...(result ?? {id: accountPatch.id}), acctType: accountPatch.acctType}
+            }
+        }
+
+        if (accountPatch.isPrimary !== undefined) {
+            const count = await this.#txn.exec(
+                `UPDATE Account
+                   SET isPrimary    = $2,
+                       isPrimaryHlc = $hlc
+                 WHERE id = $1
+                   AND isPrimaryHlc < $hlc
+                   AND isPrimary <> $2`,
+                [accountPatch.id, accountPatch.isPrimary]
+            )
+            if (count) {
+                result = {...(result ?? {id: accountPatch.id}), isPrimary: accountPatch.isPrimary}
             }
         }
 
