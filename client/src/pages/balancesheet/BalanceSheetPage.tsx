@@ -5,7 +5,7 @@ import {useParams} from "@solidjs/router";
 import {createEffect, createSignal} from "solid-js";
 import {type IsoDate, isoDateSchema, isoDateToday} from "$shared/domain/core/IsoDate.ts";
 import HoverableDropDown from "../../components/nav/HoverableDropDown.tsx";
-import {stmtNavOptions, stmtNavIconPaths} from "../../nav/stmtNavOptions.ts";
+import {useStmtNavOptions} from "../../nav/useStmtNavOptions.ts";
 
 const generateDateOptions = (): Record<string, string> => {
     const options: Record<string, string> = {}
@@ -40,7 +40,7 @@ const BalanceSheetPage = () => {
         setEndingDate(parseEndingDate())
     })
 
-    const stmtOptions = stmtNavOptions("Balance Sheet", {
+    const {options: stmtOptions, iconPaths: stmtIconPaths} = useStmtNavOptions("Balance Sheet", {
         "Income Statement": `/incomestatement/${endingDate().substring(0, 7)}`,
     })
 
@@ -50,7 +50,7 @@ const BalanceSheetPage = () => {
         <>
             <TopNav>
                 <Breadcrumb>
-                    <HoverableDropDown options={stmtOptions} selectedOption={"Balance Sheet"} iconPaths={stmtNavIconPaths}/>
+                    <HoverableDropDown options={stmtOptions()} selectedOption={"Balance Sheet"} iconPaths={stmtIconPaths()}/>
                 </Breadcrumb>
                 <Breadcrumb>
                     <HoverableDropDown selectedOption={endingDate()} options={dateOptions}/>

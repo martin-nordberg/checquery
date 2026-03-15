@@ -6,7 +6,7 @@ import {useParams} from "@solidjs/router";
 import {createEffect, createMemo, createSignal, Show} from "solid-js";
 import HoverableDropDown from "../../components/nav/HoverableDropDown.tsx";
 import {getEndDate, periodSchema} from "$shared/domain/core/Period.ts";
-import {stmtNavOptions, stmtNavIconPaths} from "../../nav/stmtNavOptions.ts";
+import {useStmtNavOptions} from "../../nav/useStmtNavOptions.ts";
 
 export type IncomeStatementView = "summary" | "details"
 
@@ -31,7 +31,7 @@ const IncomeStatementPage = () => {
         setView(parseView())
     })
 
-    const stmtOptions = stmtNavOptions("Income Statement", {
+    const {options: stmtOptions, iconPaths: stmtIconPaths} = useStmtNavOptions("Income Statement", {
         "Balance Sheet": `/balancesheet/${getEndDate(period())}`,
     })
 
@@ -53,7 +53,7 @@ const IncomeStatementPage = () => {
         <>
             <TopNav>
                 <Breadcrumb>
-                    <HoverableDropDown options={stmtOptions} selectedOption={"Income Statement"} iconPaths={stmtNavIconPaths}/>
+                    <HoverableDropDown options={stmtOptions()} selectedOption={"Income Statement"} iconPaths={stmtIconPaths()}/>
                 </Breadcrumb>
                 <Breadcrumb>
                     <HoverableDropDown selectedOption={period()} options={periodOptions()}/>

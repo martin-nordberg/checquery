@@ -5,13 +5,13 @@ import HoverableDropDown from "../../components/nav/HoverableDropDown.tsx";
 import VendorList from "../../components/vendors/VendorList.tsx";
 import MessageDialog from "../../components/common/dialogs/MessageDialog.tsx";
 import SearchField from "../../components/common/search/SearchField.tsx";
-import {stmtNavOptions, stmtNavIconPaths} from "../../nav/stmtNavOptions.ts";
+import {useStmtNavOptions} from "../../nav/useStmtNavOptions.ts";
 
 export type StatusFilter = "active" | "inactive" | "both"
 
 const VendorsPage = () => {
 
-    const stmtOptions = stmtNavOptions("Vendors")
+    const {options: stmtOptions, iconPaths: stmtIconPaths} = useStmtNavOptions("Vendors")
     const [showNotFound, setShowNotFound] = createSignal(false)
     const [statusFilter, setStatusFilter] = createSignal<StatusFilter>("active")
     const [searchText, setSearchText] = createSignal<string | undefined>(undefined)
@@ -50,7 +50,7 @@ const VendorsPage = () => {
             <div class="flex-none flex items-center justify-between pr-4 bg-white">
                 <TopNav>
                     <Breadcrumb>
-                        <HoverableDropDown options={stmtOptions} selectedOption="Vendors" iconPaths={stmtNavIconPaths}/>
+                        <HoverableDropDown options={stmtOptions()} selectedOption="Vendors" iconPaths={stmtIconPaths()}/>
                     </Breadcrumb>
                 </TopNav>
                 <div class="flex items-center gap-4">

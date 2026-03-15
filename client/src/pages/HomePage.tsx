@@ -1,21 +1,51 @@
 import {A} from "@solidjs/router";
+import {createEffect, createMemo, createResource, For, onCleanup} from "solid-js";
 import TopNav from "../components/nav/TopNav.tsx";
+import {useServices} from "../services/ServicesContext.ts";
+import {expenseLogIconPath, incomeLogIconPath, registerIconPath, sortPrimaryExpenseAccounts, sortPrimaryIncomeAccounts, sortPrimaryRegisterAccounts} from "../nav/stmtNavOptions.ts";
 
 export const HomePage = () => {
+    const {acctSvc} = useServices()
+    const [allAccounts, {refetch}] = createResource(() => acctSvc.findAccountsAll())
+
+    const primaryRegisters = createMemo(() =>
+        sortPrimaryRegisterAccounts(allAccounts() ?? [])
+    )
+
+    const primaryIncomeAccounts = createMemo(() =>
+        sortPrimaryIncomeAccounts(allAccounts() ?? [])
+    )
+
+    const primaryExpenseAccounts = createMemo(() =>
+        sortPrimaryExpenseAccounts(allAccounts() ?? [])
+    )
+
+    // Retry if accounts load empty — handles WS sync delay on first app start.
+    createEffect(() => {
+        if (!allAccounts.loading && (allAccounts() ?? []).length === 0) {
+            const id = setTimeout(refetch, 500)
+            onCleanup(() => clearTimeout(id))
+        }
+    })
+
     return (
         <>
             <TopNav/>
             <main class="p-1 ml-6 flex flex-col gap-4">
                 <ul>
-                    <li>
-                        <A class="hover:underline flex items-center gap-2" href="/register/accttruistchecking0000000000">
-                            <svg class="w-4 h-4 shrink-0 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
-                            </svg>
-                            Register (Checking)
-                        </A>
-                    </li>
+                    <For each={primaryRegisters()}>
+                        {(account) => (
+                            <li>
+                                <A class="hover:underline flex items-center gap-2" href={`/register/${account.id}`}>
+                                    <svg class="w-4 h-4 shrink-0 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d={registerIconPath}/>
+                                    </svg>
+                                    Register ({account.name})
+                                </A>
+                            </li>
+                        )}
+                    </For>
                 </ul>
                 <ul>
                     <li>
@@ -38,24 +68,34 @@ export const HomePage = () => {
                     </li>
                 </ul>
                 <ul>
-                    <li>
-                        <A class="hover:underline flex items-center gap-2" href="/incomelog/acctmartinsalaryincome000000">
-                            <svg class="w-4 h-4 shrink-0 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M6 18L18 6M18 6H10M18 6v8"/>
-                            </svg>
-                            Income Log
-                        </A>
-                    </li>
-                    <li>
-                        <A class="hover:underline flex items-center gap-2" href="/expenselog/accthouseholdmiscellaneous00">
-                            <svg class="w-4 h-4 shrink-0 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M6 6L18 18M18 18H10M18 18v-8"/>
-                            </svg>
-                            Expense Log
-                        </A>
-                    </li>
+                    <For each={primaryIncomeAccounts()}>
+                        {(account) => (
+                            <li>
+                                <A class="hover:underline flex items-center gap-2" href={`/incomelog/${account.id}`}>
+                                    <svg class="w-4 h-4 shrink-0 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d={incomeLogIconPath}/>
+                                    </svg>
+                                    Income Log ({account.name})
+                                </A>
+                            </li>
+                        )}
+                    </For>
+                </ul>
+                <ul>
+                    <For each={primaryExpenseAccounts()}>
+                        {(account) => (
+                            <li>
+                                <A class="hover:underline flex items-center gap-2" href={`/expenselog/${account.id}`}>
+                                    <svg class="w-4 h-4 shrink-0 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d={expenseLogIconPath}/>
+                                    </svg>
+                                    Expense Log ({account.name})
+                                </A>
+                            </li>
+                        )}
+                    </For>
                 </ul>
                 <ul>
                     <li>

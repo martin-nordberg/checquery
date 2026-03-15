@@ -5,11 +5,11 @@ import HoverableDropDown from "../../components/nav/HoverableDropDown.tsx";
 import AccountList from "../../components/accounts/AccountList.tsx";
 import MessageDialog from "../../components/common/dialogs/MessageDialog.tsx";
 import SearchField from "../../components/common/search/SearchField.tsx";
-import {stmtNavOptions, stmtNavIconPaths} from "../../nav/stmtNavOptions.ts";
+import {useStmtNavOptions} from "../../nav/useStmtNavOptions.ts";
 
 const AccountsPage = () => {
 
-    const stmtOptions = stmtNavOptions("Accounts")
+    const {options: stmtOptions, iconPaths: stmtIconPaths} = useStmtNavOptions("Accounts")
     const [showNotFound, setShowNotFound] = createSignal(false)
     const [searchText, setSearchText] = createSignal<string | undefined>(undefined)
     const [searchStartIndex, setSearchStartIndex] = createSignal(0)
@@ -47,7 +47,7 @@ const AccountsPage = () => {
             <div class="flex-none flex items-center justify-between pr-4 bg-white">
                 <TopNav>
                     <Breadcrumb>
-                        <HoverableDropDown options={stmtOptions} selectedOption="Accounts" iconPaths={stmtNavIconPaths}/>
+                        <HoverableDropDown options={stmtOptions()} selectedOption="Accounts" iconPaths={stmtIconPaths()}/>
                     </Breadcrumb>
                 </TopNav>
                 <SearchField

@@ -8,7 +8,7 @@ import {useParams} from "@solidjs/router";
 import {createMemo, createResource, createSignal, Show} from "solid-js";
 import {useServices} from "../../services/ServicesContext.ts";
 import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
-import {stmtNavOptions, stmtNavIconPaths} from "../../nav/stmtNavOptions.ts";
+import {useStmtNavOptions} from "../../nav/useStmtNavOptions.ts";
 
 const ExpenseLogPage = () => {
     const {acctSvc} = useServices()
@@ -32,7 +32,7 @@ const ExpenseLogPage = () => {
         return options
     })
 
-    const stmtOptions = stmtNavOptions("Expense Log")
+    const {options: stmtOptions, iconPaths: stmtIconPaths} = useStmtNavOptions("Expense Log")
     const [refetchTrigger] = createSignal(0)
     const [showNotFound, setShowNotFound] = createSignal(false)
     const [searchText, setSearchText] = createSignal<string | undefined>(undefined)
@@ -69,7 +69,7 @@ const ExpenseLogPage = () => {
             <div class="flex-none flex items-center justify-between pr-4 bg-white">
                 <TopNav>
                     <Breadcrumb>
-                        <HoverableDropDown options={stmtOptions} selectedOption="Expense Log" iconPaths={stmtNavIconPaths}/>
+                        <HoverableDropDown options={stmtOptions()} selectedOption="Expense Log" iconPaths={stmtIconPaths()}/>
                     </Breadcrumb>
                     <Breadcrumb>
                         <Show when={account()} fallback="Loading...">
