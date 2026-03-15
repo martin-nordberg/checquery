@@ -241,6 +241,7 @@ const Register = (props: RegisterProps) => {
                         <tbody class="bg-white divide-y divide-gray-200">
                         <Show when={isAddingNew()}>
                             <NewTransactionRow
+                                currentAccountId={props.accountId}
                                 currentAccountName={register()!.accountName}
                                 initialDate={stickyDate()}
                                 onCancel={handleCancelNew}

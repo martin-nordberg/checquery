@@ -16,4 +16,9 @@ export class RegisterSvcLogger implements IRegisterQrySvc {
         return null
     }
 
+    async findLatestTransactionForVendorAndAccount(vendorName: string, accountId: AcctId): Promise<RegisterTransaction | null> {
+        console.info('RegisterSvcLogger.findLatestTransactionForVendorAndAccount', JSON.stringify({vendorName, accountId}, null, 2))
+        return null
+    }
+
 }

@@ -4,6 +4,8 @@ type RegisterActionButtonsProps = {
     onSave: () => void,
     onDelete?: () => void,
     onAddEntry: () => void,
+    onRepeatPrior?: () => void,
+    canRepeatPrior?: boolean,
     isSaving?: boolean,
     isNew?: boolean,
     isDirty?: boolean,
@@ -38,16 +40,33 @@ const RegisterActionButtons = (props: RegisterActionButtonsProps) => {
                 </button>
             </Show>
             <div class="flex-1"></div>
-            <button
-                type="button"
-                onClick={props.onAddEntry}
-                class="px-2 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1 mr-75"
-            >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
-                Add Entry
-            </button>
+            <div class="flex gap-2 mr-[368px]">
+                <Show when={props.onRepeatPrior}>
+                    <button
+                        type="button"
+                        onClick={props.onRepeatPrior}
+                        disabled={!props.canRepeatPrior}
+                        class="px-2 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-1"
+                        title="Repeat the most recent transaction for this vendor"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M16 3L10 3L10 12M16 22V17a20 20 0 0 0-6-14"/>
+                        </svg>
+                        Repeat Prior
+                    </button>
+                </Show>
+                <button
+                    type="button"
+                    onClick={props.onAddEntry}
+                    class="px-2 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Add Entry
+                </button>
+            </div>
         </div>
     )
 }

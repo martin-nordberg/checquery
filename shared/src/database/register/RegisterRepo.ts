@@ -145,6 +145,80 @@ export class RegisterRepo implements IRegisterQrySvc {
         })
     }
 
+    async findLatestTransactionForVendorAndAccount(vendorName: string, accountId: AcctId): Promise<RegisterTransaction | null> {
+        return this.db.transaction(async (txn) => {
+            const txnRow = await txn.findOne(
+                `SELECT Transaxtion.id as id,
+                       Transaxtion.date as date,
+                       Transaxtion.code as code,
+                       Transaxtion.description as description,
+                       Vendor.name as vendor
+                  FROM Transaxtion
+                  LEFT JOIN Vendor ON Transaxtion.vendorId = Vendor.id
+                 WHERE Transaxtion.isDeleted = false
+                   AND Vendor.name = $1
+                   AND EXISTS (
+                       SELECT 1 FROM Entry
+                        WHERE Entry.txnId = Transaxtion.id
+                          AND Entry.accountId = $2
+                   )
+                 ORDER BY Transaxtion.date DESC, Transaxtion.insertOrder DESC
+                 LIMIT 1`,
+                [vendorName, accountId],
+                z.strictObject({
+                    id: z.string(),
+                    date: z.string(),
+                    code: z.string().nullish(),
+                    description: z.string().nullish(),
+                    vendor: z.string().nullish(),
+                }).readonly()
+            )
+
+            if (!txnRow) {
+                return null
+            }
+
+            const entries = await txn.findMany(
+                `SELECT
+                       Account.name as account,
+                       CASE WHEN Entry.stmtId IS NULL THEN NULL
+                         WHEN Statement.isReconciled = true THEN 'Reconciled'
+                         ELSE 'Pending'
+                       END as status,
+                       Entry.debitCents as "debitCents",
+                       Entry.creditCents as "creditCents"
+                  FROM Entry
+                 JOIN Account ON Entry.accountId = Account.id
+                 JOIN Transaxtion ON Entry.txnId = Transaxtion.id
+                  LEFT JOIN Statement ON Entry.stmtId = Statement.id
+                 WHERE Entry.txnId = $1
+                   AND Transaxtion.isDeleted = false
+                 ORDER BY Entry.entrySeq`,
+                [txnRow.id],
+                z.strictObject({
+                    account: z.string(),
+                    status: z.string().nullish(),
+                    debitCents: z.int(),
+                    creditCents: z.int()
+                }).readonly()
+            )
+
+            return {
+                id: txnIdSchema.parse(txnRow.id),
+                date: txnRow.date,
+                code: txnRow.code ?? undefined,
+                description: txnRow.description ?? undefined,
+                vendor: txnRow.vendor ?? undefined,
+                entries: entries.map(e => ({
+                    account: e.account,
+                    debit: fromCents(e.debitCents),
+                    credit: fromCents(e.creditCents),
+                    status: e.status ? txnStatusSchema.parse(e.status) : undefined,
+                }))
+            }
+        })
+    }
+
     async findTransaction(txnId: TxnId): Promise<RegisterTransaction | null> {
         return this.db.transaction(async (txn) => {
             // Get transaction details

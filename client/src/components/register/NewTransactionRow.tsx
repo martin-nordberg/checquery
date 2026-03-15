@@ -4,6 +4,7 @@ import type {CurrencyAmt} from "$shared/domain/core/CurrencyAmt.ts";
 import type {IsoDate} from "$shared/domain/core/IsoDate.ts";
 import {isoDateToday} from "$shared/domain/core/IsoDate.ts";
 import {genTxnId} from "$shared/domain/transactions/TxnId.ts";
+import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
 import {useServices} from "../../services/ServicesContext.ts";
 import EditableDateField from "../common/fields/EditableDateField.tsx";
 import EditableTextField from "../common/fields/EditableTextField.tsx";
@@ -14,6 +15,7 @@ import useTransactionForm from "./useTransactionForm.ts";
 import useAbandonConfirm from "../common/hooks/useAbandonConfirm.ts";
 
 type NewTransactionRowProps = {
+    currentAccountId: AcctId,
     currentAccountName: string,
     initialDate?: IsoDate | undefined,
     onCancel: () => void,
@@ -22,7 +24,7 @@ type NewTransactionRowProps = {
 }
 
 const NewTransactionRow = (props: NewTransactionRowProps) => {
-    const {txnSvc} = useServices()
+    const {txnSvc, regSvc} = useServices()
     const form = useTransactionForm({
         initialDate: props.initialDate ?? isoDateToday as IsoDate,
         initialEntries: [
@@ -98,6 +100,39 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
         }
         return entries.length > 2
     })
+
+    // Repeat Prior is available when a vendor is chosen and no amounts have been manually entered
+    const canRepeatPrior = createMemo(() => {
+        if (!form.editVendor()) {
+            return false
+        }
+        const entries = form.editEntries()
+        for (let i = 1; i < entries.length; i++) {
+            if (entries[i]!.debit !== '$0.00' || entries[i]!.credit !== '$0.00') {
+                return false
+            }
+        }
+        return true
+    })
+
+    const handleRepeatPrior = async () => {
+        const vendorName = form.editVendor()
+        if (!vendorName) {
+            return
+        }
+        const prior = await regSvc.findLatestTransactionForVendorAndAccount(vendorName, props.currentAccountId)
+        if (!prior) {
+            return
+        }
+        form.setEditEntries(prior.entries.map(e => ({
+            account: e.account,
+            debit: e.debit,
+            credit: e.credit,
+        })))
+        if (!form.editDescription() && prior.description) {
+            form.setEditDescription(prior.description)
+        }
+    }
 
     // Report dirty state changes to parent
     createEffect(() => {
@@ -251,6 +286,8 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
                         <RegisterActionButtons
                             onSave={handleSave}
                             onAddEntry={form.addEntry}
+                            onRepeatPrior={handleRepeatPrior}
+                            canRepeatPrior={canRepeatPrior()}
                             isSaving={form.isSaving()}
                             isNew={true}
                             isDirty={isDirty()}

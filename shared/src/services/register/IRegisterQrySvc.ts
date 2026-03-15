@@ -14,4 +14,7 @@ export interface IRegisterQrySvc {
     /** Finds full transaction details for editing. */
     findTransaction(txnId: TxnId): Promise<RegisterTransaction | null>
 
+    /** Finds the latest transaction involving both the given vendor and account. */
+    findLatestTransactionForVendorAndAccount(vendorName: string, accountId: AcctId): Promise<RegisterTransaction | null>
+
 }
