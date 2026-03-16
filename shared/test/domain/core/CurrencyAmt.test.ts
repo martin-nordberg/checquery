@@ -148,3 +148,46 @@ describe('Invalid Currency Amounts', () => {
         })
     })
 })
+
+describe('toCents explicit values', () => {
+
+    it('returns positive cents for standard amounts', () => {
+        expect(toCents("$0.01")).toEqual(1)
+        expect(toCents("$0.99")).toEqual(99)
+        expect(toCents("$1.00")).toEqual(100)
+        expect(toCents("$1,234.56")).toEqual(123456)
+        expect(toCents("$999,999,999.99")).toEqual(99999999999)
+    })
+
+    it('returns negative cents for parenthesized amounts', () => {
+        expect(toCents("($0.01)")).toEqual(-1)
+        expect(toCents("($1.00)")).toEqual(-100)
+        expect(toCents("($1,234.56)")).toEqual(-123456)
+        expect(toCents("($999,999,999.99)")).toEqual(-99999999999)
+    })
+
+})
+
+describe('fromCents explicit values', () => {
+
+    it('produces parenthesized format for negative inputs', () => {
+        expect(fromCents(-1)).toEqual("($0.01)")
+        expect(fromCents(-100)).toEqual("($1.00)")
+        expect(fromCents(-123456)).toEqual("($1,234.56)")
+        expect(fromCents(-99999999999)).toEqual("($999,999,999.99)")
+    })
+
+    it('treats negative zero the same as zero', () => {
+        expect(fromCents(-0)).toEqual("$0.00")
+    })
+
+})
+
+describe('fromCents and toCents for amounts over $1 billion', () => {
+
+    it('round-trips amounts requiring three comma separators', () => {
+        check("$1,000,000,000.00")
+        check("$9,999,999,999.99")
+    })
+
+})
