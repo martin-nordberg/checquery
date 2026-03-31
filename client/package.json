@@ -9,22 +9,22 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@electric-sql/pglite": "0.3.15",
+    "@electric-sql/pglite": "0.4.2",
     "@hono/zod-validator": "0.7.6",
-    "@paralleldrive/cuid2": "3.0.2",
-    "@solid-primitives/map": "0.7.2",
-    "@solidjs/router": "0.15.4",
-    "hono": "4.11.9",
-    "solid-icons": "1.1.0",
-    "solid-js": "1.9.10",
-    "zod": "4.2.1"
+    "@paralleldrive/cuid2": "3.3.0",
+    "@solid-primitives/map": "0.7.3",
+    "@solidjs/router": "0.16.1",
+    "hono": "4.12.9",
+    "solid-icons": "1.2.0",
+    "solid-js": "1.9.12",
+    "zod": "4.3.6"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "4.1.18",
-    "postcss": "8.5.6",
-    "tailwindcss": "4.1.18",
-    "typescript": "5.9.3",
-    "vite": "7.3.0",
-    "vite-plugin-solid": "2.11.10"
+    "@tailwindcss/postcss": "4.2.2",
+    "postcss": "8.5.8",
+    "tailwindcss": "4.2.2",
+    "typescript": "6.0.2",
+    "vite": "8.0.3",
+    "vite-plugin-solid": "2.11.11"
   }
 }
