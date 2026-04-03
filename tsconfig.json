@@ -1,0 +1,16 @@
+{
+  "extends": "./shared/tsconfig.options.json",
+  "compilerOptions": {
+    "lib": ["es2022"],
+    "module": "Preserve",
+    "jsx": "react-jsx",
+    "jsxImportSource": "hono/jsx",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "baseUrl": "./",
+    "paths": {
+      "$shared/*": ["./shared/src/*"]
+    }
+  },
+  "include": ["launcher.ts", "build.ts", "./server/src", "./shared/src"]
+}
