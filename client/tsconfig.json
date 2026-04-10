@@ -19,7 +19,7 @@
     "types": ["vite/client"],
 
     // Code Sharing
-    "baseUrl": "./",
+    "baseUrl": ".",
     "paths": {
       "$shared/*": ["../shared/src/*"]
     }

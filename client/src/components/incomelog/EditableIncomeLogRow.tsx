@@ -372,6 +372,7 @@ const EditableIncomeLogRow = (props: EditableIncomeLogRowProps) => {
                                                 debitRef={(el) => entryDebitRefs[index] = el}
                                                 creditRef={(el) => entryCreditRefs[index] = el}
                                                 excludeAccounts={excludeAccounts()}
+                                                accountType='INCOME'
                                             />
                                         )
                                     }}

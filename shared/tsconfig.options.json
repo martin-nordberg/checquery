@@ -3,6 +3,8 @@
   /* https://github.com/tsconfig/bases/blob/031273b815ff7f672c7c9057fb7d19ef363054b1/bases/strictest.json */
 
   "compilerOptions": {
+    /* Compatibility */
+    "ignoreDeprecations": "6.0",
     /* Basics */
     "allowJs": false,
     "esModuleInterop": true,

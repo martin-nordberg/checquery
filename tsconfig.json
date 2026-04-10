@@ -7,7 +7,7 @@
     "jsxImportSource": "hono/jsx",
     "moduleResolution": "bundler",
     "noEmit": true,
-    "baseUrl": "./",
+    "baseUrl": ".",
     "paths": {
       "$shared/*": ["./shared/src/*"]
     }

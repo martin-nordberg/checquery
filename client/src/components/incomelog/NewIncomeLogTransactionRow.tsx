@@ -193,6 +193,7 @@ const NewIncomeLogTransactionRow = (props: NewIncomeLogTransactionRowProps) => {
                                                 canRemove={form.editEntries().length > 2 && index > 0}
                                                 isPrimary={index === 0}
                                                 excludeAccounts={excludeAccounts()}
+                                                accountType='INCOME'
                                             />
                                         )
                                     }}

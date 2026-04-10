@@ -7,6 +7,7 @@ type EditableAmountFieldProps = {
     onChange: (value: CurrencyAmt) => void,
     disabled?: boolean,
     inputRef?: ((el: HTMLInputElement) => void) | undefined,
+    placeholder?: string,
 }
 
 const EditableAmountField = (props: EditableAmountFieldProps) => {
@@ -70,6 +71,7 @@ const EditableAmountField = (props: EditableAmountFieldProps) => {
                 onInput={handleInput}
                 onBlur={handleBlur}
                 disabled={props.disabled}
+                placeholder={props.placeholder}
                 class={`px-2 py-1 border rounded text-sm text-right w-24 ${error() ? 'border-red-500' : 'border-gray-300'} ${props.disabled ? 'bg-gray-100' : 'bg-white'}`}
             />
             {error() && <span class="text-red-500 text-xs mt-1">{error()}</span>}

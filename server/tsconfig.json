@@ -12,7 +12,7 @@
     "noEmit": true,
 
     // Code Sharing
-    "baseUrl": "./",
+    "baseUrl": ".",
     "paths": {
       "$shared/*": ["../shared/src/*"]
     }

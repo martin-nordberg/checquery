@@ -5,6 +5,7 @@ import type {IsoDate} from "$shared/domain/core/IsoDate.ts";
 import {isoDateToday} from "$shared/domain/core/IsoDate.ts";
 import {genTxnId} from "$shared/domain/transactions/TxnId.ts";
 import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
+import type {AcctTypeStr} from "$shared/domain/accounts/AcctType.ts";
 import {useServices} from "../../services/ServicesContext.ts";
 import EditableDateField from "../common/fields/EditableDateField.tsx";
 import EditableTextField from "../common/fields/EditableTextField.tsx";
@@ -17,6 +18,7 @@ import useAbandonConfirm from "../common/hooks/useAbandonConfirm.ts";
 type NewTransactionRowProps = {
     currentAccountId: AcctId,
     currentAccountName: string,
+    accountType: AcctTypeStr,
     initialDate?: IsoDate | undefined,
     onCancel: () => void,
     onSaved: (usedDate: IsoDate) => void,
@@ -272,6 +274,7 @@ const NewTransactionRow = (props: NewTransactionRowProps) => {
                                                 canRemove={form.editEntries().length > 2 && index > 0}
                                                 isPrimary={index === 0}
                                                 excludeAccounts={excludeAccounts()}
+                                                accountType={props.accountType}
                                             />
                                         )
                                     }}

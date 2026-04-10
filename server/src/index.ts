@@ -32,8 +32,13 @@ const {upgradeWebSocket, websocket} = createBunWebSocket<ServerWebSocket>()
 
 const app = new Hono()
 
+console.log(`CHECQUERY_HOST = ${process.env['CHECQUERY_HOST']}`)
+console.log(`CHECQUERY_LOG_FILE = ${process.env['CHECQUERY_LOG_FILE']}`)
+
+
+const checqueryHost = process.env['CHECQUERY_HOST'] ?? 'localhost'
 app.use('*', cors({
-    origin: ['http://localhost:3000', 'http://10.0.0.3:3000']
+    origin: [`http://localhost:3000`, `http://${checqueryHost}:3000`]
 }));
 
 const db = await createPgLiteDb("000")

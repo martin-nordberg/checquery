@@ -82,7 +82,7 @@ const wsVndrSvc = new VendorTeeSvc(vendorRepo, [vendorRepo, vendorWsHandler])
 const wsStmtSvc = new StatementTeeSvc(statementRepo, [statementRepo, statementWsHandler])
 
 const wsClient = new WsClient(wsAcctSvc, wsTransactionSvc, wsVndrSvc, wsStmtSvc)
-wsClient.connect('ws://localhost:3001/ws')
+wsClient.connect(`ws://${window.location.hostname}:3001/ws`)
 
 render(() => (
     <ServicesContext.Provider value={{acctSvc, vndrSvc, txnSvc, stmtSvc, regSvc, expSvc, incSvc, bsSvc, isSvc}}>

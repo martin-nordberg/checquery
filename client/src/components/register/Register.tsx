@@ -243,6 +243,7 @@ const Register = (props: RegisterProps) => {
                             <NewTransactionRow
                                 currentAccountId={props.accountId}
                                 currentAccountName={register()!.accountName}
+                                accountType={register()!.accountType}
                                 initialDate={stickyDate()}
                                 onCancel={handleCancelNew}
                                 onSaved={handleNewSaved}

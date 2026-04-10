@@ -1,6 +1,7 @@
 import {Show} from "solid-js";
 import type {RegisterEntry} from "$shared/domain/register/Register.ts";
 import type {CurrencyAmt} from "$shared/domain/core/CurrencyAmt.ts";
+import type {AcctTypeStr} from "$shared/domain/accounts/AcctType.ts";
 import EditableCategoryField from "../common/fields/EditableCategoryField.tsx";
 import EditableAmountField from "../common/fields/EditableAmountField.tsx";
 
@@ -14,12 +15,29 @@ type EditableSplitEntryProps = {
     debitRef?: ((el: HTMLInputElement) => void) | undefined,
     creditRef?: ((el: HTMLInputElement) => void) | undefined,
     excludeAccounts?: string[],
+    accountType?: AcctTypeStr,
 }
 
 const EditableSplitEntry = (props: EditableSplitEntryProps) => {
 
     const hasDebit = () => props.entry.debit !== '$0.00'
     const hasCredit = () => props.entry.credit !== '$0.00'
+
+    const debitPlaceholder = () => {
+        const t = props.accountType
+        if (t === 'LIABILITY' || t === 'INCOME') {
+            return 'Payment'
+        }
+        return 'Expense'
+    }
+
+    const creditPlaceholder = () => {
+        const t = props.accountType
+        if (t === 'LIABILITY' || t === 'INCOME') {
+            return 'Purchase'
+        }
+        return 'Income'
+    }
 
     const handleAccountChange = (account: string | undefined) => {
         props.onUpdate({
@@ -72,6 +90,7 @@ const EditableSplitEntry = (props: EditableSplitEntryProps) => {
                         value={props.entry.debit}
                         onChange={handleDebitChange}
                         disabled={hasCredit()}
+                        placeholder={debitPlaceholder()}
                     />
                 }>
                     <div class="px-2 py-1 text-sm text-gray-700 text-right w-24">
@@ -88,6 +107,7 @@ const EditableSplitEntry = (props: EditableSplitEntryProps) => {
                         value={props.entry.credit}
                         onChange={handleCreditChange}
                         disabled={hasDebit()}
+                        placeholder={creditPlaceholder()}
                     />
                 }>
                     <div class="px-2 py-1 text-sm text-gray-700 text-right w-24">

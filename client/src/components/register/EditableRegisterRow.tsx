@@ -414,6 +414,7 @@ const EditableRegisterRow = (props: EditableRegisterRowProps) => {
                                                 debitRef={(el) => entryDebitRefs[index] = el}
                                                 creditRef={(el) => entryCreditRefs[index] = el}
                                                 excludeAccounts={excludeAccounts()}
+                                                accountType={props.accountType}
                                             />
                                         )
                                     }}
