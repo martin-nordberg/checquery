@@ -9,9 +9,9 @@ type IncomeStatementProps = {
 }
 
 const AccountName = (props: {lineItem: IncStmtLineItem, logPath: string}) => (
-    <Show when={props.lineItem.acctId} fallback={<span>{props.lineItem.description.replaceAll(':', ' : ')}</span>}>
+    <Show when={props.lineItem.acctId} fallback={<span>{props.lineItem.description}</span>}>
         <A href={`${props.logPath}/${props.lineItem.acctId}`} class="hover:text-blue-600 hover:underline">
-            {props.lineItem.description.replaceAll(':', ' : ')}
+            {props.lineItem.description}
         </A>
     </Show>
 )

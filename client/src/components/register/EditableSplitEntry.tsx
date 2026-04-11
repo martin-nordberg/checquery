@@ -74,7 +74,7 @@ const EditableSplitEntry = (props: EditableSplitEntryProps) => {
                     />
                 }>
                     <div class="px-2 py-1 text-sm text-gray-700 bg-gray-100 rounded border border-gray-200">
-                        {props.entry.account.replaceAll(':', ' : ')}
+                        {props.entry.account}
                     </div>
                 </Show>
             </div>

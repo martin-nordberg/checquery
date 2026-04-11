@@ -49,11 +49,14 @@ const NewAccountRow = (props: NewAccountRowProps) => {
         props.onCancel()
     })
 
+    const normalizeAccountName = (name: string) =>
+        name.replace(/([^ ]): ?([^ ])/g, '$1 : $2').replace(/([^ ]) :([^ ])/g, '$1 : $2')
+
     const handleSave = async () => {
         setError(null)
 
         // Validate required fields
-        const name = editName()?.trim()
+        const name = normalizeAccountName(editName()?.trim() ?? '')
         if (!name) {
             setError("Name is required")
             return

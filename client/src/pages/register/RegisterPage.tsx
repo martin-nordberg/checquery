@@ -25,8 +25,6 @@ const RegisterPage = () => {
 
     const [allAccounts] = createResource(() => acctSvc.findAccountsAll())
 
-    const formatAccountName = (name: string) => name.replaceAll(':', ' : ')
-
     const accountOptions = createMemo(() => {
         const accounts = allAccounts() ?? []
         const balanceSheetAccounts = accounts.filter(a =>
@@ -34,7 +32,7 @@ const RegisterPage = () => {
         )
         const options: Record<string, string> = {}
         for (const acct of balanceSheetAccounts) {
-            options[formatAccountName(acct.name)] = `/register/${acct.id}`
+            options[acct.name] = `/register/${acct.id}`
         }
         return options
     })
@@ -145,7 +143,7 @@ const RegisterPage = () => {
                         <Show when={account()} fallback="Loading...">
                             <HoverableDropDown
                                 options={accountOptions()}
-                                selectedOption={formatAccountName(account()!.name)}
+                                selectedOption={account()!.name}
                             />
                         </Show>
                     </Breadcrumb>

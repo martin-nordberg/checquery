@@ -9,7 +9,7 @@ type BalanceSheetProps = {
 }
 
 const AccountName = (props: { lineItem: BalSheetLineItem }) => {
-    const displayName = () => props.lineItem.description.replaceAll(':', ' : ')
+    const displayName = () => props.lineItem.description
     return (
         <Show when={props.lineItem.acctId} fallback={<>{displayName()}</>}>
             <A href={`/register/${props.lineItem.acctId}`} class="hover:text-blue-600 hover:underline">

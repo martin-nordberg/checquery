@@ -142,6 +142,9 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
         }
     })
 
+    const normalizeAccountName = (name: string) =>
+        name.replace(/([^ ]): ?([^ ])/g, '$1 : $2').replace(/([^ ]) :([^ ])/g, '$1 : $2')
+
     const handleSave = async () => {
         setError(null)
         setIsSaving(true)
@@ -149,7 +152,7 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
         try {
             await acctSvc.patchAccount({
                 id: props.account.id,
-                name: editName(),
+                name: normalizeAccountName(editName()),
                 acctType: editAcctType(),
                 acctNumber: editAcctNumber() ?? undefined,
                 description: editDescription() ?? undefined,
@@ -198,7 +201,7 @@ const EditableAccountRow = (props: EditableAccountRowProps) => {
                 </button>
             </td>
             <td class="px-4 py-2 text-sm text-gray-900">
-                {props.account.name.replaceAll(':', ' : ')}
+                {props.account.name}
             </td>
             <td class="px-4 py-2 text-sm text-gray-500">
                 {acctTypeText(props.account.acctType)}

@@ -247,11 +247,11 @@ describe('IncomeStatement from checquery-test-log-2010', () => {
         })
 
         it('has correct Q1 Salary:Primary Employment', () => {
-            expect(findLineItem(q1.incomeLineItems, "Salary:Primary Employment").amount).toBe("$20,800.00")
+            expect(findLineItem(q1.incomeLineItems, "Salary : Primary Employment").amount).toBe("$20,800.00")
         })
 
         it('has correct Q1 Salary:Spouse Employment', () => {
-            expect(findLineItem(q1.incomeLineItems, "Salary:Spouse Employment").amount).toBe("$14,400.00")
+            expect(findLineItem(q1.incomeLineItems, "Salary : Spouse Employment").amount).toBe("$14,400.00")
         })
 
         it('total income equals sum of income line items', () => {

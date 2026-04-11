@@ -21,7 +21,7 @@ const EditableCategoryField = (props: EditableCategoryFieldProps) => {
             .filter(acct => !excluded.has(acct.name))
             .map(acct => ({
                 value: acct.name,
-                label: acct.name.replaceAll(':', ' : '),
+                label: acct.name,
             }))
     }
 

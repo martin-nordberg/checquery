@@ -20,14 +20,12 @@ const ExpenseLogPage = () => {
 
     const [allAccounts] = createResource(() => acctSvc.findAccountsAll())
 
-    const formatAccountName = (name: string) => name.replaceAll(':', ' : ')
-
     const accountOptions = createMemo(() => {
         const accounts = allAccounts() ?? []
         const expenseAccounts = accounts.filter(a => a.acctType === 'EXPENSE')
         const options: Record<string, string> = {}
         for (const acct of expenseAccounts) {
-            options[formatAccountName(acct.name)] = `/expenselog/${acct.id}`
+            options[acct.name] = `/expenselog/${acct.id}`
         }
         return options
     })
@@ -75,7 +73,7 @@ const ExpenseLogPage = () => {
                         <Show when={account()} fallback="Loading...">
                             <HoverableDropDown
                                 options={accountOptions()}
-                                selectedOption={formatAccountName(account()!.name)}
+                                selectedOption={account()!.name}
                             />
                         </Show>
                     </Breadcrumb>

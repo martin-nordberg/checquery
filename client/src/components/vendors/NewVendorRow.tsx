@@ -26,7 +26,7 @@ const NewVendorRow = (props: NewVendorRowProps) => {
         const all = accounts() ?? []
         return all
             .filter(a => a.acctType === 'EXPENSE' || a.acctType === 'INCOME')
-            .map(a => ({value: a.name, label: a.name.replaceAll(':', ' : ')}))
+            .map(a => ({value: a.name, label: a.name}))
     })
     const validAccountNames = createMemo(() => new Set(accounts()?.map(a => a.name) ?? []))
 

@@ -33,6 +33,10 @@ const maybeQuoteYaml = (value: unknown): string => {
     if (looksLikeNumber(str)) {
         return `"${str}"`
     }
+    // ` : ` is treated as a mapping separator by YAML parsers
+    if (str.includes(' : ')) {
+        return `"${str}"`
+    }
     return str
 }
 
@@ -77,7 +81,7 @@ const formatDirective = (directive: ChecqueryDirective): string => {
             lines.push(`    description: ${payload['description']}`)
         }
         if (payload['defaultAccount']) {
-            lines.push(`    defaultAccount: ${payload['defaultAccount']}`)
+            lines.push(`    defaultAccount: ${maybeQuoteYaml(payload['defaultAccount'])}`)
         }
         if (payload['isActive'] === false) {
             lines.push(`    isActive: false`)
@@ -106,7 +110,7 @@ const formatDirective = (directive: ChecqueryDirective): string => {
         if (entries && entries.length > 0) {
             lines.push(`    entries:`)
             for (const entry of entries) {
-                lines.push(`      - account: ${entry.account}`)
+                lines.push(`      - account: ${maybeQuoteYaml(entry.account)}`)
                 // Only include debit if non-zero
                 if (entry.debit && entry.debit !== '$0.00') {
                     lines.push(`        debit: ${entry.debit}`)
@@ -124,7 +128,7 @@ const formatDirective = (directive: ChecqueryDirective): string => {
             lines.push(`    id: ${payload['id']}`)
         }
         if (payload['account']) {
-            lines.push(`    account: ${payload['account']}`)
+            lines.push(`    account: ${maybeQuoteYaml(payload['account'])}`)
         }
         if (payload['beginDate']) {
             lines.push(`    beginDate: ${payload['beginDate']}`)

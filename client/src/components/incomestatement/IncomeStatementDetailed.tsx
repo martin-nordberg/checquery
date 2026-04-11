@@ -31,9 +31,9 @@ const IncomeStatementDetailed = (props: IncomeStatementDetailedProps) => {
         <>
             <tr class="bg-gray-50">
                 <td class="px-6 py-2 whitespace-nowrap text-sm font-semibold text-gray-700">
-                    <Show when={props.lineItem.acctId} fallback={<span>{props.lineItem.accountName.replaceAll(':', ' : ')}</span>}>
+                    <Show when={props.lineItem.acctId} fallback={<span>{props.lineItem.accountName}</span>}>
                         <A href={`${props.logPath}/${props.lineItem.acctId}`} class="hover:text-blue-600 hover:underline">
-                            {props.lineItem.accountName.replaceAll(':', ' : ')}
+                            {props.lineItem.accountName}
                         </A>
                     </Show>
                 </td>

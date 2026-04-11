@@ -47,7 +47,7 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
         const all = accounts() ?? []
         return all
             .filter(a => a.acctType === 'EXPENSE' || a.acctType === 'INCOME')
-            .map(a => ({value: a.name, label: a.name.replaceAll(':', ' : ')}))
+            .map(a => ({value: a.name, label: a.name}))
     })
     const validAccountNames = createMemo(() => new Set(accounts()?.map(a => a.name) ?? []))
 
@@ -233,7 +233,7 @@ const EditableVendorRow = (props: EditableVendorRowProps) => {
                 {props.vendor.name}
             </td>
             <td class="px-4 py-2 text-sm text-gray-500">
-                {props.vendor.defaultAccount?.replaceAll(':', ' : ') ?? ''}
+                {props.vendor.defaultAccount ?? ''}
             </td>
             <td class="px-4 py-2 text-sm text-gray-500">
                 {props.vendor.description ?? ''}

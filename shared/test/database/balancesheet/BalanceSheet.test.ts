@@ -92,118 +92,118 @@ describe('BalanceSheet from checquery-test-log-2010', () => {
         // --- Asset line items ---
 
         it('has correct Banking:Checking balance (negative)', () => {
-            const item = findLineItem(bs.assetLineItems, "Banking:Checking")
+            const item = findLineItem(bs.assetLineItems, "Banking : Checking")
             expect(item.amount).toBe("($13,484.06)")
         })
 
         it('has correct Banking:Money Market balance', () => {
-            const item = findLineItem(bs.assetLineItems, "Banking:Money Market")
+            const item = findLineItem(bs.assetLineItems, "Banking : Money Market")
             expect(item.amount).toBe("$5,000.00")
         })
 
         it('has correct Banking:Savings balance', () => {
-            const item = findLineItem(bs.assetLineItems, "Banking:Savings")
+            const item = findLineItem(bs.assetLineItems, "Banking : Savings")
             expect(item.amount).toBe("$28,833.00")
         })
 
         it('has correct Investments:401K balance', () => {
-            const item = findLineItem(bs.assetLineItems, "Investments:401K")
+            const item = findLineItem(bs.assetLineItems, "Investments : 401K")
             expect(item.amount).toBe("$46,200.00")
         })
 
         it('has correct Investments:Roth IRA balance', () => {
-            const item = findLineItem(bs.assetLineItems, "Investments:Roth IRA")
+            const item = findLineItem(bs.assetLineItems, "Investments : Roth IRA")
             expect(item.amount).toBe("$18,000.00")
         })
 
         it('has correct Property:Primary Residence balance', () => {
-            const item = findLineItem(bs.assetLineItems, "Property:Primary Residence")
+            const item = findLineItem(bs.assetLineItems, "Property : Primary Residence")
             expect(item.amount).toBe("$250,000.00")
         })
 
         it('has correct Vehicles:Honda Accord 2008 balance', () => {
-            const item = findLineItem(bs.assetLineItems, "Vehicles:Honda Accord 2008")
+            const item = findLineItem(bs.assetLineItems, "Vehicles : Honda Accord 2008")
             expect(item.amount).toBe("$12,000.00")
         })
 
         it('has correct Vehicles:Toyota Camry 2006 balance', () => {
-            const item = findLineItem(bs.assetLineItems, "Vehicles:Toyota Camry 2006")
+            const item = findLineItem(bs.assetLineItems, "Vehicles : Toyota Camry 2006")
             expect(item.amount).toBe("$6,000.00")
         })
 
         // --- Zero-balance asset accounts ---
 
         it('has zero balance for Cash:Petty Cash', () => {
-            expect(findLineItem(bs.assetLineItems, "Cash:Petty Cash").amount).toBe("$0.00")
+            expect(findLineItem(bs.assetLineItems, "Cash : Petty Cash").amount).toBe("$0.00")
         })
 
         it('has zero balance for CD:12-Month Certificate', () => {
-            expect(findLineItem(bs.assetLineItems, "CD:12-Month Certificate").amount).toBe("$0.00")
+            expect(findLineItem(bs.assetLineItems, "CD : 12-Month Certificate").amount).toBe("$0.00")
         })
 
         it('has zero balance for HSA:Health Savings Account', () => {
-            expect(findLineItem(bs.assetLineItems, "HSA:Health Savings Account").amount).toBe("$0.00")
+            expect(findLineItem(bs.assetLineItems, "HSA : Health Savings Account").amount).toBe("$0.00")
         })
 
         it('has zero balance for Investments:Brokerage Account', () => {
-            expect(findLineItem(bs.assetLineItems, "Investments:Brokerage Account").amount).toBe("$0.00")
+            expect(findLineItem(bs.assetLineItems, "Investments : Brokerage Account").amount).toBe("$0.00")
         })
 
         it('has zero balance for Investments:Traditional IRA', () => {
-            expect(findLineItem(bs.assetLineItems, "Investments:Traditional IRA").amount).toBe("$0.00")
+            expect(findLineItem(bs.assetLineItems, "Investments : Traditional IRA").amount).toBe("$0.00")
         })
 
         it('has zero balance for Property:Rental Property', () => {
-            expect(findLineItem(bs.assetLineItems, "Property:Rental Property").amount).toBe("$0.00")
+            expect(findLineItem(bs.assetLineItems, "Property : Rental Property").amount).toBe("$0.00")
         })
 
         it('has zero balance for Receivables:Tax Refund', () => {
-            expect(findLineItem(bs.assetLineItems, "Receivables:Tax Refund").amount).toBe("$0.00")
+            expect(findLineItem(bs.assetLineItems, "Receivables : Tax Refund").amount).toBe("$0.00")
         })
 
         it('excludes deleted account Savings:Vacation Fund', () => {
-            const item = bs.assetLineItems.find(li => li.description === "Savings:Vacation Fund")
+            const item = bs.assetLineItems.find(li => li.description === "Savings : Vacation Fund")
             expect(item).toBeUndefined()
         })
 
         // --- Liability line items ---
 
         it('has correct Credit Cards:Visa balance', () => {
-            expect(findLineItem(bs.liabilityLineItems, "Credit Cards:Visa").amount).toBe("$149.52")
+            expect(findLineItem(bs.liabilityLineItems, "Credit Cards : Visa").amount).toBe("$149.52")
         })
 
         it('has correct Loans:Auto Loan balance', () => {
-            expect(findLineItem(bs.liabilityLineItems, "Loans:Auto Loan").amount).toBe("$3,800.00")
+            expect(findLineItem(bs.liabilityLineItems, "Loans : Auto Loan").amount).toBe("$3,800.00")
         })
 
         it('has correct Loans:Mortgage balance', () => {
-            expect(findLineItem(bs.liabilityLineItems, "Loans:Mortgage").amount).toBe("$170,277.81")
+            expect(findLineItem(bs.liabilityLineItems, "Loans : Mortgage").amount).toBe("$170,277.81")
         })
 
         it('has correct Loans:Student Loan balance', () => {
-            expect(findLineItem(bs.liabilityLineItems, "Loans:Student Loan").amount).toBe("$12,000.00")
+            expect(findLineItem(bs.liabilityLineItems, "Loans : Student Loan").amount).toBe("$12,000.00")
         })
 
         // --- Zero-balance liability accounts ---
 
         it('has zero balance for Credit Cards:MasterCard', () => {
-            expect(findLineItem(bs.liabilityLineItems, "Credit Cards:MasterCard").amount).toBe("$0.00")
+            expect(findLineItem(bs.liabilityLineItems, "Credit Cards : MasterCard").amount).toBe("$0.00")
         })
 
         it('has zero balance for Credit Cards:Store Card', () => {
-            expect(findLineItem(bs.liabilityLineItems, "Credit Cards:Store Card").amount).toBe("$0.00")
+            expect(findLineItem(bs.liabilityLineItems, "Credit Cards : Store Card").amount).toBe("$0.00")
         })
 
         it('has zero balance for Loans:Home Equity Line', () => {
-            expect(findLineItem(bs.liabilityLineItems, "Loans:Home Equity Line").amount).toBe("$0.00")
+            expect(findLineItem(bs.liabilityLineItems, "Loans : Home Equity Line").amount).toBe("$0.00")
         })
 
         it('has zero balance for Payable:Estimated Taxes', () => {
-            expect(findLineItem(bs.liabilityLineItems, "Payable:Estimated Taxes").amount).toBe("$0.00")
+            expect(findLineItem(bs.liabilityLineItems, "Payable : Estimated Taxes").amount).toBe("$0.00")
         })
 
         it('excludes deleted account Loans:Personal Loan', () => {
-            const item = bs.liabilityLineItems.find(li => li.description === "Loans:Personal Loan")
+            const item = bs.liabilityLineItems.find(li => li.description === "Loans : Personal Loan")
             expect(item).toBeUndefined()
         })
 

@@ -252,7 +252,7 @@ const EditableIncomeLogRow = (props: EditableIncomeLogRowProps) => {
                 {props.lineItem.date}
             </td>
             <td class="px-4 py-2 text-sm text-gray-500">
-                {props.lineItem.offsetAccount.replaceAll(':', ' : ')}
+                {props.lineItem.offsetAccount}
             </td>
             <td class="px-4 py-2 text-sm text-gray-900">
                 {props.lineItem.vendor ?? ''}
