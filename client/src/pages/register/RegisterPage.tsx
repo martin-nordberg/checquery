@@ -3,6 +3,7 @@ import Breadcrumb from "../../components/nav/Breadcrumb.tsx";
 import HoverableDropDown from "../../components/nav/HoverableDropDown.tsx";
 import Register from "../../components/register/Register.tsx";
 import ReconcilePanel from "../../components/register/ReconcilePanel.tsx";
+import InlineCalculator from "../../components/common/calculator/InlineCalculator.tsx";
 import MessageDialog from "../../components/common/dialogs/MessageDialog.tsx";
 import SearchField from "../../components/common/search/SearchField.tsx";
 import {useParams} from "@solidjs/router";
@@ -38,6 +39,7 @@ const RegisterPage = () => {
     })
 
     const {options: stmtOptions, iconPaths: stmtIconPaths} = useStmtNavOptions("Register")
+    const [showCalculator, setShowCalculator] = createSignal(false)
     const [showReconcile, setShowReconcile] = createSignal(false)
     const [checkedTxnIds, setCheckedTxnIds] = createSignal<Set<TxnId>>(new Set<TxnId>())
     const [refetchTrigger, setRefetchTrigger] = createSignal(0)
@@ -150,6 +152,24 @@ const RegisterPage = () => {
                 </TopNav>
                 <div class="flex items-center gap-2">
                     <button
+                        onClick={() => setShowCalculator(v => !v)}
+                        class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-200 border border-gray-300 rounded cursor-pointer flex items-center gap-1"
+                        title="Calculator"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="4" y="2" width="16" height="20" rx="2"/>
+                            <rect x="7" y="5" width="10" height="4" rx="1"/>
+                            <circle cx="8" cy="14" r="0.75" fill="currentColor"/>
+                            <circle cx="12" cy="14" r="0.75" fill="currentColor"/>
+                            <circle cx="16" cy="14" r="0.75" fill="currentColor"/>
+                            <circle cx="8" cy="18" r="0.75" fill="currentColor"/>
+                            <circle cx="12" cy="18" r="0.75" fill="currentColor"/>
+                            <circle cx="16" cy="18" r="0.75" fill="currentColor"/>
+                        </svg>
+                        Calculator
+                    </button>
+                    <button
                         onClick={() => {
                             if (showReconcile()) {
                                 hideReconcilePanel()
@@ -171,6 +191,9 @@ const RegisterPage = () => {
                     />
                 </div>
             </div>
+            <Show when={showCalculator()}>
+                <InlineCalculator onClose={() => setShowCalculator(false)} />
+            </Show>
             <Show when={showReconcile() && account()}>
                 <ReconcilePanel
                     accountName={account()!.name}
