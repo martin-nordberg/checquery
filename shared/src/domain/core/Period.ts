@@ -1,22 +1,22 @@
 import {z} from "zod";
 import {type IsoDate} from "./IsoDate";
 
-/** Schema for a Checquery period (month or quarter). */
-export const periodLength = 7;
-
-export const periodRegex = /^20\d\d-((Q1)|(Q2)|(Q3)|(Q4)|(0[1-9])|(10)|(11)|(12))$/
+export const periodRegex = /^20\d\d(-((Q1)|(Q2)|(Q3)|(Q4)|(0[1-9])|(10)|(11)|(12)))?$/
 
 export const periodSchema =
     z.string()
         .trim()
-        .length(periodLength, `Accounting period must be ${periodLength} characters in length.`)
-        .regex(periodRegex, "Accounting period must match format 'YYYY-MM' or 'YYYY-Q#'.")
+        .regex(periodRegex, "Accounting period must match format 'YYYY', 'YYYY-MM', or 'YYYY-Q#'.")
 
 export type Period = z.infer<typeof periodSchema>
 
 export const getStartDate = (period: Period): IsoDate => {
     const year = period.substring(0, 4)
     const monthOrQtr = period.substring(5)
+
+    if (monthOrQtr === "") {
+        return year + "-01-01"
+    }
 
     switch (monthOrQtr) {
         case "01":
@@ -55,6 +55,14 @@ export const getStartDate = (period: Period): IsoDate => {
 export const getEndDate = (period: Period): IsoDate => {
     const year = period.substring(0, 4)
     const monthOrQtr = period.substring(5)
+
+    if (monthOrQtr === "") {
+        const currentYear = new Date().getFullYear().toString()
+        if (year === currentYear) {
+            return new Date().toISOString().split('T')[0] as IsoDate
+        }
+        return year + "-12-31"
+    }
 
     switch (monthOrQtr) {
         case "01":

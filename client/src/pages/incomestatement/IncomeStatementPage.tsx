@@ -35,12 +35,27 @@ const IncomeStatementPage = () => {
         "Balance Sheet": `/balancesheet/${getEndDate(period())}`,
     })
 
-    const periodOptions = createMemo(() => ({
-        "2026-01": `../../2026-01/${view()}`,
-        "2026-02": `../../2026-02/${view()}`,
-        "2026-03": `../../2026-03/${view()}`,
-        "2026-Q1": `../../2026-Q1/${view()}`,
-    }))
+    const periodOptions = createMemo(() => {
+        const today = new Date()
+        const currentYear = today.getFullYear()
+        const currentMonth = today.getMonth() + 1
+        const startYear = 2026
+        const options: Record<string, string> = {}
+        for (let year = startYear; year <= currentYear; year++) {
+            const maxMonth = year === currentYear ? currentMonth : 12
+            for (let month = 1; month <= maxMonth; month++) {
+                const monthStr = month.toString().padStart(2, '0')
+                const period = `${year}-${monthStr}`
+                options[period] = `../../${period}/${view()}`
+                if (month % 3 === 0) {
+                    const qtr = `${year}-Q${month / 3}`
+                    options[qtr] = `../../${qtr}/${view()}`
+                }
+            }
+            options[`${year}`] = `../../${year}/${view()}`
+        }
+        return options
+    })
 
     const viewOptions = createMemo(() => ({
         "Summary": `../../${period()}/summary`,

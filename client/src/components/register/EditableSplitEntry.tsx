@@ -26,7 +26,7 @@ const EditableSplitEntry = (props: EditableSplitEntryProps) => {
     const debitPlaceholder = () => {
         const t = props.accountType
         if (t === 'LIABILITY' || t === 'INCOME') {
-            return 'Payment'
+            return 'Purchase'
         }
         return 'Expense'
     }
@@ -34,7 +34,7 @@ const EditableSplitEntry = (props: EditableSplitEntryProps) => {
     const creditPlaceholder = () => {
         const t = props.accountType
         if (t === 'LIABILITY' || t === 'INCOME') {
-            return 'Purchase'
+            return 'Payment'
         }
         return 'Income'
     }

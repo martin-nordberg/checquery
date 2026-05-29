@@ -35,6 +35,15 @@ describe('Periods', () => {
         check("2026-Q4", "2026-10-01", "2026-12-31")
     })
 
+    it('Should process years (year-to-date / full year)', () => {
+        const period = periodSchema.parse("2026")
+        expect(getStartDate(period)).toEqual("2026-01-01")
+        // getEndDate("2026") for a past year returns Dec 31
+        const period2025 = periodSchema.parse("2025")
+        expect(getStartDate(period2025)).toEqual("2025-01-01")
+        expect(getEndDate(period2025)).toEqual("2025-12-31")
+    })
+
     it('Should handle leap years', () => {
         check("2027-02", "2027-02-01", "2027-02-28")
         check("2028-02", "2028-02-01", "2028-02-29")
