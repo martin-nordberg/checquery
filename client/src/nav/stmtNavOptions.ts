@@ -6,9 +6,9 @@ import type {Account} from "$shared/domain/accounts/Account.ts";
  * Expense Log, Income Log, and Register entries are injected dynamically via buildStmtNavOptions.
  */
 export const baseStmtOptions = {
+    "Accounts": "/accounts",
     "Balance Sheet": `/balancesheet/${isoDateToday}`,
     "Income Statement": `/incomestatement/${isoDateToday?.substring(0, 7)}/summary`,
-    "Accounts": "/accounts",
     "Vendors": "/vendors",
 }
 
@@ -23,9 +23,9 @@ export const incomeLogIconPath = "M6 18L18 6M18 6H10M18 6v8"
 
 /** SVG path data (stroke-based, viewBox 0 0 24 24) for each base nav option. */
 export const stmtNavIconPaths: Record<keyof typeof baseStmtOptions, string> = {
+    "Accounts":          "M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z",
     "Balance Sheet":     "M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3",
     "Income Statement":  "M8 13v-1m4 1v-3m4 3V8M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z",
-    "Accounts":          "M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z",
     "Vendors":           "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z",
 }
 
@@ -66,8 +66,8 @@ export function sortPrimaryIncomeAccounts(accounts: Account[]): Account[] {
 
 /**
  * Builds nav options matching the home page order:
- *   Register entries → Balance Sheet → Income Statement →
- *   Income Log entries → Expense Log entries → Accounts → Vendors
+ *   Accounts → Balance Sheet → Register entries →
+ *   Income Statement → Income Log entries → Expense Log entries → Vendors
  * When currentPage matches a dynamic group, shows just that label → "." with no
  * other entries from that group. Optional overrides replace specific base option URLs.
  */
@@ -81,8 +81,11 @@ export const buildStmtNavOptions = (
     const result: Record<string, string> = {}
 
     for (const key of Object.keys(baseStmtOptions) as Array<keyof typeof baseStmtOptions>) {
+        const overrideVal = overrides?.[key]
+        result[key] = overrideVal ?? (key === currentPage ? "." : baseStmtOptions[key])
+
         if (key === "Balance Sheet") {
-            // Inject register entries before Balance Sheet
+            // Inject register entries after Balance Sheet
             if (currentPage === "Register") {
                 result["Register"] = "."
             } else {
@@ -91,8 +94,8 @@ export const buildStmtNavOptions = (
                 }
             }
         }
-        if (key === "Accounts") {
-            // Inject income log entries before Accounts
+        if (key === "Income Statement") {
+            // Inject income log entries after Income Statement
             if (currentPage === "Income Log") {
                 result["Income Log"] = "."
             } else {
@@ -100,7 +103,7 @@ export const buildStmtNavOptions = (
                     result[entry.label] = entry.href
                 }
             }
-            // Inject expense log entries before Accounts (after income log)
+            // Inject expense log entries after income log entries
             if (currentPage === "Expense Log") {
                 result["Expense Log"] = "."
             } else {
@@ -109,8 +112,6 @@ export const buildStmtNavOptions = (
                 }
             }
         }
-        const overrideVal = overrides?.[key]
-        result[key] = overrideVal ?? (key === currentPage ? "." : baseStmtOptions[key])
     }
 
     return result
