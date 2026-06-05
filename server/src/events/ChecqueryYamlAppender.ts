@@ -17,27 +17,29 @@ type TransactionEntry = {
     credit?: string
 }
 
-/**
- * Checks if a string would be parsed as a number by YAML.
- */
-const looksLikeNumber = (str: string): boolean => {
-    // Matches: 123, -123, 123.45, -123.45, .5, -.5, 123.
-    return /^-?(\d+\.?\d*|\.\d+)$/.test(str)
+const needsQuoting = (str: string): boolean => {
+    // Would be parsed as a number
+    if (/^-?(\d+\.?\d*|\.\d+)$/.test(str)) { return true }
+    // Mapping separator
+    if (str.includes(' : ')) { return true }
+    // Newlines break block scalars
+    if (str.includes('\n') || str.includes('\r')) { return true }
+    // Space+hash starts a comment
+    if (/ #/.test(str)) { return true }
+    // Leading characters with special YAML meaning
+    if (/^[[\]{!&*|>@`]/.test(str)) { return true }
+    return false
 }
 
-/**
- * Quotes a string value for YAML output only if needed.
- */
 const maybeQuoteYaml = (value: unknown): string => {
     const str = String(value)
-    if (looksLikeNumber(str)) {
-        return `"${str}"`
-    }
-    // ` : ` is treated as a mapping separator by YAML parsers
-    if (str.includes(' : ')) {
-        return `"${str}"`
-    }
-    return str
+    if (!needsQuoting(str)) { return str }
+    const escaped = str
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '\\"')
+        .replace(/\n/g, '\\n')
+        .replace(/\r/g, '\\r')
+    return `"${escaped}"`
 }
 
 /**
@@ -75,10 +77,10 @@ const formatDirective = (directive: ChecqueryDirective): string => {
             lines.push(`    id: ${payload['id']}`)
         }
         if (payload['name']) {
-            lines.push(`    name: ${payload['name']}`)
+            lines.push(`    name: ${maybeQuoteYaml(payload['name'])}`)
         }
         if (payload['description']) {
-            lines.push(`    description: ${payload['description']}`)
+            lines.push(`    description: ${maybeQuoteYaml(payload['description'])}`)
         }
         if (payload['defaultAccount']) {
             lines.push(`    defaultAccount: ${maybeQuoteYaml(payload['defaultAccount'])}`)
@@ -99,10 +101,10 @@ const formatDirective = (directive: ChecqueryDirective): string => {
             lines.push(`    code: ${maybeQuoteYaml(payload['code'])}`)
         }
         if (payload['vendor']) {
-            lines.push(`    vendor: ${payload['vendor']}`)
+            lines.push(`    vendor: ${maybeQuoteYaml(payload['vendor'])}`)
         }
         if (payload['description']) {
-            lines.push(`    description: ${payload['description']}`)
+            lines.push(`    description: ${maybeQuoteYaml(payload['description'])}`)
         }
 
         // Add entries

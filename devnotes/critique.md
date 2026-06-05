@@ -17,13 +17,8 @@ Replaced `toISOString().split('T')[0]` with `toLocaleDateString('sv')` in `IsoDa
 ### ~~5. WsClient `dispatch()` fire-and-forget on async methods~~ ✓ Fixed
 Split into `dispatch()` (sync, catches rejections) and `dispatchAsync()` (awaits all service calls) in `WsClient.ts`.
 
-### 6. YAML appender doesn't escape special characters
-`server/src/events/ChecqueryYamlAppender.ts:31-36` — `maybeQuoteYaml` only quotes numeric-looking strings and strings containing ` : `. It does not handle:
-- Newlines in a value (would produce broken YAML that fails to reload on next server start)
-- `#` preceded by whitespace (parsed as a comment)
-- Leading `[`, `{`, `!`, `&`, `*`, `|`, `>` (YAML special characters)
-
-A user entering a description with a newline or a hash would corrupt the log file. The fix is to quote strings containing any of these characters and escape interior `"` characters.
+### ~~6. YAML appender doesn't escape special characters~~ ✓ Fixed
+Expanded `maybeQuoteYaml` to detect newlines, ` #`, and leading YAML special characters; escapes `\`, `"`, `\n`, `\r` before quoting. Also applied `maybeQuoteYaml` to vendor name/description and transaction vendor/description fields that previously bypassed it.
 
 ---
 
