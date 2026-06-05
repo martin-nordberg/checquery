@@ -2,7 +2,7 @@ import {z} from "zod";
 import type {IBalanceSheetQrySvc} from "$shared/services/balancesheet/IBalanceSheetQrySvc";
 import type {BalanceSheet, BalSheetLineItem} from "$shared/domain/balancesheet/BalanceSheet";
 import {fromCents} from "$shared/domain/core/CurrencyAmt";
-import {acctIdSchema} from "$shared/domain/accounts/AcctId";
+import {acctIdNetWorth, acctIdSchema} from "$shared/domain/accounts/AcctId";
 import type {IsoDate} from "$shared/domain/core/IsoDate";
 import type {PgLiteDb} from "$shared/database/PgLiteDb";
 
@@ -76,7 +76,7 @@ export class BalanceSheetRepo implements IBalanceSheetQrySvc {
 
             totalEquity = totalAssets - totalLiabilities
             equityLineItems.push({
-                acctId: acctIdSchema.parse("acctnetworth0000000000000000"),
+                acctId: acctIdNetWorth,
                 description: "Net Worth",
                 amount: fromCents(totalEquity),
             })

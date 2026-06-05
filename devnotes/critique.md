@@ -41,8 +41,8 @@ return this.#db.transaction((tx) => callback(new PgLiteTxn(tx, externalHlc))) //
 ```
 The intent of the merge is to prevent the local clock from going backward after replay. However, the replayed rows end up stamped with `externalHlc`, not the merged value. Whether this is a bug or a deliberate "preserve original timestamps on replay" decision should be made explicit with a comment.
 
-### 11. `AcctNetworth` uses a literal hardcoded ID
-`shared/src/database/balancesheet/BalanceSheetRepo.ts:79` — `acctIdSchema.parse("acctnetworth0000000000000000")` hardcodes an account ID that looks like a manually-crafted CUID2. This will silently break if the net-worth pseudo-account ever gets a different ID, or if the ID validation schema changes. Define it as a named constant next to the schema.
+### ~~11. `AcctNetworth` uses a literal hardcoded ID~~ ✓ Fixed
+Added `acctIdNetWorth` constant to `AcctId.ts`; `BalanceSheetRepo` now references it instead of the inline string literal.
 
 ---
 
