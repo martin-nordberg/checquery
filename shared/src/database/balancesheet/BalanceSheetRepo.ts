@@ -25,11 +25,11 @@ export class BalanceSheetRepo implements IBalanceSheetQrySvc {
                        COALESCE(sum(creditCents), 0) as "totalCr"
                   FROM Account
                   LEFT JOIN Entry ON Account.id = Entry.accountId
-                  LEFT JOIN Transaxtion ON Entry.txnId = Transaxtion.id
+                  LEFT JOIN Transaction ON Entry.txnId = Transaction.id
                  WHERE Account.acctType IN ('ASSET', 'LIABILITY', 'EQUITY')
                    AND Account.isDeleted = false
-                   AND (Transaxtion.date <= $1 OR Transaxtion.date IS NULL)
-                   AND (Transaxtion.isDeleted = false OR Transaxtion.isDeleted IS NULL)
+                   AND (Transaction.date <= $1 OR Transaction.date IS NULL)
+                   AND (Transaction.isDeleted = false OR Transaction.isDeleted IS NULL)
                  GROUP BY Account.id, Account.acctType, Account.name
                  ORDER BY Account.name`,
                 [

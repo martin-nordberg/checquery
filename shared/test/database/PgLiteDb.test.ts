@@ -8,7 +8,7 @@ describe('PGLite Database', () => {
         const db = await createPgLiteDb("000")
         await runChecqueryPgDdl(db)
 
-        const tableNames = ['Account', 'Entry', 'Statement', 'Transaxtion', 'Vendor']
+        const tableNames = ['Account', 'Entry', 'Statement', 'Transaction', 'Vendor']
         for (let tableName of tableNames) {
             const r1 = await db.transaction(async (txn) =>
                 txn.findOne(`SELECT count(*) as c

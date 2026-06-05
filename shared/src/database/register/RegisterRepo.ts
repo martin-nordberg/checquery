@@ -42,24 +42,24 @@ export class RegisterRepo implements IRegisterQrySvc {
 
             // Get all entries for this account with transaction details
             const sqlLineItems = await txn.findMany(
-                `SELECT Transaxtion.id as "txnId",
-                       Transaxtion.date as date,
-                       Transaxtion.code as code,
+                `SELECT Transaction.id as "txnId",
+                       Transaction.date as date,
+                       Transaction.code as code,
                        CASE WHEN Entry.stmtId IS NULL THEN NULL
                          WHEN Statement.isReconciled = true THEN 'Reconciled'
                          ELSE 'Pending'
                        END as status,
                        Vendor.name as vendor,
-                       Transaxtion.description as description,
+                       Transaction.description as description,
                        Entry.debitCents as "debitCents",
                        Entry.creditCents as "creditCents"
                   FROM Entry
-                  JOIN Transaxtion ON Entry.txnId = Transaxtion.id
-                  LEFT JOIN Vendor ON Transaxtion.vendorId = Vendor.id
+                  JOIN Transaction ON Entry.txnId = Transaction.id
+                  LEFT JOIN Vendor ON Transaction.vendorId = Vendor.id
                   LEFT JOIN Statement ON Entry.stmtId = Statement.id
                  WHERE Entry.accountId = $1
-                   AND Transaxtion.isDeleted = false
-                 ORDER BY Transaxtion.date, Transaxtion.insertOrder`,
+                   AND Transaction.isDeleted = false
+                 ORDER BY Transaction.date, Transaction.insertOrder`,
                 [accountId],
                 z.strictObject({
                     txnId: z.string(),
@@ -80,9 +80,9 @@ export class RegisterRepo implements IRegisterQrySvc {
                   FROM Entry
                  JOIN Account ON Entry.accountId = Account.id
                  WHERE Entry.txnId IN (SELECT DISTINCT Entry.txnId
-                                       FROM Entry JOIN Transaxtion ON Entry.txnId = Transaxtion.id
+                                       FROM Entry JOIN Transaction ON Entry.txnId = Transaction.id
                                        WHERE Entry.accountId = $1
-                                         AND Transaxtion.isDeleted = false)
+                                         AND Transaction.isDeleted = false)
                    AND Entry.accountId != $1
                  ORDER BY Entry.txnId, Entry.entrySeq`,
                 [accountId],
@@ -148,21 +148,21 @@ export class RegisterRepo implements IRegisterQrySvc {
     async findLatestTransactionForVendorAndAccount(vendorName: string, accountId: AcctId): Promise<RegisterTransaction | null> {
         return this.db.transaction(async (txn) => {
             const txnRow = await txn.findOne(
-                `SELECT Transaxtion.id as id,
-                       Transaxtion.date as date,
-                       Transaxtion.code as code,
-                       Transaxtion.description as description,
+                `SELECT Transaction.id as id,
+                       Transaction.date as date,
+                       Transaction.code as code,
+                       Transaction.description as description,
                        Vendor.name as vendor
-                  FROM Transaxtion
-                  LEFT JOIN Vendor ON Transaxtion.vendorId = Vendor.id
-                 WHERE Transaxtion.isDeleted = false
+                  FROM Transaction
+                  LEFT JOIN Vendor ON Transaction.vendorId = Vendor.id
+                 WHERE Transaction.isDeleted = false
                    AND Vendor.name = $1
                    AND EXISTS (
                        SELECT 1 FROM Entry
-                        WHERE Entry.txnId = Transaxtion.id
+                        WHERE Entry.txnId = Transaction.id
                           AND Entry.accountId = $2
                    )
-                 ORDER BY Transaxtion.date DESC, Transaxtion.insertOrder DESC
+                 ORDER BY Transaction.date DESC, Transaction.insertOrder DESC
                  LIMIT 1`,
                 [vendorName, accountId],
                 z.strictObject({
@@ -189,10 +189,10 @@ export class RegisterRepo implements IRegisterQrySvc {
                        Entry.creditCents as "creditCents"
                   FROM Entry
                  JOIN Account ON Entry.accountId = Account.id
-                 JOIN Transaxtion ON Entry.txnId = Transaxtion.id
+                 JOIN Transaction ON Entry.txnId = Transaction.id
                   LEFT JOIN Statement ON Entry.stmtId = Statement.id
                  WHERE Entry.txnId = $1
-                   AND Transaxtion.isDeleted = false
+                   AND Transaction.isDeleted = false
                  ORDER BY Entry.entrySeq`,
                 [txnRow.id],
                 z.strictObject({
@@ -223,15 +223,15 @@ export class RegisterRepo implements IRegisterQrySvc {
         return this.db.transaction(async (txn) => {
             // Get transaction details
             const txnRow = await txn.findOne(
-                `SELECT Transaxtion.id as id,
-                       Transaxtion.date as date,
-                       Transaxtion.code as code,
-                       Transaxtion.description as description,
+                `SELECT Transaction.id as id,
+                       Transaction.date as date,
+                       Transaction.code as code,
+                       Transaction.description as description,
                        Vendor.name as vendor
-                  FROM Transaxtion
-                  LEFT JOIN Vendor ON Transaxtion.vendorId = Vendor.id
-                 WHERE Transaxtion.id = $1
-                   AND Transaxtion.isDeleted = false`,
+                  FROM Transaction
+                  LEFT JOIN Vendor ON Transaction.vendorId = Vendor.id
+                 WHERE Transaction.id = $1
+                   AND Transaction.isDeleted = false`,
                 [txnId],
                 z.strictObject({
                     id: z.string(),
@@ -258,10 +258,10 @@ export class RegisterRepo implements IRegisterQrySvc {
                        Entry.creditCents as "creditCents"
                   FROM Entry
                  JOIN Account ON Entry.accountId = Account.id
-                 JOIN Transaxtion ON Entry.txnId = Transaxtion.id
+                 JOIN Transaction ON Entry.txnId = Transaction.id
                   LEFT JOIN Statement ON Entry.stmtId = Statement.id
                  WHERE Entry.txnId = $1
-                   AND Transaxtion.isDeleted = false
+                   AND Transaction.isDeleted = false
                  ORDER BY Entry.entrySeq`,
                 [txnId],
                 z.strictObject({

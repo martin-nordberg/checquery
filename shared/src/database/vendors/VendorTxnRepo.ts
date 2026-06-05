@@ -100,7 +100,7 @@ export class VendorTxnRepo implements IVendorSvc {
     async isVendorInUse(vendorId: VndrId): Promise<boolean> {
         const result = await this.#txn.findOne(
             `SELECT COUNT(*) as count
-             FROM Transaxtion
+             FROM Transaction
              WHERE vendorId = $1`,
             [vendorId],
             z.object({count: z.number()}).readonly()

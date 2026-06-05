@@ -42,7 +42,7 @@ describe('Load test data', () => {
 
         // Verify transactions loaded
         await db.transaction(async (txn) => {
-            const txnCount = await txn.findOne('SELECT COUNT(*) as count FROM Transaxtion', [], countSchema)
+            const txnCount = await txn.findOne('SELECT COUNT(*) as count FROM Transaction', [], countSchema)
             expect(txnCount!.count).toBeGreaterThan(10)
 
             const entryCount = await txn.findOne('SELECT COUNT(*) as count FROM Entry', [], countSchema)

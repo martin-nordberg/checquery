@@ -25,7 +25,7 @@ export class TransactionTxnRepo implements ITransactionSvc {
         let count: number | undefined
         if (transactionCreation.vendor) {
             count = await this.#txn.exec(
-                `INSERT INTO Transaxtion (id, date, dateHlc, code, codeHlc, vendorId, vendorIdHlc, description,
+                `INSERT INTO Transaction (id, date, dateHlc, code, codeHlc, vendorId, vendorIdHlc, description,
                                           descriptionHlc, isDeleted, isDeletedHlc)
                  SELECT $1, $2, $hlc, $3, $hlc, Vendor.id, $hlc, $5, $hlc, false, $hlc
                    FROM Vendor
@@ -41,7 +41,7 @@ export class TransactionTxnRepo implements ITransactionSvc {
             )
         } else {
             count = await this.#txn.exec(
-                `INSERT INTO Transaxtion (id, date, dateHlc, code, codeHlc, vendorId, vendorIdHlc, description,
+                `INSERT INTO Transaction (id, date, dateHlc, code, codeHlc, vendorId, vendorIdHlc, description,
                                           descriptionHlc, isDeleted, isDeletedHlc)
                  VALUES ($1, $2, $hlc, $3, $hlc, null, $hlc, $4, $hlc, false, $hlc)
                  ON CONFLICT ON CONSTRAINT Transaction_PK DO NOTHING`,
@@ -83,7 +83,7 @@ export class TransactionTxnRepo implements ITransactionSvc {
 
     async deleteTransaction(transactionDeletion: TransactionDeletionEvent): Promise<TransactionDeletionEvent | null> {
         const count = await this.#txn.exec(
-            `UPDATE Transaxtion
+            `UPDATE Transaction
                SET isDeleted    = true,
                    isDeletedHlc = $hlc
              WHERE id = $1
@@ -95,11 +95,11 @@ export class TransactionTxnRepo implements ITransactionSvc {
 
     async findTransactionById(transactionId: TxnId): Promise<Transaction | null> {
         const txn = await this.#txn.findOne(
-            `SELECT Transaxtion.id, date, code, Vendor.name as vendor, Transaxtion.description
-               FROM Transaxtion
-               LEFT JOIN Vendor ON Transaxtion.vendorId = Vendor.id
-              WHERE Transaxtion.id = $1
-                AND Transaxtion.isDeleted = false`,
+            `SELECT Transaction.id, date, code, Vendor.name as vendor, Transaction.description
+               FROM Transaction
+               LEFT JOIN Vendor ON Transaction.vendorId = Vendor.id
+              WHERE Transaction.id = $1
+                AND Transaction.isDeleted = false`,
             [transactionId],
             transactionBeforeEntriesSchema
         )
@@ -120,7 +120,7 @@ export class TransactionTxnRepo implements ITransactionSvc {
                    comment
               FROM Entry
               JOIN Account ON Entry.accountId = Account.id
-              JOIN Transaxtion ON Entry.txnId = Transaxtion.id
+              JOIN Transaction ON Entry.txnId = Transaction.id
               LEFT JOIN Statement ON Entry.stmtId = Statement.id
              WHERE Entry.txnId = $1
                AND Entry.isDeleted = false
@@ -156,7 +156,7 @@ export class TransactionTxnRepo implements ITransactionSvc {
 
         if (transactionPatch.date !== undefined) {
             const count = await this.#txn.exec(
-                `UPDATE Transaxtion
+                `UPDATE Transaction
                    SET date    = $2,
                        dateHlc = $hlc
                  WHERE id = $1
@@ -170,7 +170,7 @@ export class TransactionTxnRepo implements ITransactionSvc {
 
         if (transactionPatch.code !== undefined) {
             const count = await this.#txn.exec(
-                `UPDATE Transaxtion
+                `UPDATE Transaction
                    SET code    = $2,
                        codeHlc = $hlc
                  WHERE id = $1
@@ -184,7 +184,7 @@ export class TransactionTxnRepo implements ITransactionSvc {
 
         if (transactionPatch.description !== undefined) {
             const count = await this.#txn.exec(
-                `UPDATE Transaxtion
+                `UPDATE Transaction
                    SET description    = $2,
                        descriptionHlc = $hlc
                  WHERE id = $1
@@ -199,7 +199,7 @@ export class TransactionTxnRepo implements ITransactionSvc {
         if (transactionPatch.vendor !== undefined) {
             if (transactionPatch.vendor === "") {
                 const count = await this.#txn.exec(
-                    `UPDATE Transaxtion
+                    `UPDATE Transaction
                        SET vendorId    = NULL,
                            vendorIdHlc = $hlc
                      WHERE id = $1
@@ -211,7 +211,7 @@ export class TransactionTxnRepo implements ITransactionSvc {
                 }
             } else {
                 const count = await this.#txn.exec(
-                    `UPDATE Transaxtion
+                    `UPDATE Transaction
                        SET vendorId    = (SELECT id FROM Vendor WHERE name = $2),
                            vendorIdHlc = $hlc
                      WHERE id = $1

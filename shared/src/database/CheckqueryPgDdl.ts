@@ -113,7 +113,7 @@ async function runChecqueryPgDdlTxn(txn: PgLiteTxn) {
 
     // Transaction
     await txn.exec(
-        `CREATE TABLE Transaxtion
+        `CREATE TABLE Transaction
          (
              id             CHAR(${txnIdLength})      NOT NULL,
              date           VARCHAR(${isoDateLength}) NOT NULL,
@@ -135,7 +135,7 @@ async function runChecqueryPgDdlTxn(txn: PgLiteTxn) {
     await txn.exec(
         `CREATE TABLE Entry
          (
-             txnId       CHAR(${txnIdLength})     NOT NULL REFERENCES Transaxtion (id),
+             txnId       CHAR(${txnIdLength})     NOT NULL REFERENCES Transaction (id),
              entrySeq    INTEGER                  NOT NULL,
              accountId   CHAR(${acctIdLength})    NOT NULL REFERENCES Account (id),
              debitCents  INTEGER                  NOT NULL,

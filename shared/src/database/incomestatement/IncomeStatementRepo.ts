@@ -34,12 +34,12 @@ export class IncomeStatementRepo implements IIncomeStatementQrySvc {
                        sum(creditCents) as "totalCr"
                   FROM Account
                   LEFT JOIN Entry ON Account.id = Entry.accountId
-                  LEFT JOIN Transaxtion ON Entry.txnId = Transaxtion.id
+                  LEFT JOIN Transaction ON Entry.txnId = Transaction.id
                  WHERE Account.acctType IN ('INCOME', 'EXPENSE')
                    AND Account.isDeleted = false
-                   AND Transaxtion.isDeleted = false
-                   AND (Transaxtion.date >= $1)
-                   AND (Transaxtion.date <= $2)
+                   AND Transaction.isDeleted = false
+                   AND (Transaction.date >= $1)
+                   AND (Transaction.date <= $2)
                  GROUP BY Account.id, Account.acctType, Account.name
                  ORDER BY Account.name`,
                 [
@@ -102,22 +102,22 @@ export class IncomeStatementRepo implements IIncomeStatementQrySvc {
                 `SELECT Account.id       as "acctId",
                         Account.acctType as "acctType",
                         Account.name     as "accountName",
-                        Transaxtion.date as date,
+                        Transaction.date as date,
                         Vendor.name        as vendor,
-                        Transaxtion.description as description,
+                        Transaction.description as description,
                         Entry.debitCents   as "debitCents",
                         Entry.creditCents  as "creditCents"
                  FROM Entry
                      JOIN Account
                  ON Account.id = Entry.accountId
-                     JOIN Transaxtion ON Entry.txnId = Transaxtion.id
-                     LEFT JOIN Vendor ON Transaxtion.vendorId = Vendor.id
+                     JOIN Transaction ON Entry.txnId = Transaction.id
+                     LEFT JOIN Vendor ON Transaction.vendorId = Vendor.id
                  WHERE Account.acctType IN ('INCOME', 'EXPENSE')
                    AND Account.isDeleted = false
-                   AND Transaxtion.isDeleted = false
-                   AND (Transaxtion.date >= $1)
-                   AND (Transaxtion.date <= $2)
-                 ORDER BY Account.name, Transaxtion.date`,
+                   AND Transaction.isDeleted = false
+                   AND (Transaction.date >= $1)
+                   AND (Transaction.date <= $2)
+                 ORDER BY Account.name, Transaction.date`,
                 [
                     startDate,
                     endDate,
