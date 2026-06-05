@@ -76,8 +76,8 @@ These should be resolved or converted to GitHub issues rather than left as inlin
 ### 18. Reconciled statements have no enforcement
 `shared/src/domain/statements/Statement.ts` — `isReconciled: z.boolean()` exists but nothing prevents patching or deleting a reconciled statement, or modifying transactions that belong to one. For a personal finance app this is low risk, but reconciliation is the primary integrity checkpoint.
 
-### 19. Vendor deletion doesn't check transactions
-The vendor delete route doesn't verify that any transactions reference the vendor. The FK constraint is `REFERENCES Vendor (id)` with no `ON DELETE` clause (defaults to RESTRICT in Postgres), so a delete attempt will throw a FK violation error — but this surfaces as an unhandled 500 rather than a clean 409 response. Add a pre-delete check matching the pattern used for accounts.
+### ~~19. Vendor deletion doesn't check transactions~~ ✓ Already fixed
+`isVendorInUse` is fully implemented in `VendorTxnRepo`, `VendorRepo`, `VendorTeeSvc`, and `VendorRoutes` — returns 409 if any transactions reference the vendor.
 
 ### 20. Soft-delete schema is inconsistent across tables
 `CheckqueryPgDdl.ts` — `Account`, `Transaction`, and `Vendor` tables all have an `isDeletedHlc` column for HLC-tracked soft deletes. The `Entry` table has `isDeleted` but no `isDeletedHlc`. If HLC-based conflict resolution is ever extended to entries, this gap will require a migration.
