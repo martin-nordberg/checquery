@@ -18,7 +18,11 @@
       "Bash(git rm:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(bun:*)"
+      "Bash(bun:*)",
+      "Bash(git -C /code/checquery status)",
+      "Bash(git -C /code/checquery diff --stat)",
+      "Bash(git *)",
+      "Bash(xargs sed -i 's/Transaxtion/Transaction/g')"
     ]
   }
 }
