@@ -14,8 +14,8 @@ Replaced hardcoded cases with the standard formula in `Period.ts`.
 ### ~~4. `isoDateToday` uses UTC, not local time~~ ✓ Fixed
 Replaced `toISOString().split('T')[0]` with `toLocaleDateString('sv')` in `IsoDate.ts`.
 
-### 5. WsClient `dispatch()` fire-and-forget on async methods
-`client/src/ws/WsClient.ts:44-82` calls `this.acctSvc.createAccount(...)`, `this.txnSvc.createTransaction(...)`, etc. without `await`. These are all `async` — if they throw, the rejection is silently swallowed. Add `await` and wrap the switch body in a try-catch that logs failures.
+### ~~5. WsClient `dispatch()` fire-and-forget on async methods~~ ✓ Fixed
+Split into `dispatch()` (sync, catches rejections) and `dispatchAsync()` (awaits all service calls) in `WsClient.ts`.
 
 ### 6. YAML appender doesn't escape special characters
 `server/src/events/ChecqueryYamlAppender.ts:31-36` — `maybeQuoteYaml` only quotes numeric-looking strings and strings containing ` : `. It does not handle:

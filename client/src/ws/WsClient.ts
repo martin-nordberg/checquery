@@ -39,42 +39,46 @@ export class WsClient {
     }
 
     private dispatch(message: WsMessage): void {
+        this.dispatchAsync(message).catch((e) => console.error('[WS] Dispatch error', message.action, e))
+    }
+
+    private async dispatchAsync(message: WsMessage): Promise<void> {
         switch (message.action) {
             case 'create-account':
-                this.acctSvc.createAccount(accountCreationEventSchema.parse(message.payload))
+                await this.acctSvc.createAccount(accountCreationEventSchema.parse(message.payload))
                 break
             case 'update-account':
-                this.acctSvc.patchAccount(accountPatchEventSchema.parse(message.payload))
+                await this.acctSvc.patchAccount(accountPatchEventSchema.parse(message.payload))
                 break
             case 'delete-account':
-                this.acctSvc.deleteAccount(accountDeletionEventSchema.parse(message.payload))
+                await this.acctSvc.deleteAccount(accountDeletionEventSchema.parse(message.payload))
                 break
             case 'create-transaction':
-                this.txnSvc.createTransaction(transactionCreationEventSchema.parse(message.payload))
+                await this.txnSvc.createTransaction(transactionCreationEventSchema.parse(message.payload))
                 break
             case 'update-transaction':
-                this.txnSvc.patchTransaction(transactionPatchEventSchema.parse(message.payload))
+                await this.txnSvc.patchTransaction(transactionPatchEventSchema.parse(message.payload))
                 break
             case 'delete-transaction':
-                this.txnSvc.deleteTransaction(transactionDeletionEventSchema.parse(message.payload))
+                await this.txnSvc.deleteTransaction(transactionDeletionEventSchema.parse(message.payload))
                 break
             case 'create-vendor':
-                this.vndrSvc.createVendor(vendorCreationEventSchema.parse(message.payload))
+                await this.vndrSvc.createVendor(vendorCreationEventSchema.parse(message.payload))
                 break
             case 'update-vendor':
-                this.vndrSvc.patchVendor(vendorPatchEventSchema.parse(message.payload))
+                await this.vndrSvc.patchVendor(vendorPatchEventSchema.parse(message.payload))
                 break
             case 'delete-vendor':
-                this.vndrSvc.deleteVendor(vendorDeletionEventSchema.parse(message.payload))
+                await this.vndrSvc.deleteVendor(vendorDeletionEventSchema.parse(message.payload))
                 break
             case 'create-statement':
-                this.stmtSvc.createStatement(statementCreationEventSchema.parse(message.payload))
+                await this.stmtSvc.createStatement(statementCreationEventSchema.parse(message.payload))
                 break
             case 'update-statement':
-                this.stmtSvc.patchStatement(statementPatchEventSchema.parse(message.payload))
+                await this.stmtSvc.patchStatement(statementPatchEventSchema.parse(message.payload))
                 break
             case 'delete-statement':
-                this.stmtSvc.deleteStatement(statementDeletionEventSchema.parse(message.payload))
+                await this.stmtSvc.deleteStatement(statementDeletionEventSchema.parse(message.payload))
                 break
             default:
                 console.warn('[WS] Unknown action:', message.action, message.payload)
