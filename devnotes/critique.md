@@ -5,8 +5,8 @@
 ### ~~1. `Transaxtion` table typo~~ ✓ Fixed
 Renamed to `Transaction` across all SQL strings and the DDL.
 
-### 2. Empty catch in `isAccountInUse`
-`shared/src/database/accounts/AccountTxnRepo.ts:92-100` catches all errors with a `// TODO` comment and returns `true`, meaning any DB error silently prevents account deletion. The error should be re-thrown (or at minimum logged) so the caller knows something went wrong rather than thinking the account is legitimately in use.
+### ~~2. Empty catch in `isAccountInUse`~~ ✓ Fixed
+Removed the try/catch entirely in `AccountTxnRepo`; errors now propagate naturally from `Promise.all`.
 
 ### ~~3. Leap year logic hard-coded through 2048~~ ✓ Fixed
 Replaced hardcoded cases with the standard formula in `Period.ts`.

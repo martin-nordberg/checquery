@@ -89,15 +89,8 @@ export class AccountTxnRepo implements IAccountSvc {
             z.object({count: z.number()}).readonly()
         )
 
-        try {
-            const [result1, result2] = await Promise.all([query1, query2]);
-
-            return (result1?.count ?? 0) > 0 || (result2?.count ?? 0) > 0
-        } catch (error) {
-            // TODO
-        }
-
-        return true
+        const [result1, result2] = await Promise.all([query1, query2])
+        return (result1?.count ?? 0) > 0 || (result2?.count ?? 0) > 0
     }
 
     async patchAccount(accountPatch: AccountPatchEvent): Promise<AccountPatchEvent | null> {
