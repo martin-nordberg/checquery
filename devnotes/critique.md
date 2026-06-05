@@ -48,8 +48,8 @@ The intent of the merge is to prevent the local clock from going backward after 
 
 ## P3 — Code Quality
 
-### 12. `zod.parse()` receives an invalid options argument
-`server/src/events/ChecqueryEventLoader.ts:58,61,64` — Zod's `.parse()` takes one argument. `transactionCreationEventSchema.parse(directive.payload, {reportInput: true})` silently ignores the second argument. Remove the redundant option.
+### ~~12. `zod.parse()` receives an invalid options argument~~ ✓ Fixed
+Removed spurious `{reportInput: true}` second argument from three `.parse()` calls in `ChecqueryEventLoader.ts`.
 
 ### 13. Logger services are dead code
 `shared/src/logging/` contains `AccountSvcLogger`, `TransactionSvcLogger`, etc. They implement the service interfaces but every read method returns `null`. They are never instantiated or referenced anywhere in the server or client. Either implement them properly (structured logging wrapper) or delete them.

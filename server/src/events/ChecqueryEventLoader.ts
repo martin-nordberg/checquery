@@ -55,13 +55,13 @@ export const loadChecqueryLog = async (
 
                 // Transaction actions
                 case 'create-transaction':
-                    await txnSvc.createTransaction(transactionCreationEventSchema.parse(directive.payload, {reportInput: true}))
+                    await txnSvc.createTransaction(transactionCreationEventSchema.parse(directive.payload))
                     break
                 case 'update-transaction':
-                    await txnSvc.patchTransaction(transactionPatchEventSchema.parse(directive.payload, {reportInput: true}))
+                    await txnSvc.patchTransaction(transactionPatchEventSchema.parse(directive.payload))
                     break
                 case 'delete-transaction':
-                    await txnSvc.deleteTransaction({id: txnIdSchema.parse(directive.payload.id, {reportInput: true})})
+                    await txnSvc.deleteTransaction({id: txnIdSchema.parse(directive.payload.id)})
                     break
 
                 // Statement actions
