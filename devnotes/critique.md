@@ -51,8 +51,8 @@ The intent of the merge is to prevent the local clock from going backward after 
 ### ~~12. `zod.parse()` receives an invalid options argument~~ ✓ Fixed
 Removed spurious `{reportInput: true}` second argument from three `.parse()` calls in `ChecqueryEventLoader.ts`.
 
-### 13. Logger services are dead code
-`shared/src/logging/` contains `AccountSvcLogger`, `TransactionSvcLogger`, etc. They implement the service interfaces but every read method returns `null`. They are never instantiated or referenced anywhere in the server or client. Either implement them properly (structured logging wrapper) or delete them.
+### ~~13. Logger services are dead code~~ ✓ Fixed
+Deleted `shared/src/logging/` entirely — all seven logger files were unreferenced.
 
 ### 14. `fromCents` comma-insertion relies on mutating intermediate string length
 `shared/src/domain/core/CurrencyAmt.ts:37-45` — the three `if` blocks insert commas by splicing at positions computed from the string's current length. Each pass modifies the string, so subsequent passes compute offsets on the already-modified string. This happens to work, but is fragile and non-obvious. A reviewer has to trace through examples to trust it. Replace with a clean right-to-left approach or use `Intl.NumberFormat` for formatting and a simple division for the math.
