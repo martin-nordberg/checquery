@@ -67,18 +67,11 @@ export const getEndDate = (period: Period): IsoDate => {
     switch (monthOrQtr) {
         case "01":
             return year + "-01-31"
-        case "02":
-            switch (year) {
-                case "2028":
-                case "2032":
-                case "2036":
-                case "2040":
-                case "2044":
-                case "2048":
-                    return year + "-02-29"
-                default:
-                    return year + "-02-28"
-            }
+        case "02": {
+            const y = parseInt(year)
+            const isLeap = y % 400 === 0 || (y % 4 === 0 && y % 100 !== 0)
+            return year + (isLeap ? "-02-29" : "-02-28")
+        }
         case "03":
         case "Q1":
             return year + "-03-31"

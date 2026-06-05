@@ -8,8 +8,8 @@ Renamed to `Transaction` across all SQL strings and the DDL.
 ### 2. Empty catch in `isAccountInUse`
 `shared/src/database/accounts/AccountTxnRepo.ts:92-100` catches all errors with a `// TODO` comment and returns `true`, meaning any DB error silently prevents account deletion. The error should be re-thrown (or at minimum logged) so the caller knows something went wrong rather than thinking the account is legitimately in use.
 
-### 3. Leap year logic hard-coded through 2048
-`shared/src/domain/core/Period.ts:72-78` lists specific leap years as `case` labels. After 2048 the code returns Feb 28 even for leap years. Replace with the standard formula: `parseInt(year) % 400 === 0 || (parseInt(year) % 4 === 0 && parseInt(year) % 100 !== 0)`.
+### ~~3. Leap year logic hard-coded through 2048~~ ✓ Fixed
+Replaced hardcoded cases with the standard formula in `Period.ts`.
 
 ### 4. `isoDateToday` uses UTC, not local time
 `shared/src/domain/core/IsoDate.ts:17` — `new Date().toISOString()` is always UTC. For users in UTC-N timezones, after midnight UTC this returns tomorrow's local date. The TODO is present but unresolved. Fix: `new Date().toLocaleDateString('sv')` (Swedish locale uses ISO format in local time).
