@@ -54,8 +54,8 @@ Removed spurious `{reportInput: true}` second argument from three `.parse()` cal
 ### ~~13. Logger services are dead code~~ ✓ Fixed
 Deleted `shared/src/logging/` entirely — all seven logger files were unreferenced.
 
-### 14. `fromCents` comma-insertion relies on mutating intermediate string length
-`shared/src/domain/core/CurrencyAmt.ts:37-45` — the three `if` blocks insert commas by splicing at positions computed from the string's current length. Each pass modifies the string, so subsequent passes compute offsets on the already-modified string. This happens to work, but is fragile and non-obvious. A reviewer has to trace through examples to trust it. Replace with a clean right-to-left approach or use `Intl.NumberFormat` for formatting and a simple division for the math.
+### ~~14. `fromCents` comma-insertion relies on mutating intermediate string length~~ ✓ Fixed
+Replaced with `Intl.NumberFormat('en-US', {style: 'currency', currency: 'USD'})` in `CurrencyAmt.ts`; uses `Math.abs` to normalise `-0`.
 
 ### 15. No centralized logging strategy
 `console.log`, `console.info`, `console.error`, and `console.warn` are scattered throughout client and server with no consistent format. In a server process, structured logging (JSON to stdout) makes filtering and monitoring tractable. Even a thin wrapper (`logger.info(...)` → `console.error(JSON.stringify({level: 'info', ...}))`) is better than the current mix.

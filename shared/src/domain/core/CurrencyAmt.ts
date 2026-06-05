@@ -22,26 +22,11 @@ export const toCents = (currencyAmt: CurrencyAmt): number => {
     return parseInt(centsStr, 10)
 }
 
+const dollarFormatter = new Intl.NumberFormat('en-US', {style: 'currency', currency: 'USD'})
+
 export const fromCents = (cents: number): CurrencyAmt => {
     if (cents < 0) {
-        return "(" + fromCents(-cents) + ")"
+        return `(${dollarFormatter.format(-cents / 100)})` as CurrencyAmt
     }
-    let centsStr = cents.toString(10)
-
-    if (cents < 10) {
-        return "$0.0" + centsStr
-    } else if (cents < 100) {
-        return "$0." + centsStr
-    }
-
-    if (cents > 99999) {
-        centsStr = centsStr.substring(0, centsStr.length - 5) + ',' + centsStr.substring(centsStr.length - 5)
-    }
-    if (cents > 99999999) {
-        centsStr = centsStr.substring(0, centsStr.length - 9) + ',' + centsStr.substring(centsStr.length - 9)
-    }
-    if (cents > 99999999999) {
-        centsStr = centsStr.substring(0, centsStr.length - 13) + ',' + centsStr.substring(centsStr.length - 13)
-    }
-    return "$" + centsStr.substring(0, centsStr.length - 2) + '.' + centsStr.substring(centsStr.length - 2)
+    return dollarFormatter.format(Math.abs(cents) / 100) as CurrencyAmt
 }
