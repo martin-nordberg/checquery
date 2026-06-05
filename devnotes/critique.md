@@ -11,8 +11,8 @@ Renamed to `Transaction` across all SQL strings and the DDL.
 ### ~~3. Leap year logic hard-coded through 2048~~ ✓ Fixed
 Replaced hardcoded cases with the standard formula in `Period.ts`.
 
-### 4. `isoDateToday` uses UTC, not local time
-`shared/src/domain/core/IsoDate.ts:17` — `new Date().toISOString()` is always UTC. For users in UTC-N timezones, after midnight UTC this returns tomorrow's local date. The TODO is present but unresolved. Fix: `new Date().toLocaleDateString('sv')` (Swedish locale uses ISO format in local time).
+### ~~4. `isoDateToday` uses UTC, not local time~~ ✓ Fixed
+Replaced `toISOString().split('T')[0]` with `toLocaleDateString('sv')` in `IsoDate.ts`.
 
 ### 5. WsClient `dispatch()` fire-and-forget on async methods
 `client/src/ws/WsClient.ts:44-82` calls `this.acctSvc.createAccount(...)`, `this.txnSvc.createTransaction(...)`, etc. without `await`. These are all `async` — if they throw, the rejection is silently swallowed. Add `await` and wrap the switch body in a try-catch that logs failures.
