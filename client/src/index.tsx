@@ -92,7 +92,7 @@ fetch(`http://${serverHost}/replay`)
     .catch((e) => console.error('[Replay] Failed to load initial data', e))
 
 render(() => (
-    <ServicesContext.Provider value={{acctSvc, vndrSvc, txnSvc, stmtSvc, regSvc, expSvc, incSvc, bsSvc, isSvc}}>
+    <ServicesContext.Provider value={{db, acctSvc, vndrSvc, txnSvc, stmtSvc, regSvc, expSvc, incSvc, bsSvc, isSvc}}>
         {isReady() ? (
             <>
                 {!isConnected() && (

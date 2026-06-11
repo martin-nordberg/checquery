@@ -1,4 +1,4 @@
-import {createEffect, createResource, createSignal, For, on, Show} from "solid-js";
+import {createEffect, createSignal, For, Show} from "solid-js";
 import {useServices} from "../../services/ServicesContext.ts";
 import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
 import type {TxnId} from "$shared/domain/transactions/TxnId.ts";
@@ -6,22 +6,29 @@ import type {IsoDate} from "$shared/domain/core/IsoDate.ts";
 import type {ExpenseLogLineItem} from "$shared/domain/expenselog/ExpenseLog.ts";
 import EditableExpenseLogRow, {type ExpenseLogField} from "./EditableExpenseLogRow.tsx";
 import NewExpenseLogTransactionRow from "./NewExpenseLogTransactionRow.tsx";
+import {createLiveQuery} from "../../queries/createLiveQuery.ts";
 
 type ExpenseLogProps = {
     accountId: AcctId,
     searchText?: string | undefined,
     searchStartIndex?: number | undefined,
     onSearchComplete?: ((found: boolean, foundIndex: number) => void) | undefined,
-    refetchTrigger?: number | undefined,
     onExpenseLogLoaded?: ((lineItems: ExpenseLogLineItem[]) => void) | undefined,
 }
 
 const ExpenseLog = (props: ExpenseLogProps) => {
-    const {expSvc} = useServices()
+    const {db, expSvc} = useServices()
 
     let tableContainerRef: HTMLDivElement | undefined
 
-    const [expenseLog, {refetch}] = createResource(() => props.accountId, (id) => expSvc.findExpenseLog(id))
+    const expenseLog = createLiveQuery(db, () => ({
+        sql: `SELECT Entry.txnId FROM Entry
+              JOIN Transaction ON Entry.txnId = Transaction.id
+              LEFT JOIN Statement ON Entry.stmtId = Statement.id
+              WHERE Entry.accountId = $1 AND Transaction.isDeleted = false`,
+        params: [props.accountId],
+        fetch: () => expSvc.findExpenseLog(props.accountId),
+    }))
     const [editingTxnId, setEditingTxnId] = createSignal<TxnId | null>(null)
     const [focusField, setFocusField] = createSignal<ExpenseLogField | undefined>(undefined)
     const [focusEntryIndex, setFocusEntryIndex] = createSignal<number | undefined>(undefined)
@@ -37,13 +44,6 @@ const ExpenseLog = (props: ExpenseLogProps) => {
             props.onExpenseLogLoaded?.(log.lineItems)
         }
     })
-
-    // Refetch when refetchTrigger changes
-    createEffect(on(
-        () => props.refetchTrigger,
-        () => refetch(),
-        {defer: true}
-    ))
 
     // Handle search when searchText prop changes
     createEffect(() => {
@@ -140,7 +140,6 @@ const ExpenseLog = (props: ExpenseLogProps) => {
         setEditingTxnId(null)
         setIsAddingNew(false)
         setIsDirty(false)
-        refetch()
     }
 
     const handleNewSaved = (usedDate: IsoDate) => {
@@ -151,7 +150,6 @@ const ExpenseLog = (props: ExpenseLogProps) => {
     const handleDeleted = () => {
         setEditingTxnId(null)
         setIsDirty(false)
-        refetch()
     }
 
     const handleAddNew = () => {
@@ -174,12 +172,6 @@ const ExpenseLog = (props: ExpenseLogProps) => {
 
     return (
         <div class="flex-1 min-h-0 flex flex-col">
-            <Show when={expenseLog.loading}>
-                <p>Loading...</p>
-            </Show>
-            <Show when={expenseLog.error}>
-                <p class="text-red-600">Error loading expense log.</p>
-            </Show>
             <Show when={expenseLog()}>
                 <div ref={tableContainerRef} class="bg-white shadow-lg rounded-lg overflow-auto flex-1">
                     <table class="min-w-full divide-y divide-gray-200">

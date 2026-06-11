@@ -1,4 +1,4 @@
-import {createEffect, createResource, createSignal, For, on, Show} from "solid-js";
+import {createEffect, createSignal, For, Show} from "solid-js";
 import {useServices} from "../../services/ServicesContext.ts";
 import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
 import type {TxnId} from "$shared/domain/transactions/TxnId.ts";
@@ -6,22 +6,29 @@ import type {IsoDate} from "$shared/domain/core/IsoDate.ts";
 import type {IncomeLogLineItem} from "$shared/domain/incomelog/IncomeLog.ts";
 import EditableIncomeLogRow, {type IncomeLogField} from "./EditableIncomeLogRow.tsx";
 import NewIncomeLogTransactionRow from "./NewIncomeLogTransactionRow.tsx";
+import {createLiveQuery} from "../../queries/createLiveQuery.ts";
 
 type IncomeLogProps = {
     accountId: AcctId,
     searchText?: string | undefined,
     searchStartIndex?: number | undefined,
     onSearchComplete?: ((found: boolean, foundIndex: number) => void) | undefined,
-    refetchTrigger?: number | undefined,
     onIncomeLogLoaded?: ((lineItems: IncomeLogLineItem[]) => void) | undefined,
 }
 
 const IncomeLog = (props: IncomeLogProps) => {
-    const {incSvc} = useServices()
+    const {db, incSvc} = useServices()
 
     let tableContainerRef: HTMLDivElement | undefined
 
-    const [incomeLog, {refetch}] = createResource(() => props.accountId, (id) => incSvc.findIncomeLog(id))
+    const incomeLog = createLiveQuery(db, () => ({
+        sql: `SELECT Entry.txnId FROM Entry
+              JOIN Transaction ON Entry.txnId = Transaction.id
+              LEFT JOIN Statement ON Entry.stmtId = Statement.id
+              WHERE Entry.accountId = $1 AND Transaction.isDeleted = false`,
+        params: [props.accountId],
+        fetch: () => incSvc.findIncomeLog(props.accountId),
+    }))
     const [editingTxnId, setEditingTxnId] = createSignal<TxnId | null>(null)
     const [focusField, setFocusField] = createSignal<IncomeLogField | undefined>(undefined)
     const [focusEntryIndex, setFocusEntryIndex] = createSignal<number | undefined>(undefined)
@@ -37,13 +44,6 @@ const IncomeLog = (props: IncomeLogProps) => {
             props.onIncomeLogLoaded?.(log.lineItems)
         }
     })
-
-    // Refetch when refetchTrigger changes
-    createEffect(on(
-        () => props.refetchTrigger,
-        () => refetch(),
-        {defer: true}
-    ))
 
     // Handle search when searchText prop changes
     createEffect(() => {
@@ -140,7 +140,6 @@ const IncomeLog = (props: IncomeLogProps) => {
         setEditingTxnId(null)
         setIsAddingNew(false)
         setIsDirty(false)
-        refetch()
     }
 
     const handleNewSaved = (usedDate: IsoDate) => {
@@ -151,7 +150,6 @@ const IncomeLog = (props: IncomeLogProps) => {
     const handleDeleted = () => {
         setEditingTxnId(null)
         setIsDirty(false)
-        refetch()
     }
 
     const handleAddNew = () => {
@@ -174,12 +172,6 @@ const IncomeLog = (props: IncomeLogProps) => {
 
     return (
         <div class="flex-1 min-h-0 flex flex-col">
-            <Show when={incomeLog.loading}>
-                <p>Loading...</p>
-            </Show>
-            <Show when={incomeLog.error}>
-                <p class="text-red-600">Error loading income log.</p>
-            </Show>
             <Show when={incomeLog()}>
                 <div ref={tableContainerRef} class="bg-white shadow-lg rounded-lg overflow-auto flex-1">
                     <table class="min-w-full divide-y divide-gray-200">

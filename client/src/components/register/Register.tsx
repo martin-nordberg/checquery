@@ -1,4 +1,4 @@
-import {createEffect, createResource, createSignal, For, on, Show} from "solid-js";
+import {createEffect, createSignal, For, Show} from "solid-js";
 import {useServices} from "../../services/ServicesContext.ts";
 import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
 import type {TxnId} from "$shared/domain/transactions/TxnId.ts";
@@ -7,6 +7,7 @@ import type {RegisterLineItem} from "$shared/domain/register/Register.ts";
 import type {AcctTypeStr} from "$shared/domain/accounts/AcctType.ts";
 import EditableRegisterRow, {type RegisterField} from "./EditableRegisterRow.tsx";
 import NewTransactionRow from "./NewTransactionRow.tsx";
+import {createLiveQuery} from "../../queries/createLiveQuery.ts";
 
 type RegisterProps = {
     accountId: AcctId,
@@ -16,16 +17,22 @@ type RegisterProps = {
     isReconciling?: boolean | undefined,
     checkedTxnIds?: Set<TxnId> | undefined,
     onToggleReconcile?: ((txnId: TxnId) => void) | undefined,
-    refetchTrigger?: number | undefined,
     onRegisterLoaded?: ((lineItems: RegisterLineItem[], accountType: AcctTypeStr) => void) | undefined,
 }
 
 const Register = (props: RegisterProps) => {
-    const {regSvc} = useServices()
+    const {db, regSvc} = useServices()
 
     let tableContainerRef: HTMLDivElement | undefined
 
-    const [register, {refetch}] = createResource(() => props.accountId, (id) => regSvc.findRegister(id))
+    const register = createLiveQuery(db, () => ({
+        sql: `SELECT Entry.txnId FROM Entry
+              JOIN Transaction ON Entry.txnId = Transaction.id
+              LEFT JOIN Statement ON Entry.stmtId = Statement.id
+              WHERE Entry.accountId = $1 AND Transaction.isDeleted = false`,
+        params: [props.accountId],
+        fetch: () => regSvc.findRegister(props.accountId),
+    }))
     const [editingTxnId, setEditingTxnId] = createSignal<TxnId | null>(null)
     const [focusField, setFocusField] = createSignal<RegisterField | undefined>(undefined)
     const [focusEntryIndex, setFocusEntryIndex] = createSignal<number | undefined>(undefined)
@@ -41,13 +48,6 @@ const Register = (props: RegisterProps) => {
             props.onRegisterLoaded?.(reg.lineItems, reg.accountType)
         }
     })
-
-    // Refetch register when refetchTrigger changes (e.g. after statement save)
-    createEffect(on(
-        () => props.refetchTrigger,
-        () => refetch(),
-        {defer: true}
-    ))
 
     // Handle search when searchText prop changes
     createEffect(() => {
@@ -154,7 +154,6 @@ const Register = (props: RegisterProps) => {
         setEditingTxnId(null)
         setIsAddingNew(false)
         setIsDirty(false)
-        refetch()
     }
 
     const handleNewSaved = (usedDate: IsoDate) => {
@@ -165,7 +164,6 @@ const Register = (props: RegisterProps) => {
     const handleDeleted = () => {
         setEditingTxnId(null)
         setIsDirty(false)
-        refetch()
     }
 
     const handleAddNew = () => {
@@ -188,12 +186,6 @@ const Register = (props: RegisterProps) => {
 
     return (
         <div class="flex-1 min-h-0 flex flex-col">
-            <Show when={register.loading}>
-                <p>Loading...</p>
-            </Show>
-            <Show when={register.error}>
-                <p class="text-red-600">Error loading register.</p>
-            </Show>
             <Show when={register()}>
                 <div ref={tableContainerRef} class="bg-white shadow-lg rounded-lg overflow-auto flex-1">
                     <table class="min-w-full divide-y divide-gray-200">

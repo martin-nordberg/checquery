@@ -8,8 +8,10 @@ import type {IExpenseLogQrySvc} from '$shared/services/expenselog/IExpenseLogQry
 import type {IIncomeLogQrySvc} from '$shared/services/incomelog/IIncomeLogQrySvc.ts'
 import type {IBalanceSheetQrySvc} from '$shared/services/balancesheet/IBalanceSheetQrySvc.ts'
 import type {IIncomeStatementQrySvc} from '$shared/services/incomestatement/IIncomeStatementQrySvc.ts'
+import type {PgLiteDb} from '$shared/database/PgLiteDb.ts'
 
 export type Services = {
+    db: PgLiteDb
     acctSvc: IAccountSvc
     vndrSvc: IVendorSvc
     txnSvc: ITransactionSvc

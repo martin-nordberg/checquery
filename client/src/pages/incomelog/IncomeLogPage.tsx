@@ -31,7 +31,6 @@ const IncomeLogPage = () => {
     })
 
     const {options: stmtOptions, iconPaths: stmtIconPaths} = useStmtNavOptions("Income Log")
-    const [refetchTrigger] = createSignal(0)
     const [showNotFound, setShowNotFound] = createSignal(false)
     const [searchText, setSearchText] = createSignal<string | undefined>(undefined)
     const [searchStartIndex, setSearchStartIndex] = createSignal(0)
@@ -91,7 +90,6 @@ const IncomeLogPage = () => {
                     searchText={searchText()}
                     searchStartIndex={searchStartIndex()}
                     onSearchComplete={handleSearchComplete}
-                    refetchTrigger={refetchTrigger()}
                 />
             </main>
         </div>

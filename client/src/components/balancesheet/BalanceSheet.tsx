@@ -1,8 +1,9 @@
-import {createResource, For, Show} from "solid-js";
+import {For, Show} from "solid-js";
 import {A} from "@solidjs/router";
 import {useServices} from "../../services/ServicesContext.ts";
 import type {IsoDate} from "$shared/domain/core/IsoDate.ts";
 import type {BalSheetLineItem} from "$shared/domain/balancesheet/BalanceSheet.ts";
+import {createLiveQuery} from "../../queries/createLiveQuery.ts";
 
 type BalanceSheetProps = {
     endingDate: string,
@@ -20,22 +21,26 @@ const AccountName = (props: { lineItem: BalSheetLineItem }) => {
 }
 
 const BalanceSheet = (props: BalanceSheetProps) => {
-    const {bsSvc} = useServices()
+    const {db, bsSvc} = useServices()
 
-    const fetchBalanceSheet = async (endingDate: IsoDate) => {
-        if (!endingDate) {
-            return null
-        }
-        return bsSvc.findBalanceSheet(endingDate)
-    }
-
-    const [balanceSheet] = createResource(() => props.endingDate, fetchBalanceSheet)
+    const balanceSheet = createLiveQuery(db, () => ({
+        sql: `SELECT Account.id FROM Account
+              LEFT JOIN Entry ON Entry.accountId = Account.id
+              LEFT JOIN Transaction ON Entry.txnId = Transaction.id
+              WHERE Account.isDeleted = false
+              LIMIT 1`,
+        params: [],
+        fetch: () => {
+            const endingDate = props.endingDate as IsoDate
+            if (!endingDate) {
+                return Promise.resolve(null)
+            }
+            return bsSvc.findBalanceSheet(endingDate)
+        },
+    }))
 
     return (
         <>
-            <Show when={!balanceSheet()}>
-                <p>Loading ...</p>
-            </Show>
             <Show when={balanceSheet()}>
                 <div class="p-4 md:p-8 max-w-7xl mx-auto">
                     <div class="flex gap-4">

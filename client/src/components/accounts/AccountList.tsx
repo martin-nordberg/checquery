@@ -1,8 +1,9 @@
-import {createEffect, createResource, createSignal, For, Show} from "solid-js";
+import {createEffect, createSignal, For, Show} from "solid-js";
 import {useServices} from "../../services/ServicesContext.ts";
 import type {AcctId} from "$shared/domain/accounts/AcctId.ts";
 import EditableAccountRow, {type AccountField} from "./EditableAccountRow.tsx";
 import NewAccountRow from "./NewAccountRow.tsx";
+import {createLiveQuery} from "../../queries/createLiveQuery.ts";
 
 type AccountListProps = {
     searchText?: string | undefined,
@@ -11,11 +12,15 @@ type AccountListProps = {
 }
 
 const AccountList = (props: AccountListProps) => {
-    const {acctSvc} = useServices()
+    const {db, acctSvc} = useServices()
 
     let tableContainerRef: HTMLDivElement | undefined
 
-    const [accounts, {refetch}] = createResource(() => acctSvc.findAccountsAll())
+    const accounts = createLiveQuery(db, () => ({
+        sql: `SELECT id FROM Account WHERE isDeleted = false ORDER BY name`,
+        params: [],
+        fetch: () => acctSvc.findAccountsAll(),
+    }))
     const [editingAccountId, setEditingAccountId] = createSignal<AcctId | null>(null)
     const [focusField, setFocusField] = createSignal<AccountField | undefined>(undefined)
     const [isAddingNew, setIsAddingNew] = createSignal(false)
@@ -91,13 +96,11 @@ const AccountList = (props: AccountListProps) => {
         setEditingAccountId(null)
         setIsAddingNew(false)
         setIsDirty(false)
-        refetch()
     }
 
     const handleDeleted = () => {
         setEditingAccountId(null)
         setIsDirty(false)
-        refetch()
     }
 
     const handleAddNew = () => {
@@ -120,12 +123,6 @@ const AccountList = (props: AccountListProps) => {
 
     return (
         <div class="flex-1 min-h-0 flex flex-col">
-            <Show when={accounts.loading}>
-                <p>Loading...</p>
-            </Show>
-            <Show when={accounts.error}>
-                <p class="text-red-600">Error loading accounts.</p>
-            </Show>
             <Show when={accounts()}>
                 <div ref={tableContainerRef} class="bg-white shadow-lg rounded-lg overflow-auto flex-1">
                     <table class="min-w-full divide-y divide-gray-200">

@@ -1,5 +1,5 @@
-import {PGlite} from "@electric-sql/pglite";
-import {live, type LiveNamespace} from "@electric-sql/pglite/live";
+import {PGlite, type Results} from "@electric-sql/pglite";
+import {live, type LiveNamespace, type LiveQuery} from "@electric-sql/pglite/live";
 import {PgLiteTxn} from "$shared/database/PgLiteTxn";
 import {advanceHLClock, getHLClock, type HLClock, mergeHLClock} from "$shared/domain/core/HybridLogicalClock";
 
@@ -35,6 +35,14 @@ export class PgLiteDb {
         }
 
         return this.transaction(callback)
+    }
+
+    async liveQuery<T extends object>(
+        sql: string,
+        params: unknown[],
+        callback: (results: Results<T>) => void
+    ): Promise<LiveQuery<T>> {
+        return this.#db.live.query<T>(sql, params, callback)
     }
 
 }

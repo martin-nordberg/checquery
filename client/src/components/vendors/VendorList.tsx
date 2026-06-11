@@ -1,9 +1,10 @@
-import {createEffect, createMemo, createResource, createSignal, For, Show} from "solid-js";
+import {createEffect, createMemo, createSignal, For, Show} from "solid-js";
 import {useServices} from "../../services/ServicesContext.ts";
 import type {VndrId} from "$shared/domain/vendors/VndrId.ts";
 import EditableVendorRow, {type VendorField} from "./EditableVendorRow.tsx";
 import NewVendorRow from "./NewVendorRow.tsx";
 import type {StatusFilter} from "../../pages/vendors/VendorsPage.tsx";
+import {createLiveQuery} from "../../queries/createLiveQuery.ts";
 
 type VendorListProps = {
     statusFilter: StatusFilter,
@@ -13,11 +14,15 @@ type VendorListProps = {
 }
 
 const VendorList = (props: VendorListProps) => {
-    const {vndrSvc} = useServices()
+    const {db, vndrSvc} = useServices()
 
     let tableContainerRef: HTMLDivElement | undefined
 
-    const [allVendors, {refetch}] = createResource(() => vndrSvc.findVendorsAll())
+    const allVendors = createLiveQuery(db, () => ({
+        sql: `SELECT id FROM Vendor WHERE isDeleted = false ORDER BY name`,
+        params: [],
+        fetch: () => vndrSvc.findVendorsAll(),
+    }))
 
     const vendors = createMemo(() => {
         const all = allVendors()
@@ -109,13 +114,11 @@ const VendorList = (props: VendorListProps) => {
         setEditingVendorId(null)
         setIsAddingNew(false)
         setIsDirty(false)
-        refetch()
     }
 
     const handleDeleted = () => {
         setEditingVendorId(null)
         setIsDirty(false)
-        refetch()
     }
 
     const handleAddNew = () => {
@@ -138,12 +141,6 @@ const VendorList = (props: VendorListProps) => {
 
     return (
         <div class="flex-1 min-h-0 flex flex-col">
-            <Show when={allVendors.loading}>
-                <p>Loading...</p>
-            </Show>
-            <Show when={allVendors.error}>
-                <p class="text-red-600">Error loading vendors.</p>
-            </Show>
             <Show when={vendors()}>
                 <div ref={tableContainerRef} class="bg-white shadow-lg rounded-lg overflow-auto flex-1">
                     <table class="min-w-full divide-y divide-gray-200">

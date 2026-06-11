@@ -42,7 +42,6 @@ const RegisterPage = () => {
     const [showCalculator, setShowCalculator] = createSignal(false)
     const [showReconcile, setShowReconcile] = createSignal(false)
     const [checkedTxnIds, setCheckedTxnIds] = createSignal<Set<TxnId>>(new Set<TxnId>())
-    const [refetchTrigger, setRefetchTrigger] = createSignal(0)
     const [lineItems, setLineItems] = createSignal<RegisterLineItem[]>([])
     const [accountType, setAccountType] = createSignal<AcctTypeStr>('ASSET')
     const [showNotFound, setShowNotFound] = createSignal(false)
@@ -89,12 +88,10 @@ const RegisterPage = () => {
 
     const handleReconcileSaved = () => {
         hideReconcilePanel()
-        setRefetchTrigger(n => n + 1)
     }
 
     const handleReconcileDeleted = () => {
         hideReconcilePanel()
-        setRefetchTrigger(n => n + 1)
     }
 
     const handleRegisterLoaded = (items: RegisterLineItem[], acctType: AcctTypeStr) => {
@@ -215,7 +212,6 @@ const RegisterPage = () => {
                     isReconciling={showReconcile()}
                     checkedTxnIds={checkedTxnIds()}
                     onToggleReconcile={handleToggleTxn}
-                    refetchTrigger={refetchTrigger()}
                     onRegisterLoaded={handleRegisterLoaded}
                 />
             </main>

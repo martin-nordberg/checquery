@@ -1,8 +1,9 @@
-import {createResource, For, Show} from "solid-js";
+import {For, Show} from "solid-js";
 import {A} from "@solidjs/router";
 import {useServices} from "../../services/ServicesContext.ts";
 import type {Period} from "$shared/domain/core/Period.ts";
 import type {IncStmtLineItem} from "$shared/domain/incomestatement/IncomeStatement.ts";
+import {createLiveQuery} from "../../queries/createLiveQuery.ts";
 
 type IncomeStatementProps = {
     period: string,
@@ -17,22 +18,26 @@ const AccountName = (props: {lineItem: IncStmtLineItem, logPath: string}) => (
 )
 
 const IncomeStatement = (props: IncomeStatementProps) => {
-    const {isSvc} = useServices()
+    const {db, isSvc} = useServices()
 
-    const fetchIncomeStatement = async (period: Period) => {
-        if (!period) {
-            return null
-        }
-        return isSvc.findIncomeStatement(period)
-    }
-
-    const [incomeStatement] = createResource(() => props.period, fetchIncomeStatement)
+    const incomeStatement = createLiveQuery(db, () => ({
+        sql: `SELECT Account.id FROM Account
+              LEFT JOIN Entry ON Entry.accountId = Account.id
+              LEFT JOIN Transaction ON Entry.txnId = Transaction.id
+              WHERE Account.isDeleted = false
+              LIMIT 1`,
+        params: [],
+        fetch: () => {
+            const period = props.period as Period
+            if (!period) {
+                return Promise.resolve(null)
+            }
+            return isSvc.findIncomeStatement(period)
+        },
+    }))
 
     return (
         <>
-            <Show when={!incomeStatement()}>
-                <p>Loading ...</p>
-            </Show>
             <Show when={incomeStatement()}>
                 <div class="p-4 md:p-8 max-w-7xl mx-auto">
                     <div class="flex gap-4">
