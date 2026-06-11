@@ -12,9 +12,17 @@ type WsMessage = {
     payload: Record<string, unknown>
 }
 
+const INITIAL_RECONNECT_DELAY = 1000
+const MAX_RECONNECT_DELAY = 30000
+
 export class WsClient {
 
     private ws: WebSocket | null = null
+    private wsUrl: string = ''
+    private replayUrl: string = ''
+    private onStatusChange: ((connected: boolean) => void) | null = null
+    private reconnectDelay = INITIAL_RECONNECT_DELAY
+    private reconnecting = false
 
     constructor(
         private acctSvc: IAccountSvc,
@@ -24,10 +32,26 @@ export class WsClient {
     ) {
     }
 
-    connect(url: string): void {
-        this.ws = new WebSocket(url)
-        this.ws.onopen = () => console.log('[WS] Connected')
-        this.ws.onclose = () => console.log('[WS] Disconnected')
+    connect(wsUrl: string, onStatusChange?: (connected: boolean) => void): void {
+        this.wsUrl = wsUrl
+        this.replayUrl = wsUrl.replace(/^ws/, 'http').replace(/\/ws$/, '/replay')
+        if (onStatusChange) {
+            this.onStatusChange = onStatusChange
+        }
+        this.ws = new WebSocket(wsUrl)
+        this.ws.onopen = () => {
+            console.log('[WS] Connected')
+            this.reconnectDelay = INITIAL_RECONNECT_DELAY
+            this.reconnecting = false
+            this.onStatusChange?.(true)
+        }
+        this.ws.onclose = () => {
+            console.log('[WS] Disconnected')
+            this.onStatusChange?.(false)
+            if (!this.reconnecting) {
+                this.scheduleReconnect()
+            }
+        }
         this.ws.onerror = (e) => console.error('[WS] Error', e)
         this.ws.onmessage = (event) => {
             try {
@@ -35,6 +59,27 @@ export class WsClient {
             } catch (e) {
                 console.error('[WS] Failed to parse message', event.data, e)
             }
+        }
+    }
+
+    private scheduleReconnect(): void {
+        this.reconnecting = true
+        console.log(`[WS] Reconnecting in ${this.reconnectDelay}ms`)
+        setTimeout(() => this.doReconnect(), this.reconnectDelay)
+        this.reconnectDelay = Math.min(this.reconnectDelay * 2, MAX_RECONNECT_DELAY)
+    }
+
+    private async doReconnect(): Promise<void> {
+        try {
+            const response = await fetch(this.replayUrl)
+            const directives: WsMessage[] = await response.json()
+            for (const directive of directives) {
+                await this.dispatchAsync(directive)
+            }
+            this.connect(this.wsUrl)
+        } catch (e) {
+            console.error('[WS] Reconnect failed, retrying', e)
+            this.scheduleReconnect()
         }
     }
 

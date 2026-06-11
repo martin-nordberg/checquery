@@ -85,6 +85,7 @@ const wsStmtSvc = new StatementTeeSvc(statementRepo, [statementRepo, statementWs
 const wsClient = new WsClient(wsAcctSvc, wsTransactionSvc, wsVndrSvc, wsStmtSvc)
 
 const [isReady, setIsReady] = createSignal(false)
+const [isConnected, setIsConnected] = createSignal(false)
 
 const serverHost = `${window.location.hostname}:3001`
 fetch(`http://${serverHost}/replay`)
@@ -95,7 +96,7 @@ fetch(`http://${serverHost}/replay`)
         }
     })
     .then(() => {
-        wsClient.connect(`ws://${serverHost}/ws`)
+        wsClient.connect(`ws://${serverHost}/ws`, setIsConnected)
         setIsReady(true)
     })
     .catch((e) => console.error('[Replay] Failed to load initial data', e))
@@ -103,19 +104,26 @@ fetch(`http://${serverHost}/replay`)
 render(() => (
     <ServicesContext.Provider value={{acctSvc, vndrSvc, txnSvc, stmtSvc, regSvc, expSvc, incSvc, bsSvc, isSvc}}>
         {isReady() ? (
-            <Router root={App}>
-                <Route path="/" component={HomePage}/>
-                <Route path="/balancesheet" component={() => <Navigate href={"./" + isoDateToday}/>}/>
-                <Route path="/balancesheet/:endingDate" component={BalanceSheetPage}/>
-                <Route path="/incomestatement" component={() => <Navigate href={"./2026-01/summary"}/>}/>
-                <Route path="/incomestatement/:period" component={() => <Navigate href={"./summary"}/>}/>
-                <Route path="/incomestatement/:period/:view" component={IncomeStatementPage}/>
-                <Route path="/register/:accountId" component={RegisterPage}/>
-                <Route path="/expenselog/:accountId" component={ExpenseLogPage}/>
-                <Route path="/incomelog/:accountId" component={IncomeLogPage}/>
-                <Route path="/vendors" component={VendorsPage}/>
-                <Route path="/accounts" component={AccountsPage}/>
-            </Router>
+            <>
+                {!isConnected() && (
+                    <div style="position:fixed;top:0;left:0;right:0;background:#f59e0b;color:#000;text-align:center;padding:4px;z-index:1000">
+                        Reconnecting…
+                    </div>
+                )}
+                <Router root={App}>
+                    <Route path="/" component={HomePage}/>
+                    <Route path="/balancesheet" component={() => <Navigate href={"./" + isoDateToday}/>}/>
+                    <Route path="/balancesheet/:endingDate" component={BalanceSheetPage}/>
+                    <Route path="/incomestatement" component={() => <Navigate href={"./2026-01/summary"}/>}/>
+                    <Route path="/incomestatement/:period" component={() => <Navigate href={"./summary"}/>}/>
+                    <Route path="/incomestatement/:period/:view" component={IncomeStatementPage}/>
+                    <Route path="/register/:accountId" component={RegisterPage}/>
+                    <Route path="/expenselog/:accountId" component={ExpenseLogPage}/>
+                    <Route path="/incomelog/:accountId" component={IncomeLogPage}/>
+                    <Route path="/vendors" component={VendorsPage}/>
+                    <Route path="/accounts" component={AccountsPage}/>
+                </Router>
+            </>
         ) : (
             <p>Loading…</p>
         )}

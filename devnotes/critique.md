@@ -27,8 +27,8 @@ Expanded `maybeQuoteYaml` to detect newlines, ` #`, and leading YAML special cha
 ### ~~7. Client has no bootstrap — relies solely on WebSocket replay~~ ✓ Fixed
 Added `GET /replay` endpoint on the server. Client now fetches all directives via HTTP at startup, populates the local DB, then connects WebSocket for live updates only. WsManager no longer replays history on connect. A "Loading…" gate prevents rendering until replay is complete.
 
-### 8. No WebSocket reconnect logic
-`client/src/ws/WsClient.ts` sets `onclose` to a log message only. If the connection drops, the client goes stale permanently until the user manually refreshes. A simple exponential-backoff reconnect (with replay on reconnect) is needed for production use.
+### ~~8. No WebSocket reconnect logic~~ ✓ Fixed
+`WsClient` now reconnects with exponential backoff (1s → 30s cap). On each reconnect it re-fetches `GET /replay` to catch up, then re-opens the WebSocket. An `onStatusChange` callback drives an `isConnected` signal in `index.tsx`; a fixed amber banner shows "Reconnecting…" while disconnected.
 
 ### 9. Tee services are not atomic
 `shared/src/services/accounts/AccountTeeSvc.ts` (and the others) execute writes sequentially across services. If the DB write succeeds but the event-writer or WS-writer fails, the server's in-memory state diverges from the YAML log. For the current single-user use case this is low risk, but it means error recovery is undefined. At minimum, if a write to any tee fails, the error should propagate rather than be silent.
