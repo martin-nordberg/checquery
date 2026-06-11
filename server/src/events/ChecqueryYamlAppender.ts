@@ -164,16 +164,22 @@ const formatDirective = (directive: ChecqueryDirective): string => {
     return lines.join('\n')
 }
 
-/**
- * Appends a directive to the checquery log file.
- * @param directive the directive to append
- */
-export const appendDirective = async (directive: ChecqueryDirective): Promise<void> => {
+// Serializes all appends so that the stat+appendFile sequence is never concurrent.
+let appendQueue: Promise<void> = Promise.resolve()
+
+const doAppend = async (directive: ChecqueryDirective): Promise<void> => {
     const logFile = process.env['CHECQUERY_LOG_FILE']!
     const yamlStr = formatDirective(directive)
     // Blank line before each subsequent directive; no leading blank line for the first
     const {size} = await stat(logFile)
     const prefix = size > 0 ? '\n' : ''
     await appendFile(logFile, prefix + yamlStr + '\n', 'utf8')
+}
+
+export const appendDirective = (directive: ChecqueryDirective): Promise<void> => {
+    const result = appendQueue.then(() => doAppend(directive))
+    // Detach errors from the queue so a failed append doesn't stall subsequent ones
+    appendQueue = result.catch(() => {})
+    return result
 }
 
