@@ -24,8 +24,8 @@ Expanded `maybeQuoteYaml` to detect newlines, ` #`, and leading YAML special cha
 
 ## P2 — Design Issues
 
-### 7. Client has no bootstrap — relies solely on WebSocket replay
-`client/src/index.tsx` creates an empty local PGLite DB and immediately starts the WsClient. The server's `WsManager.loadReplay()` pushes the full event log to new connections, so the client eventually becomes consistent — but only after replay completes. There is no loading indicator, no fallback, and no way to know when replay is done. If the WebSocket connection fails before replay finishes (e.g., server restart during load), the client is left in a partially-populated state with no recovery mechanism. Consider: a `replay-complete` sentinel message from the server, and/or an HTTP endpoint for initial bulk-load.
+### ~~7. Client has no bootstrap — relies solely on WebSocket replay~~ ✓ Fixed
+Added `GET /replay` endpoint on the server. Client now fetches all directives via HTTP at startup, populates the local DB, then connects WebSocket for live updates only. WsManager no longer replays history on connect. A "Loading…" gate prevents rendering until replay is complete.
 
 ### 8. No WebSocket reconnect logic
 `client/src/ws/WsClient.ts` sets `onclose` to a log message only. If the connection drops, the client goes stale permanently until the user manually refreshes. A simple exponential-backoff reconnect (with replay on reconnect) is needed for production use.

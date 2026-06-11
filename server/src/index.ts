@@ -59,14 +59,13 @@ const vendorEventWriter = new VendorEventWriter()
 /** Returns the file containing all directives. */
 const checqueryLogFile = () => process.env['CHECQUERY_LOG_FILE']!
 
-const replayLoader = async (): Promise<string[]> => {
+const loadDirectives = async (): Promise<ChecqueryDirective[]> => {
     const yaml = await Bun.file(checqueryLogFile()).text()
-    const directives = Bun.YAML.parse(yaml) as ChecqueryDirective[]
-    return directives.map(d => JSON.stringify({action: d.action, payload: d.payload}))
+    return Bun.YAML.parse(yaml) as ChecqueryDirective[]
 }
 
 // Services for WebSocket broadcast
-const wsMgr = new WsManager(replayLoader)
+const wsMgr = new WsManager()
 const accountWsWriter = new AccountWsWriter(wsMgr)
 const statementWsWriter = new StatementWsWriter(wsMgr)
 const transactionWsWriter = new TransactionWsWriter(wsMgr)
@@ -98,6 +97,10 @@ const routes =
                 name: 'Checquery',
                 version: 0.1
             })
+        })
+
+        .get('/replay', async (c) => {
+            return c.json(await loadDirectives())
         })
 
         .get('/ws', upgradeWebSocket(() => ({

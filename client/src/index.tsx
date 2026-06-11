@@ -1,5 +1,6 @@
 /* @refresh reload */
 import {render} from 'solid-js/web'
+import {createSignal} from 'solid-js'
 import {Navigate, Route, Router} from "@solidjs/router";
 import App from './App.tsx'
 import {lazy} from "solid-js";
@@ -82,22 +83,41 @@ const wsVndrSvc = new VendorTeeSvc(vendorRepo, [vendorRepo, vendorWsHandler])
 const wsStmtSvc = new StatementTeeSvc(statementRepo, [statementRepo, statementWsHandler])
 
 const wsClient = new WsClient(wsAcctSvc, wsTransactionSvc, wsVndrSvc, wsStmtSvc)
-wsClient.connect(`ws://${window.location.hostname}:3001/ws`)
+
+const [isReady, setIsReady] = createSignal(false)
+
+const serverHost = `${window.location.hostname}:3001`
+fetch(`http://${serverHost}/replay`)
+    .then(r => r.json())
+    .then(async (directives: {action: string, payload: Record<string, unknown>}[]) => {
+        for (const directive of directives) {
+            await wsClient.dispatchAsync(directive)
+        }
+    })
+    .then(() => {
+        wsClient.connect(`ws://${serverHost}/ws`)
+        setIsReady(true)
+    })
+    .catch((e) => console.error('[Replay] Failed to load initial data', e))
 
 render(() => (
     <ServicesContext.Provider value={{acctSvc, vndrSvc, txnSvc, stmtSvc, regSvc, expSvc, incSvc, bsSvc, isSvc}}>
-        <Router root={App}>
-            <Route path="/" component={HomePage}/>
-            <Route path="/balancesheet" component={() => <Navigate href={"./" + isoDateToday}/>}/>
-            <Route path="/balancesheet/:endingDate" component={BalanceSheetPage}/>
-            <Route path="/incomestatement" component={() => <Navigate href={"./2026-01/summary"}/>}/>
-            <Route path="/incomestatement/:period" component={() => <Navigate href={"./summary"}/>}/>
-            <Route path="/incomestatement/:period/:view" component={IncomeStatementPage}/>
-            <Route path="/register/:accountId" component={RegisterPage}/>
-            <Route path="/expenselog/:accountId" component={ExpenseLogPage}/>
-            <Route path="/incomelog/:accountId" component={IncomeLogPage}/>
-            <Route path="/vendors" component={VendorsPage}/>
-            <Route path="/accounts" component={AccountsPage}/>
-        </Router>
+        {isReady() ? (
+            <Router root={App}>
+                <Route path="/" component={HomePage}/>
+                <Route path="/balancesheet" component={() => <Navigate href={"./" + isoDateToday}/>}/>
+                <Route path="/balancesheet/:endingDate" component={BalanceSheetPage}/>
+                <Route path="/incomestatement" component={() => <Navigate href={"./2026-01/summary"}/>}/>
+                <Route path="/incomestatement/:period" component={() => <Navigate href={"./summary"}/>}/>
+                <Route path="/incomestatement/:period/:view" component={IncomeStatementPage}/>
+                <Route path="/register/:accountId" component={RegisterPage}/>
+                <Route path="/expenselog/:accountId" component={ExpenseLogPage}/>
+                <Route path="/incomelog/:accountId" component={IncomeLogPage}/>
+                <Route path="/vendors" component={VendorsPage}/>
+                <Route path="/accounts" component={AccountsPage}/>
+            </Router>
+        ) : (
+            <p>Loading…</p>
+        )}
     </ServicesContext.Provider>
 ), root!)

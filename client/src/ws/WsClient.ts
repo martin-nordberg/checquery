@@ -42,7 +42,7 @@ export class WsClient {
         this.dispatchAsync(message).catch((e) => console.error('[WS] Dispatch error', message.action, e))
     }
 
-    private async dispatchAsync(message: WsMessage): Promise<void> {
+    async dispatchAsync(message: WsMessage): Promise<void> {
         switch (message.action) {
             case 'create-account':
                 await this.acctSvc.createAccount(accountCreationEventSchema.parse(message.payload))
