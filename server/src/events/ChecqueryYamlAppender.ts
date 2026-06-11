@@ -183,3 +183,6 @@ export const appendDirective = (directive: ChecqueryDirective): Promise<void> =>
     return result
 }
 
+/** Resolves once all queued appends have completed — use before reading the log file. */
+export const flushAppends = (): Promise<void> => appendQueue
+

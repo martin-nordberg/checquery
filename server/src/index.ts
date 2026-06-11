@@ -18,6 +18,7 @@ import {AccountEventWriter} from "./events/AccountEventWriter";
 import {TransactionEventWriter} from "./events/TransactionEventWriter";
 import {WsManager} from "./ws/WsManager";
 import type {ChecqueryDirective} from "./events/ChecqueryYamlAppender";
+import {flushAppends} from "./events/ChecqueryYamlAppender";
 import {AccountWsWriter} from "./ws/AccountWsWriter";
 import {TransactionWsWriter} from "./ws/TransactionWsWriter";
 import {VendorWsWriter} from "./ws/VendorWsWriter";
@@ -65,6 +66,7 @@ const vendorEventWriter = new VendorEventWriter()
 const checqueryLogFile = () => process.env['CHECQUERY_LOG_FILE']!
 
 const loadDirectives = async (): Promise<ChecqueryDirective[]> => {
+    await flushAppends()
     const yaml = await Bun.file(checqueryLogFile()).text()
     return Bun.YAML.parse(yaml) as ChecqueryDirective[]
 }
