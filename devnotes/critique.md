@@ -33,13 +33,8 @@ Added `GET /replay` endpoint on the server. Client now fetches all directives vi
 ### 9. Tee services are not atomic
 `shared/src/services/accounts/AccountTeeSvc.ts` (and the others) execute writes sequentially across services. If the DB write succeeds but the event-writer or WS-writer fails, the server's in-memory state diverges from the YAML log. For the current single-user use case this is low risk, but it means error recovery is undefined. At minimum, if a write to any tee fails, the error should propagate rather than be silent.
 
-### 10. `transactionx` stores merged HLC but passes original to callback
-`shared/src/database/PgLiteDb.ts:33-34` — on replay from an external HLC:
-```ts
-this.#hlc = mergeHLClock(this.#hlc, externalHlc)   // merge stored locally
-return this.#db.transaction((tx) => callback(new PgLiteTxn(tx, externalHlc))) // but original passed to txn
-```
-The intent of the merge is to prevent the local clock from going backward after replay. However, the replayed rows end up stamped with `externalHlc`, not the merged value. Whether this is a bug or a deliberate "preserve original timestamps on replay" decision should be made explicit with a comment.
+### ~~10. `transactionx` stores merged HLC but passes original to callback~~ ✓ Fixed
+`PgLiteDb.transactionx` now passes `this.#hlc` (the merged value) to the transaction instead of `externalHlc`, so rows are stamped with the post-merge clock.
 
 ### ~~11. `AcctNetworth` uses a literal hardcoded ID~~ ✓ Fixed
 Added `acctIdNetWorth` constant to `AcctId.ts`; `BalanceSheetRepo` now references it instead of the inline string literal.

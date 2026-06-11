@@ -31,7 +31,7 @@ export class PgLiteDb {
     async transactionx<T>(externalHlc: HLClock|undefined, callback: (txn: PgLiteTxn) => Promise<T>): Promise<T> {
         if (externalHlc) {
             this.#hlc = mergeHLClock(this.#hlc, externalHlc)
-            return this.#db.transaction((tx) => callback(new PgLiteTxn(tx, externalHlc)))
+            return this.#db.transaction((tx) => callback(new PgLiteTxn(tx, this.#hlc)))
         }
 
         return this.transaction(callback)
