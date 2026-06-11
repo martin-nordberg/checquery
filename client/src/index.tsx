@@ -28,10 +28,6 @@ import {AccountTeeSvc} from "$shared/services/accounts/AccountTeeSvc.ts";
 import {TransactionTeeSvc} from "$shared/services/transactions/TransactionTeeSvc.ts";
 import {VendorTeeSvc} from "$shared/services/vendors/VendorTeeSvc.ts";
 import {StatementTeeSvc} from "$shared/services/statements/StatementTeeSvc.ts";
-import {AccountWsHandlerSvc} from "./ws/AccountWsHandlerSvc.ts";
-import {TransactionWsHandlerSvc} from "./ws/TransactionWsHandlerSvc.ts";
-import {VendorWsHandlerSvc} from "./ws/VendorWsHandlerSvc.ts";
-import {StatementWsHandlerSvc} from "./ws/StatementWsHandlerSvc.ts";
 import {WsClient} from "./ws/WsClient.ts";
 import {ServicesContext} from "./services/ServicesContext.ts";
 
@@ -59,28 +55,22 @@ const vendorHttpSvc = new VendorClientSvc()
 const transactionHttpSvc = new TransactionClientSvc()
 const statementHttpSvc = new StatementClientSvc()
 
-// UI services: reads from local DB, writes to DB then HTTP server
-const acctSvc = new AccountTeeSvc(accountRepo, [accountRepo, accountHttpSvc])
-const vndrSvc = new VendorTeeSvc(vendorRepo, [vendorRepo, vendorHttpSvc])
-const txnSvc = new TransactionTeeSvc(transactionRepo, [transactionRepo, transactionHttpSvc])
-const stmtSvc = new StatementTeeSvc(statementRepo, [statementRepo, statementHttpSvc])
+// UI services: reads from local DB, writes to HTTP server only (local DB updated via WS broadcast)
+const acctSvc = new AccountTeeSvc(accountRepo, [accountHttpSvc])
+const vndrSvc = new VendorTeeSvc(vendorRepo, [vendorHttpSvc])
+const txnSvc = new TransactionTeeSvc(transactionRepo, [transactionHttpSvc])
+const stmtSvc = new StatementTeeSvc(statementRepo, [statementHttpSvc])
 const regSvc = new RegisterRepo(db)
 const expSvc = new ExpenseLogRepo(db)
 const incSvc = new IncomeLogRepo(db)
 const bsSvc = new BalanceSheetRepo(db)
 const isSvc = new IncomeStatementRepo(db)
 
-// WS handler services (log received events)
-const accountWsHandler = new AccountWsHandlerSvc()
-const transactionWsHandler = new TransactionWsHandlerSvc()
-const vendorWsHandler = new VendorWsHandlerSvc()
-const statementWsHandler = new StatementWsHandlerSvc()
-
-// Tee services for WS dispatch: DB repo first, then handler
-const wsAcctSvc = new AccountTeeSvc(accountRepo, [accountRepo, accountWsHandler])
-const wsTransactionSvc = new TransactionTeeSvc(transactionRepo, [transactionRepo, transactionWsHandler])
-const wsVndrSvc = new VendorTeeSvc(vendorRepo, [vendorRepo, vendorWsHandler])
-const wsStmtSvc = new StatementTeeSvc(statementRepo, [statementRepo, statementWsHandler])
+// WS dispatch services: write incoming server events to local DB
+const wsAcctSvc = new AccountTeeSvc(accountRepo, [accountRepo])
+const wsTransactionSvc = new TransactionTeeSvc(transactionRepo, [transactionRepo])
+const wsVndrSvc = new VendorTeeSvc(vendorRepo, [vendorRepo])
+const wsStmtSvc = new StatementTeeSvc(statementRepo, [statementRepo])
 
 const wsClient = new WsClient(wsAcctSvc, wsTransactionSvc, wsVndrSvc, wsStmtSvc)
 
