@@ -1,5 +1,6 @@
 import type {WSContext} from 'hono/ws'
 import type {ServerWebSocket} from 'bun'
+import {logger} from "../logger";
 
 type ClientQueue = {
     queue: string[]
@@ -13,10 +14,12 @@ export class WsManager {
 
     addConnection(ws: WSContext<ServerWebSocket>): void {
         this.clients.set(ws, {queue: [], draining: false})
+        logger.info('WebSocket client connected', {clients: this.clients.size})
     }
 
     removeConnection(ws: WSContext<ServerWebSocket>): void {
         this.clients.delete(ws)
+        logger.info('WebSocket client disconnected', {clients: this.clients.size})
     }
 
     broadcast(message: object): void {

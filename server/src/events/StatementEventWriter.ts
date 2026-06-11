@@ -5,10 +5,12 @@ import {
     type StatementPatchEvent
 } from "$shared/domain/statements/Statement";
 import {appendDirective} from "./ChecqueryYamlAppender";
+import {logger} from "../logger";
 
 export class StatementEventWriter implements IStatementCmdSvc {
 
     async createStatement(statementCreation: StatementCreationEvent): Promise<StatementCreationEvent | null> {
+        logger.info('create-statement', {id: statementCreation.id, account: statementCreation.account})
         await appendDirective({action: 'create-statement', payload: {
             id: statementCreation.id,
             beginDate: statementCreation.beginDate,
@@ -23,11 +25,13 @@ export class StatementEventWriter implements IStatementCmdSvc {
     }
 
     async deleteStatement(statementDeletion: StatementDeletionEvent): Promise<StatementDeletionEvent | null> {
+        logger.info('delete-statement', {id: statementDeletion.id})
         await appendDirective({action: 'delete-statement', payload: {id: statementDeletion.id}})
         return statementDeletion
     }
 
     async patchStatement(statementPatch: StatementPatchEvent): Promise<StatementPatchEvent | null> {
+        logger.info('update-statement', {id: statementPatch.id})
         await appendDirective({action: 'update-statement', payload: {
             id: statementPatch.id,
             beginDate: statementPatch.beginDate,

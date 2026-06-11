@@ -27,13 +27,18 @@ import {VendorTeeSvc} from "$shared/services/vendors/VendorTeeSvc";
 import {TransactionTeeSvc} from "$shared/services/transactions/TransactionTeeSvc";
 import {StatementTeeSvc} from "$shared/services/statements/StatementTeeSvc";
 import {loadChecqueryLog} from "./events/ChecqueryEventLoader";
+import {logger} from "./logger";
 
 const {upgradeWebSocket, websocket} = createBunWebSocket<ServerWebSocket>()
 
 const app = new Hono()
 
-console.log(`CHECQUERY_HOST = ${process.env['CHECQUERY_HOST']}`)
-console.log(`CHECQUERY_LOG_FILE = ${process.env['CHECQUERY_LOG_FILE']}`)
+const port = parseInt(process.env["CHECQUERY_PORT"] ?? '3001')
+logger.info('Starting Checquery server', {
+    port,
+    host: process.env['CHECQUERY_HOST'] ?? 'localhost',
+    logFile: process.env['CHECQUERY_LOG_FILE'],
+})
 
 
 const checqueryHost = process.env['CHECQUERY_HOST'] ?? 'localhost'
@@ -77,6 +82,7 @@ const acctSvc = new AccountTeeSvc(accountRepo, [accountRepo, accountEventWriter,
 const txnSvc = new TransactionTeeSvc(transactionRepo, [transactionRepo, transactionEventWriter, transactionWsWriter])
 const stmtSvc = new StatementTeeSvc(statementRepo, [statementRepo, statementEventWriter, statementWsWriter])
 
+const loadStart = Date.now()
 await loadChecqueryLog(
     checqueryLogFile(),
     accountRepo,
@@ -84,7 +90,7 @@ await loadChecqueryLog(
     vendorRepo,
     statementRepo
 )
-
+logger.info('Event log loaded', {durationMs: Date.now() - loadStart})
 
 const routes =
     app
@@ -112,6 +118,7 @@ const routes =
             },
         })))
 
+
         .route('/accounts', accountRoutes(acctSvc))
         .route('/transactions', transactionRoutes(txnSvc))
         .route('/statements', statementRoutes(stmtSvc))
@@ -119,8 +126,10 @@ const routes =
 
 export type AppType = typeof routes
 
+logger.info('Server ready', {port})
+
 export default {
-    port: parseInt(process.env["CHECQUERY_PORT"] ?? '3001'),
+    port,
     fetch: app.fetch,
     websocket,
 }

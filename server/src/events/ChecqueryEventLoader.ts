@@ -2,6 +2,7 @@ import type {IAccountCmdSvc} from "$shared/services/accounts/IAccountCmdSvc";
 import type {ITransactionCmdSvc} from "$shared/services/transactions/ITransactionCmdSvc";
 import type {IVendorCmdSvc} from "$shared/services/vendors/IVendorCmdSvc";
 import type {IStatementCmdSvc} from "$shared/services/statements/IStatementCmdSvc";
+import {logger} from "../logger";
 import {accountCreationEventSchema, accountPatchEventSchema} from "$shared/domain/accounts/Account";
 import {acctIdSchema} from "$shared/domain/accounts/AcctId";
 import {transactionCreationEventSchema, transactionPatchEventSchema} from "$shared/domain/transactions/Transaction";
@@ -26,6 +27,8 @@ export const loadChecqueryLog = async (
 
     // Parse the YAML string into a JavaScript object.
     const directives = Bun.YAML.parse(yaml) as any[]
+
+    logger.info('Loading event log', {file: yamlFileName, count: directives.length})
 
     // Handle each directive in order.
     for (const directive of directives) {
@@ -76,9 +79,10 @@ export const loadChecqueryLog = async (
                     break
             }
         } catch (error) {
-            console.error({error})
-            console.error({directive})
+            logger.error('Failed to process directive', {directive, error: String(error)})
             throw error
         }
     }
+
+    logger.info('Event log loaded successfully', {file: yamlFileName, count: directives.length})
 }

@@ -4,11 +4,13 @@ import {
     type TransactionPatchEvent
 } from "$shared/domain/transactions/Transaction";
 import {appendDirective} from "./ChecqueryYamlAppender";
+import {logger} from "../logger";
 
 
 export class TransactionEventWriter implements ITransactionCmdSvc {
 
     async createTransaction(transactionCreation: TransactionCreationEvent): Promise<TransactionCreationEvent | null> {
+        logger.info('create-transaction', {id: transactionCreation.id, date: transactionCreation.date})
         const payload: Record<string, unknown> = {
             id: transactionCreation.id,
             date: transactionCreation.date,
@@ -37,11 +39,13 @@ export class TransactionEventWriter implements ITransactionCmdSvc {
     }
 
     async deleteTransaction(transactionDeletion: TransactionDeletionEvent): Promise<TransactionDeletionEvent | null> {
+        logger.info('delete-transaction', {id: transactionDeletion.id})
         await appendDirective({action: 'delete-transaction', payload: {id: transactionDeletion.id}})
         return transactionDeletion
     }
 
     async patchTransaction(transactionPatch: TransactionPatchEvent): Promise<TransactionPatchEvent | null> {
+        logger.info('update-transaction', {id: transactionPatch.id})
         const payload: Record<string, unknown> = {id: transactionPatch.id}
         if (transactionPatch.date !== undefined) {
             payload['date'] = transactionPatch.date

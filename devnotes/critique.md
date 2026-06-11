@@ -52,8 +52,8 @@ Deleted `shared/src/logging/` entirely — all seven logger files were unreferen
 ### ~~14. `fromCents` comma-insertion relies on mutating intermediate string length~~ ✓ Fixed
 Replaced with `Intl.NumberFormat('en-US', {style: 'currency', currency: 'USD'})` in `CurrencyAmt.ts`; uses `Math.abs` to normalise `-0`.
 
-### 15. No centralized logging strategy
-`console.log`, `console.info`, `console.error`, and `console.warn` are scattered throughout client and server with no consistent format. In a server process, structured logging (JSON to stdout) makes filtering and monitoring tractable. Even a thin wrapper (`logger.info(...)` → `console.error(JSON.stringify({level: 'info', ...}))`) is better than the current mix.
+### ~~15. No centralized logging strategy~~ ✓ Fixed
+Added `server/src/logger.ts` — thin wrapper writing newline-delimited JSON to stdout/stderr. All server `console.*` calls replaced; structured log lines added for startup, event log load (with count and duration), WS connect/disconnect (with client count), and every API mutation (action + entity ID).
 
 ### 16. TODOs that affect correctness are open
 - `AccountRepo.ts:45` and `AccountTxnRepo.ts:75` — both note `// TODO: save a flag isDeletable instead`, suggesting the current `isAccountInUse` query approach is a placeholder.

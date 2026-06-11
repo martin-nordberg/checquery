@@ -5,11 +5,13 @@ import {
 } from "$shared/domain/accounts/Account";
 import {type IAccountCmdSvc} from "$shared/services/accounts/IAccountCmdSvc";
 import {appendDirective} from "./ChecqueryYamlAppender";
+import {logger} from "../logger";
 
 
 export class AccountEventWriter implements IAccountCmdSvc {
 
     async createAccount(accountCreation: AccountCreationEvent): Promise<AccountCreationEvent | null> {
+        logger.info('create-account', {id: accountCreation.id, name: accountCreation.name})
         await appendDirective({action: 'create-account', payload: {
             id: accountCreation.id,
             name: accountCreation.name,
@@ -22,6 +24,7 @@ export class AccountEventWriter implements IAccountCmdSvc {
     }
 
     async deleteAccount(accountDeletion: AccountDeletionEvent): Promise<AccountDeletionEvent | null> {
+        logger.info('delete-account', {id: accountDeletion.id})
         await appendDirective({action: 'delete-account', payload: {
             id: accountDeletion.id,
         }})
@@ -29,6 +32,7 @@ export class AccountEventWriter implements IAccountCmdSvc {
     }
 
     async patchAccount(accountPatch: AccountPatchEvent): Promise<AccountPatchEvent | null> {
+        logger.info('update-account', {id: accountPatch.id})
         await appendDirective({action: 'update-account', payload: {
             id: accountPatch.id,
             acctType: accountPatch.acctType,
