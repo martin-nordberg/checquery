@@ -22,7 +22,10 @@ const ExpenseLog = (props: ExpenseLogProps) => {
     let tableContainerRef: HTMLDivElement | undefined
 
     const expenseLog = createLiveQuery(db, () => ({
-        sql: `SELECT Entry.txnId FROM Entry
+        sql: `SELECT Entry.txnId,
+                     Transaction.dateHlc, Transaction.codeHlc, Transaction.vendorIdHlc, Transaction.descriptionHlc,
+                     Entry.debitCents, Entry.creditCents, Entry.accountId, Entry.stmtId
+              FROM Entry
               JOIN Transaction ON Entry.txnId = Transaction.id
               LEFT JOIN Statement ON Entry.stmtId = Statement.id
               WHERE Entry.accountId = $1 AND Transaction.isDeleted = false`,

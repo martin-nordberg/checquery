@@ -23,21 +23,18 @@ const AccountName = (props: { lineItem: BalSheetLineItem }) => {
 const BalanceSheet = (props: BalanceSheetProps) => {
     const {db, bsSvc} = useServices()
 
-    const balanceSheet = createLiveQuery(db, () => ({
-        sql: `SELECT Account.id FROM Account
-              LEFT JOIN Entry ON Entry.accountId = Account.id
-              LEFT JOIN Transaction ON Entry.txnId = Transaction.id
-              WHERE Account.isDeleted = false
-              LIMIT 1`,
-        params: [],
-        fetch: () => {
-            const endingDate = props.endingDate as IsoDate
-            if (!endingDate) {
-                return Promise.resolve(null)
-            }
-            return bsSvc.findBalanceSheet(endingDate)
-        },
-    }))
+    const balanceSheet = createLiveQuery(db, () => {
+        const endingDate = props.endingDate as IsoDate
+        return {
+            sql: `SELECT Account.id FROM Account
+                  LEFT JOIN Entry ON Entry.accountId = Account.id
+                  LEFT JOIN Transaction ON Entry.txnId = Transaction.id
+                  WHERE Account.isDeleted = false
+                  LIMIT 1`,
+            params: [],
+            fetch: () => endingDate ? bsSvc.findBalanceSheet(endingDate) : Promise.resolve(null),
+        }
+    })
 
     return (
         <>

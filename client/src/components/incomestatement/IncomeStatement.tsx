@@ -20,21 +20,18 @@ const AccountName = (props: {lineItem: IncStmtLineItem, logPath: string}) => (
 const IncomeStatement = (props: IncomeStatementProps) => {
     const {db, isSvc} = useServices()
 
-    const incomeStatement = createLiveQuery(db, () => ({
-        sql: `SELECT Account.id FROM Account
-              LEFT JOIN Entry ON Entry.accountId = Account.id
-              LEFT JOIN Transaction ON Entry.txnId = Transaction.id
-              WHERE Account.isDeleted = false
-              LIMIT 1`,
-        params: [],
-        fetch: () => {
-            const period = props.period as Period
-            if (!period) {
-                return Promise.resolve(null)
-            }
-            return isSvc.findIncomeStatement(period)
-        },
-    }))
+    const incomeStatement = createLiveQuery(db, () => {
+        const period = props.period as Period
+        return {
+            sql: `SELECT Account.id FROM Account
+                  LEFT JOIN Entry ON Entry.accountId = Account.id
+                  LEFT JOIN Transaction ON Entry.txnId = Transaction.id
+                  WHERE Account.isDeleted = false
+                  LIMIT 1`,
+            params: [],
+            fetch: () => period ? isSvc.findIncomeStatement(period) : Promise.resolve(null),
+        }
+    })
 
     return (
         <>
