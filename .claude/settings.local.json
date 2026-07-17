@@ -22,7 +22,8 @@
       "Bash(git -C /code/checquery status)",
       "Bash(git -C /code/checquery diff --stat)",
       "Bash(git *)",
-      "Bash(xargs sed -i 's/Transaxtion/Transaction/g')"
+      "Bash(xargs sed -i 's/Transaxtion/Transaction/g')",
+      "Bash(node *)"
     ]
   }
 }

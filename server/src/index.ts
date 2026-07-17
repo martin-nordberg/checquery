@@ -1,7 +1,6 @@
 import {Hono} from 'hono'
 import {cors} from 'hono/cors'
-import {createBunWebSocket} from 'hono/bun'
-import type {ServerWebSocket} from 'bun'
+import {upgradeWebSocket, websocket} from 'hono/bun'
 import {accountRoutes} from "$shared/routes/accounts/AccountRoutes";
 import {transactionRoutes} from "$shared/routes/transactions/TransactionRoutes";
 import {vendorRoutes} from "$shared/routes/vendors/VendorRoutes";
@@ -30,25 +29,25 @@ import {StatementTeeSvc} from "$shared/services/statements/StatementTeeSvc";
 import {loadChecqueryLog} from "./events/ChecqueryEventLoader";
 import {logger} from "./logger";
 
-const {upgradeWebSocket, websocket} = createBunWebSocket<ServerWebSocket>()
-
 const app = new Hono()
 
 const port = parseInt(process.env["CHECQUERY_PORT"] ?? '3001')
-logger.info('Starting Checquery server', {
+const checqueryHost = process.env['CHECQUERY_HOST'] ?? 'localhost'
+const checqueryLogFile = process.env['CHECQUERY_LOG_FILE']!
+
+logger.info('Checquery server configuration', {
     port,
-    host: process.env['CHECQUERY_HOST'] ?? 'localhost',
-    logFile: process.env['CHECQUERY_LOG_FILE'],
+    checqueryHost,
+    checqueryLogFile,
 })
 
 
-const checqueryHost = process.env['CHECQUERY_HOST'] ?? 'localhost'
 app.use('*', cors({
     origin: [`http://localhost:3000`, `http://${checqueryHost}:3000`]
 }));
 
 const db = await createPgLiteDb("000")
-runChecqueryPgDdl(db)
+await runChecqueryPgDdl(db)
 
 // Services for the database
 const accountRepo = new AccountRepo(db)
@@ -63,11 +62,10 @@ const transactionEventWriter = new TransactionEventWriter()
 const vendorEventWriter = new VendorEventWriter()
 
 /** Returns the file containing all directives. */
-const checqueryLogFile = () => process.env['CHECQUERY_LOG_FILE']!
 
 const loadDirectives = async (): Promise<ChecqueryDirective[]> => {
     await flushAppends()
-    const yaml = await Bun.file(checqueryLogFile()).text()
+    const yaml = await Bun.file(checqueryLogFile).text()
     return Bun.YAML.parse(yaml) as ChecqueryDirective[]
 }
 
@@ -86,7 +84,7 @@ const stmtSvc = new StatementTeeSvc(statementRepo, [statementRepo, statementEven
 
 const loadStart = Date.now()
 await loadChecqueryLog(
-    checqueryLogFile(),
+    checqueryLogFile,
     accountRepo,
     transactionRepo,
     vendorRepo,

@@ -43,19 +43,19 @@ Both client and server use `$shared/*` to import from `shared/src/*`. This is co
 The project uses Hono's type-safe client (`hc`) to share route types between client and server:
 
 1. **Routes** are defined in `shared/src/routes/` using Hono and Zod validation
-2. **Service interfaces** in `shared/src/services/` define the contract (e.g., `IAccountSvc`)
+2. **Service interfaces** in `shared/src/services/` define the contract (e.g., `IAccountSvc`, split into `IAccountQrySvc` and `IAccountCmdSvc`)
 3. **Database repositories** in `shared/src/database/` implement interfaces using PGlite
-4. **Event writers** in `server/src/events/` implement the same interfaces to append YAML directives
-5. **Tee services** in `shared/src/services/` fan out writes to multiple implementations (e.g., DB + event log)
-6. **Client services** in `client/src/clients/` implement the same interfaces using Hono's typed client
+4. **Event writers** in `server/src/events/` append YAML directives to the log file
+5. **WS writers** in `server/src/ws/` broadcast write events to all connected WebSocket clients
+6. **Tee services** in `shared/src/services/` fan out writes to multiple implementations (repo + event writer + WS writer)
+7. **Client services** in `client/src/clients/` implement read-side interfaces using Hono's typed client
 
-Example flow for accounts:
-- `shared/src/routes/accounts/AccountRoutes.ts` - defines REST routes with Zod validation
-- `shared/src/services/accounts/IAccountSvc.ts` - service interface
-- `shared/src/database/accounts/AccountRepo.ts` - PGlite implementation
-- `server/src/events/AccountEventWriter.ts` - YAML event writer
-- `shared/src/services/accounts/AccountTeeSvc.ts` - tees writes to both repo and event writer
-- `client/src/clients/accounts/AccountClientSvc.ts` - HTTP client using Hono's `hc`
+Example flow for account mutations (server-authoritative write path):
+- `shared/src/routes/accounts/AccountRoutes.ts` - REST route triggers `AccountTeeSvc`
+- `shared/src/services/accounts/AccountTeeSvc.ts` - fans out to all `cmdSvcs`: repo, event writer, WS writer
+- `server/src/events/AccountEventWriter.ts` - appends directive to YAML log
+- `server/src/ws/AccountWsWriter.ts` - broadcasts directive to all WebSocket clients
+- Client's `WsClient` receives the broadcast and applies it to the local PGlite DB via repo methods
 
 ### Domain Model
 
@@ -77,7 +77,12 @@ Event writers (`server/src/events/`): `AccountEventWriter`, `TransactionEventWri
 
 ### Tee Service Pattern
 
-Tee services (e.g., `AccountTeeSvc`) accept an array of `IAccountSvc` implementations. Write operations (create, update, delete) are forwarded to **all** services in sequence. Read operations (find) delegate to only the **first** service (`svcs[0]`), which is the database repo.
+Tee services (e.g., `AccountTeeSvc`) split query and command sides:
+- Constructor takes a `qrySvc: IAccountQrySvc` and `cmdSvcs: IAccountCmdSvc[]`
+- Read operations delegate to `qrySvc` (the database repo)
+- Write operations fan out to **all** `cmdSvcs` in sequence: `[repo, eventWriter, wsWriter]`
+
+The WS writer is the last in the chain so the client only sees writes that have already been persisted to both DB and YAML log.
 
 ### Database
 
@@ -86,6 +91,23 @@ Tee services (e.g., `AccountTeeSvc`) accept an array of `IAccountSvc` implementa
 - `shared/src/database/CheckqueryPgDdl.ts` - schema definitions with HLC columns for conflict-free merging
 - Each entity has a Repo (e.g., `AccountRepo`) that delegates to a TxnRepo (e.g., `AccountTxnRepo`) within a transaction
 - `shared/src/database/register/RegisterRepo.ts` - register-specific reads with running balance computation; delegates mutations to `ITransactionSvc`
+
+### WebSocket / Real-Time Updates
+
+The server exposes two endpoints for real-time state synchronization:
+- `GET /ws` — WebSocket upgrade; `WsManager` (`server/src/ws/WsManager.ts`) tracks all connected clients and broadcasts per-write directive messages
+- `GET /replay` — returns all YAML directives as JSON for bulk state catch-up; flushes the append queue first to guarantee consistency
+
+The client side:
+- `WsClient` (`client/src/ws/WsClient.ts`) connects to `/ws` and dispatches incoming `{action, payload}` messages to the local PGlite repos (same Zod schemas used for YAML directives)
+- On reconnect, `WsClient` fetches `/replay` to re-apply all directives before re-opening the WebSocket, with exponential backoff (1 s → 30 s)
+- `createLiveQuery` (`client/src/queries/createLiveQuery.ts`) wraps PGlite's live extension to drive reactive SolidJS signals — any write applied to the local DB automatically re-fetches the query and updates the UI
+
+The client's local PGlite DB is **write-only via WebSocket**. The client never writes to its own DB directly; all mutations go through the server API → tee → WS broadcast → client dispatch.
+
+### Logging
+
+`server/src/logger.ts` — thin structured JSON logger (`{ts, level, msg, ...data}`) used throughout server startup and WebSocket lifecycle. Output goes to stdout/stderr.
 
 ### Validation
 
