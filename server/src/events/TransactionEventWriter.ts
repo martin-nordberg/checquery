@@ -72,7 +72,7 @@ export class TransactionEventWriter implements ITransactionCmdSvc {
             })
         }
         await appendDirective({action: 'update-transaction', payload})
-        return null
+        return transactionPatch
     }
 
 }

@@ -42,7 +42,7 @@ export class StatementEventWriter implements IStatementCmdSvc {
             isReconciled: statementPatch.isReconciled,
             transactions: statementPatch.transactions,
         }})
-        return null
+        return statementPatch
     }
 
 }
