@@ -16,8 +16,3 @@ export type AcctId = z.infer<typeof acctIdSchema>
 /** Generates a new ID for an account. */
 export const genAcctId: () => AcctId =
     () => acctIdSchema.parse(acctIdPrefix + createId())
-
-/** Synthetic account ID used to represent the Net Worth equity line on the balance sheet. */
-export const acctIdNetWorth: AcctId = acctIdSchema.parse("acctnetworth0000000000000000")
-
-
