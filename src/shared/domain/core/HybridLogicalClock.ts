@@ -1,5 +1,4 @@
 import {z} from "zod";
-import type {Branded} from "../../util/Branded";
 
 
 // Known limitation (not fixed, intentionally accepted): if the system clock
@@ -12,14 +11,14 @@ export const hlcLength = 16;
 
 export const hlcRegex = /^[0-9A-F]{16}$/
 
-export type HLClock = Branded<string, 'HLClock'>
-
 export const hlcSchema =
     z.string()
         .trim()
         .length(hlcLength, `Hybrid logical clock must be ${hlcLength} characters in length.`)
         .regex(hlcRegex, "Hybrid logical clock must be an upper case hexadecimal integer.")
-        .transform((s): HLClock => s as HLClock)
+        .brand('HLClock')
+
+export type HLClock = z.infer<typeof hlcSchema>
 
 /** Initializes a new clock. */
 export function getHLClock(nodeId: string): HLClock {

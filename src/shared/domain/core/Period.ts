@@ -1,16 +1,15 @@
 import {z} from "zod";
-import type {Branded} from "../../util/Branded";
 import {type IsoDate} from "./IsoDate";
 
 export const periodRegex = /^20\d\d(-((Q1)|(Q2)|(Q3)|(Q4)|(0[1-9])|(10)|(11)|(12)))?$/
-
-export type Period = Branded<string, 'Period'>
 
 export const periodSchema =
     z.string()
         .trim()
         .regex(periodRegex, "Accounting period must match format 'YYYY', 'YYYY-MM', or 'YYYY-Q#'.")
-        .transform((s): Period => s as Period)
+        .brand('Period')
+
+export type Period = z.infer<typeof periodSchema>
 
 const asIsoDate = (s: string): IsoDate => s as IsoDate
 

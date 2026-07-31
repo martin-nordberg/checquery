@@ -1,5 +1,4 @@
 import {z} from "zod";
-import type {Branded} from "../../util/Branded";
 
 /** Schema for a Checquery date. */
 export const isoDateLength = 10;
@@ -18,15 +17,15 @@ const isValidCalendarDate = (date: string): boolean => {
     return day <= daysInMonth(year, month)
 }
 
-export type IsoDate = Branded<string, 'IsoDate'>
-
 export const isoDateSchema =
     z.string()
         .trim()
         .length(isoDateLength, `ISO date must be ${isoDateLength} characters.`)
         .regex(isoDateRegex, "ISO date must match format 'YYYY-MM-DD'.")
         .refine(isValidCalendarDate, "ISO date must be a valid calendar date.")
-        .transform((s): IsoDate => s as IsoDate)
+        .brand('IsoDate')
+
+export type IsoDate = z.infer<typeof isoDateSchema>
 
 /** Returns today's date, computed fresh on each call (not cached at module load). */
 export const isoDateToday = (): IsoDate => new Date().toLocaleDateString('sv') as IsoDate
