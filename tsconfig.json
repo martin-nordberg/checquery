@@ -14,7 +14,11 @@
 		"noFallthroughCasesInSwitch": true,
 		"moduleResolution": "bundler",
 		"jsx": "preserve",
-		"jsxImportSource": "solid-js"
+		"jsxImportSource": "solid-js",
+		"baseUrl": ".",
+		"paths": {
+			"$shared/*": ["src/shared/*"]
+		}
 	},
 	"include": ["src"],
 	"exclude": ["node_modules", "dist", "build", "../../package/dist"]
