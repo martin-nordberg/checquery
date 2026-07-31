@@ -28,3 +28,5 @@ Two separate runtime targets share one TypeScript project, compiled independentl
 **Build/copy flow** (`electrobun.config.ts`): Vite builds `src/mainview` → `dist/`, then Electrobun's `build.copy` maps `dist/index.html` and `dist/assets` into `views/mainview/...` inside the packaged app (`build/`). Always run the Vite build before an Electrobun build/dev step that needs fresh frontend assets — `bun run start` does this automatically; `bun run dev` does not.
 
 `tsconfig.json` targets `src/` only, with SolidJS's `jsxImportSource` configured for the `preserve` JSX transform — required for `.tsx` files under `src/mainview` to compile correctly.
+
+**Styling**: Tailwind CSS v4 is wired in via the `@tailwindcss/vite` plugin in `vite.config.ts` (no separate `tailwind.config.js`/PostCSS config needed for v4). `src/mainview/app.css` starts with `@import "tailwindcss";` followed by the app's existing hand-written CSS.
