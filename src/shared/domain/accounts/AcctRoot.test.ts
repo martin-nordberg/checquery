@@ -9,9 +9,9 @@ import {
     acctRootName,
     acctTypeForRootId,
     isRootAcctId,
-} from "$shared/domain/accounts/AcctRoot";
-import {acctIdLength, acctIdPrefix, acctIdSchema, genAcctId} from "$shared/domain/accounts/AcctId";
-import {acctTypeCodes} from "$shared/domain/accounts/AcctType";
+} from "./AcctRoot";
+import {acctIdLength, acctIdPrefix, acctIdSchema, genAcctId} from "./AcctId";
+import {acctTypeCodes} from "./AcctType";
 
 const allRootIds = [acctIdAssets, acctIdLiabilities, acctIdNetWorth, acctIdIncome, acctIdExpenses]
 

@@ -5,7 +5,7 @@ import {acctTypeSchema} from "./AcctType";
 import {acctIdSchema, type AcctId} from "./AcctId";
 import {acctTypeForRootId, isRootAcctId} from "./AcctRoot";
 import type {AcctTypeStr} from "./AcctType";
-import {hlcSchema} from "$shared/domain/core/HybridLogicalClock";
+import {hlcSchema} from "../core/HybridLogicalClock";
 
 /**
  * Checks that an account isn't its own parent. This is checkable purely from a delta, so it applies to

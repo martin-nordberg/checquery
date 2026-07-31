@@ -1,8 +1,8 @@
 import {describe, expect, it} from 'bun:test'
-import {accountCreationEventSchema, accountDeletionEventSchema, accountReadSchema, accountPatchEventSchema} from "$shared/domain/accounts/Account";
+import {accountCreationEventSchema, accountDeletionEventSchema, accountReadSchema, accountPatchEventSchema} from "./Account";
 import {z} from "zod";
-import {genAcctId} from "$shared/domain/accounts/AcctId";
-import {acctIdAssets, acctIdExpenses, acctIdIncome, acctIdLiabilities, acctIdNetWorth} from "$shared/domain/accounts/AcctRoot";
+import {genAcctId} from "./AcctId";
+import {acctIdAssets, acctIdExpenses, acctIdIncome, acctIdLiabilities, acctIdNetWorth} from "./AcctRoot";
 import {getHLClock} from "$shared/domain/core/HybridLogicalClock";
 
 describe('Sample Accounts', () => {
