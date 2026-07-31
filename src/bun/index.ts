@@ -1,4 +1,6 @@
-import { BrowserWindow, Updater } from "electrobun/bun";
+import { BrowserView, BrowserWindow, Updater } from "electrobun/bun";
+import type { AppSchema } from "../shared/rpc";
+import { setupApplicationMenu } from "./menu";
 
 const DEV_SERVER_PORT = 5173;
 const DEV_SERVER_URL = `http://localhost:${DEV_SERVER_PORT}`;
@@ -22,6 +24,16 @@ async function getMainViewUrl(): Promise<string> {
 
 const url = await getMainViewUrl();
 
+const rpc = BrowserView.defineRPC<AppSchema>({
+	// promptNewFileName blocks on user input in the New File modal, which can
+	// take far longer than Electrobun's 1000ms default RPC request timeout.
+	maxRequestTime: Infinity,
+	handlers: {
+		requests: {},
+		messages: {},
+	},
+});
+
 const mainWindow = new BrowserWindow({
 	title: "Solid App",
 	url,
@@ -31,6 +43,9 @@ const mainWindow = new BrowserWindow({
 		x: 200,
 		y: 200,
 	},
+	rpc,
 });
+
+setupApplicationMenu(mainWindow, rpc);
 
 console.log("Solid app started!");

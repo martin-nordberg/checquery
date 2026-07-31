@@ -1,0 +1,98 @@
+import { ApplicationMenu, Utils, type BrowserWindow } from "electrobun/bun";
+import { createNewFile, openExistingFile } from "./db";
+import type { PromptNewFileNameResult, FileOpenedPayload } from "../shared/rpc";
+
+type AppRpc = {
+	request: {
+		promptNewFileName: (params: {
+			suggestedFolder: string;
+		}) => Promise<PromptNewFileNameResult>;
+	};
+	send: {
+		fileOpened: (payload: FileOpenedPayload) => void;
+	};
+};
+
+export function setupApplicationMenu(
+	window: BrowserWindow<any>,
+	rpc: AppRpc,
+) {
+	ApplicationMenu.setApplicationMenu([
+		{
+			label: "File",
+			submenu: [
+				{ label: "New...", action: "file:new", accelerator: "CmdOrCtrl+N" },
+				{ label: "Open...", action: "file:open", accelerator: "CmdOrCtrl+O" },
+			],
+		},
+	]);
+
+	ApplicationMenu.on("application-menu-clicked", (event) => {
+		const action = (event as { data?: { action?: string } })?.data?.action;
+		if (action === "file:new") {
+			void handleNewFile(window, rpc);
+		} else if (action === "file:open") {
+			void handleOpenFile(window, rpc);
+		}
+	});
+}
+
+async function handleNewFile(window: BrowserWindow<any>, rpc: AppRpc) {
+	const folders = await Utils.openFileDialog({
+		canChooseFiles: false,
+		canChooseDirectory: true,
+		allowsMultipleSelection: false,
+	});
+	const folder = folders?.[0];
+	if (!folder) return;
+
+	const promptResult = await rpc.request.promptNewFileName({
+		suggestedFolder: folder,
+	});
+	if (promptResult.cancelled) return;
+
+	const result = createNewFile(folder, promptResult.name);
+	if (!result.ok) {
+		await Utils.showMessageBox({
+			type: "error",
+			title: "Cannot Create File",
+			message: result.error,
+		});
+		return;
+	}
+
+	window.setTitle(result.name);
+	rpc.send.fileOpened({
+		path: result.path,
+		fileId: result.fileId,
+		name: result.name,
+	});
+}
+
+async function handleOpenFile(window: BrowserWindow<any>, rpc: AppRpc) {
+	const files = await Utils.openFileDialog({
+		canChooseFiles: true,
+		canChooseDirectory: false,
+		allowsMultipleSelection: false,
+		allowedFileTypes: "checquery",
+	});
+	const path = files?.[0];
+	if (!path) return;
+
+	const result = openExistingFile(path);
+	if (!result.ok) {
+		await Utils.showMessageBox({
+			type: "error",
+			title: "Cannot Open File",
+			message: result.error,
+		});
+		return;
+	}
+
+	window.setTitle(result.name);
+	rpc.send.fileOpened({
+		path: result.path,
+		fileId: result.fileId,
+		name: result.name,
+	});
+}
