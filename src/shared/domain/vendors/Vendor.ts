@@ -4,12 +4,16 @@ import {vndrIdSchema} from "./VndrId";
 import {descriptionSchema} from "../core/Description";
 import {hlcSchema} from "../core/HybridLogicalClock";
 import {acctIdSchema} from "../accounts/AcctId";
+import {origIdSchema} from "../origins/OrigId";
 
 /** Base schema for a Checquery vendor's details. */
 export const vendorAttributesSchema =
     z.strictObject({
         /** The unique ID of the vendor. */
         id: vndrIdSchema,
+
+        /** The ID of the origin (who/where) that created or most recently modified this vendor. */
+        origId: origIdSchema,
 
         /** The name of the vendor. */
         name: nameSchema,
@@ -46,6 +50,10 @@ export type VendorCreationEvent = z.infer<typeof vendorCreationEventSchema>
 export const vendorDeletionEventSchema = z.object({
     /** The unique ID of the vendor. */
     id: vndrIdSchema,
+
+    /** The ID of the origin (who/where) performing the deletion. */
+    origId: origIdSchema,
+
     hlc: hlcSchema.optional(),
 })
 

@@ -4,11 +4,13 @@ import {vendorCreationEventSchema, vendorDeletionEventSchema, vendorReadSchema, 
 import {genVndrId} from './VndrId'
 import {genAcctId} from '../accounts/AcctId'
 import {getHLClock} from '../core/HybridLogicalClock'
+import {genOrigId} from '../origins/OrigId'
 
 describe('vendorSchema', () => {
     it('parses a valid vendor', () => {
         const input = {
             id: genVndrId(),
+            origId: genOrigId(),
             name: 'Acme Corporation',
             description: 'A fictional company',
             isActive: true
@@ -17,6 +19,7 @@ describe('vendorSchema', () => {
         const result = vendorReadSchema.parse(input)
 
         expect(result.id).toBe(input.id)
+        expect(result.origId).toBe(input.origId)
         expect(result.name as string).toBe(input.name)
         expect(result.description as string).toBe(input.description)
         expect(result.isActive).toBe(true)
@@ -25,6 +28,7 @@ describe('vendorSchema', () => {
     it('trims whitespace from name', () => {
         const input = {
             id: genVndrId(),
+            origId: genOrigId(),
             name: '  Acme Corporation  ',
             description: 'A fictional company',
             isActive: true
@@ -38,6 +42,7 @@ describe('vendorSchema', () => {
     it('rejects empty name', () => {
         const input = {
             id: genVndrId(),
+            origId: genOrigId(),
             name: ''
         }
 
@@ -47,6 +52,7 @@ describe('vendorSchema', () => {
     it('rejects name with only whitespace', () => {
         const input = {
             id: genVndrId(),
+            origId: genOrigId(),
             name: '   '
         }
 
@@ -56,6 +62,7 @@ describe('vendorSchema', () => {
     it('rejects name exceeding max length', () => {
         const input = {
             id: genVndrId(),
+            origId: genOrigId(),
             name: 'x'.repeat(201)
         }
 
@@ -65,6 +72,7 @@ describe('vendorSchema', () => {
     it('rejects name with newlines', () => {
         const input = {
             id: genVndrId(),
+            origId: genOrigId(),
             name: 'Acme\nCorporation'
         }
 
@@ -74,6 +82,7 @@ describe('vendorSchema', () => {
     it('rejects invalid vendor id format', () => {
         const input = {
             id: 'invalid-id',
+            origId: genOrigId(),
             name: 'Acme Corporation'
         }
 
@@ -83,6 +92,7 @@ describe('vendorSchema', () => {
     it('rejects vendor id without correct prefix', () => {
         const input = {
             id: 'acctabcdefghij1234567890',
+            origId: genOrigId(),
             name: 'Acme Corporation'
         }
 
@@ -92,6 +102,7 @@ describe('vendorSchema', () => {
     it('rejects description exceeding max length', () => {
         const input = {
             id: genVndrId(),
+            origId: genOrigId(),
             name: 'Acme Corporation',
             description: 'x'.repeat(201)
         }
@@ -102,6 +113,7 @@ describe('vendorSchema', () => {
     it('rejects description with newlines', () => {
         const input = {
             id: genVndrId(),
+            origId: genOrigId(),
             name: 'Acme Corporation',
             description: 'Line one\nLine two'
         }
@@ -112,6 +124,7 @@ describe('vendorSchema', () => {
     it('rejects unknown properties', () => {
         const input = {
             id: genVndrId(),
+            origId: genOrigId(),
             name: 'Acme Corporation',
             unknownField: 'should fail'
         }
@@ -120,10 +133,62 @@ describe('vendorSchema', () => {
     })
 })
 
+describe('origId', () => {
+    it('rejects a missing origId (vendorReadSchema)', () => {
+        expect(() => vendorReadSchema.parse({
+            id: genVndrId(),
+            name: 'Acme Corporation',
+            description: '',
+            isActive: true,
+        })).toThrow()
+    })
+
+    it('rejects an invalid origId format (vendorReadSchema)', () => {
+        expect(() => vendorReadSchema.parse({
+            id: genVndrId(),
+            origId: 'not-an-orig-id',
+            name: 'Acme Corporation',
+            description: '',
+            isActive: true,
+        })).toThrow()
+    })
+
+    it('rejects an origId with the wrong entity prefix (a vendor ID, not an origin ID)', () => {
+        expect(() => vendorReadSchema.parse({
+            id: genVndrId(),
+            origId: genVndrId(),
+            name: 'Acme Corporation',
+            description: '',
+            isActive: true,
+        })).toThrow()
+    })
+
+    it('rejects a missing origId on creation', () => {
+        expect(() => vendorCreationEventSchema.parse({
+            id: genVndrId(),
+            name: 'New Vendor',
+        })).toThrow()
+    })
+
+    it('rejects a missing origId on a patch, even though other fields are optional', () => {
+        expect(() => vendorPatchEventSchema.parse({
+            id: genVndrId(),
+            name: 'Renamed',
+        })).toThrow()
+    })
+
+    it('rejects a missing origId on deletion', () => {
+        expect(() => vendorDeletionEventSchema.parse({
+            id: genVndrId(),
+        })).toThrow()
+    })
+})
+
 describe('vendorCreationSchema', () => {
     it('parses valid creation input', () => {
         const input = {
             id: genVndrId(),
+            origId: genOrigId(),
             name: 'New Vendor',
             description: 'Created for testing'
         }
@@ -131,12 +196,14 @@ describe('vendorCreationSchema', () => {
         const result = vendorCreationEventSchema.parse(input)
 
         expect(result.id).toBe(input.id)
+        expect(result.origId).toBe(input.origId)
         expect(result.name as string).toBe(input.name)
         expect(result.description as string).toBe(input.description)
     })
 
     it('requires id field', () => {
         const input = {
+            origId: genOrigId(),
             name: 'New Vendor'
         }
 
@@ -145,7 +212,8 @@ describe('vendorCreationSchema', () => {
 
     it('requires name field', () => {
         const input = {
-            id: genVndrId()
+            id: genVndrId(),
+            origId: genOrigId(),
         }
 
         expect(() => vendorCreationEventSchema.parse(input)).toThrow()
@@ -154,6 +222,7 @@ describe('vendorCreationSchema', () => {
     it('defaults description to empty string when absent', () => {
         const result = vendorCreationEventSchema.parse({
             id: genVndrId(),
+            origId: genOrigId(),
             name: 'New Vendor',
         })
         expect(result.description as string).toBe('')
@@ -162,6 +231,7 @@ describe('vendorCreationSchema', () => {
     it('defaults isActive to true when absent', () => {
         const result = vendorCreationEventSchema.parse({
             id: genVndrId(),
+            origId: genOrigId(),
             name: 'New Vendor',
         })
         expect(result.isActive).toBe(true)
@@ -170,6 +240,7 @@ describe('vendorCreationSchema', () => {
     it('rejects unknown properties', () => {
         expect(() => vendorCreationEventSchema.parse({
             id: genVndrId(),
+            origId: genOrigId(),
             name: 'New Vendor',
             unknownField: 'should fail',
         })).toThrow()
@@ -178,6 +249,7 @@ describe('vendorCreationSchema', () => {
     it('rejects a malformed defaultAcctId', () => {
         expect(() => vendorCreationEventSchema.parse({
             id: genVndrId(),
+            origId: genOrigId(),
             name: 'New Vendor',
             defaultAcctId: 'not-an-acct-id',
         })).toThrow()
@@ -193,6 +265,16 @@ describe('vendorCreationSchema', () => {
                     allOf: [
                         {pattern: "^[0-9a-z]+$"},
                         {pattern: "^vndr.*"},
+                    ],
+                    maxLength: 28,
+                    minLength: 28,
+                    format: "cuid2",
+                    type: "string",
+                },
+                origId: {
+                    allOf: [
+                        {pattern: "^[0-9a-z]+$"},
+                        {pattern: "^orig.*"},
                     ],
                     maxLength: 28,
                     minLength: 28,
@@ -229,6 +311,7 @@ describe('vendorCreationSchema', () => {
             readOnly: true,
             required: [
                 "id",
+                "origId",
                 "name",
                 "description",
                 "isActive",
@@ -242,6 +325,7 @@ describe('vendorUpdateSchema', () => {
     it('parses update with all fields', () => {
         const input = {
             id: genVndrId(),
+            origId: genOrigId(),
             name: 'Updated Name',
             description: 'Updated description'
         }
@@ -249,6 +333,7 @@ describe('vendorUpdateSchema', () => {
         const result = vendorPatchEventSchema.parse(input)
 
         expect(result.id).toBe(input.id)
+        expect(result.origId).toBe(input.origId)
         expect(result.name as string).toBe(input.name)
         expect(result.description as string).toBe(input.description)
     })
@@ -256,6 +341,7 @@ describe('vendorUpdateSchema', () => {
     it('allows update without name (name is optional in updates)', () => {
         const input = {
             id: genVndrId(),
+            origId: genOrigId(),
             description: 'Updated description only'
         }
 
@@ -268,6 +354,7 @@ describe('vendorUpdateSchema', () => {
 
     it('requires id field', () => {
         const input = {
+            origId: genOrigId(),
             name: 'Updated Name'
         }
 
@@ -277,6 +364,7 @@ describe('vendorUpdateSchema', () => {
     it('validates name when provided', () => {
         const input = {
             id: genVndrId(),
+            origId: genOrigId(),
             name: ''
         }
 
@@ -286,6 +374,7 @@ describe('vendorUpdateSchema', () => {
     it('rejects unknown properties', () => {
         expect(() => vendorPatchEventSchema.parse({
             id: genVndrId(),
+            origId: genOrigId(),
             unknownField: 'should fail',
         })).toThrow()
     })
@@ -293,6 +382,7 @@ describe('vendorUpdateSchema', () => {
     it('rejects a malformed defaultAcctId', () => {
         expect(() => vendorPatchEventSchema.parse({
             id: genVndrId(),
+            origId: genOrigId(),
             defaultAcctId: 'not-an-acct-id',
         })).toThrow()
     })
@@ -305,6 +395,7 @@ describe('hlc field in vendor event schemas', () => {
             const hlc = getHLClock("ABC")
             const vendor = vendorCreationEventSchema.parse({
                 id: genVndrId(),
+                origId: genOrigId(),
                 name: 'Acme Corp',
                 hlc,
             })
@@ -314,6 +405,7 @@ describe('hlc field in vendor event schemas', () => {
         it('hlc is undefined when absent', () => {
             const vendor = vendorCreationEventSchema.parse({
                 id: genVndrId(),
+                origId: genOrigId(),
                 name: 'Acme Corp',
             })
             expect(vendor.hlc).toBeUndefined()
@@ -322,6 +414,7 @@ describe('hlc field in vendor event schemas', () => {
         it('rejects an invalid hlc', () => {
             expect(() => vendorCreationEventSchema.parse({
                 id: genVndrId(),
+                origId: genOrigId(),
                 name: 'Acme Corp',
                 hlc: 'not-valid',
             })).toThrow()
@@ -329,10 +422,12 @@ describe('hlc field in vendor event schemas', () => {
     })
 
     describe('vendorDeletionEventSchema', () => {
-        it('parses with required id only', () => {
+        it('parses with required id and origId only', () => {
             const id = genVndrId()
-            const event = vendorDeletionEventSchema.parse({id})
+            const origId = genOrigId()
+            const event = vendorDeletionEventSchema.parse({id, origId})
             expect(event.id).toBe(id)
+            expect(event.origId).toBe(origId)
             expect(event.hlc).toBeUndefined()
         })
 
@@ -340,6 +435,7 @@ describe('hlc field in vendor event schemas', () => {
             const hlc = getHLClock("ABC")
             const event = vendorDeletionEventSchema.parse({
                 id: genVndrId(),
+                origId: genOrigId(),
                 hlc,
             })
             expect(event.hlc).toBe(hlc)
@@ -348,12 +444,21 @@ describe('hlc field in vendor event schemas', () => {
         it('rejects an invalid hlc', () => {
             expect(() => vendorDeletionEventSchema.parse({
                 id: genVndrId(),
+                origId: genOrigId(),
                 hlc: 'not-valid',
             })).toThrow()
         })
 
         it('rejects a missing id', () => {
-            expect(() => vendorDeletionEventSchema.parse({})).toThrow()
+            expect(() => vendorDeletionEventSchema.parse({
+                origId: genOrigId(),
+            })).toThrow()
+        })
+
+        it('rejects a missing origId', () => {
+            expect(() => vendorDeletionEventSchema.parse({
+                id: genVndrId(),
+            })).toThrow()
         })
     })
 
@@ -362,6 +467,7 @@ describe('hlc field in vendor event schemas', () => {
             const hlc = getHLClock("ABC")
             const vendor = vendorPatchEventSchema.parse({
                 id: genVndrId(),
+                origId: genOrigId(),
                 hlc,
             })
             expect(vendor.hlc).toBe(hlc)
@@ -370,6 +476,7 @@ describe('hlc field in vendor event schemas', () => {
         it('hlc is undefined when absent', () => {
             const vendor = vendorPatchEventSchema.parse({
                 id: genVndrId(),
+                origId: genOrigId(),
             })
             expect(vendor.hlc).toBeUndefined()
         })
@@ -377,6 +484,7 @@ describe('hlc field in vendor event schemas', () => {
         it('rejects an invalid hlc', () => {
             expect(() => vendorPatchEventSchema.parse({
                 id: genVndrId(),
+                origId: genOrigId(),
                 hlc: 'not-valid',
             })).toThrow()
         })
@@ -388,6 +496,7 @@ describe('defaultAcctId', () => {
     it('is undefined when absent (vendorReadSchema)', () => {
         const vendor = vendorReadSchema.parse({
             id: genVndrId(),
+            origId: genOrigId(),
             name: 'Acme Corporation',
             description: '',
             isActive: true,
@@ -399,6 +508,7 @@ describe('defaultAcctId', () => {
         const acctId = genAcctId()
         const vendor = vendorReadSchema.parse({
             id: genVndrId(),
+            origId: genOrigId(),
             name: 'Acme Corporation',
             description: '',
             defaultAcctId: acctId,
@@ -410,6 +520,7 @@ describe('defaultAcctId', () => {
     it('rejects a malformed defaultAcctId', () => {
         expect(() => vendorReadSchema.parse({
             id: genVndrId(),
+            origId: genOrigId(),
             name: 'Acme Corporation',
             description: '',
             defaultAcctId: 'not-an-acct-id',
@@ -420,6 +531,7 @@ describe('defaultAcctId', () => {
     it('rejects a defaultAcctId with the wrong entity prefix (a vendor ID, not an account ID)', () => {
         expect(() => vendorReadSchema.parse({
             id: genVndrId(),
+            origId: genOrigId(),
             name: 'Acme Corporation',
             description: '',
             defaultAcctId: genVndrId(),
@@ -431,6 +543,7 @@ describe('defaultAcctId', () => {
         const acctId = genAcctId()
         const vendor = vendorCreationEventSchema.parse({
             id: genVndrId(),
+            origId: genOrigId(),
             name: 'Acme Corporation',
             defaultAcctId: acctId,
         })
@@ -441,6 +554,7 @@ describe('defaultAcctId', () => {
         const acctId = genAcctId()
         const vendor = vendorPatchEventSchema.parse({
             id: genVndrId(),
+            origId: genOrigId(),
             defaultAcctId: acctId,
         })
         expect(vendor.defaultAcctId).toBe(acctId)
@@ -449,6 +563,7 @@ describe('defaultAcctId', () => {
     it('is omittable in a patch (leaves it unchanged)', () => {
         const vendor = vendorPatchEventSchema.parse({
             id: genVndrId(),
+            origId: genOrigId(),
             name: 'Renamed',
         })
         expect(vendor.defaultAcctId).toBeUndefined()

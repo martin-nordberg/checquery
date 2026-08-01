@@ -10,6 +10,7 @@ import {genTxnId} from '$shared/domain/transactions/TxnId'
 import {genAcctId} from '$shared/domain/accounts/AcctId'
 import {genVndrId} from '$shared/domain/vendors/VndrId'
 import {getHLClock} from '$shared/domain/core/HybridLogicalClock'
+import {genOrigId} from '$shared/domain/origins/OrigId'
 
 const validEntries = [
     {acctId: genAcctId(), debit: '$100.00', credit: '$0.00'},
@@ -20,9 +21,11 @@ describe('transactionReadSchema', () => {
     describe('valid transactions', () => {
         it('parses a transaction with required fields and a vendor', () => {
             const id = genTxnId()
+            const origId = genOrigId()
             const vndrId = genVndrId()
             const txn = transactionReadSchema.parse({
                 id,
+                origId,
                 postDate: '2026-01-15',
                 code: '',
                 vndrId,
@@ -32,6 +35,7 @@ describe('transactionReadSchema', () => {
             })
 
             expect(txn.id).toBe(id)
+            expect(txn.origId).toBe(origId)
             expect(txn.postDate as string).toBe('2026-01-15')
             expect(txn.vndrId).toBe(vndrId)
             expect(txn.entries).toHaveLength(2)
@@ -40,6 +44,7 @@ describe('transactionReadSchema', () => {
         it('parses a transaction with a description instead of a vendor', () => {
             const txn = transactionReadSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '2026-01-15',
                 code: '',
                 description: 'Monthly payment',
@@ -56,6 +61,7 @@ describe('transactionReadSchema', () => {
             const vndrId = genVndrId()
             const txn = transactionReadSchema.parse({
                 id,
+                origId: genOrigId(),
                 postDate: '2026-01-15',
                 clearedDate: '2026-01-20',
                 code: '1234',
@@ -75,6 +81,7 @@ describe('transactionReadSchema', () => {
         it('parses a transaction with more than two entries', () => {
             const txn = transactionReadSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '2026-01-15',
                 code: '',
                 description: 'Split purchase',
@@ -93,6 +100,7 @@ describe('transactionReadSchema', () => {
     describe('invalid id', () => {
         it('rejects missing id', () => {
             expect(() => transactionReadSchema.parse({
+                origId: genOrigId(),
                 postDate: '2026-01-15',
                 code: '',
                 description: 'x',
@@ -104,6 +112,7 @@ describe('transactionReadSchema', () => {
         it('rejects invalid id format', () => {
             expect(() => transactionReadSchema.parse({
                 id: 'invalid-id',
+                origId: genOrigId(),
                 postDate: '2026-01-15',
                 code: '',
                 description: 'x',
@@ -115,6 +124,44 @@ describe('transactionReadSchema', () => {
         it('rejects id with wrong prefix', () => {
             expect(() => transactionReadSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
+                postDate: '2026-01-15',
+                code: '',
+                description: 'x',
+                needsReview: false,
+                entries: validEntries
+            })).toThrow()
+        })
+    })
+
+    describe('invalid origId', () => {
+        it('rejects missing origId', () => {
+            expect(() => transactionReadSchema.parse({
+                id: genTxnId(),
+                postDate: '2026-01-15',
+                code: '',
+                description: 'x',
+                needsReview: false,
+                entries: validEntries
+            })).toThrow()
+        })
+
+        it('rejects invalid origId format', () => {
+            expect(() => transactionReadSchema.parse({
+                id: genTxnId(),
+                origId: 'not-an-orig-id',
+                postDate: '2026-01-15',
+                code: '',
+                description: 'x',
+                needsReview: false,
+                entries: validEntries
+            })).toThrow()
+        })
+
+        it('rejects an origId with the wrong entity prefix', () => {
+            expect(() => transactionReadSchema.parse({
+                id: genTxnId(),
+                origId: genTxnId(),
                 postDate: '2026-01-15',
                 code: '',
                 description: 'x',
@@ -128,6 +175,7 @@ describe('transactionReadSchema', () => {
         it('rejects missing postDate', () => {
             expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 code: '',
                 description: 'x',
                 needsReview: false,
@@ -138,6 +186,7 @@ describe('transactionReadSchema', () => {
         it('rejects invalid date format - wrong separator', () => {
             expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '2026/01/15',
                 code: '',
                 description: 'x',
@@ -149,6 +198,7 @@ describe('transactionReadSchema', () => {
         it('rejects invalid date format - wrong order', () => {
             expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '15-01-2026',
                 code: '',
                 description: 'x',
@@ -160,6 +210,7 @@ describe('transactionReadSchema', () => {
         it('rejects invalid month', () => {
             expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '2026-13-15',
                 code: '',
                 description: 'x',
@@ -171,6 +222,7 @@ describe('transactionReadSchema', () => {
         it('rejects invalid day', () => {
             expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '2026-01-32',
                 code: '',
                 description: 'x',
@@ -184,6 +236,7 @@ describe('transactionReadSchema', () => {
         it('rejects an invalid clearedDate format', () => {
             expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '2026-01-15',
                 clearedDate: '2026/01/20',
                 code: '',
@@ -198,6 +251,7 @@ describe('transactionReadSchema', () => {
         it('rejects an invalid vndrId format', () => {
             expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '2026-01-15',
                 code: '',
                 vndrId: 'not-a-vndr-id',
@@ -210,6 +264,7 @@ describe('transactionReadSchema', () => {
         it('rejects a vndrId with the wrong entity prefix', () => {
             expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '2026-01-15',
                 code: '',
                 vndrId: genAcctId(),
@@ -224,6 +279,7 @@ describe('transactionReadSchema', () => {
         it('rejects missing description', () => {
             expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '2026-01-15',
                 code: '',
                 vndrId: genVndrId(),
@@ -235,6 +291,7 @@ describe('transactionReadSchema', () => {
         it('rejects description exceeding max length', () => {
             expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '2026-01-15',
                 code: '',
                 description: 'x'.repeat(201),
@@ -246,6 +303,7 @@ describe('transactionReadSchema', () => {
         it('rejects description with newlines', () => {
             expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '2026-01-15',
                 code: '',
                 description: 'Line one\nLine two',
@@ -259,6 +317,7 @@ describe('transactionReadSchema', () => {
         it('rejects missing entries', () => {
             expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '2026-01-15',
                 code: '',
                 description: 'x',
@@ -269,6 +328,7 @@ describe('transactionReadSchema', () => {
         it('rejects a single entry', () => {
             expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '2026-01-15',
                 code: '',
                 description: 'x',
@@ -280,6 +340,7 @@ describe('transactionReadSchema', () => {
         it('rejects unbalanced entries', () => {
             expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '2026-01-15',
                 code: '',
                 description: 'x',
@@ -294,6 +355,7 @@ describe('transactionReadSchema', () => {
         it('rejects an empty entries array', () => {
             expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '2026-01-15',
                 code: '',
                 description: 'x',
@@ -307,6 +369,7 @@ describe('transactionReadSchema', () => {
         it('rejects unknown properties', () => {
             expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '2026-01-15',
                 code: '',
                 vndrId: genVndrId(),
@@ -322,6 +385,7 @@ describe('transactionReadSchema', () => {
         it('rejects a missing needsReview (required on a complete read)', () => {
             expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '2026-01-15',
                 code: '',
                 description: 'x',
@@ -332,6 +396,7 @@ describe('transactionReadSchema', () => {
         it('rejects a non-boolean needsReview', () => {
             expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '2026-01-15',
                 code: '',
                 description: 'x',
@@ -343,6 +408,7 @@ describe('transactionReadSchema', () => {
         it('accepts needsReview true', () => {
             const txn = transactionReadSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '2026-01-15',
                 code: '',
                 description: 'x',
@@ -358,6 +424,7 @@ describe('transactionReadSchema', () => {
             const vndrId = genVndrId()
             const txn = transactionReadSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '2026-01-15',
                 code: '',
                 vndrId,
@@ -371,6 +438,7 @@ describe('transactionReadSchema', () => {
         it('accepts a transaction with description only', () => {
             const txn = transactionReadSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '2026-01-15',
                 code: '',
                 description: 'Monthly payment',
@@ -384,6 +452,7 @@ describe('transactionReadSchema', () => {
             const vndrId = genVndrId()
             const txn = transactionReadSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '2026-01-15',
                 code: '',
                 vndrId,
@@ -398,6 +467,7 @@ describe('transactionReadSchema', () => {
         it('rejects a transaction with neither vndrId nor description', () => {
             expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '2026-01-15',
                 code: '',
                 description: '',
@@ -409,6 +479,7 @@ describe('transactionReadSchema', () => {
         it('rejects a transaction with a whitespace-only description and no vndrId', () => {
             expect(() => transactionReadSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '2026-01-15',
                 code: '',
                 description: '   ',
@@ -424,6 +495,7 @@ describe('transactionBeforeEntriesSchema', () => {
         const id = genTxnId()
         const txn = transactionBeforeEntriesSchema.parse({
             id,
+            origId: genOrigId(),
             postDate: '2026-01-15',
             code: '',
             description: 'Monthly payment',
@@ -434,9 +506,20 @@ describe('transactionBeforeEntriesSchema', () => {
         expect(txn.postDate as string).toBe('2026-01-15')
     })
 
+    it('rejects a missing origId', () => {
+        expect(() => transactionBeforeEntriesSchema.parse({
+            id: genTxnId(),
+            postDate: '2026-01-15',
+            code: '',
+            description: 'Monthly payment',
+            needsReview: false,
+        })).toThrow()
+    })
+
     it('rejects entries as an unknown property', () => {
         expect(() => transactionBeforeEntriesSchema.parse({
             id: genTxnId(),
+            origId: genOrigId(),
             postDate: '2026-01-15',
             code: '',
             description: 'Monthly payment',
@@ -448,6 +531,7 @@ describe('transactionBeforeEntriesSchema', () => {
     it('rejects a missing needsReview', () => {
         expect(() => transactionBeforeEntriesSchema.parse({
             id: genTxnId(),
+            origId: genOrigId(),
             postDate: '2026-01-15',
             code: '',
             description: 'Monthly payment',
@@ -457,6 +541,7 @@ describe('transactionBeforeEntriesSchema', () => {
     it('does not enforce vendor-or-description (no such refinement on this sub-schema)', () => {
         const txn = transactionBeforeEntriesSchema.parse({
             id: genTxnId(),
+            origId: genOrigId(),
             postDate: '2026-01-15',
             code: '',
             description: '',
@@ -471,6 +556,7 @@ describe('transactionCreationEventSchema', () => {
     it('parses valid creation input', () => {
         const txn = transactionCreationEventSchema.parse({
             id: genTxnId(),
+            origId: genOrigId(),
             postDate: '2026-01-15',
             vndrId: genVndrId(),
             entries: validEntries
@@ -482,13 +568,24 @@ describe('transactionCreationEventSchema', () => {
     it('requires all mandatory fields', () => {
         expect(() => transactionCreationEventSchema.parse({
             id: genTxnId(),
+            origId: genOrigId(),
             vndrId: genVndrId()
+        })).toThrow()
+    })
+
+    it('requires origId', () => {
+        expect(() => transactionCreationEventSchema.parse({
+            id: genTxnId(),
+            postDate: '2026-01-15',
+            vndrId: genVndrId(),
+            entries: validEntries
         })).toThrow()
     })
 
     it('requires vndrId or description', () => {
         expect(() => transactionCreationEventSchema.parse({
             id: genTxnId(),
+            origId: genOrigId(),
             postDate: '2026-01-15',
             entries: validEntries
         })).toThrow('A transaction must have a vendor or a description (or both).')
@@ -497,6 +594,7 @@ describe('transactionCreationEventSchema', () => {
     it('defaults code to an empty string', () => {
         const txn = transactionCreationEventSchema.parse({
             id: genTxnId(),
+            origId: genOrigId(),
             postDate: '2026-01-15',
             vndrId: genVndrId(),
             entries: validEntries
@@ -508,6 +606,7 @@ describe('transactionCreationEventSchema', () => {
     it('defaults description to an empty string', () => {
         const txn = transactionCreationEventSchema.parse({
             id: genTxnId(),
+            origId: genOrigId(),
             postDate: '2026-01-15',
             vndrId: genVndrId(),
             entries: validEntries
@@ -519,6 +618,7 @@ describe('transactionCreationEventSchema', () => {
     it('defaults needsReview to false when absent', () => {
         const txn = transactionCreationEventSchema.parse({
             id: genTxnId(),
+            origId: genOrigId(),
             postDate: '2026-01-15',
             vndrId: genVndrId(),
             entries: validEntries
@@ -530,6 +630,7 @@ describe('transactionCreationEventSchema', () => {
     it('accepts an explicit needsReview of true', () => {
         const txn = transactionCreationEventSchema.parse({
             id: genTxnId(),
+            origId: genOrigId(),
             postDate: '2026-01-15',
             vndrId: genVndrId(),
             needsReview: true,
@@ -542,6 +643,7 @@ describe('transactionCreationEventSchema', () => {
     it('rejects a non-boolean needsReview', () => {
         expect(() => transactionCreationEventSchema.parse({
             id: genTxnId(),
+            origId: genOrigId(),
             postDate: '2026-01-15',
             vndrId: genVndrId(),
             needsReview: 'true',
@@ -552,6 +654,7 @@ describe('transactionCreationEventSchema', () => {
     it('rejects unbalanced entries', () => {
         expect(() => transactionCreationEventSchema.parse({
             id: genTxnId(),
+            origId: genOrigId(),
             postDate: '2026-01-15',
             vndrId: genVndrId(),
             entries: [
@@ -564,6 +667,7 @@ describe('transactionCreationEventSchema', () => {
     it('rejects a single entry', () => {
         expect(() => transactionCreationEventSchema.parse({
             id: genTxnId(),
+            origId: genOrigId(),
             postDate: '2026-01-15',
             vndrId: genVndrId(),
             entries: [validEntries[0]]
@@ -572,10 +676,12 @@ describe('transactionCreationEventSchema', () => {
 })
 
 describe('transactionDeletionEventSchema', () => {
-    it('parses with required id only', () => {
+    it('parses with required id and origId only', () => {
         const id = genTxnId()
-        const event = transactionDeletionEventSchema.parse({id})
+        const origId = genOrigId()
+        const event = transactionDeletionEventSchema.parse({id, origId})
         expect(event.id).toBe(id)
+        expect(event.origId).toBe(origId)
         expect(event.hlc).toBeUndefined()
     })
 
@@ -583,6 +689,7 @@ describe('transactionDeletionEventSchema', () => {
         const hlc = getHLClock("ABC")
         const event = transactionDeletionEventSchema.parse({
             id: genTxnId(),
+            origId: genOrigId(),
             hlc,
         })
         expect(event.hlc).toBe(hlc)
@@ -591,12 +698,21 @@ describe('transactionDeletionEventSchema', () => {
     it('rejects an invalid hlc', () => {
         expect(() => transactionDeletionEventSchema.parse({
             id: genTxnId(),
+            origId: genOrigId(),
             hlc: 'not-valid',
         })).toThrow()
     })
 
     it('rejects a missing id', () => {
-        expect(() => transactionDeletionEventSchema.parse({})).toThrow()
+        expect(() => transactionDeletionEventSchema.parse({
+            origId: genOrigId(),
+        })).toThrow()
+    })
+
+    it('rejects a missing origId', () => {
+        expect(() => transactionDeletionEventSchema.parse({
+            id: genTxnId(),
+        })).toThrow()
     })
 })
 
@@ -604,6 +720,7 @@ describe('transactionPatchEventSchema', () => {
     it('parses an update with all fields', () => {
         const txn = transactionPatchEventSchema.parse({
             id: genTxnId(),
+            origId: genOrigId(),
             postDate: '2026-02-15',
             entries: validEntries
         })
@@ -614,6 +731,7 @@ describe('transactionPatchEventSchema', () => {
     it('allows an update without postDate (postDate is optional in updates)', () => {
         const txn = transactionPatchEventSchema.parse({
             id: genTxnId(),
+            origId: genOrigId(),
             entries: validEntries
         })
 
@@ -622,14 +740,23 @@ describe('transactionPatchEventSchema', () => {
 
     it('requires the id field', () => {
         expect(() => transactionPatchEventSchema.parse({
+            origId: genOrigId(),
             postDate: '2026-01-15',
             entries: validEntries
         })).toThrow()
     })
 
+    it('requires the origId field, even though other fields are optional', () => {
+        expect(() => transactionPatchEventSchema.parse({
+            id: genTxnId(),
+            postDate: '2026-01-15',
+        })).toThrow()
+    })
+
     it('allows an update without entries', () => {
         const txn = transactionPatchEventSchema.parse({
-            id: genTxnId()
+            id: genTxnId(),
+            origId: genOrigId(),
         })
         expect(txn.entries).toBeUndefined()
     })
@@ -637,6 +764,7 @@ describe('transactionPatchEventSchema', () => {
     it('does not enforce vendor-or-description on a patch that omits both', () => {
         const txn = transactionPatchEventSchema.parse({
             id: genTxnId(),
+            origId: genOrigId(),
             postDate: '2026-01-15',
         })
         expect(txn.vndrId).toBeUndefined()
@@ -646,6 +774,7 @@ describe('transactionPatchEventSchema', () => {
     it('allows an update without needsReview (unset, not defaulted)', () => {
         const txn = transactionPatchEventSchema.parse({
             id: genTxnId(),
+            origId: genOrigId(),
         })
         expect(txn.needsReview).toBeUndefined()
     })
@@ -653,6 +782,7 @@ describe('transactionPatchEventSchema', () => {
     it('allows patching needsReview alone', () => {
         const txn = transactionPatchEventSchema.parse({
             id: genTxnId(),
+            origId: genOrigId(),
             needsReview: true,
         })
         expect(txn.needsReview).toBe(true)
@@ -661,6 +791,7 @@ describe('transactionPatchEventSchema', () => {
     it('rejects a non-boolean needsReview', () => {
         expect(() => transactionPatchEventSchema.parse({
             id: genTxnId(),
+            origId: genOrigId(),
             needsReview: 'true',
         })).toThrow()
     })
@@ -668,6 +799,7 @@ describe('transactionPatchEventSchema', () => {
     it('rejects unbalanced entries when entries are provided', () => {
         expect(() => transactionPatchEventSchema.parse({
             id: genTxnId(),
+            origId: genOrigId(),
             entries: [
                 {acctId: genAcctId(), debit: '$100.00', credit: '$0.00'},
                 {acctId: genAcctId(), debit: '$0.00', credit: '$50.00'}
@@ -678,6 +810,7 @@ describe('transactionPatchEventSchema', () => {
     it('rejects unknown properties', () => {
         expect(() => transactionPatchEventSchema.parse({
             id: genTxnId(),
+            origId: genOrigId(),
             unknownField: 'should fail'
         })).toThrow()
     })
@@ -690,6 +823,7 @@ describe('hlc field in transaction event schemas', () => {
             const hlc = getHLClock("ABC")
             const txn = transactionCreationEventSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '2026-01-15',
                 vndrId: genVndrId(),
                 entries: validEntries,
@@ -701,6 +835,7 @@ describe('hlc field in transaction event schemas', () => {
         it('hlc is undefined when absent', () => {
             const txn = transactionCreationEventSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '2026-01-15',
                 vndrId: genVndrId(),
                 entries: validEntries,
@@ -711,6 +846,7 @@ describe('hlc field in transaction event schemas', () => {
         it('rejects an invalid hlc', () => {
             expect(() => transactionCreationEventSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 postDate: '2026-01-15',
                 vndrId: genVndrId(),
                 entries: validEntries,
@@ -724,6 +860,7 @@ describe('hlc field in transaction event schemas', () => {
             const hlc = getHLClock("ABC")
             const txn = transactionPatchEventSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 hlc,
             })
             expect(txn.hlc).toBe(hlc)
@@ -732,6 +869,7 @@ describe('hlc field in transaction event schemas', () => {
         it('hlc is undefined when absent', () => {
             const txn = transactionPatchEventSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
             })
             expect(txn.hlc).toBeUndefined()
         })
@@ -739,6 +877,7 @@ describe('hlc field in transaction event schemas', () => {
         it('rejects an invalid hlc', () => {
             expect(() => transactionPatchEventSchema.parse({
                 id: genTxnId(),
+                origId: genOrigId(),
                 hlc: 'not-valid',
             })).toThrow()
         })

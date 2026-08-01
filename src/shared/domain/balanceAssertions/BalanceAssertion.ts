@@ -4,6 +4,7 @@ import {isoDateSchema} from "../core/IsoDate";
 import {currencyAmtSchema} from "../core/CurrencyAmt";
 import {hlcSchema} from "../core/HybridLogicalClock";
 import {asrtIdSchema} from "./AsrtId";
+import {origIdSchema} from "../origins/OrigId";
 
 /**
  * Base schema for a Checquery balance assertion's details. A balance assertion pins an account's
@@ -16,6 +17,9 @@ const balanceAssertionAttributesSchema =
     z.strictObject({
         /** The unique ID of the balance assertion. */
         id: asrtIdSchema,
+
+        /** The ID of the origin (who/where) that created or most recently modified this assertion. */
+        origId: origIdSchema,
 
         /** The account whose balance is being asserted. */
         acctId: acctIdSchema,
@@ -48,6 +52,10 @@ export type BalanceAssertionCreationEvent = z.infer<typeof balanceAssertionCreat
 export const balanceAssertionDeletionEventSchema = z.object({
     /** The unique ID of the balance assertion. */
     id: asrtIdSchema,
+
+    /** The ID of the origin (who/where) performing the deletion. */
+    origId: origIdSchema,
+
     hlc: hlcSchema.optional(),
 })
 

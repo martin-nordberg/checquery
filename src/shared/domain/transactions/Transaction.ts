@@ -5,12 +5,16 @@ import {isoDateSchema} from "../core/IsoDate";
 import {entriesWriteSchema, entriesReadSchema} from "$shared/domain/transactions/Entries";
 import {hlcSchema} from "$shared/domain/core/HybridLogicalClock";
 import {vndrIdSchema, type VndrId} from "$shared/domain/vendors/VndrId";
+import {origIdSchema} from "$shared/domain/origins/OrigId";
 
 /** Base schema for a Checquery transaction's details. */
 const transactionAttributesSchema =
     z.strictObject({
         /** The transaction sequence number. */
         id: txnIdSchema,
+
+        /** The ID of the origin (who/where) that created or most recently modified this transaction. */
+        origId: origIdSchema,
 
         /** The date of the transaction for reporting purposes. */
         postDate: isoDateSchema,
@@ -78,6 +82,10 @@ export type TransactionCreationEvent = z.infer<typeof transactionCreationEventSc
 export const transactionDeletionEventSchema = z.object({
     /** The unique ID of the transaction. */
     id: txnIdSchema,
+
+    /** The ID of the origin (who/where) performing the deletion. */
+    origId: origIdSchema,
+
     hlc: hlcSchema.optional(),
 })
 

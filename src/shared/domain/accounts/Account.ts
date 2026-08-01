@@ -6,6 +6,7 @@ import {acctIdSchema, type AcctId} from "./AcctId";
 import {acctTypeForRootId, isRootAcctId} from "./AcctRoot";
 import type {AcctTypeStr} from "./AcctType";
 import {hlcSchema} from "../core/HybridLogicalClock";
+import {origIdSchema} from "../origins/OrigId";
 
 /**
  * Checks that an account isn't its own parent. This is checkable purely from a delta, so it applies to
@@ -52,6 +53,9 @@ const accountAttributesSchema =
     z.strictObject({
         /** The unique ID of the account. */
         id: acctIdSchema,
+
+        /** The ID of the origin (who/where) that created or most recently modified this account. */
+        origId: origIdSchema,
 
         /**
          * The ID of this account's parent in the account hierarchy. Absent for the five predefined root
@@ -106,6 +110,10 @@ export type AccountCreationEvent = z.infer<typeof accountCreationEventSchema>
 export const accountDeletionEventSchema = z.object({
     /** The unique ID of the account. */
     id: acctIdSchema,
+
+    /** The ID of the origin (who/where) performing the deletion. */
+    origId: origIdSchema,
+
     hlc: hlcSchema.optional(),
 })
 

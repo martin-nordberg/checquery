@@ -4,6 +4,7 @@ import {z} from "zod";
 import {genAcctId} from "./AcctId";
 import {acctIdAssets, acctIdExpenses, acctIdIncome, acctIdLiabilities, acctIdNetWorth} from "./AcctRoot";
 import {getHLClock} from "$shared/domain/core/HybridLogicalClock";
+import {genOrigId} from "$shared/domain/origins/OrigId";
 
 describe('Sample Accounts', () => {
     it('Should parse without error', () => {
@@ -11,6 +12,7 @@ describe('Sample Accounts', () => {
         const acct = accountReadSchema.parse(
             {
                 id: id,
+                origId: genOrigId(),
                 parentId: acctIdAssets,
                 name: 'example',
                 acctType: 'ASSET',
@@ -31,6 +33,7 @@ describe('Sample Accounts', () => {
         const acct = accountCreationEventSchema.parse(
             {
                 id: id,
+                origId: genOrigId(),
                 parentId: acctIdAssets,
                 name: 'example',
                 acctType: 'ASSET',
@@ -46,9 +49,11 @@ describe('Sample Accounts', () => {
 
     it('Should convert to JSON', () => {
         const id = genAcctId()
+        const origId = genOrigId()
         const acct = accountCreationEventSchema.parse(
             {
                 id: id,
+                origId,
                 parentId: acctIdLiabilities,
                 name: 'example',
                 acctType: 'LIABILITY',
@@ -58,7 +63,7 @@ describe('Sample Accounts', () => {
         const accountJson = JSON.stringify(acct)
 
         expect(accountJson).toBe(
-            `{"id":"${id}","parentId":"${acctIdLiabilities}","acctType":"LIABILITY","name":"example","description":"an example of an account","isPrimary":false}`
+            `{"id":"${id}","origId":"${origId}","parentId":"${acctIdLiabilities}","acctType":"LIABILITY","name":"example","description":"an example of an account","isPrimary":false}`
         )
     })
 
@@ -67,6 +72,7 @@ describe('Sample Accounts', () => {
         const acct = accountPatchEventSchema.parse(
             {
                 id: id,
+                origId: genOrigId(),
                 name: 'example'
             }
         )
@@ -81,6 +87,7 @@ describe('Sample Accounts', () => {
         const acct = accountPatchEventSchema.parse(
             {
                 id: id,
+                origId: genOrigId(),
                 description: 'Revised summary',
             }
         )
@@ -120,6 +127,20 @@ describe('Sample Accounts', () => {
                     format: "cuid2",
                     type: "string",
                 },
+                origId: {
+                    allOf: [
+                        {
+                            pattern: "^[0-9a-z]+$",
+                        },
+                        {
+                            pattern: "^orig.*",
+                        }
+                    ],
+                    maxLength: 28,
+                    minLength: 28,
+                    format: "cuid2",
+                    type: "string",
+                },
                 name: {
                     maxLength: 200,
                     minLength: 1,
@@ -140,6 +161,7 @@ describe('Sample Accounts', () => {
             readOnly: true,
             required: [
                 "id",
+                "origId",
                 "acctType",
                 "name",
                 "description",
@@ -155,6 +177,7 @@ describe('Invalid Accounts', () => {
     describe('invalid id', () => {
         it('rejects missing id', () => {
             expect(() => accountReadSchema.parse({
+                origId: genOrigId(),
                 name: 'example',
                 acctType: 'ASSET'
             })).toThrow()
@@ -163,6 +186,7 @@ describe('Invalid Accounts', () => {
         it('rejects invalid id format', () => {
             expect(() => accountReadSchema.parse({
                 id: 'not-a-cuid2',
+                origId: genOrigId(),
                 name: 'example',
                 acctType: 'ASSET'
             })).toThrow()
@@ -171,8 +195,65 @@ describe('Invalid Accounts', () => {
         it('rejects id with wrong prefix', () => {
             expect(() => accountReadSchema.parse({
                 id: 'orgabcdefghij1234567890',
+                origId: genOrigId(),
                 name: 'example',
                 acctType: 'ASSET'
+            })).toThrow()
+        })
+    })
+
+    describe('invalid origId', () => {
+        it('rejects missing origId', () => {
+            expect(() => accountReadSchema.parse({
+                id: genAcctId(),
+                name: 'example',
+                acctType: 'ASSET',
+                description: '',
+                isPrimary: false,
+            })).toThrow()
+        })
+
+        it('rejects invalid origId format', () => {
+            expect(() => accountReadSchema.parse({
+                id: genAcctId(),
+                origId: 'not-a-cuid2',
+                name: 'example',
+                acctType: 'ASSET',
+                description: '',
+                isPrimary: false,
+            })).toThrow()
+        })
+
+        it('rejects origId with the wrong entity prefix (an account ID, not an origin ID)', () => {
+            expect(() => accountReadSchema.parse({
+                id: genAcctId(),
+                origId: genAcctId(),
+                name: 'example',
+                acctType: 'ASSET',
+                description: '',
+                isPrimary: false,
+            })).toThrow()
+        })
+
+        it('rejects a creation event with missing origId', () => {
+            expect(() => accountCreationEventSchema.parse({
+                id: genAcctId(),
+                parentId: acctIdAssets,
+                name: 'example',
+                acctType: 'ASSET',
+            })).toThrow()
+        })
+
+        it('rejects a patch with missing origId, even though other fields are optional', () => {
+            expect(() => accountPatchEventSchema.parse({
+                id: genAcctId(),
+                name: 'Renamed',
+            })).toThrow()
+        })
+
+        it('rejects a deletion event with missing origId', () => {
+            expect(() => accountDeletionEventSchema.parse({
+                id: genAcctId(),
             })).toThrow()
         })
     })
@@ -181,6 +262,7 @@ describe('Invalid Accounts', () => {
         it('rejects missing name', () => {
             expect(() => accountReadSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
                 acctType: 'ASSET'
             })).toThrow()
         })
@@ -188,6 +270,7 @@ describe('Invalid Accounts', () => {
         it('rejects empty name', () => {
             expect(() => accountReadSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
                 name: '',
                 acctType: 'ASSET'
             })).toThrow()
@@ -196,6 +279,7 @@ describe('Invalid Accounts', () => {
         it('rejects whitespace-only name', () => {
             expect(() => accountReadSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
                 name: '   ',
                 acctType: 'ASSET'
             })).toThrow()
@@ -204,6 +288,7 @@ describe('Invalid Accounts', () => {
         it('rejects name exceeding max length', () => {
             expect(() => accountReadSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
                 name: 'x'.repeat(201),
                 acctType: 'ASSET'
             })).toThrow()
@@ -212,6 +297,7 @@ describe('Invalid Accounts', () => {
         it('rejects name with newlines', () => {
             expect(() => accountReadSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
                 name: 'Line one\nLine two',
                 acctType: 'ASSET'
             })).toThrow()
@@ -220,6 +306,7 @@ describe('Invalid Accounts', () => {
         it('rejects name with carriage return', () => {
             expect(() => accountReadSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
                 name: 'Line one\rLine two',
                 acctType: 'ASSET'
             })).toThrow()
@@ -230,6 +317,7 @@ describe('Invalid Accounts', () => {
         it('rejects missing acctType', () => {
             expect(() => accountReadSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
                 name: 'example'
             })).toThrow()
         })
@@ -237,6 +325,7 @@ describe('Invalid Accounts', () => {
         it('rejects invalid acctType value', () => {
             expect(() => accountReadSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
                 name: 'example',
                 acctType: 'INVALID'
             })).toThrow()
@@ -245,6 +334,7 @@ describe('Invalid Accounts', () => {
         it('rejects lowercase acctType', () => {
             expect(() => accountReadSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
                 name: 'example',
                 acctType: 'asset'
             })).toThrow()
@@ -255,6 +345,7 @@ describe('Invalid Accounts', () => {
         it('rejects description exceeding max length', () => {
             expect(() => accountReadSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
                 name: 'example',
                 acctType: 'ASSET',
                 description: 'x'.repeat(201)
@@ -264,6 +355,7 @@ describe('Invalid Accounts', () => {
         it('rejects description with newlines', () => {
             expect(() => accountReadSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
                 name: 'example',
                 acctType: 'ASSET',
                 description: 'Line one\nLine two'
@@ -275,6 +367,7 @@ describe('Invalid Accounts', () => {
         it('rejects unknown properties', () => {
             expect(() => accountReadSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
                 name: 'example',
                 acctType: 'ASSET',
                 unknownField: 'should fail'
@@ -285,6 +378,7 @@ describe('Invalid Accounts', () => {
     describe('accountUpdateSchema invalid inputs', () => {
         it('rejects missing id', () => {
             expect(() => accountPatchEventSchema.parse({
+                origId: genOrigId(),
                 name: 'Updated Name'
             })).toThrow()
         })
@@ -292,6 +386,7 @@ describe('Invalid Accounts', () => {
         it('rejects empty name when provided', () => {
             expect(() => accountPatchEventSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
                 name: ''
             })).toThrow()
         })
@@ -299,6 +394,7 @@ describe('Invalid Accounts', () => {
         it('rejects invalid acctType when provided', () => {
             expect(() => accountPatchEventSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
                 acctType: 'INVALID'
             })).toThrow()
         })
@@ -313,6 +409,7 @@ describe('Invalid Accounts', () => {
 
         it('rejects missing id', () => {
             expect(() => accountCreationEventSchema.parse({
+                origId: genOrigId(),
                 name: 'example',
                 acctType: 'ASSET'
             })).toThrow()
@@ -327,6 +424,7 @@ describe('hlc field in account event schemas', () => {
             const hlc = getHLClock("ABC")
             const acct = accountCreationEventSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
                 parentId: acctIdAssets,
                 name: 'example',
                 acctType: 'ASSET',
@@ -338,6 +436,7 @@ describe('hlc field in account event schemas', () => {
         it('hlc is undefined when absent', () => {
             const acct = accountCreationEventSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
                 parentId: acctIdAssets,
                 name: 'example',
                 acctType: 'ASSET',
@@ -348,6 +447,7 @@ describe('hlc field in account event schemas', () => {
         it('rejects an invalid hlc', () => {
             expect(() => accountCreationEventSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
                 parentId: acctIdAssets,
                 name: 'example',
                 acctType: 'ASSET',
@@ -357,10 +457,12 @@ describe('hlc field in account event schemas', () => {
     })
 
     describe('accountDeletionEventSchema', () => {
-        it('parses with required id only', () => {
+        it('parses with required id and origId only', () => {
             const id = genAcctId()
-            const event = accountDeletionEventSchema.parse({id})
+            const origId = genOrigId()
+            const event = accountDeletionEventSchema.parse({id, origId})
             expect(event.id).toBe(id)
+            expect(event.origId).toBe(origId)
             expect(event.hlc).toBeUndefined()
         })
 
@@ -368,6 +470,7 @@ describe('hlc field in account event schemas', () => {
             const hlc = getHLClock("ABC")
             const event = accountDeletionEventSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
                 hlc,
             })
             expect(event.hlc).toBe(hlc)
@@ -376,12 +479,21 @@ describe('hlc field in account event schemas', () => {
         it('rejects an invalid hlc', () => {
             expect(() => accountDeletionEventSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
                 hlc: 'not-valid',
             })).toThrow()
         })
 
         it('rejects a missing id', () => {
-            expect(() => accountDeletionEventSchema.parse({})).toThrow()
+            expect(() => accountDeletionEventSchema.parse({
+                origId: genOrigId(),
+            })).toThrow()
+        })
+
+        it('rejects a missing origId', () => {
+            expect(() => accountDeletionEventSchema.parse({
+                id: genAcctId(),
+            })).toThrow()
         })
     })
 
@@ -390,6 +502,7 @@ describe('hlc field in account event schemas', () => {
             const hlc = getHLClock("ABC")
             const acct = accountPatchEventSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
                 name: 'example',
                 hlc,
             })
@@ -399,6 +512,7 @@ describe('hlc field in account event schemas', () => {
         it('hlc is undefined when absent', () => {
             const acct = accountPatchEventSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
                 name: 'example',
             })
             expect(acct.hlc).toBeUndefined()
@@ -407,6 +521,7 @@ describe('hlc field in account event schemas', () => {
         it('rejects an invalid hlc', () => {
             expect(() => accountPatchEventSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
                 name: 'example',
                 hlc: 'not-valid',
             })).toThrow()
@@ -422,6 +537,7 @@ describe('Account hierarchy invariants', () => {
             const id = genAcctId()
             expect(() => accountReadSchema.parse({
                 id,
+                origId: genOrigId(),
                 parentId: id,
                 name: 'example',
                 acctType: 'ASSET',
@@ -434,6 +550,7 @@ describe('Account hierarchy invariants', () => {
             const id = genAcctId()
             expect(() => accountCreationEventSchema.parse({
                 id,
+                origId: genOrigId(),
                 parentId: id,
                 name: 'example',
                 acctType: 'ASSET',
@@ -444,6 +561,7 @@ describe('Account hierarchy invariants', () => {
             const id = genAcctId()
             expect(() => accountPatchEventSchema.parse({
                 id,
+                origId: genOrigId(),
                 parentId: id,
             })).toThrow('An account cannot be its own parent.')
         })
@@ -453,6 +571,7 @@ describe('Account hierarchy invariants', () => {
         it('accepts a root account (well-known id, acctType ASSET) with no parentId', () => {
             const acct = accountReadSchema.parse({
                 id: acctIdAssets,
+                origId: genOrigId(),
                 name: 'Assets',
                 acctType: 'ASSET',
                 description: '',
@@ -464,6 +583,7 @@ describe('Account hierarchy invariants', () => {
         it('accepts the Net Worth root (EQUITY) with no parentId', () => {
             const acct = accountReadSchema.parse({
                 id: acctIdNetWorth,
+                origId: genOrigId(),
                 name: 'Net Worth',
                 acctType: 'EQUITY',
                 description: '',
@@ -475,6 +595,7 @@ describe('Account hierarchy invariants', () => {
         it('rejects a root account that has a parentId set', () => {
             expect(() => accountReadSchema.parse({
                 id: acctIdAssets,
+                origId: genOrigId(),
                 parentId: acctIdLiabilities,
                 name: 'Assets',
                 acctType: 'ASSET',
@@ -486,6 +607,7 @@ describe('Account hierarchy invariants', () => {
         it('rejects a non-root account (accountReadSchema) with no parentId', () => {
             expect(() => accountReadSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
                 name: 'Checking',
                 acctType: 'ASSET',
                 description: '',
@@ -496,6 +618,7 @@ describe('Account hierarchy invariants', () => {
         it('rejects a non-root account (accountCreationEventSchema) with no parentId', () => {
             expect(() => accountCreationEventSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
                 name: 'Checking',
                 acctType: 'ASSET',
             })).toThrow('An account has no parent if and only if it is one of the five predefined root accounts.')
@@ -504,6 +627,7 @@ describe('Account hierarchy invariants', () => {
         it('accepts a non-root account with a parentId pointing at its type root', () => {
             const acct = accountReadSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
                 parentId: acctIdAssets,
                 name: 'Checking',
                 acctType: 'ASSET',
@@ -518,6 +642,7 @@ describe('Account hierarchy invariants', () => {
             // re-affirm parentId, since the patch schema describes a delta, not complete state.
             const acct = accountPatchEventSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
                 name: 'Renamed',
             })
             expect(acct.parentId).toBeUndefined()
@@ -537,6 +662,7 @@ describe('Account hierarchy invariants', () => {
             for (const [id, acctType] of roots) {
                 expect(() => accountReadSchema.parse({
                     id,
+                    origId: genOrigId(),
                     acctType,
                     name: 'example',
                     description: '',
@@ -548,6 +674,7 @@ describe('Account hierarchy invariants', () => {
         it('rejects a root whose acctType does not match what it represents (accountReadSchema)', () => {
             expect(() => accountReadSchema.parse({
                 id: acctIdAssets,
+                origId: genOrigId(),
                 acctType: 'LIABILITY',
                 name: 'Assets',
                 description: '',
@@ -558,6 +685,7 @@ describe('Account hierarchy invariants', () => {
         it('rejects a root whose acctType does not match what it represents (accountCreationEventSchema)', () => {
             expect(() => accountCreationEventSchema.parse({
                 id: acctIdNetWorth,
+                origId: genOrigId(),
                 acctType: 'INCOME',
                 name: 'Net Worth',
             })).toThrow("A predefined root account's acctType must match the type it represents.")
@@ -566,6 +694,7 @@ describe('Account hierarchy invariants', () => {
         it('rejects a patch that sets a mismatched acctType on a root account', () => {
             expect(() => accountPatchEventSchema.parse({
                 id: acctIdExpenses,
+                origId: genOrigId(),
                 acctType: 'ASSET',
             })).toThrow("A predefined root account's acctType must match the type it represents.")
         })
@@ -573,6 +702,7 @@ describe('Account hierarchy invariants', () => {
         it('does not enforce the check on patches that omit acctType, even for a root account', () => {
             const acct = accountPatchEventSchema.parse({
                 id: acctIdExpenses,
+                origId: genOrigId(),
                 name: 'Expenses',
             })
             expect(acct.acctType).toBeUndefined()
@@ -581,6 +711,7 @@ describe('Account hierarchy invariants', () => {
         it('imposes no constraint on a non-root account\'s acctType', () => {
             const acct = accountReadSchema.parse({
                 id: genAcctId(),
+                origId: genOrigId(),
                 parentId: acctIdLiabilities,
                 acctType: 'LIABILITY',
                 name: 'Credit Card',
