@@ -1,6 +1,6 @@
 import { ApplicationMenu, Utils, type BrowserWindow } from "electrobun/bun";
 import { basename } from "node:path";
-import { createNewFile, openExistingFile } from "./db";
+import { createNewFile, openExistingFile } from "./persistence/db";
 import type { PromptNewFileNameResult, PromptPasswordResult, FileOpenedPayload } from "../shared/rpc";
 
 type AppRpc = {
