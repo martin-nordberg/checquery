@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'bun:test'
-import { closeCurrentFile, createNewFile, getCurrentActionLog, getCurrentFile, openExistingFile } from './db'
+import { closeCurrentFile, createNewFile, getCurrentFile, getCurrentLedgerStore, openExistingFile } from './db'
 import { setMetaValue } from './actionLog/meta'
 import { genOrigId } from '../../shared/domain/origins/OrigId'
 
@@ -20,47 +20,47 @@ afterAll(() => {
 })
 
 describe('createNewFile', () => {
-    it('creates a file on disk and returns a working actionLog', async () => {
+    it('creates a file on disk and returns a working store', async () => {
         const name = freshName()
-        const result = createNewFile(tmpDir, name, 'hunter2')
+        const result = await createNewFile(tmpDir, name, 'hunter2')
         expect(result.ok).toBe(true)
         if (!result.ok) return
 
         expect(existsSync(result.path)).toBe(true)
         expect(result.fileId).toBeTruthy()
 
-        const appended = await result.actionLog.appendAction('create-origin', { id: genOrigId(), name: 'Jane' } as any)
+        const appended = await result.store.actionLog.appendAction('create-origin', { id: genOrigId(), name: 'Jane' } as any)
         expect(appended.hlc).toBeDefined()
     })
 
-    it('fails with already-exists when the path is already taken', () => {
+    it('fails with already-exists when the path is already taken', async () => {
         const name = freshName()
-        const first = createNewFile(tmpDir, name, 'hunter2')
+        const first = await createNewFile(tmpDir, name, 'hunter2')
         expect(first.ok).toBe(true)
 
-        const second = createNewFile(tmpDir, name, 'hunter2')
+        const second = await createNewFile(tmpDir, name, 'hunter2')
         expect(second.ok).toBe(false)
         if (second.ok) return
         expect(second.code).toBe('already-exists')
     })
 
-    it('updates getCurrentFile/getCurrentActionLog', () => {
+    it('updates getCurrentFile/getCurrentLedgerStore', async () => {
         const name = freshName()
-        const result = createNewFile(tmpDir, name, 'hunter2')
+        const result = await createNewFile(tmpDir, name, 'hunter2')
         expect(result.ok).toBe(true)
         if (!result.ok) return
 
         expect(getCurrentFile()?.path).toBe(result.path)
-        expect(getCurrentActionLog()).toBe(result.actionLog)
+        expect(getCurrentLedgerStore()).toBe(result.store)
     })
 
     it('creates an unencrypted file when no password is given, storing plaintext rows', async () => {
         const name = freshName()
-        const result = createNewFile(tmpDir, name)
+        const result = await createNewFile(tmpDir, name)
         expect(result.ok).toBe(true)
         if (!result.ok) return
 
-        await result.actionLog.appendAction('create-origin', { id: genOrigId(), name: 'Jane' } as any)
+        await result.store.actionLog.appendAction('create-origin', { id: genOrigId(), name: 'Jane' } as any)
 
         const db = new Database(result.path, { create: false, readonly: true })
         const row = db.query(`SELECT iv, encrypted_payload FROM actions`).get() as {
@@ -72,86 +72,86 @@ describe('createNewFile', () => {
         expect(row.encrypted_payload).toContain('"name":"Jane"')
     })
 
-    it('treats an empty-string password the same as no password', () => {
+    it('treats an empty-string password the same as no password', async () => {
         const name = freshName()
-        const result = createNewFile(tmpDir, name, '')
+        const result = await createNewFile(tmpDir, name, '')
         expect(result.ok).toBe(true)
         if (!result.ok) return
 
-        const reopened = openExistingFile(result.path)
+        const reopened = await openExistingFile(result.path)
         expect(reopened.ok).toBe(true)
     })
 })
 
 describe('openExistingFile', () => {
-    it('opens an unencrypted file with no password', () => {
+    it('opens an unencrypted file with no password', async () => {
         const name = freshName()
-        const created = createNewFile(tmpDir, name)
+        const created = await createNewFile(tmpDir, name)
         expect(created.ok).toBe(true)
         if (!created.ok) return
 
-        const opened = openExistingFile(created.path)
+        const opened = await openExistingFile(created.path)
         expect(opened.ok).toBe(true)
         if (!opened.ok) return
         expect(opened.fileId).toBe(created.fileId)
     })
 
-    it('opens an unencrypted file even if a password is supplied (ignored)', () => {
+    it('opens an unencrypted file even if a password is supplied (ignored)', async () => {
         const name = freshName()
-        const created = createNewFile(tmpDir, name)
+        const created = await createNewFile(tmpDir, name)
         expect(created.ok).toBe(true)
         if (!created.ok) return
 
-        const opened = openExistingFile(created.path, 'some password')
+        const opened = await openExistingFile(created.path, 'some password')
         expect(opened.ok).toBe(true)
     })
 
-    it('opens a file created with createNewFile using the correct password', () => {
+    it('opens a file created with createNewFile using the correct password', async () => {
         const name = freshName()
-        const created = createNewFile(tmpDir, name, 'correct horse')
+        const created = await createNewFile(tmpDir, name, 'correct horse')
         expect(created.ok).toBe(true)
         if (!created.ok) return
 
-        const opened = openExistingFile(created.path, 'correct horse')
+        const opened = await openExistingFile(created.path, 'correct horse')
         expect(opened.ok).toBe(true)
         if (!opened.ok) return
         expect(opened.fileId).toBe(created.fileId)
     })
 
-    it('fails with wrong-password for an incorrect password', () => {
+    it('fails with wrong-password for an incorrect password', async () => {
         const name = freshName()
-        const created = createNewFile(tmpDir, name, 'correct horse')
+        const created = await createNewFile(tmpDir, name, 'correct horse')
         expect(created.ok).toBe(true)
         if (!created.ok) return
 
-        const opened = openExistingFile(created.path, 'wrong password')
+        const opened = await openExistingFile(created.path, 'wrong password')
         expect(opened.ok).toBe(false)
         if (opened.ok) return
         expect(opened.code).toBe('wrong-password')
     })
 
-    it('fails with io-error for a nonexistent path', () => {
-        const result = openExistingFile(join(tmpDir, 'does-not-exist.checquery'), 'anything')
+    it('fails with io-error for a nonexistent path', async () => {
+        const result = await openExistingFile(join(tmpDir, 'does-not-exist.checquery'), 'anything')
         expect(result.ok).toBe(false)
         if (result.ok) return
         expect(result.code).toBe('io-error')
     })
 
-    it('fails with not-a-checquery-file for a plain SQLite file with no meta table', () => {
+    it('fails with not-a-checquery-file for a plain SQLite file with no meta table', async () => {
         const path = join(tmpDir, `${freshName()}.checquery`)
         const plainDb = new Database(path, { create: true })
         plainDb.run('CREATE TABLE unrelated (id INTEGER PRIMARY KEY)')
         plainDb.close()
 
-        const result = openExistingFile(path, 'anything')
+        const result = await openExistingFile(path, 'anything')
         expect(result.ok).toBe(false)
         if (result.ok) return
         expect(result.code).toBe('not-a-checquery-file')
     })
 
-    it('fails with unsupported-version for a schema_version newer than this build knows', () => {
+    it('fails with unsupported-version for a schema_version newer than this build knows', async () => {
         const name = freshName()
-        const created = createNewFile(tmpDir, name, 'correct horse')
+        const created = await createNewFile(tmpDir, name, 'correct horse')
         expect(created.ok).toBe(true)
         if (!created.ok) return
 
@@ -159,7 +159,7 @@ describe('openExistingFile', () => {
         setMetaValue(db, 'schema_version', '9999')
         db.close()
 
-        const result = openExistingFile(created.path, 'correct horse')
+        const result = await openExistingFile(created.path, 'correct horse')
         expect(result.ok).toBe(false)
         if (result.ok) return
         expect(result.code).toBe('unsupported-version')

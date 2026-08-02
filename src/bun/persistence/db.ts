@@ -8,17 +8,18 @@ import { PlaintextCodec } from "./actionLog/encryption/PlaintextCodec";
 import { generateFileCryptoMaterial, generateNodeId, verifyPassword, type KdfParams } from "./actionLog/encryption/crypto";
 import { getMetaValue, metaTableExists, setMetaValue } from "./actionLog/meta";
 import { latestKnownVersion, readSchemaVersion, runMigrations } from "./actionLog/migrations/runMigrations";
+import { LedgerStore } from "./ledgerStore/LedgerStore";
 
 let currentDb: Database | null = null;
 let currentPath: string | null = null;
-let currentActionLog: ActionLog | null = null;
+let currentLedgerStore: LedgerStore | null = null;
 
 export function getCurrentFile(): { path: string; name: string } | null {
 	return currentPath ? { path: currentPath, name: basename(currentPath) } : null;
 }
 
-export function getCurrentActionLog(): ActionLog | null {
-	return currentActionLog;
+export function getCurrentLedgerStore(): LedgerStore | null {
+	return currentLedgerStore;
 }
 
 export function closeCurrentFile(): void {
@@ -37,7 +38,7 @@ function closeCurrent() {
 	currentDb?.close();
 	currentDb = null;
 	currentPath = null;
-	currentActionLog = null;
+	currentLedgerStore = null;
 }
 
 export type FileErrorCode =
@@ -48,12 +49,12 @@ export type FileErrorCode =
 	| "io-error";
 
 export type FileResult =
-	| { ok: true; path: string; fileId: string; name: string; actionLog: ActionLog }
+	| { ok: true; path: string; fileId: string; name: string; store: LedgerStore }
 	| { ok: false; error: string; code: FileErrorCode };
 
 /** A falsy (empty/omitted) password creates an unencrypted file: PlaintextCodec instead of AesGcmCodec is the
  * entire difference, plus the "encrypted" meta flag so openExistingFile later knows which one to reconstruct. */
-export function createNewFile(folder: string, rawName: string, password?: string): FileResult {
+export async function createNewFile(folder: string, rawName: string, password?: string): Promise<FileResult> {
 	const path = normalizeCheqPath(folder, rawName);
 
 	if (existsSync(path)) {
@@ -89,12 +90,13 @@ export function createNewFile(folder: string, rawName: string, password?: string
 		setMetaValue(db, "encrypted", password ? "true" : "false");
 
 		const actionLog = new ActionLog(db, codec, nodeId);
+		const store = await LedgerStore.open(actionLog);
 
 		closeCurrent();
 		currentDb = db;
 		currentPath = path;
-		currentActionLog = actionLog;
-		return { ok: true, path, fileId, name: basename(path), actionLog };
+		currentLedgerStore = store;
+		return { ok: true, path, fileId, name: basename(path), store };
 	} catch (err) {
 		db?.close();
 		return {
@@ -107,7 +109,7 @@ export function createNewFile(folder: string, rawName: string, password?: string
 
 /** `password` is only consulted if the file turns out to be encrypted; an unencrypted file opens fine with
  * none, or with one supplied but ignored. */
-export function openExistingFile(path: string, password?: string): FileResult {
+export async function openExistingFile(path: string, password?: string): Promise<FileResult> {
 	let db: Database;
 	try {
 		db = new Database(path, { create: false, readwrite: true });
@@ -186,12 +188,13 @@ export function openExistingFile(path: string, password?: string): FileResult {
 		}
 
 		const actionLog = new ActionLog(db, codec, nodeId);
+		const store = await LedgerStore.open(actionLog);
 
 		closeCurrent();
 		currentDb = db;
 		currentPath = path;
-		currentActionLog = actionLog;
-		return { ok: true, path, fileId, name: basename(path), actionLog };
+		currentLedgerStore = store;
+		return { ok: true, path, fileId, name: basename(path), store };
 	} catch (err) {
 		db.close();
 		return {

@@ -58,7 +58,7 @@ async function handleNewFile(window: BrowserWindow<any>, rpc: AppRpc) {
 	});
 	if (promptResult.cancelled) return;
 
-	const result = createNewFile(folder, promptResult.name, promptResult.password);
+	const result = await createNewFile(folder, promptResult.name, promptResult.password);
 	if (!result.ok) {
 		await Utils.showMessageBox({
 			type: "error",
@@ -91,7 +91,7 @@ async function handleOpenFile(window: BrowserWindow<any>, rpc: AppRpc) {
 	});
 	if (passwordResult.cancelled) return;
 
-	const result = openExistingFile(path, passwordResult.password);
+	const result = await openExistingFile(path, passwordResult.password);
 	if (!result.ok) {
 		await Utils.showMessageBox({
 			type: "error",
