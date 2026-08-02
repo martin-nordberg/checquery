@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'bun:test'
-import {nameMaxLength, nameRegex, nameSchema} from "../../domain/core/Name";
+import {nameMaxLength, nameRegex, nameSchema} from "./Name";
 
 describe('nameSchema', () => {
     describe('valid names', () => {

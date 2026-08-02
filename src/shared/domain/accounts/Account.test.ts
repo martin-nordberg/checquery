@@ -3,8 +3,8 @@ import {accountCreationEventSchema, accountDeletionEventSchema, accountReadSchem
 import {z} from "zod";
 import {genAcctId} from "./AcctId";
 import {acctIdAssets, acctIdExpenses, acctIdIncome, acctIdLiabilities, acctIdNetWorth} from "./AcctRoot";
-import {getHLClock} from "../../domain/core/HybridLogicalClock";
-import {genOrigId} from "../../domain/origins/OrigId";
+import {getHLClock} from "../core/HybridLogicalClock";
+import {genOrigId} from "../origins/OrigId";
 
 describe('Sample Accounts', () => {
     it('Should parse without error', () => {

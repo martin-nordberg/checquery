@@ -1,6 +1,6 @@
 import {z} from "zod";
 import {toCents, type CurrencyAmt} from "../core/CurrencyAmt";
-import {entryWriteSchema, entryReadSchema} from "../../domain/transactions/Entry";
+import {entryWriteSchema, entryReadSchema} from "./Entry";
 
 const totalsBalance = (entries: readonly { debit: CurrencyAmt, credit: CurrencyAmt }[]): boolean => {
     let totalDr = 0

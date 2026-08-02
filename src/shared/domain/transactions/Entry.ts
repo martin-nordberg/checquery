@@ -1,6 +1,6 @@
 import {z} from "zod";
 import {currencyAmtSchema, toCents, type CurrencyAmt} from "../core/CurrencyAmt";
-import {acctIdSchema} from "../../domain/accounts/AcctId";
+import {acctIdSchema} from "../accounts/AcctId";
 
 /** Base schema for a Checquery entry's details. */
 export const entryAttributesSchema =

@@ -2,10 +2,10 @@ import {z} from "zod";
 import {descriptionSchema, type DescriptionStr} from "../core/Description";
 import {txnIdSchema} from "./TxnId";
 import {isoDateSchema} from "../core/IsoDate";
-import {entriesWriteSchema, entriesReadSchema} from "../../domain/transactions/Entries";
-import {hlcSchema} from "../../domain/core/HybridLogicalClock";
-import {vndrIdSchema, type VndrId} from "../../domain/vendors/VndrId";
-import {origIdSchema} from "../../domain/origins/OrigId";
+import {entriesWriteSchema, entriesReadSchema} from "./Entries";
+import {hlcSchema} from "../core/HybridLogicalClock";
+import {vndrIdSchema, type VndrId} from "../vendors/VndrId";
+import {origIdSchema} from "../origins/OrigId";
 
 /** Base schema for a Checquery transaction's details. */
 const transactionAttributesSchema =

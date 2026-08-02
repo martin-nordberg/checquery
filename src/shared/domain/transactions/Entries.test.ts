@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'bun:test'
-import {entriesWriteSchema, entriesReadSchema} from '../../domain/transactions/Entries'
-import {genAcctId} from '../../domain/accounts/AcctId'
+import {entriesWriteSchema, entriesReadSchema} from './Entries'
+import {genAcctId} from '../accounts/AcctId'
 
 describe('entriesWriteSchema', () => {
     it('parses two balanced entries', () => {
