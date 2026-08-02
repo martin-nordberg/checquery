@@ -86,7 +86,7 @@ describe('replaying an ActionLog into a MaterializedStore', () => {
         )
         await actionLog.cmdSvcs.balanceAssertions.createBalanceAssertion(
             balanceAssertionCreationEventSchema.parse({
-                id: asrtId, origId, acctId, clearedDate: '2026-01-31', balance: '$50.00',
+                id: asrtId, origId, acctId, assertionDate: '2026-01-31', balance: '$50.00',
             }),
         )
 

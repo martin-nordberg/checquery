@@ -7,11 +7,13 @@ import {asrtIdSchema} from "./AsrtId";
 import {origIdSchema} from "../origins/OrigId";
 
 /**
- * Base schema for a Checquery balance assertion's details. A balance assertion pins an account's
- * balance, as of a given cleared date, to an external source of truth (typically a bank statement) so
- * that cleared transactions in Checquery can be reconciled against it. Uniqueness of the (acctId,
- * clearedDate) pair is an application-level concern -- it needs the full set of assertions for an
- * account and isn't checkable from a single assertion, so it isn't enforced here.
+ * Base schema for a Checquery balance assertion's details. A balance assertion claims that, as of a given
+ * date, the sum of every entry posted to the account whose transaction has cleared by that date equals a
+ * stated balance -- pinning the ledger to an external source of truth (typically a bank statement). It
+ * doesn't reference or create any transactions itself; it's checked by comparing that sum against the
+ * asserted balance (mismatches are flagged to the user via UI still to be designed). Uniqueness of the
+ * (acctId, assertionDate) pair is an application-level concern -- it needs the full set of assertions for
+ * an account and isn't checkable from a single assertion, so it isn't enforced here.
  */
 const balanceAssertionAttributesSchema =
     z.strictObject({
@@ -24,10 +26,10 @@ const balanceAssertionAttributesSchema =
         /** The account whose balance is being asserted. */
         acctId: acctIdSchema,
 
-        /** The date, according to the external statement, that the balance applies to. */
-        clearedDate: isoDateSchema,
+        /** The as-of date the asserted balance applies to. */
+        assertionDate: isoDateSchema,
 
-        /** The asserted balance as of clearedDate. */
+        /** The asserted balance as of assertionDate. */
         balance: currencyAmtSchema,
     })
 
@@ -68,7 +70,7 @@ export const balanceAssertionPatchEventSchema =
         hlc: hlcSchema.optional(),
     }).partial({
         acctId: true,
-        clearedDate: true,
+        assertionDate: true,
         balance: true,
     }).readonly()
 

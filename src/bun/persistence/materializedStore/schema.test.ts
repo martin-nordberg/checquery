@@ -62,7 +62,7 @@ describe('createSchema', () => {
         const db = new Database(':memory:')
         createSchema(db)
         expect(columnNames(db, 'balance_assertions')).toEqual([
-            'id', 'orig_id', 'acct_id', 'cleared_date', 'balance_cents', 'is_deleted',
+            'id', 'orig_id', 'acct_id', 'assertion_date', 'balance_cents', 'is_deleted',
         ])
     })
 

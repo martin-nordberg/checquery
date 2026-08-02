@@ -16,7 +16,7 @@ describe('BalanceAssertionActionLogCmdSvc', () => {
             id: genAsrtId(),
             origId: genOrigId(),
             acctId: genAcctId(),
-            clearedDate: '2026-01-31',
+            assertionDate: '2026-01-31',
             balance: '$1,234.56',
         })
 

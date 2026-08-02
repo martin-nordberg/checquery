@@ -16,7 +16,7 @@ type BalanceAssertionRow = {
     id: string
     orig_id: string
     acct_id: string
-    cleared_date: string
+    assertion_date: string
     balance_cents: number
 }
 
@@ -25,7 +25,7 @@ function rowToBalanceAssertion(row: BalanceAssertionRow): BalanceAssertion {
         id: row.id as AsrtId,
         origId: row.orig_id as OrigId,
         acctId: row.acct_id as AcctId,
-        clearedDate: row.cleared_date as IsoDate,
+        assertionDate: row.assertion_date as IsoDate,
         balance: fromCents(row.balance_cents),
     } as BalanceAssertion
 }
@@ -39,13 +39,13 @@ export class BalanceAssertionMaterializedStoreSvc implements IBalanceAssertionSv
         assertionCreation: BalanceAssertionCreationEvent,
     ): Promise<BalanceAssertionCreationEvent | null> {
         this.db.run(
-            `INSERT INTO balance_assertions (id, orig_id, acct_id, cleared_date, balance_cents)
+            `INSERT INTO balance_assertions (id, orig_id, acct_id, assertion_date, balance_cents)
              VALUES (?, ?, ?, ?, ?)`,
             [
                 assertionCreation.id,
                 assertionCreation.origId,
                 assertionCreation.acctId,
-                assertionCreation.clearedDate,
+                assertionCreation.assertionDate,
                 toCents(assertionCreation.balance),
             ],
         )
@@ -62,9 +62,9 @@ export class BalanceAssertionMaterializedStoreSvc implements IBalanceAssertionSv
             sets.push("acct_id = ?")
             params.push(assertionPatch.acctId)
         }
-        if (assertionPatch.clearedDate !== undefined) {
-            sets.push("cleared_date = ?")
-            params.push(assertionPatch.clearedDate)
+        if (assertionPatch.assertionDate !== undefined) {
+            sets.push("assertion_date = ?")
+            params.push(assertionPatch.assertionDate)
         }
         if (assertionPatch.balance !== undefined) {
             sets.push("balance_cents = ?")
@@ -101,7 +101,7 @@ export class BalanceAssertionMaterializedStoreSvc implements IBalanceAssertionSv
 
     async findBalanceAssertionsAll(): Promise<BalanceAssertion[]> {
         const rows = this.db
-            .query(`SELECT * FROM balance_assertions WHERE is_deleted = 0 ORDER BY cleared_date`)
+            .query(`SELECT * FROM balance_assertions WHERE is_deleted = 0 ORDER BY assertion_date`)
             .all() as BalanceAssertionRow[]
         return rows.map(rowToBalanceAssertion)
     }

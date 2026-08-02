@@ -25,7 +25,7 @@ describe('BalanceAssertionMaterializedStoreSvc', () => {
                 id: genAsrtId(),
                 origId: genOrigId(),
                 acctId: genAcctId(),
-                clearedDate: '2026-01-31',
+                assertionDate: '2026-01-31',
                 balance: '$1,234.56',
             })
 
@@ -34,33 +34,33 @@ describe('BalanceAssertionMaterializedStoreSvc', () => {
 
             expect(found).not.toBeNull()
             expect(found!.acctId).toBe(event.acctId)
-            expect(found!.clearedDate as string).toBe('2026-01-31')
+            expect(found!.assertionDate as string).toBe('2026-01-31')
             expect(found!.balance as string).toBe('$1,234.56')
         })
 
         it('round-trips a negative balance', async () => {
             const { svc } = makeSvc()
             const event = balanceAssertionCreationEventSchema.parse({
-                id: genAsrtId(), origId: genOrigId(), acctId: genAcctId(), clearedDate: '2026-01-31', balance: '($500.00)',
+                id: genAsrtId(), origId: genOrigId(), acctId: genAcctId(), assertionDate: '2026-01-31', balance: '($500.00)',
             })
             await svc.createBalanceAssertion(event)
             const found = await svc.findBalanceAssertionById(event.id)
             expect(found!.balance as string).toBe('($500.00)')
         })
 
-        it('findBalanceAssertionsAll only returns non-deleted assertions, ordered by clearedDate', async () => {
+        it('findBalanceAssertionsAll only returns non-deleted assertions, ordered by assertionDate', async () => {
             const { svc } = makeSvc()
             const later = balanceAssertionCreationEventSchema.parse({
-                id: genAsrtId(), origId: genOrigId(), acctId: genAcctId(), clearedDate: '2026-02-28', balance: '$1.00',
+                id: genAsrtId(), origId: genOrigId(), acctId: genAcctId(), assertionDate: '2026-02-28', balance: '$1.00',
             })
             const earlier = balanceAssertionCreationEventSchema.parse({
-                id: genAsrtId(), origId: genOrigId(), acctId: genAcctId(), clearedDate: '2026-01-31', balance: '$1.00',
+                id: genAsrtId(), origId: genOrigId(), acctId: genAcctId(), assertionDate: '2026-01-31', balance: '$1.00',
             })
             await svc.createBalanceAssertion(later)
             await svc.createBalanceAssertion(earlier)
 
             const all = await svc.findBalanceAssertionsAll()
-            expect(all.map((a) => a.clearedDate as string)).toEqual(['2026-01-31', '2026-02-28'])
+            expect(all.map((a) => a.assertionDate as string)).toEqual(['2026-01-31', '2026-02-28'])
         })
     })
 
@@ -68,7 +68,7 @@ describe('BalanceAssertionMaterializedStoreSvc', () => {
         it('updates only the fields present on the patch', async () => {
             const { svc } = makeSvc()
             const created = balanceAssertionCreationEventSchema.parse({
-                id: genAsrtId(), origId: genOrigId(), acctId: genAcctId(), clearedDate: '2026-01-31', balance: '$100.00',
+                id: genAsrtId(), origId: genOrigId(), acctId: genAcctId(), assertionDate: '2026-01-31', balance: '$100.00',
             })
             await svc.createBalanceAssertion(created)
 
@@ -79,7 +79,7 @@ describe('BalanceAssertionMaterializedStoreSvc', () => {
 
             const found = await svc.findBalanceAssertionById(created.id)
             expect(found!.balance as string).toBe('$200.00')
-            expect(found!.clearedDate as string).toBe('2026-01-31')
+            expect(found!.assertionDate as string).toBe('2026-01-31')
         })
 
         it('throws when patching an unknown id', async () => {
@@ -93,7 +93,7 @@ describe('BalanceAssertionMaterializedStoreSvc', () => {
         it('soft-deletes: findById still resolves it, findAll excludes it', async () => {
             const { svc } = makeSvc()
             const created = balanceAssertionCreationEventSchema.parse({
-                id: genAsrtId(), origId: genOrigId(), acctId: genAcctId(), clearedDate: '2026-01-31', balance: '$1.00',
+                id: genAsrtId(), origId: genOrigId(), acctId: genAcctId(), assertionDate: '2026-01-31', balance: '$1.00',
             })
             await svc.createBalanceAssertion(created)
 
@@ -116,10 +116,10 @@ describe('BalanceAssertionMaterializedStoreSvc', () => {
         it('counts only non-deleted balance assertions', async () => {
             const { svc } = makeSvc()
             const a = balanceAssertionCreationEventSchema.parse({
-                id: genAsrtId(), origId: genOrigId(), acctId: genAcctId(), clearedDate: '2026-01-31', balance: '$1.00',
+                id: genAsrtId(), origId: genOrigId(), acctId: genAcctId(), assertionDate: '2026-01-31', balance: '$1.00',
             })
             const b = balanceAssertionCreationEventSchema.parse({
-                id: genAsrtId(), origId: genOrigId(), acctId: genAcctId(), clearedDate: '2026-02-28', balance: '$2.00',
+                id: genAsrtId(), origId: genOrigId(), acctId: genAcctId(), assertionDate: '2026-02-28', balance: '$2.00',
             })
             await svc.createBalanceAssertion(a)
             await svc.createBalanceAssertion(b)

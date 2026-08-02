@@ -65,10 +65,10 @@ export function createSchema(db: Database): void {
         CREATE TABLE balance_assertions (
             id            TEXT PRIMARY KEY,
             orig_id       TEXT NOT NULL,
-            acct_id       TEXT NOT NULL REFERENCES accounts (id),
-            cleared_date  TEXT NOT NULL,
-            balance_cents INTEGER NOT NULL,
-            is_deleted    INTEGER NOT NULL DEFAULT 0
+            acct_id        TEXT NOT NULL REFERENCES accounts (id),
+            assertion_date TEXT NOT NULL,
+            balance_cents  INTEGER NOT NULL,
+            is_deleted     INTEGER NOT NULL DEFAULT 0
         )
     `)
     db.run(`CREATE INDEX balance_assertions_acct_id_idx ON balance_assertions (acct_id)`)

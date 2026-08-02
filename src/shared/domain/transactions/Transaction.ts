@@ -16,10 +16,19 @@ const transactionAttributesSchema =
         /** The ID of the origin (who/where) that created or most recently modified this transaction. */
         origId: origIdSchema,
 
-        /** The date of the transaction for reporting purposes. */
+        /**
+         * The date money changed hands (e.g. at the store), used for reporting purposes. Has no default of
+         * its own, but if left unset while clearedDate is provided when a transaction is saved, it takes
+         * clearedDate's value.
+         */
         postDate: isoDateSchema,
 
-        /** The date of the transaction according to external statements. */
+        /**
+         * The date the transaction reached the bank, entered by hand or (in the future) imported from a
+         * bank CSV. Unrelated to any BalanceAssertion's date -- an assertion instead sums every entry whose
+         * transaction has cleared by the assertion's own date. Never defaulted from postDate; if the user
+         * doesn't enter it, it simply stays unset.
+         */
         clearedDate: isoDateSchema.optional(),
 
         /* The check number or similar code. */
