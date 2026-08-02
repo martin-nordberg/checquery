@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { createInMemoryActionLog } from './inMemory'
-import type { CmdSvcBundle } from './ActionLog'
+import type { CmdSvcBundle } from '../../shared/crudServices/CmdSvcBundle'
 import type { ActionType } from './ActionType'
 import { ACTION_TYPES } from './ActionType'
 import type { HLClock } from '../../shared/domain/core/HybridLogicalClock'

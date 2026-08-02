@@ -1,9 +1,5 @@
 import { Database } from "bun:sqlite";
-import type { IAccountCmdSvc } from "../../shared/crudServices/accounts/IAccountCmdSvc";
-import type { IVendorCmdSvc } from "../../shared/crudServices/vendors/IVendorCmdSvc";
-import type { ITransactionCmdSvc } from "../../shared/crudServices/transactions/ITransactionCmdSvc";
-import type { IBalanceAssertionCmdSvc } from "../../shared/crudServices/balanceAssertions/IBalanceAssertionCmdSvc";
-import type { IOriginCmdSvc } from "../../shared/crudServices/origins/IOriginCmdSvc";
+import type { CmdSvcBundle } from "../../shared/crudServices/CmdSvcBundle";
 import type { AccountCreationEvent, AccountDeletionEvent, AccountPatchEvent } from "../../shared/domain/accounts/Account";
 import type { VendorCreationEvent, VendorDeletionEvent, VendorPatchEvent } from "../../shared/domain/vendors/Vendor";
 import type {
@@ -26,14 +22,6 @@ import { VendorActionLogCmdSvc } from "./crudServices/VendorActionLogCmdSvc";
 import { TransactionActionLogCmdSvc } from "./crudServices/TransactionActionLogCmdSvc";
 import { BalanceAssertionActionLogCmdSvc } from "./crudServices/BalanceAssertionActionLogCmdSvc";
 import { OriginActionLogCmdSvc } from "./crudServices/OriginActionLogCmdSvc";
-
-export type CmdSvcBundle = {
-    accounts: IAccountCmdSvc
-    vendors: IVendorCmdSvc
-    transactions: ITransactionCmdSvc
-    balanceAssertions: IBalanceAssertionCmdSvc
-    origins: IOriginCmdSvc
-}
 
 export type DecodedAction = {
     id: number
