@@ -23,16 +23,16 @@ Anyone using the functional spec as a reference should read this first.
 | Client/server web app, multi-tab real-time sync over WebSocket | Single-window Electrobun desktop app; one encrypted local file open at a time, no multi-tab sync | Home page is genuinely two states — "no file open" vs. "file open" — rather than a login-free single app shell (§3, §4) |
 | Client-side routing (`@solidjs/router`), URL-addressable pages | No router wired up yet (no `@solidjs/router` dependency); navigation is currently signal/state-driven | This doc describes pages and transitions, not URL paths. Adding a router is an implementation choice, not a nav requirement |
 
-Cash Flow Statement (§10) has no prior implementation in either the functional spec or the old client — it
+Cash Flow Statement (§12) has no prior implementation in either the functional spec or the old client — it
 is new to checquery2 and intentionally left as a stub for now.
 
 ---
 
 ## 1. Refactoring
 
-- Lose the native window menu `File ▸ *`.
-- `File ▸ Exit` will not reappear as an in-page control — `Alt+F4` / native quit remains the only way to
-  quit, per the existing `Utils.quit()` wiring in `menu.ts`.
+- Lose the native window menu entirely — no `File ▸ *`, no menu bar at all. The window's native close
+  button (top-right "X") is the only way to quit; nothing needs to be wired up for that; it's the OS
+  default.
 - `File ▸ New...`, `File ▸ Open...`, and `File ▸ Info...` move into in-page controls (§3, §4). The
   underlying RPC calls and dialogs (`NewFileModal`, `PasswordModal`, `FileInfoModal`) are already built and
   are reused as-is.
@@ -86,52 +86,58 @@ carries no application data of its own.
   counts, file metadata).
 - **Close This File** → calls `closeCurrentFile()`, returns to the no-file-open Home Page (§3).
 
-**Row 2 — 3 columns**
+**Row 2 — 2 columns**
 
-| Assets | Liabilities | Net Worth |
-|---|---|---|
-| [Edit the List of Asset Accounts](#5-account-list) | [Edit the List of Liability Accounts](#5-account-list) | [Edit the List of Net Worth Accounts](#5-account-list) |
-| Open Register for each primary Asset account | Open Register for each primary Liability account | [Balance Sheet](#8-balance-sheet) |
-| Dropdown: Register for remaining (non-primary) Asset accounts | Dropdown: Register for remaining (non-primary) Liability accounts | |
+| Assets | Liabilities |
+|---|---|
+| [Edit the List of Asset Accounts](#5-account-list) | [Edit the List of Liability Accounts](#5-account-list) |
+| Open [Register](#6-register) for each primary Asset account | Open [Register](#6-register) for each primary Liability account |
+| Dropdown: Register for remaining (non-primary) Asset accounts | Dropdown: Register for remaining (non-primary) Liability accounts |
 
-**Row 3 — 3 columns**
+**Row 3 — 2 columns**
 
-| Income | Expenses | Reports |
-|---|---|---|
-| [Edit the List of Income Accounts](#5-account-list) | [Edit the List of Expense Accounts](#5-account-list) | [Income Statement](#9-income-statement) |
-| Open Income Log for each primary Income account | Open Expense Log for each primary Expense account | [Cash Flow Statement](#10-cash-flow-statement) *(stub)* |
-| Dropdown: Income Log for remaining (non-primary) Income accounts | Dropdown: Expense Log for remaining (non-primary) Expense accounts | |
+| Income | Expenses |
+|---|---|
+| [Edit the List of Income Accounts](#5-account-list) | [Edit the List of Expense Accounts](#5-account-list) |
+| Open [Income Log](#7-income-log) for each primary Income account | Open [Expense Log](#8-expense-log) for each primary Expense account |
+| Dropdown: Income Log for remaining (non-primary) Income accounts | Dropdown: Expense Log for remaining (non-primary) Expense accounts |
 
-**Row 4 — 1 column**
-- [Edit the List of Vendors](#7-vendor-list)
+**Row 4 — 2 columns**
+
+| Statements | Budgeting |
+|---|---|
+| [Balance Sheet](#10-balance-sheet), [Income Statement](#11-income-statement), [Cash Flow Statement](#12-cash-flow-statement) *(stub)* — stacked vertically, one under the other | [Annual Budget](#13-annual-budget) *(stub)* |
+
+**Row 5 — "Vendors"**
+- [Edit the List of Vendors](#9-vendor-list)
 
 ### Summary
 
 The hub for an open file: quick access to every primary account's register/log, plus entry points to the
-three account-management tree views, the two reports, and vendor management.
+account-management tree views, the three statements, budgeting, and vendor management.
 
 Notes:
 - "Primary" vs. "non-primary" is `Account.isPrimary`, a flat flag independent of tree depth — a
   deeply-nested account can still be primary and get a direct shortcut here. This is unchanged from the old
   home page's behavior; only the account-management pages (§5) need to become tree-aware.
-  The Net Worth column was added even though the old home page never surfaced equity accounts directly,
-  because equity accounts are rarely primary/register-driven but still need a management entry point
-  somewhere; grouping it with Balance Sheet keeps the 3-column layout.
-- Net Worth accounts are not expected to have per-account registers on this page (matches old app: equity
-  wasn't in `sortPrimaryRegisterAccounts`), only the account-list link and the Balance Sheet.
+- **There is no Net Worth column and no Net Worth account-management page.** Net Worth (`EQUITY`) is a
+  single predefined, uneditable root account (`acctIdNetWorth`) with no children — there is nothing to
+  list, edit, or drill into. Its balance is visible only via the Balance Sheet. This also means the
+  account-list tree view (§5) applies to four account types, not five — see §5.
 
 ---
 
 ## 5. Account List
 
-Applies once per account type (Asset, Liability, Net Worth, Income, Expense) — same page shape, scoped to
-a different root.
+Applies once per account type — **Asset, Liability, Income, or Expense only.** Net Worth is deliberately
+excluded: it's a single predefined, childless root account (§4), so there's no tree to show and no page for
+it. Each of the four applicable types gets the same page shape, scoped to a different root.
 
 ### Breadcrumbs
 
 `Checquery` › `[File Name]` › `[Xxx Accounts]`
 
-Dropdown at the `[Xxx Accounts]` segment offers the other four account types.
+Dropdown at the `[Xxx Accounts]` segment offers the other three (of these four) account types.
 
 ### Content
 
@@ -213,7 +219,50 @@ computed sum against an asserted balance" rather than a checkbox-driven Statemen
 
 ---
 
-## 7. Vendor List
+## 7. Income Log
+
+### Breadcrumbs
+
+`Checquery` › `[File Name]` › `[Account Name]`
+
+Dropdown at `[Account Name]` offers other Income accounts.
+
+### Content
+
+- Register-style view (§6) scoped to a single Income account: every transaction posting to it, in date
+  order, with the same columns and running balance. No reconciliation affordance — reconciliation only
+  applies to Asset/Liability accounts (Income accounts aren't the kind of thing a bank statement pins).
+- Reachable from the file hub (§4) for accounts flagged `isPrimary`.
+
+### Summary
+
+Undocumented in the prior draft of this file despite being linked from the file hub. Old checquery had this
+as its own `IncomeLogPage`/`IncomeLog` component, nearly identical to Register minus the reconcile panel;
+same shape carries over here.
+
+---
+
+## 8. Expense Log
+
+### Breadcrumbs
+
+`Checquery` › `[File Name]` › `[Account Name]`
+
+Dropdown at `[Account Name]` offers other Expense accounts.
+
+### Content
+
+- Register-style view (§6) scoped to a single Expense account. Same shape as Income Log (§7), for Expense
+  accounts instead.
+
+### Summary
+
+Same as Income Log (§7): undocumented gap in the prior draft, filled in to match the old app's
+`ExpenseLogPage`/`ExpenseLog`.
+
+---
+
+## 9. Vendor List
 
 ### Breadcrumbs
 
@@ -234,7 +283,7 @@ is how a vendor's default account is picked.
 
 ---
 
-## 8. Balance Sheet
+## 10. Balance Sheet
 
 ### Breadcrumbs
 
@@ -259,7 +308,7 @@ balances as before — *TBD*.
 
 ---
 
-## 9. Income Statement
+## 11. Income Statement
 
 ### Breadcrumbs
 
@@ -283,7 +332,7 @@ nesting should surface as report subtotals.
 
 ---
 
-## 10. Cash Flow Statement
+## 12. Cash Flow Statement
 
 ### Breadcrumbs
 
@@ -300,3 +349,23 @@ nesting should surface as report subtotals.
 New to checquery2 — no equivalent in the prior effort or its functional spec. Deliberately left undefined:
 period selection, direct vs. indirect method, and how it reads from the double-entry ledger are all open
 design questions for a later pass.
+
+---
+
+## 13. Annual Budget
+
+### Breadcrumbs
+
+`Checquery` › `[File Name]` › `Annual Budget`
+
+No dropdown yet — it's the only page under "Budgeting" (§4) for now.
+
+### Content
+
+- *Stub for now.* Breadcrumb and routing exist; page renders a placeholder.
+
+### Summary
+
+New to checquery2 — no equivalent in the prior effort or its functional spec, and not part of the original
+navigation draft either. Everything about it (what a budget is scoped to — account, period; how it compares
+against actual activity; whether "Annual" is the only cadence) is an open design question for a later pass.

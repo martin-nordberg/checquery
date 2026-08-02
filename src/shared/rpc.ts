@@ -36,7 +36,14 @@ export type FileInfoPayload = {
 };
 
 export type AppSchema = {
-	bun: RPCSchema<{}>;
+	bun: RPCSchema<{
+		requests: {
+			startNewFile: { params: undefined; response: void };
+			startOpenFile: { params: undefined; response: void };
+			getFileInfo: { params: undefined; response: void };
+			closeFile: { params: undefined; response: { closed: boolean } };
+		};
+	}>;
 	webview: RPCSchema<{
 		requests: {
 			promptNewFileName: {

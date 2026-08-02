@@ -1,25 +1,19 @@
 import "./rpc";
-import { currentFile } from "./rpc";
+import type { RouteSectionProps } from "@solidjs/router";
 import NewFileModal from "./NewFileModal";
 import PasswordModal from "./PasswordModal";
 import FileInfoModal from "./FileInfoModal";
 import ErrorAlertModal from "./ErrorAlertModal";
 
-export default function App() {
+/** Router root: modals stay mounted across every route; {props.children} is the matched page. */
+export default function App(props: RouteSectionProps) {
 	return (
-		<main>
+		<>
 			<NewFileModal />
 			<PasswordModal />
 			<FileInfoModal />
 			<ErrorAlertModal />
-			<div class="container">
-				<h1>Checquery</h1>
-				<p class="subtitle">
-					{currentFile()
-						? `Open: ${currentFile()!.name} (id: ${currentFile()!.fileId})`
-						: "No file open — use File > New or File > Open"}
-				</p>
-			</div>
-		</main>
+			{props.children}
+		</>
 	);
 }

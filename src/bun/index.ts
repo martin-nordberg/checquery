@@ -1,6 +1,6 @@
 import { BrowserView, BrowserWindow, Updater } from "electrobun/bun";
 import type { AppSchema } from "../shared/rpc";
-import { setupApplicationMenu } from "./menu";
+import { handleCloseFile, handleFileInfo, handleNewFile, handleOpenFile } from "./fileLifecycle";
 
 const DEV_SERVER_PORT = 5173;
 const DEV_SERVER_URL = `http://localhost:${DEV_SERVER_PORT}`;
@@ -24,18 +24,27 @@ async function getMainViewUrl(): Promise<string> {
 
 const url = await getMainViewUrl();
 
-const rpc = BrowserView.defineRPC<AppSchema>({
+// Assigned below, before the window loads -- request handlers only ever run in response to a user
+// action from within that window, so it's always set by the time one fires.
+let mainWindow: BrowserWindow<any>;
+
+const rpc: ReturnType<typeof BrowserView.defineRPC<AppSchema>> = BrowserView.defineRPC<AppSchema>({
 	// promptNewFileName blocks on user input in the New File modal, which can
 	// take far longer than Electrobun's 1000ms default RPC request timeout.
 	maxRequestTime: Infinity,
 	handlers: {
-		requests: {},
+		requests: {
+			startNewFile: () => handleNewFile(mainWindow, rpc),
+			startOpenFile: () => handleOpenFile(mainWindow, rpc),
+			getFileInfo: () => handleFileInfo(rpc),
+			closeFile: () => handleCloseFile(mainWindow),
+		},
 		messages: {},
 	},
 });
 
-const mainWindow = new BrowserWindow({
-	title: "Solid App",
+mainWindow = new BrowserWindow({
+	title: "Checquery",
 	url,
 	frame: {
 		width: 900,
@@ -46,6 +55,4 @@ const mainWindow = new BrowserWindow({
 	rpc,
 });
 
-setupApplicationMenu(mainWindow, rpc);
-
-console.log("Solid app started!");
+console.log("Checquery started!");

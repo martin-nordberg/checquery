@@ -1,6 +1,6 @@
-import { ApplicationMenu, Utils, type BrowserWindow } from "electrobun/bun";
+import { Utils, type BrowserWindow } from "electrobun/bun";
 import { basename } from "node:path";
-import { createNewFile, getCurrentFileInfo, openExistingFile } from "./persistence/db";
+import { closeCurrentFile, createNewFile, getCurrentFile, getCurrentFileInfo, openExistingFile } from "./persistence/db";
 import type {
 	PromptNewFileNameResult,
 	PromptPasswordResult,
@@ -25,38 +25,7 @@ type AppRpc = {
 	};
 };
 
-export function setupApplicationMenu(
-	window: BrowserWindow<any>,
-	rpc: AppRpc,
-) {
-	ApplicationMenu.setApplicationMenu([
-		{
-			label: "File",
-			submenu: [
-				{ label: "New...", action: "file:new", accelerator: "CmdOrCtrl+N" },
-				{ label: "Open...", action: "file:open", accelerator: "CmdOrCtrl+O" },
-				{ label: "Info...", action: "file:info" },
-				{ type: "separator" },
-				{ label: "Exit", action: "file:exit", accelerator: "Alt+F4" },
-			],
-		},
-	]);
-
-	ApplicationMenu.on("application-menu-clicked", (event) => {
-		const action = (event as { data?: { action?: string } })?.data?.action;
-		if (action === "file:new") {
-			void handleNewFile(window, rpc);
-		} else if (action === "file:open") {
-			void handleOpenFile(window, rpc);
-		} else if (action === "file:info") {
-			void handleFileInfo(rpc);
-		} else if (action === "file:exit") {
-			Utils.quit();
-		}
-	});
-}
-
-async function handleNewFile(window: BrowserWindow<any>, rpc: AppRpc) {
+export async function handleNewFile(window: BrowserWindow<any>, rpc: AppRpc) {
 	const folders = await Utils.openFileDialog({
 		canChooseFiles: false,
 		canChooseDirectory: true,
@@ -84,7 +53,7 @@ async function handleNewFile(window: BrowserWindow<any>, rpc: AppRpc) {
 	});
 }
 
-async function handleFileInfo(rpc: AppRpc) {
+export async function handleFileInfo(rpc: AppRpc) {
 	const info = await getCurrentFileInfo();
 	if (!info) {
 		rpc.send.showError({ title: "No File Open", message: "Open or create a file first." });
@@ -94,7 +63,7 @@ async function handleFileInfo(rpc: AppRpc) {
 	rpc.send.showFileInfo(info);
 }
 
-async function handleOpenFile(window: BrowserWindow<any>, rpc: AppRpc) {
+export async function handleOpenFile(window: BrowserWindow<any>, rpc: AppRpc) {
 	const files = await Utils.openFileDialog({
 		canChooseFiles: true,
 		canChooseDirectory: false,
@@ -121,4 +90,11 @@ async function handleOpenFile(window: BrowserWindow<any>, rpc: AppRpc) {
 		fileId: result.fileId,
 		name: result.name,
 	});
+}
+
+export function handleCloseFile(window: BrowserWindow<any>): { closed: boolean } {
+	const hadFile = getCurrentFile() !== null;
+	closeCurrentFile();
+	window.setTitle("Checquery");
+	return { closed: hadFile };
 }

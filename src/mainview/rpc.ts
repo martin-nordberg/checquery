@@ -61,3 +61,18 @@ const rpc = Electroview.defineRPC<AppSchema>({
 });
 
 new Electroview({ rpc });
+
+// Wrap the bun-side file-lifecycle requests so page components don't need to reach into `rpc` directly.
+// startNewFile/startOpenFile/getFileInfo report their outcome via the existing fileOpened/showFileInfo/
+// showError messages above, so there's nothing to do with their (void) response here.
+export const requestNewFile = () => rpc.request.startNewFile();
+export const requestOpenFile = () => rpc.request.startOpenFile();
+export const requestFileInfo = () => rpc.request.getFileInfo();
+
+export async function requestCloseFile(): Promise<void> {
+	const { closed } = await rpc.request.closeFile();
+	if (closed) {
+		setCurrentFile(null);
+		setFileInfo(null);
+	}
+}
