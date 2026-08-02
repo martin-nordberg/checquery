@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'bun:test'
-import {descriptionMaxLength, descriptionRegex, descriptionSchema} from "$shared/domain/core/Description";
+import {descriptionMaxLength, descriptionRegex, descriptionSchema} from "../../domain/core/Description";
 
 describe('descriptionSchema', () => {
     describe('valid descriptions', () => {

@@ -5,12 +5,12 @@ import {
     transactionDeletionEventSchema,
     transactionReadSchema,
     transactionPatchEventSchema
-} from '$shared/domain/transactions/Transaction'
-import {genTxnId} from '$shared/domain/transactions/TxnId'
-import {genAcctId} from '$shared/domain/accounts/AcctId'
-import {genVndrId} from '$shared/domain/vendors/VndrId'
-import {getHLClock} from '$shared/domain/core/HybridLogicalClock'
-import {genOrigId} from '$shared/domain/origins/OrigId'
+} from '../../domain/transactions/Transaction'
+import {genTxnId} from '../../domain/transactions/TxnId'
+import {genAcctId} from '../../domain/accounts/AcctId'
+import {genVndrId} from '../../domain/vendors/VndrId'
+import {getHLClock} from '../../domain/core/HybridLogicalClock'
+import {genOrigId} from '../../domain/origins/OrigId'
 
 const validEntries = [
     {acctId: genAcctId(), debit: '$100.00', credit: '$0.00'},

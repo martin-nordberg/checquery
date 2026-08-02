@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'bun:test'
-import {advanceHLClock, getHLClock, hlcLength, hlcRegex, hlcSchema, mergeHLClock, type HLClock} from "$shared/domain/core/HybridLogicalClock";
+import {advanceHLClock, getHLClock, hlcLength, hlcRegex, hlcSchema, mergeHLClock, type HLClock} from "../../domain/core/HybridLogicalClock";
 
 const check = (hlc: string) => {
     expect(() => hlcSchema.parse(hlc)).not.toThrow();

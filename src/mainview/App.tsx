@@ -1,11 +1,13 @@
 import "./rpc";
 import { currentFile } from "./rpc";
 import NewFileModal from "./NewFileModal";
+import PasswordModal from "./PasswordModal";
 
 export default function App() {
 	return (
 		<main>
 			<NewFileModal />
+			<PasswordModal />
 			<div class="container">
 				<h1>Checquery</h1>
 				<p class="subtitle">

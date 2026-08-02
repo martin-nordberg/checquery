@@ -1,7 +1,7 @@
 import {describe, expect, it} from 'bun:test'
-import {entryReadSchema, entryWriteSchema, entryPatchSchema} from '$shared/domain/transactions/Entry'
-import {genAcctId} from '$shared/domain/accounts/AcctId'
-import {genTxnId} from '$shared/domain/transactions/TxnId'
+import {entryReadSchema, entryWriteSchema, entryPatchSchema} from '../../domain/transactions/Entry'
+import {genAcctId} from '../../domain/accounts/AcctId'
+import {genTxnId} from '../../domain/transactions/TxnId'
 
 describe('entryReadSchema', () => {
     describe('valid entries', () => {

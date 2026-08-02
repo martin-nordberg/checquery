@@ -1,5 +1,5 @@
 import {afterEach, describe, expect, it, setSystemTime} from 'bun:test'
-import {isoDateSchema, isoDateToday} from "$shared/domain/core/IsoDate";
+import {isoDateSchema, isoDateToday} from "../../domain/core/IsoDate";
 
 const check = (date: string) => {
     expect(() => isoDateSchema.parse(date)).not.toThrow();

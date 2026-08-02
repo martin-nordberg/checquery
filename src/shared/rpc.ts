@@ -8,7 +8,11 @@ export type FileOpenedPayload = {
 
 export type PromptNewFileNameResult =
 	| { cancelled: true }
-	| { cancelled: false; name: string };
+	| { cancelled: false; name: string; password: string };
+
+export type PromptPasswordResult =
+	| { cancelled: true }
+	| { cancelled: false; password: string };
 
 export type AppSchema = {
 	bun: RPCSchema<{}>;
@@ -17,6 +21,10 @@ export type AppSchema = {
 			promptNewFileName: {
 				params: { suggestedFolder: string };
 				response: PromptNewFileNameResult;
+			};
+			promptPassword: {
+				params: { fileName: string };
+				response: PromptPasswordResult;
 			};
 		};
 		messages: {

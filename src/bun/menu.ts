@@ -1,12 +1,16 @@
 import { ApplicationMenu, Utils, type BrowserWindow } from "electrobun/bun";
+import { basename } from "node:path";
 import { createNewFile, openExistingFile } from "./db";
-import type { PromptNewFileNameResult, FileOpenedPayload } from "../shared/rpc";
+import type { PromptNewFileNameResult, PromptPasswordResult, FileOpenedPayload } from "../shared/rpc";
 
 type AppRpc = {
 	request: {
 		promptNewFileName: (params: {
 			suggestedFolder: string;
 		}) => Promise<PromptNewFileNameResult>;
+		promptPassword: (params: {
+			fileName: string;
+		}) => Promise<PromptPasswordResult>;
 	};
 	send: {
 		fileOpened: (payload: FileOpenedPayload) => void;
@@ -51,7 +55,7 @@ async function handleNewFile(window: BrowserWindow<any>, rpc: AppRpc) {
 	});
 	if (promptResult.cancelled) return;
 
-	const result = createNewFile(folder, promptResult.name);
+	const result = createNewFile(folder, promptResult.name, promptResult.password);
 	if (!result.ok) {
 		await Utils.showMessageBox({
 			type: "error",
@@ -79,7 +83,12 @@ async function handleOpenFile(window: BrowserWindow<any>, rpc: AppRpc) {
 	const path = files?.[0];
 	if (!path) return;
 
-	const result = openExistingFile(path);
+	const passwordResult = await rpc.request.promptPassword({
+		fileName: basename(path),
+	});
+	if (passwordResult.cancelled) return;
+
+	const result = openExistingFile(path, passwordResult.password);
 	if (!result.ok) {
 		await Utils.showMessageBox({
 			type: "error",

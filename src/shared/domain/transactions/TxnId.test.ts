@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'bun:test'
-import {genTxnId, txnIdPrefix, txnIdSchema} from "$shared/domain/transactions/TxnId";
+import {genTxnId, txnIdPrefix, txnIdSchema} from "../../domain/transactions/TxnId";
 
 describe('genTxnId', () => {
     it('generates a valid transaction ID', () => {

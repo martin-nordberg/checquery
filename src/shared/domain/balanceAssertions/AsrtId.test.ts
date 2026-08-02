@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'bun:test'
-import {genAsrtId, asrtIdPrefix, asrtIdSchema} from "$shared/domain/balanceAssertions/AsrtId";
+import {genAsrtId, asrtIdPrefix, asrtIdSchema} from "../../domain/balanceAssertions/AsrtId";
 
 describe('genAsrtId', () => {
     it('generates a valid balance assertion ID', () => {
