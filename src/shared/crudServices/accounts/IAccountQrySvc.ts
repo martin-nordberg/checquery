@@ -10,6 +10,9 @@ export interface IAccountQrySvc {
     /** Finds the entire list of accounts */
     findAccountsAll(): Promise<Account[]>
 
+    /** Counts non-deleted accounts. */
+    countAccountsAll(): Promise<number>
+
     /** Checks if an account is used in any transaction entry or default for a vendor. */
     isAccountInUse(accountId: AcctId): Promise<boolean>
 

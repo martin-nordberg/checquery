@@ -2,6 +2,8 @@ import { Electroview } from "electrobun/view";
 import { createSignal } from "solid-js";
 import type {
 	AppSchema,
+	ErrorAlertPayload,
+	FileInfoPayload,
 	FileOpenedPayload,
 	PromptNewFileNameResult,
 	PromptPasswordResult,
@@ -9,6 +11,12 @@ import type {
 
 export const [currentFile, setCurrentFile] =
 	createSignal<FileOpenedPayload | null>(null);
+
+export const [fileInfo, setFileInfo] =
+	createSignal<FileInfoPayload | null>(null);
+
+export const [errorAlert, setErrorAlert] =
+	createSignal<ErrorAlertPayload | null>(null);
 
 export type PendingPrompt = {
 	suggestedFolder: string;
@@ -46,6 +54,8 @@ const rpc = Electroview.defineRPC<AppSchema>({
 		},
 		messages: {
 			fileOpened: (payload) => setCurrentFile(payload),
+			showFileInfo: (payload) => setFileInfo(payload),
+			showError: (payload) => setErrorAlert(payload),
 		},
 	},
 });

@@ -1,7 +1,13 @@
 import { ApplicationMenu, Utils, type BrowserWindow } from "electrobun/bun";
 import { basename } from "node:path";
-import { createNewFile, openExistingFile } from "./persistence/db";
-import type { PromptNewFileNameResult, PromptPasswordResult, FileOpenedPayload } from "../shared/rpc";
+import { createNewFile, getCurrentFileInfo, openExistingFile } from "./persistence/db";
+import type {
+	PromptNewFileNameResult,
+	PromptPasswordResult,
+	FileOpenedPayload,
+	FileInfoPayload,
+	ErrorAlertPayload,
+} from "../shared/rpc";
 
 type AppRpc = {
 	request: {
@@ -14,6 +20,8 @@ type AppRpc = {
 	};
 	send: {
 		fileOpened: (payload: FileOpenedPayload) => void;
+		showFileInfo: (payload: FileInfoPayload) => void;
+		showError: (payload: ErrorAlertPayload) => void;
 	};
 };
 
@@ -27,6 +35,8 @@ export function setupApplicationMenu(
 			submenu: [
 				{ label: "New...", action: "file:new", accelerator: "CmdOrCtrl+N" },
 				{ label: "Open...", action: "file:open", accelerator: "CmdOrCtrl+O" },
+				{ label: "Info...", action: "file:info" },
+				{ type: "separator" },
 				{ label: "Exit", action: "file:exit", accelerator: "Alt+F4" },
 			],
 		},
@@ -38,6 +48,8 @@ export function setupApplicationMenu(
 			void handleNewFile(window, rpc);
 		} else if (action === "file:open") {
 			void handleOpenFile(window, rpc);
+		} else if (action === "file:info") {
+			void handleFileInfo(rpc);
 		} else if (action === "file:exit") {
 			Utils.quit();
 		}
@@ -60,11 +72,7 @@ async function handleNewFile(window: BrowserWindow<any>, rpc: AppRpc) {
 
 	const result = await createNewFile(folder, promptResult.name, promptResult.password);
 	if (!result.ok) {
-		await Utils.showMessageBox({
-			type: "error",
-			title: "Cannot Create File",
-			message: result.error,
-		});
+		rpc.send.showError({ title: "Cannot Create File", message: result.error });
 		return;
 	}
 
@@ -74,6 +82,16 @@ async function handleNewFile(window: BrowserWindow<any>, rpc: AppRpc) {
 		fileId: result.fileId,
 		name: result.name,
 	});
+}
+
+async function handleFileInfo(rpc: AppRpc) {
+	const info = await getCurrentFileInfo();
+	if (!info) {
+		rpc.send.showError({ title: "No File Open", message: "Open or create a file first." });
+		return;
+	}
+
+	rpc.send.showFileInfo(info);
 }
 
 async function handleOpenFile(window: BrowserWindow<any>, rpc: AppRpc) {
@@ -93,11 +111,7 @@ async function handleOpenFile(window: BrowserWindow<any>, rpc: AppRpc) {
 
 	const result = await openExistingFile(path, passwordResult.password);
 	if (!result.ok) {
-		await Utils.showMessageBox({
-			type: "error",
-			title: "Cannot Open File",
-			message: result.error,
-		});
+		rpc.send.showError({ title: "Cannot Open File", message: result.error });
 		return;
 	}
 

@@ -111,4 +111,22 @@ describe('BalanceAssertionMaterializedStoreSvc', () => {
             await expect(svc.deleteBalanceAssertion(deletion)).rejects.toThrow()
         })
     })
+
+    describe('countBalanceAssertionsAll', () => {
+        it('counts only non-deleted balance assertions', async () => {
+            const { svc } = makeSvc()
+            const a = balanceAssertionCreationEventSchema.parse({
+                id: genAsrtId(), origId: genOrigId(), acctId: genAcctId(), clearedDate: '2026-01-31', balance: '$1.00',
+            })
+            const b = balanceAssertionCreationEventSchema.parse({
+                id: genAsrtId(), origId: genOrigId(), acctId: genAcctId(), clearedDate: '2026-02-28', balance: '$2.00',
+            })
+            await svc.createBalanceAssertion(a)
+            await svc.createBalanceAssertion(b)
+            expect(await svc.countBalanceAssertionsAll()).toBe(2)
+
+            await svc.deleteBalanceAssertion(balanceAssertionDeletionEventSchema.parse({ id: a.id, origId: genOrigId() }))
+            expect(await svc.countBalanceAssertionsAll()).toBe(1)
+        })
+    })
 })

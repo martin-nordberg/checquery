@@ -151,6 +151,13 @@ export class ActionLog {
         return { id: row.id, actionType: row.action_type, hlc: row.hlc, payload } as Action
     }
 
+    /** Total number of rows in the actions table -- a lightweight count, unlike readActions() which decrypts
+     * every row. */
+    countActions(): number {
+        const row = this.db.query(`SELECT COUNT(*) as n FROM actions`).get() as { n: number }
+        return row.n
+    }
+
     /**
      * Decrypted, oldest-first read of this log's actions, optionally starting strictly after a given hlc. The
      * building block for replayInto below, and for cross-log copying (compaction/sync, action-log.md §7). Halts

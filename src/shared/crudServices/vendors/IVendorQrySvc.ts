@@ -10,6 +10,9 @@ export interface IVendorQrySvc {
     /** Finds the entire list of vendors */
     findVendorsAll(): Promise<Vendor[]>
 
+    /** Counts non-deleted vendors. */
+    countVendorsAll(): Promise<number>
+
     /** Checks if a vendor is used in any transaction. */
     isVendorInUse(vendorId: VndrId): Promise<boolean>
 

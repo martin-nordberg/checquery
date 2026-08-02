@@ -10,4 +10,7 @@ export interface IBalanceAssertionQrySvc {
     /** Finds the entire list of balance assertions */
     findBalanceAssertionsAll(): Promise<BalanceAssertion[]>
 
+    /** Counts non-deleted balance assertions. */
+    countBalanceAssertionsAll(): Promise<number>
+
 }

@@ -46,6 +46,11 @@ export class VendorTeeSvc implements IVendorSvc {
         return this.qrySvc.findVendorsAll()
     }
 
+    /** Counts non-deleted vendors. */
+    async countVendorsAll(): Promise<number> {
+        return this.qrySvc.countVendorsAll()
+    }
+
     /** Checks if a vendor is used in any transaction. */
     async isVendorInUse(vendorId: VndrId): Promise<boolean> {
         return this.qrySvc.isVendorInUse(vendorId)

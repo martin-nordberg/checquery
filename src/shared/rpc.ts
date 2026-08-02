@@ -14,6 +14,27 @@ export type PromptPasswordResult =
 	| { cancelled: true }
 	| { cancelled: false; password: string };
 
+export type ErrorAlertPayload = {
+	title: string;
+	message: string;
+};
+
+export type FileInfoPayload = {
+	name: string;
+	path: string;
+	sizeBytes: number;
+	lastModifiedIso: string;
+	entityCounts: {
+		origins: number;
+		accounts: number;
+		vendors: number;
+		transactions: number;
+		balanceAssertions: number;
+	};
+	actionLogEntryCount: number;
+	meta: Array<{ key: string; value: string }>;
+};
+
 export type AppSchema = {
 	bun: RPCSchema<{}>;
 	webview: RPCSchema<{
@@ -29,6 +50,8 @@ export type AppSchema = {
 		};
 		messages: {
 			fileOpened: FileOpenedPayload;
+			showFileInfo: FileInfoPayload;
+			showError: ErrorAlertPayload;
 		};
 	}>;
 };

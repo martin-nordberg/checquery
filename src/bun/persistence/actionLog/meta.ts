@@ -17,6 +17,11 @@ export function getMetaValue(db: Database, key: string): string | null {
     return row?.value ?? null
 }
 
+/** Reads every key/value pair from _checquery_meta, ordered by key. */
+export function getAllMetaEntries(db: Database): Array<{ key: string; value: string }> {
+    return db.query(`SELECT key, value FROM _checquery_meta ORDER BY key`).all() as Array<{ key: string; value: string }>
+}
+
 /** Inserts or updates a value in _checquery_meta. */
 export function setMetaValue(db: Database, key: string, value: string): void {
     db.run(

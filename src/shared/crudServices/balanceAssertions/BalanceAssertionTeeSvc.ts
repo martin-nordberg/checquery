@@ -46,6 +46,11 @@ export class BalanceAssertionTeeSvc implements IBalanceAssertionSvc {
         return this.qrySvc.findBalanceAssertionsAll()
     }
 
+    /** Counts non-deleted balance assertions. */
+    async countBalanceAssertionsAll(): Promise<number> {
+        return this.qrySvc.countBalanceAssertionsAll()
+    }
+
     /** Updates a balance assertion's attributes. */
     async patchBalanceAssertion(assertionPatch: BalanceAssertionPatchEvent): Promise<BalanceAssertionPatchEvent | null> {
         let result: BalanceAssertionPatchEvent | null = assertionPatch

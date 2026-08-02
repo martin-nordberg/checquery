@@ -10,4 +10,7 @@ export interface IOriginQrySvc {
     /** Finds the entire list of origins */
     findOriginsAll(): Promise<Origin[]>
 
+    /** Counts origins. Origins are immutable and never deleted, so this is simply the total. */
+    countOriginsAll(): Promise<number>
+
 }

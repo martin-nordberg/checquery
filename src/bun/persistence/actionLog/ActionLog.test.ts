@@ -115,6 +115,20 @@ describe('readActions', () => {
     })
 })
 
+describe('countActions', () => {
+    it('is 0 for an empty log', () => {
+        const log = createInMemoryActionLog()
+        expect(log.countActions()).toBe(0)
+    })
+
+    it('counts every appended action, regardless of type', async () => {
+        const log = createInMemoryActionLog()
+        await log.appendAction('create-origin', fixture({ name: 'first' }))
+        await log.appendAction('create-origin', fixture({ name: 'second' }))
+        expect(log.countActions()).toBe(2)
+    })
+})
+
 describe('readActionsForXxx (per-entity lookup)', () => {
     it('readActionsForAccount returns only that account\'s own actions, in hlc order', async () => {
         const log = createInMemoryActionLog()

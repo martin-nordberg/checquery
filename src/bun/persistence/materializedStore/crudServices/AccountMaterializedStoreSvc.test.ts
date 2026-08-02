@@ -66,6 +66,24 @@ describe('AccountMaterializedStoreSvc', () => {
         })
     })
 
+    describe('countAccountsAll', () => {
+        it('counts only non-deleted accounts', async () => {
+            const { svc } = makeSvc()
+            const a = accountCreationEventSchema.parse({
+                id: genAcctId(), origId: genOrigId(), parentId: acctIdAssets, acctType: 'ASSET', name: 'A',
+            })
+            const b = accountCreationEventSchema.parse({
+                id: genAcctId(), origId: genOrigId(), parentId: acctIdAssets, acctType: 'ASSET', name: 'B',
+            })
+            await svc.createAccount(a)
+            await svc.createAccount(b)
+            expect(await svc.countAccountsAll()).toBe(2)
+
+            await svc.deleteAccount(accountDeletionEventSchema.parse({ id: a.id, origId: genOrigId() }))
+            expect(await svc.countAccountsAll()).toBe(1)
+        })
+    })
+
     describe('patchAccount', () => {
         it('updates only the fields present on the patch, leaving others unchanged', async () => {
             const { svc } = makeSvc()

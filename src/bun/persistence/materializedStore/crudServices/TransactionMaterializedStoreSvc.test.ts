@@ -163,4 +163,30 @@ describe('TransactionMaterializedStoreSvc', () => {
             await expect(svc.deleteTransaction(deletion)).rejects.toThrow()
         })
     })
+
+    describe('countTransactionsAll', () => {
+        it('counts only non-deleted transactions', async () => {
+            const { svc } = makeSvc()
+            const a = transactionCreationEventSchema.parse({
+                id: genTxnId(), origId: genOrigId(), postDate: '2026-01-15', description: 'A',
+                entries: [
+                    { acctId: acctA, debit: '$10.00', credit: '$0.00' },
+                    { acctId: acctB, debit: '$0.00', credit: '$10.00' },
+                ],
+            })
+            const b = transactionCreationEventSchema.parse({
+                id: genTxnId(), origId: genOrigId(), postDate: '2026-01-16', description: 'B',
+                entries: [
+                    { acctId: acctA, debit: '$5.00', credit: '$0.00' },
+                    { acctId: acctB, debit: '$0.00', credit: '$5.00' },
+                ],
+            })
+            await svc.createTransaction(a)
+            await svc.createTransaction(b)
+            expect(await svc.countTransactionsAll()).toBe(2)
+
+            await svc.deleteTransaction(transactionDeletionEventSchema.parse({ id: a.id, origId: genOrigId() }))
+            expect(await svc.countTransactionsAll()).toBe(1)
+        })
+    })
 })

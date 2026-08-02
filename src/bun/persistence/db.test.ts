@@ -3,9 +3,13 @@ import { existsSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'bun:test'
-import { closeCurrentFile, createNewFile, getCurrentFile, getCurrentLedgerStore, openExistingFile } from './db'
+import { closeCurrentFile, createNewFile, getCurrentFile, getCurrentFileInfo, getCurrentLedgerStore, openExistingFile } from './db'
 import { setMetaValue } from './actionLog/meta'
 import { genOrigId } from '../../shared/domain/origins/OrigId'
+import { accountCreationEventSchema } from '../../shared/domain/accounts/Account'
+import { genAcctId } from '../../shared/domain/accounts/AcctId'
+import { acctIdAssets } from '../../shared/domain/accounts/AcctRoot'
+import { originCreationEventSchema } from '../../shared/domain/origins/Origin'
 
 const tmpDir = mkdtempSync(join(tmpdir(), 'checquery-db-test-'))
 let counter = 0
@@ -163,5 +167,59 @@ describe('openExistingFile', () => {
         expect(result.ok).toBe(false)
         if (result.ok) return
         expect(result.code).toBe('unsupported-version')
+    })
+})
+
+describe('getCurrentFileInfo', () => {
+    it('is null when no file is open', async () => {
+        closeCurrentFile()
+        expect(await getCurrentFileInfo()).toBeNull()
+    })
+
+    it('reports name, size, entity counts, action log count, and meta for a freshly created file', async () => {
+        const name = freshName()
+        const created = await createNewFile(tmpDir, name, 'hunter2')
+        expect(created.ok).toBe(true)
+        if (!created.ok) return
+
+        const info = await getCurrentFileInfo()
+        expect(info).not.toBeNull()
+        expect(info!.name).toBe(created.name)
+        expect(info!.path).toBe(created.path)
+        expect(info!.sizeBytes).toBeGreaterThan(0)
+        expect(new Date(info!.lastModifiedIso).getTime()).not.toBeNaN()
+        expect(info!.entityCounts).toEqual({
+            origins: 0,
+            accounts: 0,
+            vendors: 0,
+            transactions: 0,
+            balanceAssertions: 0,
+        })
+        expect(info!.actionLogEntryCount).toBe(0)
+        expect(info!.meta.find((e) => e.key === 'file_id')?.value).toBe(created.fileId)
+        expect(info!.meta.find((e) => e.key === 'encrypted')?.value).toBe('true')
+    })
+
+    it('reflects writes made through the ledger store', async () => {
+        const name = freshName()
+        const created = await createNewFile(tmpDir, name)
+        expect(created.ok).toBe(true)
+        if (!created.ok) return
+
+        const origin = await created.store.svcs.origins.createOrigin(
+            originCreationEventSchema.parse({ id: genOrigId(), name: 'Tester', ipAddress: '127.0.0.1' }),
+        )
+        await created.store.svcs.accounts.createAccount(accountCreationEventSchema.parse({
+            id: genAcctId(),
+            origId: origin!.id,
+            parentId: acctIdAssets,
+            acctType: 'ASSET',
+            name: 'Checking',
+        }))
+
+        const info = await getCurrentFileInfo()
+        expect(info!.entityCounts.accounts).toBe(1)
+        expect(info!.entityCounts.origins).toBe(1)
+        expect(info!.actionLogEntryCount).toBe(2)
     })
 })

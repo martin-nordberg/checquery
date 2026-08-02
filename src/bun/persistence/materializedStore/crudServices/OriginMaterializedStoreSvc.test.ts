@@ -43,4 +43,11 @@ describe('OriginMaterializedStoreSvc', () => {
         const all = await svc.findOriginsAll()
         expect(all.map((o) => o.name as string)).toEqual(['A Person', 'B Person'])
     })
+
+    it('countOriginsAll counts every origin (no soft-delete concept)', async () => {
+        const { svc } = makeSvc()
+        await svc.createOrigin(originCreationEventSchema.parse({ id: genOrigId(), name: 'A', ipAddress: '1.1.1.1' }))
+        await svc.createOrigin(originCreationEventSchema.parse({ id: genOrigId(), name: 'B', ipAddress: '2.2.2.2' }))
+        expect(await svc.countOriginsAll()).toBe(2)
+    })
 })

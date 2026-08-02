@@ -153,4 +153,9 @@ export class TransactionMaterializedStoreSvc implements ITransactionSvc {
             .all(transactionId) as EntryRow[]
         return rowToTransaction(row, entryRows)
     }
+
+    async countTransactionsAll(): Promise<number> {
+        const row = this.db.query(`SELECT COUNT(*) as n FROM transactions WHERE is_deleted = 0`).get() as { n: number }
+        return row.n
+    }
 }

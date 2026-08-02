@@ -7,4 +7,7 @@ export interface ITransactionQrySvc {
     /** Finds the transaction with given unique ID. */
     findTransactionById(transactionId: TxnId): Promise<Transaction | null>
 
+    /** Counts non-deleted transactions. */
+    countTransactionsAll(): Promise<number>
+
 }

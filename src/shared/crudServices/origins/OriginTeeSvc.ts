@@ -32,4 +32,9 @@ export class OriginTeeSvc implements IOriginSvc {
         return this.qrySvc.findOriginsAll()
     }
 
+    /** Counts origins. */
+    async countOriginsAll(): Promise<number> {
+        return this.qrySvc.countOriginsAll()
+    }
+
 }

@@ -43,4 +43,9 @@ export class OriginMaterializedStoreSvc implements IOriginSvc {
         const rows = this.db.query(`SELECT * FROM origins ORDER BY name`).all() as OriginRow[]
         return rows.map(rowToOrigin)
     }
+
+    async countOriginsAll(): Promise<number> {
+        const row = this.db.query(`SELECT COUNT(*) as n FROM origins`).get() as { n: number }
+        return row.n
+    }
 }

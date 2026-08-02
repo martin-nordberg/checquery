@@ -112,6 +112,11 @@ export class AccountMaterializedStoreSvc implements IAccountSvc {
         return rows.map(rowToAccount)
     }
 
+    async countAccountsAll(): Promise<number> {
+        const row = this.db.query(`SELECT COUNT(*) as n FROM accounts WHERE is_deleted = 0`).get() as { n: number }
+        return row.n
+    }
+
     async isAccountInUse(accountId: AcctId): Promise<boolean> {
         const row = this.db
             .query(

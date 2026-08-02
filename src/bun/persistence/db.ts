@@ -1,12 +1,13 @@
 import { Database } from "bun:sqlite";
 import { createId } from "@paralleldrive/cuid2";
-import { existsSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import { basename, join } from "node:path";
+import type { FileInfoPayload } from "../../shared/rpc";
 import { ActionLog } from "./actionLog/ActionLog";
 import { AesGcmCodec } from "./actionLog/encryption/AesGcmCodec";
 import { PlaintextCodec } from "./actionLog/encryption/PlaintextCodec";
 import { generateFileCryptoMaterial, generateNodeId, verifyPassword, type KdfParams } from "./actionLog/encryption/crypto";
-import { getMetaValue, metaTableExists, setMetaValue } from "./actionLog/meta";
+import { getAllMetaEntries, getMetaValue, metaTableExists, setMetaValue } from "./actionLog/meta";
 import { latestKnownVersion, readSchemaVersion, runMigrations } from "./actionLog/migrations/runMigrations";
 import { LedgerStore } from "./ledgerStore/LedgerStore";
 
@@ -20,6 +21,31 @@ export function getCurrentFile(): { path: string; name: string } | null {
 
 export function getCurrentLedgerStore(): LedgerStore | null {
 	return currentLedgerStore;
+}
+
+/** Assembles the File > Info payload for the currently open file, or null if none is open. */
+export async function getCurrentFileInfo(): Promise<FileInfoPayload | null> {
+	if (!currentPath || !currentLedgerStore || !currentDb) return null;
+
+	const stats = statSync(currentPath);
+	const { svcs, actionLog } = currentLedgerStore;
+	const [origins, accounts, vendors, transactions, balanceAssertions] = await Promise.all([
+		svcs.origins.countOriginsAll(),
+		svcs.accounts.countAccountsAll(),
+		svcs.vendors.countVendorsAll(),
+		svcs.transactions.countTransactionsAll(),
+		svcs.balanceAssertions.countBalanceAssertionsAll(),
+	]);
+
+	return {
+		name: basename(currentPath),
+		path: currentPath,
+		sizeBytes: stats.size,
+		lastModifiedIso: stats.mtime.toISOString(),
+		entityCounts: { origins, accounts, vendors, transactions, balanceAssertions },
+		actionLogEntryCount: actionLog.countActions(),
+		meta: getAllMetaEntries(currentDb),
+	};
 }
 
 export function closeCurrentFile(): void {

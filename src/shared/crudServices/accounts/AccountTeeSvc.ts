@@ -46,6 +46,11 @@ export class AccountTeeSvc implements IAccountSvc {
         return this.qrySvc.findAccountsAll()
     }
 
+    /** Counts non-deleted accounts. */
+    async countAccountsAll(): Promise<number> {
+        return this.qrySvc.countAccountsAll()
+    }
+
     /** Checks if an account is used in any transaction entry or default for a vendor. */
     async isAccountInUse(accountId: AcctId): Promise<boolean> {
         return this.qrySvc.isAccountInUse(accountId)

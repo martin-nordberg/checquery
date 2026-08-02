@@ -107,6 +107,20 @@ describe('VendorMaterializedStoreSvc', () => {
         })
     })
 
+    describe('countVendorsAll', () => {
+        it('counts only non-deleted vendors', async () => {
+            const { svc } = makeSvc()
+            const a = vendorCreationEventSchema.parse({ id: genVndrId(), origId: genOrigId(), name: 'A' })
+            const b = vendorCreationEventSchema.parse({ id: genVndrId(), origId: genOrigId(), name: 'B' })
+            await svc.createVendor(a)
+            await svc.createVendor(b)
+            expect(await svc.countVendorsAll()).toBe(2)
+
+            await svc.deleteVendor(vendorDeletionEventSchema.parse({ id: a.id, origId: genOrigId() }))
+            expect(await svc.countVendorsAll()).toBe(1)
+        })
+    })
+
     describe('isVendorInUse', () => {
         it('is false for a vendor nothing references', async () => {
             const { svc } = makeSvc()

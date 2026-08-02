@@ -103,6 +103,11 @@ export class VendorMaterializedStoreSvc implements IVendorSvc {
         return rows.map(rowToVendor)
     }
 
+    async countVendorsAll(): Promise<number> {
+        const row = this.db.query(`SELECT COUNT(*) as n FROM vendors WHERE is_deleted = 0`).get() as { n: number }
+        return row.n
+    }
+
     async isVendorInUse(vendorId: VndrId): Promise<boolean> {
         const row = this.db
             .query(`SELECT EXISTS (SELECT 1 FROM transactions WHERE vndr_id = ? AND is_deleted = 0) AS in_use`)

@@ -40,6 +40,11 @@ export class TransactionTeeSvc implements ITransactionSvc {
         return this.qrySvc.findTransactionById(transactionId)
     }
 
+    /** Counts non-deleted transactions. */
+    async countTransactionsAll(): Promise<number> {
+        return this.qrySvc.countTransactionsAll()
+    }
+
     /** Updates a transaction's attributes. */
     async patchTransaction(transactionPatch: TransactionPatchEvent): Promise<TransactionPatchEvent | null> {
         let result: TransactionPatchEvent | null = transactionPatch
