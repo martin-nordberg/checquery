@@ -66,10 +66,6 @@ export class AccountMaterializedStoreSvc implements IAccountSvc {
             sets.push("parent_id = ?")
             params.push(accountPatch.parentId)
         }
-        if (accountPatch.acctType !== undefined) {
-            sets.push("acct_type = ?")
-            params.push(accountPatch.acctType)
-        }
         if (accountPatch.name !== undefined) {
             sets.push("name = ?")
             params.push(accountPatch.name)

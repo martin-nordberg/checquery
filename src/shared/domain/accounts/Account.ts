@@ -34,10 +34,9 @@ const rootIffNoParentMessage =
 
 /**
  * Checks that if an account's id is a predefined root, its acctType matches the type that root
- * represents (e.g. the Assets root's acctType must be ASSET, never LIABILITY). Unlike rootIffNoParent,
- * this only asserts something when acctType is actually present, so it's safe to apply to the patch
- * schema too: a patch that omits acctType isn't claiming anything, but a patch that does set it on a
- * root account gets checked immediately.
+ * represents (e.g. the Assets root's acctType must be ASSET, never LIABILITY). Only applies to the read
+ * and creation schemas -- acctType is immutable after creation (see accountPatchEventSchema, which omits
+ * the field entirely), so there's nothing for this to check on a patch.
  */
 const rootAcctTypeMatches = (acct: { id: AcctId, acctType?: AcctTypeStr }): boolean => {
     if (acct.acctType === undefined) return true
@@ -120,19 +119,21 @@ export const accountDeletionEventSchema = z.object({
 export type AccountDeletionEvent = z.infer<typeof accountDeletionEventSchema>
 
 
-/** Sub-schema for account patches. */
+/**
+ * Sub-schema for account patches. acctType is omitted entirely (not just optional) -- an account's type
+ * is fixed at creation and can never be changed afterward, so a patch payload that includes acctType at
+ * all is rejected as an unrecognized field, regardless of its value.
+ */
 export const accountPatchEventSchema =
-    accountAttributesSchema.extend({
+    accountAttributesSchema.omit({acctType: true}).extend({
         hlc: hlcSchema.optional()
     }).partial({
         parentId: true,
-        acctType: true,
         name: true,
         description: true,
         isPrimary: true,
     })
         .refine(noSelfParent, noSelfParentMessage)
-        .refine(rootAcctTypeMatches, rootAcctTypeMatchesMessage)
         .readonly()
 
 export type AccountPatchEvent = z.infer<typeof accountPatchEventSchema>

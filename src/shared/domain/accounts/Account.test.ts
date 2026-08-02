@@ -391,11 +391,11 @@ describe('Invalid Accounts', () => {
             })).toThrow()
         })
 
-        it('rejects invalid acctType when provided', () => {
+        it('rejects a patch that includes acctType at all -- it is immutable after creation', () => {
             expect(() => accountPatchEventSchema.parse({
                 id: genAcctId(),
                 origId: genOrigId(),
-                acctType: 'INVALID'
+                acctType: 'ASSET'
             })).toThrow()
         })
     })
@@ -691,21 +691,23 @@ describe('Account hierarchy invariants', () => {
             })).toThrow("A predefined root account's acctType must match the type it represents.")
         })
 
-        it('rejects a patch that sets a mismatched acctType on a root account', () => {
+        it('rejects a patch that includes acctType on a root account, even a matching value', () => {
+            // acctType is omitted from the patch schema entirely, so this fails as an unrecognized
+            // field -- not because EXPENSE mismatches acctIdExpenses's type (it doesn't).
             expect(() => accountPatchEventSchema.parse({
                 id: acctIdExpenses,
                 origId: genOrigId(),
-                acctType: 'ASSET',
-            })).toThrow("A predefined root account's acctType must match the type it represents.")
+                acctType: 'EXPENSE',
+            })).toThrow()
         })
 
-        it('does not enforce the check on patches that omit acctType, even for a root account', () => {
+        it('a patch that omits acctType parses fine, even for a root account', () => {
             const acct = accountPatchEventSchema.parse({
                 id: acctIdExpenses,
                 origId: genOrigId(),
                 name: 'Expenses',
             })
-            expect(acct.acctType).toBeUndefined()
+            expect(acct.name as string).toBe('Expenses')
         })
 
         it('imposes no constraint on a non-root account\'s acctType', () => {
