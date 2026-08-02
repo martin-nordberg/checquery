@@ -25,27 +25,44 @@ describe('runMigrations', () => {
         expect(readSchemaVersion(db)).toBe(latestKnownVersion)
     })
 
-    it('creates _checquery_meta and actions', () => {
+    it('creates _checquery_meta, actions, and the five per-entity lookup tables', () => {
         const db = new Database(':memory:')
         runMigrations(db)
         const names = tableNames(db)
         expect(names).toContain('_checquery_meta')
         expect(names).toContain('actions')
+        expect(names).toContain('account_actions')
+        expect(names).toContain('vendor_actions')
+        expect(names).toContain('transaction_actions')
+        expect(names).toContain('balance_assertion_actions')
+        expect(names).toContain('origin_actions')
     })
 
-    it('creates actions with the expected columns', () => {
+    it('creates actions with the expected columns, id as TEXT (an ActnId, not an autoincrement integer)', () => {
         const db = new Database(':memory:')
         runMigrations(db)
         const columns = columnNames(db, 'actions')
         expect(columns).toEqual(['id', 'action_type', 'hlc', 'iv', 'encrypted_payload'])
     })
 
+    it.each([
+        ['account_actions', ['actn_id', 'acct_id']],
+        ['vendor_actions', ['actn_id', 'vndr_id']],
+        ['transaction_actions', ['actn_id', 'txn_id']],
+        ['balance_assertion_actions', ['actn_id', 'asrt_id']],
+        ['origin_actions', ['actn_id', 'orig_id']],
+    ])('creates %s with the expected columns', (table, expectedColumns) => {
+        const db = new Database(':memory:')
+        runMigrations(db)
+        expect(columnNames(db, table)).toEqual(expectedColumns)
+    })
+
     it('rejects an action_type outside the known vocabulary', () => {
         const db = new Database(':memory:')
         runMigrations(db)
         expect(() =>
-            db.run(`INSERT INTO actions (action_type, hlc, iv, encrypted_payload) VALUES (?, ?, ?, ?)`, [
-                'not-a-real-action', '0000000000000000', 'iv', 'payload',
+            db.run(`INSERT INTO actions (id, action_type, hlc, iv, encrypted_payload) VALUES (?, ?, ?, ?, ?)`, [
+                'actn1', 'not-a-real-action', '0000000000000000', 'iv', 'payload',
             ]),
         ).toThrow()
     })
@@ -53,14 +70,24 @@ describe('runMigrations', () => {
     it('enforces a unique hlc', () => {
         const db = new Database(':memory:')
         runMigrations(db)
-        db.run(`INSERT INTO actions (action_type, hlc, iv, encrypted_payload) VALUES (?, ?, ?, ?)`, [
-            'create-origin', '0000000000000001', 'iv', 'payload',
+        db.run(`INSERT INTO actions (id, action_type, hlc, iv, encrypted_payload) VALUES (?, ?, ?, ?, ?)`, [
+            'actn1', 'create-origin', '0000000000000001', 'iv', 'payload',
         ])
         expect(() =>
-            db.run(`INSERT INTO actions (action_type, hlc, iv, encrypted_payload) VALUES (?, ?, ?, ?)`, [
-                'create-origin', '0000000000000001', 'iv2', 'payload2',
+            db.run(`INSERT INTO actions (id, action_type, hlc, iv, encrypted_payload) VALUES (?, ?, ?, ?, ?)`, [
+                'actn2', 'create-origin', '0000000000000001', 'iv2', 'payload2',
             ]),
         ).toThrow()
+    })
+
+    it('rejects a duplicate action id across the lookup tables (actn_id is each lookup table\'s own primary key)', () => {
+        const db = new Database(':memory:')
+        runMigrations(db)
+        db.run(`INSERT INTO actions (id, action_type, hlc, iv, encrypted_payload) VALUES (?, ?, ?, ?, ?)`, [
+            'actn1', 'create-account', '0000000000000001', 'iv', 'payload',
+        ])
+        db.run(`INSERT INTO account_actions (actn_id, acct_id) VALUES (?, ?)`, ['actn1', 'acct1'])
+        expect(() => db.run(`INSERT INTO account_actions (actn_id, acct_id) VALUES (?, ?)`, ['actn1', 'acct2'])).toThrow()
     })
 
     it('is idempotent: calling it again is a no-op', () => {

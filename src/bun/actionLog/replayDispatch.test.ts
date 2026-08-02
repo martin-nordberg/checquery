@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test'
 import { createInMemoryActionLog } from './inMemory'
 import type { CmdSvcBundle } from '../../shared/crudServices/CmdSvcBundle'
-import type { ActionType } from './ActionType'
-import { ACTION_TYPES } from './ActionType'
+import type { ActionType } from '../../shared/domain/actions/ActionType'
+import { ACTION_TYPES } from '../../shared/domain/actions/ActionType'
 import type { HLClock } from '../../shared/domain/core/HybridLogicalClock'
 
 /** Records every call made to it, keyed by "service.method", regardless of which entity/method it belongs to. */
@@ -62,7 +62,7 @@ describe('replayInto dispatch table', () => {
     it('dispatches every one of the 13 action types to its matching method with its matching payload', async () => {
         const log = createInMemoryActionLog()
         for (const actionType of ACTION_TYPES) {
-            const payload: { marker: ActionType; hlc?: HLClock } = { marker: actionType }
+            const payload: { id: string; marker: ActionType; hlc?: HLClock } = { id: `id-${actionType}`, marker: actionType }
             await log.appendAction(actionType, payload)
         }
 

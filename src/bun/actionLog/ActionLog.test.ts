@@ -6,6 +6,11 @@ import { AesGcmCodec } from './encryption/AesGcmCodec'
 import { PlaintextCodec } from './encryption/PlaintextCodec'
 import { createInMemoryActionLog } from './inMemory'
 import { getHLClock, type HLClock } from '../../shared/domain/core/HybridLogicalClock'
+import { genOrigId } from '../../shared/domain/origins/OrigId'
+import { genAcctId } from '../../shared/domain/accounts/AcctId'
+import { genVndrId } from '../../shared/domain/vendors/VndrId'
+import { genTxnId } from '../../shared/domain/transactions/TxnId'
+import { genAsrtId } from '../../shared/domain/balanceAssertions/AsrtId'
 
 function rawInMemoryLog() {
     const db = new Database(':memory:')
@@ -17,9 +22,10 @@ function rawInMemoryLog() {
 
 /** A typed test fixture -- routing literals through this (rather than passing them inline) avoids a known
  * TypeScript quirk where a fresh object literal gets excess-property-checked against a generic constraint
- * rather than against its own inferred type. */
-function fixture(fields: { name?: string; ipAddress?: string; hlc?: HLClock }) {
-    return fields
+ * rather than against its own inferred type. Defaults `id` to a fresh OrigId since every test here appends
+ * 'create-origin' actions unless it overrides it. */
+function fixture(fields: { id?: string; name?: string; ipAddress?: string; hlc?: HLClock }) {
+    return { id: fields.id ?? genOrigId(), ...fields }
 }
 
 describe('appendAction', () => {
@@ -56,6 +62,15 @@ describe('appendAction', () => {
         // The master must have advanced past the merged-in external hlc, not reset to the local clock's own pace.
         expect(next.hlc! > farFutureHlc).toBe(true)
         expect(next.hlc!.startsWith('FFFFFFFFFF')).toBe(true)
+    })
+
+    it('records the entity id in the right lookup table', async () => {
+        const { db, log } = rawInMemoryLog()
+        const acctId = genAcctId()
+        await log.appendAction('create-account', fixture({ id: acctId }))
+
+        const row = db.query(`SELECT acct_id FROM account_actions`).get() as { acct_id: string }
+        expect(row.acct_id).toBe(acctId)
     })
 })
 
@@ -97,6 +112,69 @@ describe('readActions', () => {
         ])
 
         expect(() => [...log.readActions()]).toThrow(new RegExp(appended.hlc as string))
+    })
+})
+
+describe('readActionsForXxx (per-entity lookup)', () => {
+    it('readActionsForAccount returns only that account\'s own actions, in hlc order', async () => {
+        const log = createInMemoryActionLog()
+        const acctId1 = genAcctId()
+        const acctId2 = genAcctId()
+
+        const created = await log.appendAction('create-account', fixture({ id: acctId1 }))
+        const patched = await log.appendAction('update-account', fixture({ id: acctId1 }))
+        await log.appendAction('create-account', fixture({ id: acctId2 })) // a different account, must not show up
+        await log.appendAction('create-origin', fixture({ name: 'unrelated' })) // a different entity type entirely
+
+        const actions = [...log.readActionsForAccount(acctId1)]
+        expect(actions).toHaveLength(2)
+        expect(actions.map((a) => a.actionType)).toEqual(['create-account', 'update-account'])
+        expect(actions[0]!.hlc).toBe(created.hlc!)
+        expect(actions[1]!.hlc).toBe(patched.hlc!)
+    })
+
+    it('readActionsForOrigin returns only that origin\'s own actions', async () => {
+        const log = createInMemoryActionLog()
+        const origId1 = genOrigId()
+        const origId2 = genOrigId()
+
+        await log.appendAction('create-origin', fixture({ id: origId1, name: 'first' }))
+        await log.appendAction('create-origin', fixture({ id: origId2, name: 'second' }))
+
+        const actions = [...log.readActionsForOrigin(origId1)]
+        expect(actions).toHaveLength(1)
+        expect((actions[0]!.payload as { name: string }).name).toBe('first')
+    })
+
+    it('returns nothing for an entity with no actions', async () => {
+        const log = createInMemoryActionLog()
+        expect([...log.readActionsForAccount(genAcctId())]).toEqual([])
+    })
+
+    it('readActionsForVendor / readActionsForTransaction / readActionsForBalanceAssertion each isolate their own entity', async () => {
+        const log = createInMemoryActionLog()
+        const vndrId1 = genVndrId()
+        const vndrId2 = genVndrId()
+        const txnId1 = genTxnId()
+        const asrtId1 = genAsrtId()
+
+        await log.appendAction('create-vendor', fixture({ id: vndrId1 }))
+        await log.appendAction('delete-vendor', fixture({ id: vndrId1 }))
+        await log.appendAction('create-vendor', fixture({ id: vndrId2 }))
+
+        await log.appendAction('create-transaction', fixture({ id: txnId1 }))
+        await log.appendAction('create-balance-assertion', fixture({ id: asrtId1 }))
+
+        const vendorActions = [...log.readActionsForVendor(vndrId1)]
+        expect(vendorActions.map((a) => a.actionType)).toEqual(['create-vendor', 'delete-vendor'])
+
+        const transactionActions = [...log.readActionsForTransaction(txnId1)]
+        expect(transactionActions).toHaveLength(1)
+        expect(transactionActions[0]!.actionType).toBe('create-transaction')
+
+        const balanceAssertionActions = [...log.readActionsForBalanceAssertion(asrtId1)]
+        expect(balanceAssertionActions).toHaveLength(1)
+        expect(balanceAssertionActions[0]!.actionType).toBe('create-balance-assertion')
     })
 })
 

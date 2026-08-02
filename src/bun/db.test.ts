@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'bun:test'
 import { closeCurrentFile, createNewFile, getCurrentActionLog, getCurrentFile, openExistingFile } from './db'
 import { setMetaValue } from './actionLog/meta'
+import { genOrigId } from '../shared/domain/origins/OrigId'
 
 const tmpDir = mkdtempSync(join(tmpdir(), 'checquery-db-test-'))
 let counter = 0
@@ -28,7 +29,7 @@ describe('createNewFile', () => {
         expect(existsSync(result.path)).toBe(true)
         expect(result.fileId).toBeTruthy()
 
-        const appended = await result.actionLog.appendAction('create-origin', { name: 'Jane' } as any)
+        const appended = await result.actionLog.appendAction('create-origin', { id: genOrigId(), name: 'Jane' } as any)
         expect(appended.hlc).toBeDefined()
     })
 
@@ -59,7 +60,7 @@ describe('createNewFile', () => {
         expect(result.ok).toBe(true)
         if (!result.ok) return
 
-        await result.actionLog.appendAction('create-origin', { name: 'Jane' } as any)
+        await result.actionLog.appendAction('create-origin', { id: genOrigId(), name: 'Jane' } as any)
 
         const db = new Database(result.path, { create: false, readonly: true })
         const row = db.query(`SELECT iv, encrypted_payload FROM actions`).get() as {
