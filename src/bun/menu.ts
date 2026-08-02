@@ -27,6 +27,7 @@ export function setupApplicationMenu(
 			submenu: [
 				{ label: "New...", action: "file:new", accelerator: "CmdOrCtrl+N" },
 				{ label: "Open...", action: "file:open", accelerator: "CmdOrCtrl+O" },
+				{ label: "Exit", action: "file:exit", accelerator: "Alt+F4" },
 			],
 		},
 	]);
@@ -37,6 +38,8 @@ export function setupApplicationMenu(
 			void handleNewFile(window, rpc);
 		} else if (action === "file:open") {
 			void handleOpenFile(window, rpc);
+		} else if (action === "file:exit") {
+			Utils.quit();
 		}
 	});
 }
