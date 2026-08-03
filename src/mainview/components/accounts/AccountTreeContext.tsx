@@ -14,13 +14,13 @@ export type AccountTreeActions = {
 	/** The full (unfiltered) account list, for AccountParentPicker's type-filtering/cycle-exclusion. */
 	accounts: Accessor<Account[]>;
 
-	/** The parentId currently showing an inline "new account" row, or null if none is. Only one at a time. */
+	/** The parentId the "new account" modal is currently open for, or null if it's closed. Only one at a time. */
 	addingParentId: Accessor<AcctId | null>;
-	/** Opens the "new account" row as a child of the given parent (a tree node's id, or the type root). */
+	/** Opens the "new account" modal as a child of the given parent (a tree node's id, or the type root). */
 	requestAdd: (parentId: AcctId) => void;
-	/** Called after a successful create: refetches the account list and closes the new-account row. */
+	/** Called after a successful create: refetches the account list and closes the modal. */
 	onAdded: () => void;
-	/** Called to abandon the in-progress new-account row without creating anything. */
+	/** Called to abandon the in-progress new-account modal without creating anything. */
 	onCancelAdd: () => void;
 
 	/** The account id currently in edit mode, or null if none is. Only one at a time. */

@@ -16,6 +16,7 @@ import {
 } from "../nav/icons";
 import { isoDateToday } from "../../shared/domain/core/IsoDate";
 import { accountsClient } from "../accounts/accountsClient";
+import { accountDetailRoute } from "../accounts/accountRoute";
 import type { Account } from "../../shared/domain/accounts/Account";
 import type { AcctTypeStr } from "../../shared/domain/accounts/AcctType";
 
@@ -46,16 +47,11 @@ function primaryAccountsOfType(accounts: Account[], acctType: AcctTypeStr): Acco
 /** One link per primary account of a given type, to its Register/Income Log/Expense Log. Rebuilt from
  * live account data every time the page renders (info-architecture.md §4) -- there's deliberately no
  * dropdown of non-primary accounts here yet, just the primary shortcuts. */
-function PrimaryAccountLinks(props: {
-	accounts: Account[];
-	routePrefix: "register" | "incomelog" | "expenselog";
-	iconPath: string;
-	labelSuffix: string;
-}) {
+function PrimaryAccountLinks(props: { accounts: Account[]; iconPath: string; labelSuffix: string }) {
 	return (
 		<For each={props.accounts}>
 			{(account) => (
-				<A class={linkClass} href={`/${props.routePrefix}/${account.id}`}>
+				<A class={linkClass} href={accountDetailRoute(account.acctType, account.id)}>
 					<NavIcon path={props.iconPath} /> {account.name} {props.labelSuffix}
 				</A>
 			)}
@@ -97,24 +93,14 @@ function FileHub() {
 					<A class={linkClass} href="/accounts/ASSET">
 						<NavIcon path={accountsIconPath} /> Edit the List of Asset Accounts
 					</A>
-					<PrimaryAccountLinks
-						accounts={primary("ASSET")}
-						routePrefix="register"
-						iconPath={registerIconPath}
-						labelSuffix="Register"
-					/>
+					<PrimaryAccountLinks accounts={primary("ASSET")} iconPath={registerIconPath} labelSuffix="Register" />
 				</div>
 				<div class="flex flex-col gap-1">
 					<h2 class="font-semibold text-slate-700">Liabilities</h2>
 					<A class={linkClass} href="/accounts/LIABILITY">
 						<NavIcon path={accountsIconPath} /> Edit the List of Liability Accounts
 					</A>
-					<PrimaryAccountLinks
-						accounts={primary("LIABILITY")}
-						routePrefix="register"
-						iconPath={registerIconPath}
-						labelSuffix="Register"
-					/>
+					<PrimaryAccountLinks accounts={primary("LIABILITY")} iconPath={registerIconPath} labelSuffix="Register" />
 				</div>
 			</div>
 
@@ -124,12 +110,7 @@ function FileHub() {
 					<A class={linkClass} href="/accounts/INCOME">
 						<NavIcon path={accountsIconPath} /> Edit the List of Income Accounts
 					</A>
-					<PrimaryAccountLinks
-						accounts={primary("INCOME")}
-						routePrefix="incomelog"
-						iconPath={incomeLogIconPath}
-						labelSuffix="Income Log"
-					/>
+					<PrimaryAccountLinks accounts={primary("INCOME")} iconPath={incomeLogIconPath} labelSuffix="Income Log" />
 				</div>
 				<div class="flex flex-col gap-1">
 					<h2 class="font-semibold text-slate-700">Expenses</h2>
@@ -138,7 +119,6 @@ function FileHub() {
 					</A>
 					<PrimaryAccountLinks
 						accounts={primary("EXPENSE")}
-						routePrefix="expenselog"
 						iconPath={expenseLogIconPath}
 						labelSuffix="Expense Log"
 					/>

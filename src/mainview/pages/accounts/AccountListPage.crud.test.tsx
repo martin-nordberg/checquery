@@ -56,29 +56,42 @@ async function renderAssetPage() {
 }
 
 describe("AccountListPage -- rendering real (mocked) account data", () => {
-	it("renders existing accounts fetched from accountsClient", async () => {
+	it("renders existing accounts as table rows, name linking to the Register", async () => {
 		const checking = account({ name: "Checking" });
 		findAccountsAllMock.mockResolvedValue([checking]);
 
-		const { findByText } = await renderAssetPage();
-		expect(await findByText("Checking")).toBeTruthy();
+		const { findByRole } = await renderAssetPage();
+		const nameLink = await findByRole("link", { name: "Checking" });
+		expect(nameLink.getAttribute("href")).toBe(`/register/${checking.id}`);
+	});
+
+	it("shows a star only for primary accounts", async () => {
+		const checking = account({ name: "Checking", isPrimary: true });
+		const savings = account({ name: "Savings", isPrimary: false });
+		findAccountsAllMock.mockResolvedValue([checking, savings]);
+
+		const { findByRole, container } = await renderAssetPage();
+		await findByRole("link", { name: "Checking" });
+
+		const stars = container.querySelectorAll('[title="Primary account"]');
+		expect(stars).toHaveLength(1);
 	});
 });
 
 describe("AccountListPage -- create flow", () => {
-	it("opens the new-account row, forces acctType from the route, and refetches on save", async () => {
+	it("opens via the header '+' icon, forces acctType from the route, and refetches on save", async () => {
 		findAccountsAllMock.mockResolvedValueOnce([]);
-		const { findByText, getByLabelText } = await renderAssetPage();
+		const { findByRole, getByLabelText } = await renderAssetPage();
 
-		fireEvent.click(await findByText("+ Add Asset Account"));
+		fireEvent.click(await findByRole("button", { name: "Add Asset Account" }));
 
 		const nameInput = getByLabelText("Name") as HTMLInputElement;
 		fireEvent.input(nameInput, { target: { value: "New Checking" } });
 
 		findAccountsAllMock.mockResolvedValueOnce([account({ name: "New Checking" })]);
-		fireEvent.click(await findByText("Add"));
+		fireEvent.click(await findByRole("button", { name: "Add" }));
 
-		await findByText("New Checking");
+		await findByRole("link", { name: "New Checking" });
 		expect(createAccountMock).toHaveBeenCalledTimes(1);
 		const params = createAccountMock.mock.calls[0]![0] as Record<string, unknown>;
 		expect(params.acctType).toBe("ASSET");
@@ -87,13 +100,13 @@ describe("AccountListPage -- create flow", () => {
 		expect(params).not.toHaveProperty("acctTypeOverride"); // sanity: no stray fields
 	});
 
-	it("never shows a type field/selector in the new-account row itself", async () => {
+	it("never shows a type field/selector in the new-account form itself", async () => {
 		findAccountsAllMock.mockResolvedValueOnce([]);
-		const { findByText, container } = await renderAssetPage();
+		const { findByRole, container } = await renderAssetPage();
 
-		fireEvent.click(await findByText("+ Add Asset Account"));
+		fireEvent.click(await findByRole("button", { name: "Add Asset Account" }));
 
-		// The create row has no <select> at all (a parent picker only appears in edit mode) and no text
+		// The create form has no <select> at all (a parent picker only appears in edit mode) and no text
 		// anywhere mentioning account type -- acctType is forced from the route, never user-input.
 		expect(container.querySelectorAll("select")).toHaveLength(0);
 		expect(container.textContent?.toLowerCase()).not.toContain("account type");
@@ -103,12 +116,12 @@ describe("AccountListPage -- create flow", () => {
 		const checking = account({ name: "Checking" });
 		findAccountsAllMock.mockResolvedValue([checking]);
 
-		const { findByText, findByRole, container } = await renderAssetPage();
-		fireEvent.click(await findByText("+ Add Asset Account"));
+		const { findByRole, container } = await renderAssetPage();
+		fireEvent.click(await findByRole("button", { name: "Add Asset Account" }));
 
 		// The existing row is still visible underneath -- the create form floats on top as a fixed,
 		// full-screen, darkened overlay (bg-black/40), same treatment as EditableAccountRow.
-		expect(await findByRole("button", { name: "Checking" })).toBeTruthy();
+		expect(await findByRole("link", { name: "Checking" })).toBeTruthy();
 
 		const overlay = container.querySelector(".fixed.inset-0");
 		expect(overlay).toBeTruthy();
@@ -118,12 +131,12 @@ describe("AccountListPage -- create flow", () => {
 });
 
 describe("AccountListPage -- edit flow", () => {
-	it("edits name/description/isPrimary without ever exposing an acctType input", async () => {
+	it("opens via the row's pencil icon and edits name/description/isPrimary without ever exposing an acctType input", async () => {
 		const checking = account({ name: "Checking" });
 		findAccountsAllMock.mockResolvedValue([checking]);
 
-		const { findByText, container } = await renderAssetPage();
-		fireEvent.click(await findByText("Checking"));
+		const { findByRole, container } = await renderAssetPage();
+		fireEvent.click(await findByRole("button", { name: "Edit Checking" }));
 
 		// Edit mode should have exactly one <select> (the parent picker) and zero mentions of "type".
 		const selects = container.querySelectorAll("select");
@@ -134,12 +147,27 @@ describe("AccountListPage -- edit flow", () => {
 		fireEvent.input(nameInput, { target: { value: "Renamed Checking" } });
 
 		findAccountsAllMock.mockResolvedValueOnce([account({ name: "Renamed Checking" })]);
-		fireEvent.click(await findByText("Save"));
+		fireEvent.click(await findByRole("button", { name: "Save" }));
 
-		await findByText("Renamed Checking");
+		await findByRole("link", { name: "Renamed Checking" });
 		expect(patchAccountMock).toHaveBeenCalledTimes(1);
 		const params = patchAccountMock.mock.calls[0]![0] as Record<string, unknown>;
 		expect(params).not.toHaveProperty("acctType");
+	});
+
+	it("the account name is a plain navigation link, not an edit trigger", async () => {
+		const checking = account({ name: "Checking" });
+		findAccountsAllMock.mockResolvedValue([checking]);
+
+		// Structural check rather than firing a real click: @solidjs/router's <A> click handling calls into
+		// real browser navigation internals that happy-dom's synthetic environment can't fully satisfy, so
+		// simulating the click itself is unreliable here. What matters -- that the name has no click-to-edit
+		// behavior of its own -- is fully captured by it being an <a> (edit only ever opens via the row's
+		// pencil-icon button, exercised in the tests above).
+		const { findByRole } = await renderAssetPage();
+		const nameLink = await findByRole("link", { name: "Checking" });
+		expect(nameLink.tagName).toBe("A");
+		expect(nameLink.getAttribute("href")).toBe(`/register/${checking.id}`);
 	});
 
 	it("opens as a full-viewport overlay, not an inline row -- editing one account must not be losable by clicking another", async () => {
@@ -147,15 +175,15 @@ describe("AccountListPage -- edit flow", () => {
 		const savings = account({ name: "Savings" });
 		findAccountsAllMock.mockResolvedValue([checking, savings]);
 
-		const { findByText, findByRole, container } = await renderAssetPage();
-		fireEvent.click(await findByText("Checking"));
+		const { findByRole, container } = await renderAssetPage();
+		fireEvent.click(await findByRole("button", { name: "Edit Checking" }));
 
 		// Both rows are still present underneath -- the edit form isn't swapped in for the row, it floats
 		// on top of everything as a fixed, full-screen, darkened overlay (bg-black/40) so nothing behind
 		// it is reachable while unsaved changes are pending. "Savings" also now appears a second time, as
-		// an option in the parent picker, so match the row specifically via its button role.
-		expect(await findByRole("button", { name: "Checking" })).toBeTruthy();
-		expect(await findByRole("button", { name: "Savings" })).toBeTruthy();
+		// an option in the parent picker, so match the row specifically via its link role.
+		expect(await findByRole("link", { name: "Checking" })).toBeTruthy();
+		expect(await findByRole("link", { name: "Savings" })).toBeTruthy();
 
 		const overlay = container.querySelector(".fixed.inset-0");
 		expect(overlay).toBeTruthy();
@@ -170,17 +198,19 @@ describe("AccountListPage -- delete flow", () => {
 		findAccountsAllMock.mockResolvedValue([checking]);
 		isAccountInUseMock.mockResolvedValue(false);
 
-		const { findByText, queryByText } = await renderAssetPage();
-		fireEvent.click(await findByText("Checking"));
-		fireEvent.click(await findByText("Delete"));
+		const { findByRole, queryByRole, container } = await renderAssetPage();
+		fireEvent.click(await findByRole("button", { name: "Edit Checking" }));
+		fireEvent.click(await findByRole("button", { name: "Delete" }));
 
-		expect(await findByText("Delete Account")).toBeTruthy(); // confirm dialog title
+		expect(await findByRole("heading", { name: "Delete Account" })).toBeTruthy(); // confirm dialog title
 		findAccountsAllMock.mockResolvedValueOnce([]);
-		fireEvent.click(await findByText("Delete", { selector: "button.bg-red-600" }));
+		// Two "Delete" buttons exist now (the form's own, and the confirm dialog's) -- target the confirm
+		// dialog's specifically via its distinct styling rather than an ambiguous role/name query.
+		fireEvent.click(container.querySelector("button.bg-red-600")!);
 
 		expect(deleteAccountMock).toHaveBeenCalledTimes(1);
 		await new Promise((resolve) => setTimeout(resolve, 0));
-		expect(queryByText("Checking")).toBeNull();
+		expect(queryByRole("link", { name: "Checking" })).toBeNull();
 	});
 
 	it("blocks deletion with an error message when the account is in use, without deleting", async () => {
@@ -190,12 +220,12 @@ describe("AccountListPage -- delete flow", () => {
 
 		// ErrorAlertModal is mounted at the App shell level, not by AccountListPage itself -- assert on the
 		// errorAlert signal it reads from, rather than querying for a modal that isn't in this render tree.
-		const { findByText, queryByText } = await renderAssetPage();
-		fireEvent.click(await findByText("Checking"));
-		fireEvent.click(await findByText("Delete"));
+		const { findByRole } = await renderAssetPage();
+		fireEvent.click(await findByRole("button", { name: "Edit Checking" }));
+		fireEvent.click(await findByRole("button", { name: "Delete" }));
 
 		await waitFor(() => expect(errorAlert()?.title).toBe("Cannot Delete Account"));
-		expect(queryByText("Delete Account")).toBeNull(); // confirm dialog never opened
+		expect(document.querySelector(".fixed.inset-0")?.textContent).not.toContain("Delete Account");
 		expect(deleteAccountMock).not.toHaveBeenCalled();
 	});
 });

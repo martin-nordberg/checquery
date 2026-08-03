@@ -5,6 +5,8 @@ import Breadcrumb from "../../components/nav/Breadcrumb";
 import FileBreadcrumb from "../../components/nav/FileBreadcrumb";
 import HoverableDropDown from "../../components/nav/HoverableDropDown";
 import AccountTree from "../../components/accounts/AccountTree";
+import NewAccountRow from "../../components/accounts/NewAccountRow";
+import EditableAccountRow from "../../components/accounts/EditableAccountRow";
 import { AccountTreeProvider, type AccountTreeActions } from "../../components/accounts/AccountTreeContext";
 import { accountsIconPath } from "../../nav/icons";
 import { acctTypeCodes, acctTypeSchema, acctTypeText } from "../../../shared/domain/accounts/AcctType";
@@ -50,6 +52,8 @@ export default function AccountListPage() {
 
 	const [addingParentId, setAddingParentId] = createSignal<AcctId | null>(null);
 	const [editingId, setEditingId] = createSignal<AcctId | null>(null);
+	const editingAccount = createMemo(() => (accounts() ?? []).find((account) => account.id === editingId()));
+
 	const treeActions: AccountTreeActions = {
 		get acctType() {
 			return acctType();
@@ -85,26 +89,68 @@ export default function AccountListPage() {
 					</Breadcrumb>
 				</TopNav>
 				<main class="p-4">
-					<div class="flex items-center justify-between">
-						<h1 class="text-lg font-semibold text-slate-700">{label()}</h1>
-						<button
-							type="button"
-							class="rounded border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-							onClick={() => setAddingParentId(rootId())}
-						>
-							+ Add {acctTypeText(acctType())} Account
-						</button>
-					</div>
-					<Show when={!accounts.loading} fallback={<p class="mt-2 text-slate-500">Loading…</p>}>
-						<AccountTreeProvider value={treeActions}>
-							<div class="mt-4 max-w-2xl">
-								<Show when={tree().length === 0 && addingParentId() !== rootId()}>
-									<p class="text-slate-500">No {acctTypeText(acctType())} accounts yet.</p>
+					<h1 class="mb-4 text-lg font-semibold text-slate-700">{label()}</h1>
+					<AccountTreeProvider value={treeActions}>
+						{/* Both are modals (fixed overlays) -- rendered once here rather than at their tree
+						    position, since floating dialogs have no need to live at a specific spot in the DOM. */}
+						<Show when={addingParentId()}>
+							{(parentId) => <NewAccountRow parentId={parentId()} />}
+						</Show>
+						<Show when={editingAccount()}>
+							{(account) => <EditableAccountRow account={account()} />}
+						</Show>
+
+						<Show when={!accounts.loading} fallback={<p class="text-slate-500">Loading…</p>}>
+							<div class="flex-1 overflow-auto rounded-lg bg-white shadow-lg">
+								<table class="min-w-full divide-y divide-gray-200">
+									<thead class="sticky top-0 z-10 bg-blue-100">
+										<tr>
+											<th class="w-10 px-2 py-3 text-center">
+												<button
+													type="button"
+													class="rounded p-1 text-green-600 hover:bg-gray-200 hover:text-green-800"
+													onClick={() => setAddingParentId(rootId())}
+													aria-label={`Add ${acctTypeText(acctType())} Account`}
+													title="Add account"
+												>
+													<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+														<path
+															stroke-linecap="round"
+															stroke-linejoin="round"
+															stroke-width="2"
+															d="M12 4v16m8-8H4"
+														/>
+													</svg>
+												</button>
+											</th>
+											<th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500">
+												Name
+											</th>
+											<th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500">
+												Description
+											</th>
+											<th class="w-10 px-2 py-3 text-center text-xs font-bold text-gray-500" title="Primary">
+												★
+											</th>
+											<th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500">
+												Add
+											</th>
+										</tr>
+									</thead>
+									<tbody class="divide-y divide-gray-200 bg-white">
+										<Show when={tree().length > 0}>
+											<AccountTree nodes={tree()} />
+										</Show>
+									</tbody>
+								</table>
+								<Show when={tree().length === 0}>
+									<p class="p-4 text-center text-gray-500">
+										No {acctTypeText(acctType())} accounts yet.
+									</p>
 								</Show>
-								<AccountTree nodes={tree()} parentId={rootId()} />
 							</div>
-						</AccountTreeProvider>
-					</Show>
+						</Show>
+					</AccountTreeProvider>
 				</main>
 			</>
 		</Show>
