@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'bun:test'
-import { closeCurrentFile, createNewFile, getCurrentFile, getCurrentFileInfo, getCurrentLedgerStore, openExistingFile } from './db'
+import { closeCurrentFile, createNewFile, getCurrentFile, getCurrentFileInfo, getCurrentLedgerStore, getCurrentOrigId, openExistingFile } from './db'
 import { setMetaValue } from './actionLog/meta'
 import { genOrigId } from '../../shared/domain/origins/OrigId'
 import { accountCreationEventSchema } from '../../shared/domain/accounts/Account'
@@ -66,8 +66,10 @@ describe('createNewFile', () => {
 
         await result.store.actionLog.appendAction('create-origin', { id: genOrigId(), name: 'Jane' } as any)
 
+        // Creating the file already bootstraps a "current origin" action (see bootstrapCurrentOrigin in
+        // db.ts), so there's more than one row here -- filter to the one this test actually appended.
         const db = new Database(result.path, { create: false, readonly: true })
-        const row = db.query(`SELECT iv, encrypted_payload FROM actions`).get() as {
+        const row = db.query(`SELECT iv, encrypted_payload FROM actions WHERE encrypted_payload LIKE '%Jane%'`).get() as {
             iv: string
             encrypted_payload: string
         }
@@ -85,6 +87,20 @@ describe('createNewFile', () => {
         const reopened = await openExistingFile(result.path)
         expect(reopened.ok).toBe(true)
     })
+
+    it('bootstraps a current origin for the session', async () => {
+        const name = freshName()
+        const result = await createNewFile(tmpDir, name, 'hunter2')
+        expect(result.ok).toBe(true)
+        if (!result.ok) return
+
+        const origId = getCurrentOrigId()
+        expect(origId).not.toBeNull()
+
+        const origins = await result.store.svcs.origins.findOriginsAll()
+        expect(origins).toHaveLength(1)
+        expect(origins[0]!.id).toBe(origId!)
+    })
 })
 
 describe('openExistingFile', () => {
@@ -98,6 +114,22 @@ describe('openExistingFile', () => {
         expect(opened.ok).toBe(true)
         if (!opened.ok) return
         expect(opened.fileId).toBe(created.fileId)
+    })
+
+    it('reuses the same origin on reopen instead of creating a second one for the same identity', async () => {
+        const name = freshName()
+        const created = await createNewFile(tmpDir, name)
+        expect(created.ok).toBe(true)
+        if (!created.ok) return
+        const origIdAfterCreate = getCurrentOrigId()
+
+        const opened = await openExistingFile(created.path)
+        expect(opened.ok).toBe(true)
+        if (!opened.ok) return
+
+        expect(getCurrentOrigId()).toBe(origIdAfterCreate!)
+        const origins = await opened.store.svcs.origins.findOriginsAll()
+        expect(origins).toHaveLength(1)
     })
 
     it('opens an unencrypted file even if a password is supplied (ignored)', async () => {
@@ -188,14 +220,16 @@ describe('getCurrentFileInfo', () => {
         expect(info!.path).toBe(created.path)
         expect(info!.sizeBytes).toBeGreaterThan(0)
         expect(new Date(info!.lastModifiedIso).getTime()).not.toBeNaN()
+        // origins:1 and actionLogEntryCount:1, not 0 -- creating a file bootstraps a "current origin" for
+        // this session (see bootstrapCurrentOrigin in db.ts), which is itself one action-log entry.
         expect(info!.entityCounts).toEqual({
-            origins: 0,
+            origins: 1,
             accounts: 0,
             vendors: 0,
             transactions: 0,
             balanceAssertions: 0,
         })
-        expect(info!.actionLogEntryCount).toBe(0)
+        expect(info!.actionLogEntryCount).toBe(1)
         expect(info!.meta.find((e) => e.key === 'file_id')?.value).toBe(created.fileId)
         expect(info!.meta.find((e) => e.key === 'encrypted')?.value).toBe('true')
     })
@@ -206,8 +240,10 @@ describe('getCurrentFileInfo', () => {
         expect(created.ok).toBe(true)
         if (!created.ok) return
 
+        // createNewFile already bootstrapped one origin for this session; this creates a second, distinct
+        // one (different name/ipAddress) to prove writes made directly through the store are reflected too.
         const origin = await created.store.svcs.origins.createOrigin(
-            originCreationEventSchema.parse({ id: genOrigId(), name: 'Tester', ipAddress: '127.0.0.1' }),
+            originCreationEventSchema.parse({ id: genOrigId(), name: 'Tester', ipAddress: '10.0.0.99' }),
         )
         await created.store.svcs.accounts.createAccount(accountCreationEventSchema.parse({
             id: genAcctId(),
@@ -219,7 +255,7 @@ describe('getCurrentFileInfo', () => {
 
         const info = await getCurrentFileInfo()
         expect(info!.entityCounts.accounts).toBe(1)
-        expect(info!.entityCounts.origins).toBe(1)
-        expect(info!.actionLogEntryCount).toBe(2)
+        expect(info!.entityCounts.origins).toBe(2)
+        expect(info!.actionLogEntryCount).toBe(3)
     })
 })

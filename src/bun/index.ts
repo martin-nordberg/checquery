@@ -1,6 +1,13 @@
 import { BrowserView, BrowserWindow, Updater } from "electrobun/bun";
 import type { AppSchema } from "../shared/rpc";
 import { handleCloseFile, handleFileInfo, handleNewFile, handleOpenFile } from "./fileLifecycle";
+import {
+	handleCreateAccount,
+	handleDeleteAccount,
+	handleFindAccountsAll,
+	handleIsAccountInUse,
+	handlePatchAccount,
+} from "./accountHandlers";
 
 const DEV_SERVER_PORT = 5173;
 const DEV_SERVER_URL = `http://localhost:${DEV_SERVER_PORT}`;
@@ -38,6 +45,11 @@ const rpc: ReturnType<typeof BrowserView.defineRPC<AppSchema>> = BrowserView.def
 			startOpenFile: () => handleOpenFile(mainWindow, rpc),
 			getFileInfo: () => handleFileInfo(rpc),
 			closeFile: () => handleCloseFile(mainWindow),
+			findAccountsAll: () => handleFindAccountsAll(),
+			createAccount: (params) => handleCreateAccount(params),
+			patchAccount: (params) => handlePatchAccount(params),
+			deleteAccount: (params) => handleDeleteAccount(params),
+			isAccountInUse: (params) => handleIsAccountInUse(params),
 		},
 		messages: {},
 	},

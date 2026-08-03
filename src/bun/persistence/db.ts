@@ -1,6 +1,7 @@
 import { Database } from "bun:sqlite";
 import { createId } from "@paralleldrive/cuid2";
 import { existsSync, statSync } from "node:fs";
+import { networkInterfaces, userInfo } from "node:os";
 import { basename, join } from "node:path";
 import type { FileInfoPayload } from "../../shared/rpc";
 import { ActionLog } from "./actionLog/ActionLog";
@@ -10,10 +11,15 @@ import { generateFileCryptoMaterial, generateNodeId, verifyPassword, type KdfPar
 import { getAllMetaEntries, getMetaValue, metaTableExists, setMetaValue } from "./actionLog/meta";
 import { latestKnownVersion, readSchemaVersion, runMigrations } from "./actionLog/migrations/runMigrations";
 import { LedgerStore } from "./ledgerStore/LedgerStore";
+import { ipAddressSchema } from "../../shared/domain/core/IpAddress";
+import { nameSchema } from "../../shared/domain/core/Name";
+import { genOrigId, type OrigId } from "../../shared/domain/origins/OrigId";
+import { originCreationEventSchema } from "../../shared/domain/origins/Origin";
 
 let currentDb: Database | null = null;
 let currentPath: string | null = null;
 let currentLedgerStore: LedgerStore | null = null;
+let currentOrigId: OrigId | null = null;
 
 export function getCurrentFile(): { path: string; name: string } | null {
 	return currentPath ? { path: currentPath, name: basename(currentPath) } : null;
@@ -21,6 +27,47 @@ export function getCurrentFile(): { path: string; name: string } | null {
 
 export function getCurrentLedgerStore(): LedgerStore | null {
 	return currentLedgerStore;
+}
+
+/** The Origin (who/where) to stamp on every mutation made during this session, bootstrapped by
+ * bootstrapCurrentOrigin() when a file is opened or created. Null if no file is open. */
+export function getCurrentOrigId(): OrigId | null {
+	return currentOrigId;
+}
+
+/** The machine's actual LAN IPv4 address (e.g. "192.168.1.42"), not a loopback placeholder -- this is
+ * what makes "where" in the audit trail meaningful if a .checquery file is ever opened from more than one
+ * machine over a network share. Falls back to loopback only if no such interface exists at all. */
+function localIpAddress(): string {
+	for (const ifaceList of Object.values(networkInterfaces())) {
+		for (const iface of ifaceList ?? []) {
+			if (iface.family === "IPv4" && !iface.internal) {
+				return iface.address;
+			}
+		}
+	}
+	return "127.0.0.1";
+}
+
+/**
+ * Finds or creates the Origin representing this (user, machine) identity in the given store, reusing an
+ * existing one whenever its (name, ipAddress) already matches rather than minting a new Origin every
+ * session -- see documentation/account-list-implementation-plan.md §1b.
+ */
+async function bootstrapCurrentOrigin(store: LedgerStore): Promise<OrigId> {
+	const name = nameSchema.parse(userInfo().username);
+	const ipAddress = ipAddressSchema.parse(localIpAddress());
+
+	const existing = await store.svcs.origins.findOriginsAll();
+	const match = existing.find((origin) => origin.name === name && origin.ipAddress === ipAddress);
+	if (match) {
+		return match.id;
+	}
+
+	const created = await store.svcs.origins.createOrigin(
+		originCreationEventSchema.parse({ id: genOrigId(), name, ipAddress }),
+	);
+	return created!.id;
 }
 
 /** Assembles the File > Info payload for the currently open file, or null if none is open. */
@@ -65,6 +112,7 @@ function closeCurrent() {
 	currentDb = null;
 	currentPath = null;
 	currentLedgerStore = null;
+	currentOrigId = null;
 }
 
 export type FileErrorCode =
@@ -117,11 +165,13 @@ export async function createNewFile(folder: string, rawName: string, password?: 
 
 		const actionLog = new ActionLog(db, codec, nodeId);
 		const store = await LedgerStore.open(actionLog);
+		const origId = await bootstrapCurrentOrigin(store);
 
 		closeCurrent();
 		currentDb = db;
 		currentPath = path;
 		currentLedgerStore = store;
+		currentOrigId = origId;
 		return { ok: true, path, fileId, name: basename(path), store };
 	} catch (err) {
 		db?.close();
@@ -215,11 +265,13 @@ export async function openExistingFile(path: string, password?: string): Promise
 
 		const actionLog = new ActionLog(db, codec, nodeId);
 		const store = await LedgerStore.open(actionLog);
+		const origId = await bootstrapCurrentOrigin(store);
 
 		closeCurrent();
 		currentDb = db;
 		currentPath = path;
 		currentLedgerStore = store;
+		currentOrigId = origId;
 		return { ok: true, path, fileId, name: basename(path), store };
 	} catch (err) {
 		db.close();

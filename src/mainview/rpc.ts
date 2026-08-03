@@ -34,7 +34,7 @@ export type PendingPasswordPrompt = {
 export const [pendingPasswordPrompt, setPendingPasswordPrompt] =
 	createSignal<PendingPasswordPrompt | null>(null);
 
-const rpc = Electroview.defineRPC<AppSchema>({
+export const rpc = Electroview.defineRPC<AppSchema>({
 	handlers: {
 		requests: {
 			promptNewFileName: (params) =>
