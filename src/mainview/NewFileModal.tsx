@@ -5,12 +5,18 @@ export default function NewFileModal() {
 	const [name, setName] = createSignal("");
 	const [password, setPassword] = createSignal("");
 
+	// Test mode (CHECQUERY_ENCRYPTION_DISABLED=true) omits password entry entirely -- see
+	// documentation/test-mode.md -- otherwise it's a required field.
+	const passwordRequired = () => pendingPrompt()?.encryptionMode === "enabled";
+	const canSubmit = () => name().trim().length > 0 && (!passwordRequired() || password().length > 0);
+
 	const submit = (e: Event) => {
 		e.preventDefault();
 		const prompt = pendingPrompt();
 		if (!prompt) return;
 		const trimmedName = name().trim();
 		if (!trimmedName) return;
+		if (passwordRequired() && !password()) return;
 		prompt.resolve({ cancelled: false, name: trimmedName, password: password() });
 		setPendingPrompt(null);
 		setName("");
@@ -45,16 +51,16 @@ export default function NewFileModal() {
 							placeholder="MyProject"
 							class="mb-4 w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
 						/>
-						<input
-							type="password"
-							value={password()}
-							onInput={(e) => setPassword(e.currentTarget.value)}
-							placeholder="Password (optional)"
-							class="mb-1 w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
-						/>
-						<p class="mb-4 text-xs text-slate-500">
-							Leave blank to create the file without encryption.
-						</p>
+						<Show when={prompt().encryptionMode === "enabled"}>
+							<input
+								type="password"
+								required
+								value={password()}
+								onInput={(e) => setPassword(e.currentTarget.value)}
+								placeholder="Password"
+								class="mb-4 w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
+							/>
+						</Show>
 						<div class="flex justify-end gap-2">
 							<button
 								type="button"
@@ -65,7 +71,8 @@ export default function NewFileModal() {
 							</button>
 							<button
 								type="submit"
-								class="rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+								disabled={!canSubmit()}
+								class="rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
 							>
 								Create
 							</button>

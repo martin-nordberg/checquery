@@ -8,6 +8,7 @@ import type {
 	PromptNewFileNameResult,
 	PromptPasswordResult,
 } from "../shared/rpc";
+import type { EncryptionMode } from "../shared/encryptionMode";
 
 export const [currentFile, setCurrentFile] =
 	createSignal<FileOpenedPayload | null>(null);
@@ -20,6 +21,7 @@ export const [errorAlert, setErrorAlert] =
 
 export type PendingPrompt = {
 	suggestedFolder: string;
+	encryptionMode: EncryptionMode;
 	resolve: (result: PromptNewFileNameResult) => void;
 };
 
@@ -41,6 +43,7 @@ export const rpc = Electroview.defineRPC<AppSchema>({
 				new Promise<PromptNewFileNameResult>((resolve) => {
 					setPendingPrompt({
 						suggestedFolder: params.suggestedFolder,
+						encryptionMode: params.encryptionMode,
 						resolve,
 					});
 				}),

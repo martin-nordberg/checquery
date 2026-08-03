@@ -8,6 +8,17 @@ import {
 	handleIsAccountInUse,
 	handlePatchAccount,
 } from "./accountHandlers";
+import { resolveEncryptionMode } from "./encryptionMode";
+
+// Fail fast, before any window or dialog exists, on a misconfigured CHECQUERY_ENCRYPTION_DISABLED --
+// see documentation/test-mode.md.
+let encryptionMode;
+try {
+	encryptionMode = resolveEncryptionMode(process.env.CHECQUERY_ENCRYPTION_DISABLED);
+} catch (err) {
+	console.error((err as Error).message);
+	process.exit(1);
+}
 
 const DEV_SERVER_PORT = 5173;
 const DEV_SERVER_URL = `http://localhost:${DEV_SERVER_PORT}`;
@@ -41,8 +52,8 @@ const rpc: ReturnType<typeof BrowserView.defineRPC<AppSchema>> = BrowserView.def
 	maxRequestTime: Infinity,
 	handlers: {
 		requests: {
-			startNewFile: () => handleNewFile(mainWindow, rpc),
-			startOpenFile: () => handleOpenFile(mainWindow, rpc),
+			startNewFile: () => handleNewFile(mainWindow, rpc, encryptionMode),
+			startOpenFile: () => handleOpenFile(mainWindow, rpc, encryptionMode),
 			getFileInfo: () => handleFileInfo(rpc),
 			closeFile: () => handleCloseFile(mainWindow),
 			findAccountsAll: () => handleFindAccountsAll(),

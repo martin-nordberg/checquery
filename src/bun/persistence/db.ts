@@ -15,6 +15,8 @@ import { ipAddressSchema } from "../../shared/domain/core/IpAddress";
 import { nameSchema } from "../../shared/domain/core/Name";
 import { genOrigId, type OrigId } from "../../shared/domain/origins/OrigId";
 import { originCreationEventSchema } from "../../shared/domain/origins/Origin";
+import type { EncryptionMode } from "../../shared/encryptionMode";
+import { fileExtensionFor } from "../encryptionMode";
 
 let currentDb: Database | null = null;
 let currentPath: string | null = null;
@@ -99,11 +101,10 @@ export function closeCurrentFile(): void {
 	closeCurrent();
 }
 
-export function normalizeCheqPath(folder: string, rawName: string): string {
+export function normalizeCheqPath(folder: string, rawName: string, encryptionMode: EncryptionMode): string {
+	const ext = fileExtensionFor(encryptionMode);
 	const trimmed = rawName.trim();
-	const withExt = trimmed.toLowerCase().endsWith(".checquery")
-		? trimmed
-		: `${trimmed}.checquery`;
+	const withExt = trimmed.toLowerCase().endsWith(`.${ext}`) ? trimmed : `${trimmed}.${ext}`;
 	return join(folder, withExt);
 }
 
@@ -119,6 +120,7 @@ export type FileErrorCode =
 	| "already-exists"
 	| "not-a-checquery-file"
 	| "wrong-password"
+	| "password-required"
 	| "unsupported-version"
 	| "io-error";
 
@@ -126,10 +128,26 @@ export type FileResult =
 	| { ok: true; path: string; fileId: string; name: string; store: LedgerStore }
 	| { ok: false; error: string; code: FileErrorCode };
 
-/** A falsy (empty/omitted) password creates an unencrypted file: PlaintextCodec instead of AesGcmCodec is the
- * entire difference, plus the "encrypted" meta flag so openExistingFile later knows which one to reconstruct. */
-export async function createNewFile(folder: string, rawName: string, password?: string): Promise<FileResult> {
-	const path = normalizeCheqPath(folder, rawName);
+/**
+ * Whether the created file is encrypted is decided entirely by encryptionMode, not by whether a password
+ * happens to be supplied (see documentation/test-mode.md): "enabled" requires a non-empty password and
+ * always encrypts; "disabled" (test mode) always creates a plaintext file, ignoring any password passed in.
+ */
+export async function createNewFile(
+	folder: string,
+	rawName: string,
+	password: string | undefined,
+	encryptionMode: EncryptionMode,
+): Promise<FileResult> {
+	if (encryptionMode === "enabled" && !password) {
+		return {
+			ok: false,
+			error: "A password is required.",
+			code: "password-required",
+		};
+	}
+
+	const path = normalizeCheqPath(folder, rawName, encryptionMode);
 
 	if (existsSync(path)) {
 		return {
@@ -151,9 +169,10 @@ export async function createNewFile(folder: string, rawName: string, password?: 
 		const nodeId = generateNodeId();
 		setMetaValue(db, "node_id", nodeId);
 
-		const codec = password
+		const shouldEncrypt = encryptionMode === "enabled";
+		const codec = shouldEncrypt
 			? (() => {
-					const { material, key } = generateFileCryptoMaterial(password);
+					const { material, key } = generateFileCryptoMaterial(password!);
 					setMetaValue(db!, "kdf_salt", material.kdfSalt);
 					setMetaValue(db!, "kdf_params", JSON.stringify(material.kdfParams));
 					setMetaValue(db!, "verify_iv", material.verifyIv);
@@ -161,7 +180,7 @@ export async function createNewFile(folder: string, rawName: string, password?: 
 					return new AesGcmCodec(key);
 				})()
 			: new PlaintextCodec();
-		setMetaValue(db, "encrypted", password ? "true" : "false");
+		setMetaValue(db, "encrypted", shouldEncrypt ? "true" : "false");
 
 		const actionLog = new ActionLog(db, codec, nodeId);
 		const store = await LedgerStore.open(actionLog);

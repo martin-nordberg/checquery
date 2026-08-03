@@ -1,6 +1,7 @@
 import type { RPCSchema } from "electrobun/bun";
 import type { Account } from "./domain/accounts/Account";
 import type { AcctTypeStr } from "./domain/accounts/AcctType";
+import type { EncryptionMode } from "./encryptionMode";
 
 export type FileOpenedPayload = {
 	path: string;
@@ -75,7 +76,7 @@ export type AppSchema = {
 	webview: RPCSchema<{
 		requests: {
 			promptNewFileName: {
-				params: { suggestedFolder: string };
+				params: { suggestedFolder: string; encryptionMode: EncryptionMode };
 				response: PromptNewFileNameResult;
 			};
 			promptPassword: {

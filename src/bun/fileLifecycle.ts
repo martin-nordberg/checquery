@@ -1,6 +1,8 @@
 import { Utils, type BrowserWindow } from "electrobun/bun";
 import { basename } from "node:path";
 import { closeCurrentFile, createNewFile, getCurrentFile, getCurrentFileInfo, openExistingFile } from "./persistence/db";
+import { fileExtensionFor } from "./encryptionMode";
+import type { EncryptionMode } from "../shared/encryptionMode";
 import type {
 	PromptNewFileNameResult,
 	PromptPasswordResult,
@@ -13,6 +15,7 @@ type AppRpc = {
 	request: {
 		promptNewFileName: (params: {
 			suggestedFolder: string;
+			encryptionMode: EncryptionMode;
 		}) => Promise<PromptNewFileNameResult>;
 		promptPassword: (params: {
 			fileName: string;
@@ -25,7 +28,7 @@ type AppRpc = {
 	};
 };
 
-export async function handleNewFile(window: BrowserWindow<any>, rpc: AppRpc) {
+export async function handleNewFile(window: BrowserWindow<any>, rpc: AppRpc, encryptionMode: EncryptionMode) {
 	const folders = await Utils.openFileDialog({
 		canChooseFiles: false,
 		canChooseDirectory: true,
@@ -36,10 +39,11 @@ export async function handleNewFile(window: BrowserWindow<any>, rpc: AppRpc) {
 
 	const promptResult = await rpc.request.promptNewFileName({
 		suggestedFolder: folder,
+		encryptionMode,
 	});
 	if (promptResult.cancelled) return;
 
-	const result = await createNewFile(folder, promptResult.name, promptResult.password);
+	const result = await createNewFile(folder, promptResult.name, promptResult.password, encryptionMode);
 	if (!result.ok) {
 		rpc.send.showError({ title: "Cannot Create File", message: result.error });
 		return;
@@ -63,22 +67,31 @@ export async function handleFileInfo(rpc: AppRpc) {
 	rpc.send.showFileInfo(info);
 }
 
-export async function handleOpenFile(window: BrowserWindow<any>, rpc: AppRpc) {
+/**
+ * In test mode (encryptionMode "disabled") there's no password dialog at all -- test-mode files are never
+ * encrypted, so there's nothing to unlock (see documentation/test-mode.md). Only the normal, encryption-
+ * enabled path prompts for one.
+ */
+export async function handleOpenFile(window: BrowserWindow<any>, rpc: AppRpc, encryptionMode: EncryptionMode) {
 	const files = await Utils.openFileDialog({
 		canChooseFiles: true,
 		canChooseDirectory: false,
 		allowsMultipleSelection: false,
-		allowedFileTypes: "checquery",
+		allowedFileTypes: fileExtensionFor(encryptionMode),
 	});
 	const path = files?.[0];
 	if (!path) return;
 
-	const passwordResult = await rpc.request.promptPassword({
-		fileName: basename(path),
-	});
-	if (passwordResult.cancelled) return;
+	let password: string | undefined;
+	if (encryptionMode === "enabled") {
+		const passwordResult = await rpc.request.promptPassword({
+			fileName: basename(path),
+		});
+		if (passwordResult.cancelled) return;
+		password = passwordResult.password;
+	}
 
-	const result = await openExistingFile(path, passwordResult.password);
+	const result = await openExistingFile(path, password);
 	if (!result.ok) {
 		rpc.send.showError({ title: "Cannot Open File", message: result.error });
 		return;

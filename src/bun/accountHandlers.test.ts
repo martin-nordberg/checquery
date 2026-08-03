@@ -25,7 +25,7 @@ afterAll(() => {
 })
 
 beforeEach(async () => {
-    const result = await createNewFile(tmpDir, freshName())
+    const result = await createNewFile(tmpDir, freshName(), undefined, 'disabled')
     expect(result.ok).toBe(true)
 })
 
