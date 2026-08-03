@@ -1,6 +1,7 @@
 import type { RPCSchema } from "electrobun/bun";
 import type { Account } from "./domain/accounts/Account";
 import type { AcctTypeStr } from "./domain/accounts/AcctType";
+import type { Vendor } from "./domain/vendors/Vendor";
 import type { EncryptionMode } from "./encryptionMode";
 
 export type FileOpenedPayload = {
@@ -59,6 +60,22 @@ export type PatchAccountParams = {
 	isPrimary?: boolean;
 };
 
+/** Params for the bun-side createVendor request. isActive is deliberately omitted -- new vendors are always
+ * created active; see documentation/vendor-list-implementation-plan.md §0. */
+export type CreateVendorParams = {
+	name: string;
+	description?: string;
+	defaultAcctId?: string;
+};
+
+export type PatchVendorParams = {
+	id: string;
+	name?: string;
+	description?: string;
+	defaultAcctId?: string;
+	isActive?: boolean;
+};
+
 export type AppSchema = {
 	bun: RPCSchema<{
 		requests: {
@@ -71,6 +88,11 @@ export type AppSchema = {
 			patchAccount: { params: PatchAccountParams; response: void };
 			deleteAccount: { params: { id: string }; response: void };
 			isAccountInUse: { params: { id: string }; response: boolean };
+			findVendorsAll: { params: undefined; response: Vendor[] };
+			createVendor: { params: CreateVendorParams; response: void };
+			patchVendor: { params: PatchVendorParams; response: void };
+			deleteVendor: { params: { id: string }; response: void };
+			isVendorInUse: { params: { id: string }; response: boolean };
 		};
 	}>;
 	webview: RPCSchema<{

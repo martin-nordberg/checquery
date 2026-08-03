@@ -8,6 +8,13 @@ import {
 	handleIsAccountInUse,
 	handlePatchAccount,
 } from "./accountHandlers";
+import {
+	handleCreateVendor,
+	handleDeleteVendor,
+	handleFindVendorsAll,
+	handleIsVendorInUse,
+	handlePatchVendor,
+} from "./vendorHandlers";
 import { resolveEncryptionMode } from "./encryptionMode";
 
 // Fail fast, before any window or dialog exists, on a misconfigured CHECQUERY_ENCRYPTION_DISABLED --
@@ -61,6 +68,11 @@ const rpc: ReturnType<typeof BrowserView.defineRPC<AppSchema>> = BrowserView.def
 			patchAccount: (params) => handlePatchAccount(params),
 			deleteAccount: (params) => handleDeleteAccount(params),
 			isAccountInUse: (params) => handleIsAccountInUse(params),
+			findVendorsAll: () => handleFindVendorsAll(),
+			createVendor: (params) => handleCreateVendor(params),
+			patchVendor: (params) => handlePatchVendor(params),
+			deleteVendor: (params) => handleDeleteVendor(params),
+			isVendorInUse: (params) => handleIsVendorInUse(params),
 		},
 		messages: {},
 	},

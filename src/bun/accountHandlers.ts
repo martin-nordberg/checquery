@@ -1,18 +1,7 @@
-import { getCurrentLedgerStore, getCurrentOrigId } from "./persistence/db";
-import type { LedgerStore } from "./persistence/ledgerStore/LedgerStore";
+import { requireCurrentSession } from "./currentSession";
 import { accountCreationEventSchema, accountDeletionEventSchema, accountPatchEventSchema, type Account } from "../shared/domain/accounts/Account";
 import { genAcctId, acctIdSchema } from "../shared/domain/accounts/AcctId";
-import type { OrigId } from "../shared/domain/origins/OrigId";
 import type { CreateAccountParams, PatchAccountParams } from "../shared/rpc";
-
-function requireCurrentSession(): { store: LedgerStore; origId: OrigId } {
-	const store = getCurrentLedgerStore();
-	const origId = getCurrentOrigId();
-	if (!store || !origId) {
-		throw new Error("No file open");
-	}
-	return { store, origId };
-}
 
 export async function handleFindAccountsAll(): Promise<Account[]> {
 	const { store } = requireCurrentSession();
