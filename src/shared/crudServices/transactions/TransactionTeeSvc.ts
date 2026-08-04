@@ -64,6 +64,16 @@ export class TransactionTeeSvc implements ITransactionSvc {
         return this.qrySvc.findAccountBalancesAsOf(asOfDate)
     }
 
+    /** Net debit/credit totals per account, for a date range. */
+    async findAccountBalancesForPeriod(startDate: IsoDate, endDate: IsoDate): Promise<AccountBalance[]> {
+        return this.qrySvc.findAccountBalancesForPeriod(startDate, endDate)
+    }
+
+    /** Every non-deleted transaction whose postDate falls within a date range. */
+    async findTransactionsForPeriod(startDate: IsoDate, endDate: IsoDate): Promise<Transaction[]> {
+        return this.qrySvc.findTransactionsForPeriod(startDate, endDate)
+    }
+
     /** Updates a transaction's attributes. */
     async patchTransaction(transactionPatch: TransactionPatchEvent): Promise<TransactionPatchEvent | null> {
         let result: TransactionPatchEvent | null = transactionPatch

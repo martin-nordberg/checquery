@@ -180,6 +180,8 @@ export type AppSchema = {
 			patchTransaction: { params: PatchTransactionParams; response: void };
 			deleteTransaction: { params: { id: string }; response: void };
 			findAccountBalancesAsOf: { params: { asOfDate: string }; response: AccountBalance[] };
+			findAccountBalancesForPeriod: { params: { startDate: string; endDate: string }; response: AccountBalance[] };
+			findTransactionsForPeriod: { params: { startDate: string; endDate: string }; response: Transaction[] };
 		};
 	}>;
 	webview: RPCSchema<{

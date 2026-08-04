@@ -209,4 +209,36 @@ export class TransactionMaterializedStoreSvc implements ITransactionSvc {
             credit: fromCents(row.credit_cents),
         }))
     }
+
+    /** Net debit/credit totals per account, summed over every live entry whose transaction's post_date falls
+     *  within [startDate, endDate] inclusive -- same shape as findAccountBalancesAsOf, just bounded on both
+     *  ends instead of one. Backs the Income Statement Summary. */
+    async findAccountBalancesForPeriod(startDate: IsoDate, endDate: IsoDate): Promise<AccountBalance[]> {
+        const rows = this.db.query(
+            `SELECT e.acct_id AS acct_id,
+                    COALESCE(SUM(e.debit_cents), 0) AS debit_cents,
+                    COALESCE(SUM(e.credit_cents), 0) AS credit_cents
+             FROM entries e
+             JOIN transactions t ON t.id = e.transaction_id
+             WHERE t.is_deleted = 0 AND t.post_date >= ? AND t.post_date <= ?
+             GROUP BY e.acct_id`
+        ).all(startDate, endDate) as { acct_id: string; debit_cents: number; credit_cents: number }[]
+        return rows.map((row) => ({
+            acctId: row.acct_id as AcctId,
+            debit: fromCents(row.debit_cents),
+            credit: fromCents(row.credit_cents),
+        }))
+    }
+
+    /** Every non-deleted transaction whose post_date falls within [startDate, endDate] inclusive, oldest
+     *  first (post_date, then rowid tie-break, same convention as findTransactionsByAccount). Backs the
+     *  Income Statement Details view -- unscoped by which accounts a transaction touches. */
+    async findTransactionsForPeriod(startDate: IsoDate, endDate: IsoDate): Promise<Transaction[]> {
+        const rows = this.db.query(
+            `SELECT * FROM transactions t
+             WHERE t.is_deleted = 0 AND t.post_date >= ? AND t.post_date <= ?
+             ORDER BY t.post_date, t.rowid`
+        ).all(startDate, endDate) as TransactionRow[]
+        return rows.map((row) => this.hydrate(row))
+    }
 }

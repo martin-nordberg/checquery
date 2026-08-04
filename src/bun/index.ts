@@ -33,8 +33,10 @@ import {
 	handleCreateTransaction,
 	handleDeleteTransaction,
 	handleFindAccountBalancesAsOf,
+	handleFindAccountBalancesForPeriod,
 	handleFindLatestTransactionForVendorAndAccount,
 	handleFindTransactionsByAccount,
+	handleFindTransactionsForPeriod,
 	handlePatchTransaction,
 } from "./transactionHandlers";
 import { resolveEncryptionMode } from "./encryptionMode";
@@ -111,6 +113,8 @@ const rpc: ReturnType<typeof BrowserView.defineRPC<AppSchema>> = BrowserView.def
 			patchTransaction: (params) => handlePatchTransaction(params),
 			deleteTransaction: (params) => handleDeleteTransaction(params),
 			findAccountBalancesAsOf: (params) => handleFindAccountBalancesAsOf(params),
+			findAccountBalancesForPeriod: (params) => handleFindAccountBalancesForPeriod(params),
+			findTransactionsForPeriod: (params) => handleFindTransactionsForPeriod(params),
 		},
 		messages: {},
 	},

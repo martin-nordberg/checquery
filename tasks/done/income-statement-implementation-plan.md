@@ -1,5 +1,18 @@
 # Income Statement — Implementation Plan
 
+> **Implemented as planned**, §1–§5 built essentially as designed. `bun run test` (`bun --conditions=browser
+> test`) passes all 1146 tests including the new coverage; `tsc --noEmit` and a production `vite build` are
+> both clean. One test-writing pitfall worth flagging for next time: `queryByText`/`getByText` throw (not
+> return `null`) when a query matches *more than one* element, not just when it matches zero — Details' two
+> tables (Expenses, Income) both render an "Amount" column header, so `queryByText("Amount")` threw a
+> multiple-elements error that looked, from the stack trace alone, like an unrelated `findByText` timeout
+> failure several lines above it. Cost a fair amount of debugging before the actual cause (use
+> `getAllByText(...)` and assert a length) was found. Not independently verified: actually opening the
+> Electrobun window and eyeballing the report — no automated driver for that exists in this environment (same
+> caveat as the balance sheet, transactions-register, calculator, and yaml-import passes). Run `bun run
+> dev:hmr`, open a file with Expense/Income activity across at least two months, and check both the Summary
+> and Details views.
+
 > Covers turning `IncomeStatementPage.tsx` (breadcrumbs/period-and-view routing already wired, `<main>` still
 > a "coming soon" stub) into the real Expenses/Income/Net-Income report described in
 > `documentation/info-architecture.md` §11, following `../checquery/client`'s `IncomeStatement`/

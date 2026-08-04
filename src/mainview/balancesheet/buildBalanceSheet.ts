@@ -3,22 +3,15 @@ import type { AcctId } from "../../shared/domain/accounts/AcctId";
 import type { AccountCategory } from "../../shared/domain/accountCategories/AccountCategory";
 import type { AccountBalance } from "../../shared/domain/transactions/AccountBalance";
 import type { IsoDate } from "../../shared/domain/core/IsoDate";
-import { type CurrencyAmt, fromCents, toCents } from "../../shared/domain/core/CurrencyAmt";
-import { buildAccountCategoryTree, type AccountTreeNode } from "../accountCategories/buildAccountCategoryTree";
+import { fromCents, type CurrencyAmt, toCents } from "../../shared/domain/core/CurrencyAmt";
+import {
+	buildCategoryRollupSection,
+	type CategoryRollupLine,
+	type CategoryRollupSection,
+} from "../reports/buildCategoryRollupSection";
 
-export type BalanceSheetLine = {
-	kind: "account" | "category";
-	depth: number;
-	label: string;
-	amount: CurrencyAmt;
-	acctId?: AcctId; // present only for kind: "account" -- Register link target
-};
-
-export type BalanceSheetSection = {
-	heading: string;
-	lines: BalanceSheetLine[];
-	total: CurrencyAmt;
-};
+export type BalanceSheetLine = CategoryRollupLine;
+export type BalanceSheetSection = CategoryRollupSection;
 
 export type BalanceSheet = {
 	endingDate: IsoDate;
@@ -31,48 +24,10 @@ export type BalanceSheet = {
 	netWorth: CurrencyAmt;
 };
 
-function flattenNode(
-	node: AccountTreeNode,
-	depth: number,
-	signedCentsByAcct: ReadonlyMap<AcctId, number>,
-	out: BalanceSheetLine[],
-): number {
-	if (node.kind === "account") {
-		const cents = signedCentsByAcct.get(node.account.id) ?? 0;
-		out.push({ kind: "account", depth, label: node.account.name, amount: fromCents(cents), acctId: node.account.id });
-		return cents;
-	}
-
-	const childLines: BalanceSheetLine[] = [];
-	let subtotalCents = 0;
-	for (const child of node.children) {
-		subtotalCents += flattenNode(child, depth + 1, signedCentsByAcct, childLines);
-	}
-	out.push({ kind: "category", depth, label: node.category.name, amount: fromCents(subtotalCents) });
-	out.push(...childLines);
-	return subtotalCents;
-}
-
-function buildSection(
-	heading: string,
-	categories: readonly AccountCategory[],
-	accounts: readonly Account[],
-	signedCentsByAcct: ReadonlyMap<AcctId, number>,
-	acctType: "ASSET" | "LIABILITY",
-): BalanceSheetSection {
-	const tree = buildAccountCategoryTree(categories, accounts, acctType);
-	const lines: BalanceSheetLine[] = [];
-	let totalCents = 0;
-	for (const node of tree) {
-		totalCents += flattenNode(node, 0, signedCentsByAcct, lines);
-	}
-	return { heading, lines, total: fromCents(totalCents) };
-}
-
 /**
- * Builds the Assets/Liabilities/Net-Worth snapshot as of endingDate. Category rows carry their own rolled-up
- * subtotal (no separate "Total X" row -- see documentation/balance-sheet-implementation-plan.md §0), and
- * indentation follows AccountTreeRow.tsx's depth*1.5rem convention.
+ * Builds the Assets/Liabilities/Net-Worth snapshot as of endingDate, via the shared
+ * buildCategoryRollupSection (see documentation/income-statement-implementation-plan.md §0/§1 -- this used to
+ * contain its own private flattener/section-builder, now shared with the income statement).
  *
  * netWorth is always Assets − Liabilities, never a lookup of the Net Worth account's own balance -- see
  * CLAUDE.md's Domain Model Notes. balances rows for EQUITY/INCOME/EXPENSE accounts (including the Net Worth
@@ -96,8 +51,8 @@ export function buildBalanceSheet(
 		signedCentsByAcct.set(balance.acctId, signedCents);
 	}
 
-	const assets = buildSection("Assets", categories, accounts, signedCentsByAcct, "ASSET");
-	const liabilities = buildSection("Liabilities", categories, accounts, signedCentsByAcct, "LIABILITY");
+	const assets = buildCategoryRollupSection("Assets", categories, accounts, signedCentsByAcct, "ASSET");
+	const liabilities = buildCategoryRollupSection("Liabilities", categories, accounts, signedCentsByAcct, "LIABILITY");
 	const netWorth = fromCents(toCents(assets.total) - toCents(liabilities.total));
 
 	return { endingDate, assets, liabilities, netWorth };

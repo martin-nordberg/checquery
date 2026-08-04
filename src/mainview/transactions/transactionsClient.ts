@@ -13,4 +13,8 @@ export const transactionsClient = {
 	deleteTransaction: (id: string): Promise<void> => rpc.request.deleteTransaction({ id }),
 	findAccountBalancesAsOf: (asOfDate: string): Promise<AccountBalance[]> =>
 		rpc.request.findAccountBalancesAsOf({ asOfDate }),
+	findAccountBalancesForPeriod: (startDate: string, endDate: string): Promise<AccountBalance[]> =>
+		rpc.request.findAccountBalancesForPeriod({ startDate, endDate }),
+	findTransactionsForPeriod: (startDate: string, endDate: string): Promise<Transaction[]> =>
+		rpc.request.findTransactionsForPeriod({ startDate, endDate }),
 };

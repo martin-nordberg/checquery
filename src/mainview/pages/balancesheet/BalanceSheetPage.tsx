@@ -1,16 +1,16 @@
-import { useParams, A } from "@solidjs/router";
-import { createMemo, createResource, For, Show } from "solid-js";
+import { useParams } from "@solidjs/router";
+import { createMemo, createResource, Show } from "solid-js";
 import TopNav from "../../components/nav/TopNav";
 import Breadcrumb from "../../components/nav/Breadcrumb";
 import FileBreadcrumb from "../../components/nav/FileBreadcrumb";
 import HoverableDropDown from "../../components/nav/HoverableDropDown";
+import CategoryRollupTable from "../../components/reports/CategoryRollupTable";
 import { balanceSheetIconPath, cashFlowIconPath, incomeStatementIconPath } from "../../nav/icons";
 import { isoDateSchema, isoDateToday, type IsoDate } from "../../../shared/domain/core/IsoDate";
 import { accountsClient } from "../../accounts/accountsClient";
 import { accountCategoriesClient } from "../../accountCategories/accountCategoriesClient";
 import { transactionsClient } from "../../transactions/transactionsClient";
-import { accountDetailRoute } from "../../accounts/accountRoute";
-import { buildBalanceSheet, type BalanceSheetLine, type BalanceSheetSection } from "../../balancesheet/buildBalanceSheet";
+import { buildBalanceSheet } from "../../balancesheet/buildBalanceSheet";
 
 function currentMonthPeriod(): string {
 	const today = new Date();
@@ -49,56 +49,6 @@ const reportIconPaths = {
 	"Cash Flow Statement": cashFlowIconPath,
 };
 
-type BalanceSheetTableProps = {
-	section: BalanceSheetSection;
-	acctType: "ASSET" | "LIABILITY";
-};
-
-function BalanceSheetTable(props: BalanceSheetTableProps) {
-	return (
-		<div class="flex-1 overflow-hidden rounded-lg bg-white shadow-lg">
-			<table class="min-w-full divide-y divide-gray-200">
-				<thead class="sticky top-0 z-10 bg-blue-100">
-					<tr>
-						<th class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500">
-							{props.section.heading}
-						</th>
-						<th class="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-gray-500">Balance</th>
-					</tr>
-				</thead>
-				<tbody class="divide-y divide-gray-200 bg-white">
-					<For each={props.section.lines}>
-						{(line: BalanceSheetLine) => (
-							<tr class="hover:bg-gray-50">
-								<td class="px-6 py-2 text-sm text-gray-900" classList={{ "font-semibold": line.kind === "category" }}>
-									<div style={{ "padding-left": `${line.depth * 1.5}rem` }}>
-										<Show when={line.kind === "account" && line.acctId} fallback={line.label}>
-											<A href={accountDetailRoute(props.acctType, line.acctId!)} class="hover:text-blue-600 hover:underline">
-												{line.label}
-											</A>
-										</Show>
-									</div>
-								</td>
-								<td class="px-6 py-2 text-right text-sm text-gray-500" classList={{ "font-semibold": line.kind === "category" }}>
-									{line.amount}
-								</td>
-							</tr>
-						)}
-					</For>
-					<tr class="bg-blue-50">
-						<td class="border-t border-blue-200 px-6 py-2 text-sm font-semibold text-gray-900">
-							Total {props.section.heading}
-						</td>
-						<td class="border-t border-blue-200 px-6 py-2 text-right text-sm font-semibold text-gray-900">
-							{props.section.total}
-						</td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
-	);
-}
-
 export default function BalanceSheetPage() {
 	const params = useParams<{ endingDate: string }>();
 	const endingDate = createMemo(() => isoDateSchema.parse(params.endingDate));
@@ -129,9 +79,9 @@ export default function BalanceSheetPage() {
 					fallback={<p class="text-slate-500">Loading…</p>}
 				>
 					<div class="flex gap-4">
-						<BalanceSheetTable section={balanceSheet().assets} acctType="ASSET" />
+						<CategoryRollupTable section={balanceSheet().assets} acctType="ASSET" />
 						<div class="flex flex-1 flex-col gap-4">
-							<BalanceSheetTable section={balanceSheet().liabilities} acctType="LIABILITY" />
+							<CategoryRollupTable section={balanceSheet().liabilities} acctType="LIABILITY" />
 							<div class="flex items-center justify-between rounded-lg bg-blue-50 px-6 py-3 shadow-lg">
 								<span class="text-sm font-semibold text-gray-900">Net Worth</span>
 								<span class="text-sm font-semibold text-gray-900">{balanceSheet().netWorth}</span>

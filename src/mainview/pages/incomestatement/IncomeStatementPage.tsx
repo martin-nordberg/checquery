@@ -1,9 +1,11 @@
 import { useParams } from "@solidjs/router";
-import { createMemo } from "solid-js";
+import { createMemo, Show } from "solid-js";
 import TopNav from "../../components/nav/TopNav";
 import Breadcrumb from "../../components/nav/Breadcrumb";
 import FileBreadcrumb from "../../components/nav/FileBreadcrumb";
 import HoverableDropDown from "../../components/nav/HoverableDropDown";
+import IncomeStatementSummary from "../../components/incomestatement/IncomeStatementSummary";
+import IncomeStatementDetails from "../../components/incomestatement/IncomeStatementDetails";
 import { balanceSheetIconPath, cashFlowIconPath, incomeStatementIconPath } from "../../nav/icons";
 import { periodSchema } from "../../../shared/domain/core/Period";
 import { isoDateToday } from "../../../shared/domain/core/IsoDate";
@@ -83,13 +85,12 @@ export default function IncomeStatementPage() {
 				</Breadcrumb>
 			</TopNav>
 			<main class="p-4">
-				<h1 class="text-lg font-semibold text-slate-700">
+				<h1 class="mb-4 text-lg font-semibold text-slate-700">
 					Income Statement — {period()} ({viewLabel()})
 				</h1>
-				<p class="mt-2 text-slate-500">
-					Coming soon — Income/Expense {view()} for this period (see
-					documentation/info-architecture.md §11).
-				</p>
+				<Show when={view() === "details"} fallback={<IncomeStatementSummary period={period()} />}>
+					<IncomeStatementDetails period={period()} />
+				</Show>
 			</main>
 		</>
 	);

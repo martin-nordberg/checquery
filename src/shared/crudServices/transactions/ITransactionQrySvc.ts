@@ -29,4 +29,15 @@ export interface ITransactionQrySvc {
      *  client-side using the same accounts list it already fetches for the category tree. */
     findAccountBalancesAsOf(asOfDate: IsoDate): Promise<AccountBalance[]>
 
+    /** Net debit/credit totals per account, for every live entry whose transaction's postDate falls within
+     *  [startDate, endDate] inclusive -- the Income Statement Summary's raw per-account data. Same unscoped-
+     *  by-account-type shape as findAccountBalancesAsOf; the caller decides which account types matter. */
+    findAccountBalancesForPeriod(startDate: IsoDate, endDate: IsoDate): Promise<AccountBalance[]>
+
+    /** Every non-deleted transaction whose postDate falls within [startDate, endDate] inclusive, oldest
+     *  first -- the Income Statement Details view's raw data; the mainview groups entries by account and
+     *  resolves vendor labels. Unscoped by which accounts a transaction touches (same reasoning as
+     *  findTransactionsByAccount). */
+    findTransactionsForPeriod(startDate: IsoDate, endDate: IsoDate): Promise<Transaction[]>
+
 }

@@ -7,8 +7,10 @@ import {
     handleCreateTransaction,
     handleDeleteTransaction,
     handleFindAccountBalancesAsOf,
+    handleFindAccountBalancesForPeriod,
     handleFindLatestTransactionForVendorAndAccount,
     handleFindTransactionsByAccount,
+    handleFindTransactionsForPeriod,
     handlePatchTransaction,
 } from './transactionHandlers'
 import { genAcctId } from '../shared/domain/accounts/AcctId'
@@ -199,5 +201,66 @@ describe('transaction RPC handlers, end to end against a real (temp) file', () =
 
         closeCurrentFile()
         await expect(handleFindAccountBalancesAsOf({ asOfDate: '2026-01-31' })).rejects.toThrow('No file open')
+    })
+
+    it('findAccountBalancesForPeriod reflects only transactions within range, and rejects when no file is open', async () => {
+        const acctA = genAcctId()
+        const acctB = genAcctId()
+
+        await handleCreateTransaction({
+            postDate: '2026-01-15',
+            description: 'Within range',
+            entries: [
+                { acctId: acctA, debit: '$100.00', credit: '$0.00' },
+                { acctId: acctB, debit: '$0.00', credit: '$100.00' },
+            ],
+        })
+        await handleCreateTransaction({
+            postDate: '2026-03-01',
+            description: 'Outside range',
+            entries: [
+                { acctId: acctA, debit: '$999.00', credit: '$0.00' },
+                { acctId: acctB, debit: '$0.00', credit: '$999.00' },
+            ],
+        })
+
+        const balances = await handleFindAccountBalancesForPeriod({ startDate: '2026-01-01', endDate: '2026-01-31' })
+        const acctABalance = balances.find((b) => b.acctId === acctA)
+        expect(acctABalance!.debit as string).toBe('$100.00')
+
+        closeCurrentFile()
+        await expect(
+            handleFindAccountBalancesForPeriod({ startDate: '2026-01-01', endDate: '2026-01-31' }),
+        ).rejects.toThrow('No file open')
+    })
+
+    it('findTransactionsForPeriod reflects only transactions within range, and rejects when no file is open', async () => {
+        const acctA = genAcctId()
+        const acctB = genAcctId()
+
+        await handleCreateTransaction({
+            postDate: '2026-01-15',
+            description: 'Within range',
+            entries: [
+                { acctId: acctA, debit: '$100.00', credit: '$0.00' },
+                { acctId: acctB, debit: '$0.00', credit: '$100.00' },
+            ],
+        })
+        await handleCreateTransaction({
+            postDate: '2026-03-01',
+            description: 'Outside range',
+            entries: [
+                { acctId: acctA, debit: '$999.00', credit: '$0.00' },
+                { acctId: acctB, debit: '$0.00', credit: '$999.00' },
+            ],
+        })
+
+        const found = await handleFindTransactionsForPeriod({ startDate: '2026-01-01', endDate: '2026-01-31' })
+        expect(found.map((t) => t.description as string)).toEqual(['Within range'])
+
+        closeCurrentFile()
+        await expect(
+            handleFindTransactionsForPeriod({ startDate: '2026-01-01', endDate: '2026-01-31' }),
+        ).rejects.toThrow('No file open')
     })
 })

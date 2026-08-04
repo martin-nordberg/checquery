@@ -73,3 +73,25 @@ export async function handleFindAccountBalancesAsOf(params: { asOfDate: string }
 	const { store } = requireCurrentSession();
 	return store.svcs.transactions.findAccountBalancesAsOf(isoDateSchema.parse(params.asOfDate));
 }
+
+export async function handleFindAccountBalancesForPeriod(params: {
+	startDate: string;
+	endDate: string;
+}): Promise<AccountBalance[]> {
+	const { store } = requireCurrentSession();
+	return store.svcs.transactions.findAccountBalancesForPeriod(
+		isoDateSchema.parse(params.startDate),
+		isoDateSchema.parse(params.endDate),
+	);
+}
+
+export async function handleFindTransactionsForPeriod(params: {
+	startDate: string;
+	endDate: string;
+}): Promise<Transaction[]> {
+	const { store } = requireCurrentSession();
+	return store.svcs.transactions.findTransactionsForPeriod(
+		isoDateSchema.parse(params.startDate),
+		isoDateSchema.parse(params.endDate),
+	);
+}
