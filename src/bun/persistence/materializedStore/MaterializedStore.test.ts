@@ -3,7 +3,9 @@ import { MaterializedStore } from './MaterializedStore'
 import { createInMemoryActionLog } from '../actionLog/inMemory'
 import { accountCreationEventSchema, accountPatchEventSchema } from '../../../shared/domain/accounts/Account'
 import { genAcctId } from '../../../shared/domain/accounts/AcctId'
-import { acctIdAssets } from '../../../shared/domain/accounts/AcctRoot'
+import { accountCategoryCreationEventSchema } from '../../../shared/domain/accountCategories/AccountCategory'
+import { genAcctCtgId } from '../../../shared/domain/accountCategories/AcctCtgId'
+import { acctCtgIdAssets } from '../../../shared/domain/accountCategories/AcctCtgRoot'
 import { vendorCreationEventSchema, vendorDeletionEventSchema } from '../../../shared/domain/vendors/Vendor'
 import { genVndrId } from '../../../shared/domain/vendors/VndrId'
 import { transactionCreationEventSchema } from '../../../shared/domain/transactions/Transaction'
@@ -17,6 +19,7 @@ describe('MaterializedStore construction', () => {
     it('produces working, empty cmdSvcs/qrySvcs bundles', async () => {
         const store = new MaterializedStore()
         expect(await store.qrySvcs.accounts.findAccountsAll()).toEqual([])
+        expect(await store.qrySvcs.accountCategories.findAccountCategoriesAll()).toEqual([])
         expect(await store.qrySvcs.vendors.findVendorsAll()).toEqual([])
         expect(await store.qrySvcs.balanceAssertions.findBalanceAssertionsAll()).toEqual([])
         expect(await store.qrySvcs.origins.findOriginsAll()).toEqual([])
@@ -40,6 +43,7 @@ describe('replaying an ActionLog into a MaterializedStore', () => {
 
         const acctId = genAcctId()
         const acctId2 = genAcctId()
+        const acctCtgId = genAcctCtgId()
         const vndrId = genVndrId()
         const txnId = genTxnId()
         const asrtId = genAsrtId()
@@ -49,14 +53,19 @@ describe('replaying an ActionLog into a MaterializedStore', () => {
         await actionLog.cmdSvcs.origins.createOrigin(
             originCreationEventSchema.parse({ id: origId, name: 'Jane', ipAddress: '10.0.0.1' }),
         )
-        await actionLog.cmdSvcs.accounts.createAccount(
-            accountCreationEventSchema.parse({
-                id: acctId, origId, parentId: acctIdAssets, acctType: 'ASSET', name: 'Checking',
+        await actionLog.cmdSvcs.accountCategories.createAccountCategory(
+            accountCategoryCreationEventSchema.parse({
+                id: acctCtgId, origId, parentCtgId: acctCtgIdAssets, acctType: 'ASSET', name: 'Bank Accounts',
             }),
         )
         await actionLog.cmdSvcs.accounts.createAccount(
             accountCreationEventSchema.parse({
-                id: acctId2, origId, parentId: acctIdAssets, acctType: 'ASSET', name: 'Savings',
+                id: acctId, origId, parentCtgId: acctCtgId, acctType: 'ASSET', name: 'Checking',
+            }),
+        )
+        await actionLog.cmdSvcs.accounts.createAccount(
+            accountCreationEventSchema.parse({
+                id: acctId2, origId, parentCtgId: acctCtgId, acctType: 'ASSET', name: 'Savings',
             }),
         )
         await actionLog.cmdSvcs.accounts.patchAccount(
@@ -98,6 +107,9 @@ describe('replaying an ActionLog into a MaterializedStore', () => {
 
         const allAccounts = await store.qrySvcs.accounts.findAccountsAll()
         expect(allAccounts).toHaveLength(2)
+
+        const category = await store.qrySvcs.accountCategories.findAccountCategoryById(acctCtgId)
+        expect(category!.name as string).toBe('Bank Accounts')
 
         const vendor = await store.qrySvcs.vendors.findVendorById(vndrId)
         expect(vendor!.name as string).toBe('Acme Corp')

@@ -3,18 +3,18 @@ import { renderPage } from "../../../test/renderPage";
 import { accountReadSchema, type Account } from "../../shared/domain/accounts/Account";
 import { genAcctId } from "../../shared/domain/accounts/AcctId";
 import { genOrigId } from "../../shared/domain/origins/OrigId";
-import { acctIdAssets, acctIdExpenses, acctIdIncome, acctIdLiabilities } from "../../shared/domain/accounts/AcctRoot";
+import { genAcctCtgId } from "../../shared/domain/accountCategories/AcctCtgId";
 import { setCurrentFile } from "../rpc";
 
 function account(overrides: {
 	name: string;
 	acctType: Account["acctType"];
-	parentId: Account["parentId"];
 	isPrimary?: boolean;
 }): Account {
 	return accountReadSchema.parse({
 		id: genAcctId(),
 		origId: genOrigId(),
+		parentCtgId: genAcctCtgId(),
 		description: "",
 		isPrimary: false,
 		...overrides,
@@ -36,11 +36,11 @@ beforeEach(() => {
 
 describe("HomePage -- primary account shortcuts (dynamically built from live account data)", () => {
 	it("links each primary account to its Register/Income Log/Expense Log under the right heading", async () => {
-		const checking = account({ name: "Checking", acctType: "ASSET", parentId: acctIdAssets, isPrimary: true });
-		const oldAccount = account({ name: "Old Account", acctType: "ASSET", parentId: acctIdAssets, isPrimary: false });
-		const creditCard = account({ name: "Credit Card", acctType: "LIABILITY", parentId: acctIdLiabilities, isPrimary: true });
-		const salary = account({ name: "Salary", acctType: "INCOME", parentId: acctIdIncome, isPrimary: true });
-		const groceries = account({ name: "Groceries", acctType: "EXPENSE", parentId: acctIdExpenses, isPrimary: true });
+		const checking = account({ name: "Checking", acctType: "ASSET", isPrimary: true });
+		const oldAccount = account({ name: "Old Account", acctType: "ASSET", isPrimary: false });
+		const creditCard = account({ name: "Credit Card", acctType: "LIABILITY", isPrimary: true });
+		const salary = account({ name: "Salary", acctType: "INCOME", isPrimary: true });
+		const groceries = account({ name: "Groceries", acctType: "EXPENSE", isPrimary: true });
 		findAccountsAllMock.mockResolvedValue([checking, oldAccount, creditCard, salary, groceries]);
 
 		const { findByText, queryByText } = renderPage("/", "/", HomePage);

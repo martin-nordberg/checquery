@@ -6,7 +6,7 @@ import { genVndrId } from "../../../shared/domain/vendors/VndrId";
 import { accountReadSchema, type Account } from "../../../shared/domain/accounts/Account";
 import { genAcctId } from "../../../shared/domain/accounts/AcctId";
 import { genOrigId } from "../../../shared/domain/origins/OrigId";
-import { acctIdExpenses, acctIdAssets } from "../../../shared/domain/accounts/AcctRoot";
+import { genAcctCtgId } from "../../../shared/domain/accountCategories/AcctCtgId";
 import { errorAlert, setErrorAlert } from "../../rpc";
 
 function vendor(overrides: { name: string; isActive?: boolean; defaultAcctId?: ReturnType<typeof genAcctId> }): Vendor {
@@ -28,7 +28,7 @@ function account(overrides: { name: string; acctType?: "EXPENSE" | "INCOME" | "A
 		isPrimary: false,
 		...overrides,
 		acctType,
-		parentId: acctType === "ASSET" ? acctIdAssets : acctIdExpenses,
+		parentCtgId: genAcctCtgId(),
 	});
 }
 

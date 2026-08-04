@@ -3,14 +3,14 @@ import { defaultAccountName } from './defaultAccountName'
 import { accountReadSchema, type Account } from '../../shared/domain/accounts/Account'
 import { genAcctId, type AcctId } from '../../shared/domain/accounts/AcctId'
 import { genOrigId } from '../../shared/domain/origins/OrigId'
-import { acctIdExpenses } from '../../shared/domain/accounts/AcctRoot'
+import { genAcctCtgId } from '../../shared/domain/accountCategories/AcctCtgId'
 
 function account(overrides: { id?: AcctId; name: string }): Account {
     return accountReadSchema.parse({
         id: genAcctId(),
         origId: genOrigId(),
         acctType: 'EXPENSE',
-        parentId: acctIdExpenses,
+        parentCtgId: genAcctCtgId(),
         description: '',
         isPrimary: false,
         ...overrides,

@@ -8,7 +8,7 @@ import {
     accountPatchEventSchema,
 } from '../../../../shared/domain/accounts/Account'
 import { genAcctId } from '../../../../shared/domain/accounts/AcctId'
-import { acctIdAssets } from '../../../../shared/domain/accounts/AcctRoot'
+import { genAcctCtgId } from '../../../../shared/domain/accountCategories/AcctCtgId'
 import { genOrigId } from '../../../../shared/domain/origins/OrigId'
 import { genVndrId } from '../../../../shared/domain/vendors/VndrId'
 import { genTxnId } from '../../../../shared/domain/transactions/TxnId'
@@ -23,10 +23,11 @@ describe('AccountMaterializedStoreSvc', () => {
     describe('createAccount / findAccountById / findAccountsAll', () => {
         it('creates an account retrievable by id', async () => {
             const { svc } = makeSvc()
+            const parentCtgId = genAcctCtgId()
             const event = accountCreationEventSchema.parse({
                 id: genAcctId(),
                 origId: genOrigId(),
-                parentId: acctIdAssets,
+                parentCtgId,
                 acctType: 'ASSET',
                 name: 'Checking',
                 description: 'My checking account',
@@ -39,7 +40,7 @@ describe('AccountMaterializedStoreSvc', () => {
             expect(found).not.toBeNull()
             expect(found!.id).toBe(event.id)
             expect(found!.origId).toBe(event.origId)
-            expect(found!.parentId).toBe(acctIdAssets)
+            expect(found!.parentCtgId).toBe(parentCtgId)
             expect(found!.name as string).toBe('Checking')
             expect(found!.description as string).toBe('My checking account')
             expect(found!.isPrimary).toBe(true)
@@ -47,11 +48,12 @@ describe('AccountMaterializedStoreSvc', () => {
 
         it('findAccountsAll only returns non-deleted accounts, ordered by name', async () => {
             const { svc } = makeSvc()
+            const parentCtgId = genAcctCtgId()
             const b = accountCreationEventSchema.parse({
-                id: genAcctId(), origId: genOrigId(), parentId: acctIdAssets, acctType: 'ASSET', name: 'B account',
+                id: genAcctId(), origId: genOrigId(), parentCtgId, acctType: 'ASSET', name: 'B account',
             })
             const a = accountCreationEventSchema.parse({
-                id: genAcctId(), origId: genOrigId(), parentId: acctIdAssets, acctType: 'ASSET', name: 'A account',
+                id: genAcctId(), origId: genOrigId(), parentCtgId, acctType: 'ASSET', name: 'A account',
             })
             await svc.createAccount(b)
             await svc.createAccount(a)
@@ -69,11 +71,12 @@ describe('AccountMaterializedStoreSvc', () => {
     describe('countAccountsAll', () => {
         it('counts only non-deleted accounts', async () => {
             const { svc } = makeSvc()
+            const parentCtgId = genAcctCtgId()
             const a = accountCreationEventSchema.parse({
-                id: genAcctId(), origId: genOrigId(), parentId: acctIdAssets, acctType: 'ASSET', name: 'A',
+                id: genAcctId(), origId: genOrigId(), parentCtgId, acctType: 'ASSET', name: 'A',
             })
             const b = accountCreationEventSchema.parse({
-                id: genAcctId(), origId: genOrigId(), parentId: acctIdAssets, acctType: 'ASSET', name: 'B',
+                id: genAcctId(), origId: genOrigId(), parentCtgId, acctType: 'ASSET', name: 'B',
             })
             await svc.createAccount(a)
             await svc.createAccount(b)
@@ -88,7 +91,7 @@ describe('AccountMaterializedStoreSvc', () => {
         it('updates only the fields present on the patch, leaving others unchanged', async () => {
             const { svc } = makeSvc()
             const created = accountCreationEventSchema.parse({
-                id: genAcctId(), origId: genOrigId(), parentId: acctIdAssets, acctType: 'ASSET', name: 'Original',
+                id: genAcctId(), origId: genOrigId(), parentCtgId: genAcctCtgId(), acctType: 'ASSET', name: 'Original',
                 description: 'original description', isPrimary: false,
             })
             await svc.createAccount(created)
@@ -107,6 +110,25 @@ describe('AccountMaterializedStoreSvc', () => {
             expect(found!.origId).toBe(patch.origId)
         })
 
+        it('reparents an account to a new category', async () => {
+            const { svc } = makeSvc()
+            const created = accountCreationEventSchema.parse({
+                id: genAcctId(), origId: genOrigId(), parentCtgId: genAcctCtgId(), acctType: 'ASSET', name: 'Movable',
+            })
+            await svc.createAccount(created)
+
+            const newParentCtgId = genAcctCtgId()
+            const patch = accountPatchEventSchema.parse({
+                id: created.id,
+                origId: genOrigId(),
+                parentCtgId: newParentCtgId,
+            })
+            await svc.patchAccount(patch)
+
+            const found = await svc.findAccountById(created.id)
+            expect(found!.parentCtgId).toBe(newParentCtgId)
+        })
+
         it('throws when patching an unknown id', async () => {
             const { svc } = makeSvc()
             const patch = accountPatchEventSchema.parse({ id: genAcctId(), origId: genOrigId(), name: 'X' })
@@ -118,7 +140,7 @@ describe('AccountMaterializedStoreSvc', () => {
         it('soft-deletes: findAccountById still resolves it, findAccountsAll excludes it', async () => {
             const { svc } = makeSvc()
             const created = accountCreationEventSchema.parse({
-                id: genAcctId(), origId: genOrigId(), parentId: acctIdAssets, acctType: 'ASSET', name: 'Deleted Acct',
+                id: genAcctId(), origId: genOrigId(), parentCtgId: genAcctCtgId(), acctType: 'ASSET', name: 'Deleted Acct',
             })
             await svc.createAccount(created)
 
@@ -145,7 +167,7 @@ describe('AccountMaterializedStoreSvc', () => {
         it('is false for an account nothing references', async () => {
             const { svc } = makeSvc()
             const created = accountCreationEventSchema.parse({
-                id: genAcctId(), origId: genOrigId(), parentId: acctIdAssets, acctType: 'ASSET', name: 'Unused',
+                id: genAcctId(), origId: genOrigId(), parentCtgId: genAcctCtgId(), acctType: 'ASSET', name: 'Unused',
             })
             await svc.createAccount(created)
             expect(await svc.isAccountInUse(created.id)).toBe(false)
@@ -154,7 +176,7 @@ describe('AccountMaterializedStoreSvc', () => {
         it('is true when referenced by a live transaction entry', async () => {
             const { db, svc } = makeSvc()
             const created = accountCreationEventSchema.parse({
-                id: genAcctId(), origId: genOrigId(), parentId: acctIdAssets, acctType: 'ASSET', name: 'Used',
+                id: genAcctId(), origId: genOrigId(), parentCtgId: genAcctCtgId(), acctType: 'ASSET', name: 'Used',
             })
             await svc.createAccount(created)
 
@@ -177,7 +199,7 @@ describe('AccountMaterializedStoreSvc', () => {
         it('is true when referenced as a live vendor default account', async () => {
             const { db, svc } = makeSvc()
             const created = accountCreationEventSchema.parse({
-                id: genAcctId(), origId: genOrigId(), parentId: acctIdAssets, acctType: 'ASSET', name: 'Default Acct',
+                id: genAcctId(), origId: genOrigId(), parentCtgId: genAcctCtgId(), acctType: 'ASSET', name: 'Default Acct',
             })
             await svc.createAccount(created)
 

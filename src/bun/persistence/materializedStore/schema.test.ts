@@ -18,19 +18,27 @@ function indexNames(db: Database): string[] {
 }
 
 describe('createSchema', () => {
-    it('creates all six tables', () => {
+    it('creates all seven tables', () => {
         const db = new Database(':memory:')
         createSchema(db)
         expect(tableNames(db).sort()).toEqual(
-            ['accounts', 'balance_assertions', 'entries', 'origins', 'transactions', 'vendors'].sort(),
+            ['account_categories', 'accounts', 'balance_assertions', 'entries', 'origins', 'transactions', 'vendors'].sort(),
         )
+    })
+
+    it('creates account_categories with the expected columns', () => {
+        const db = new Database(':memory:')
+        createSchema(db)
+        expect(columnNames(db, 'account_categories')).toEqual([
+            'id', 'orig_id', 'parent_ctg_id', 'acct_type', 'name', 'description', 'is_deleted',
+        ])
     })
 
     it('creates accounts with the expected columns', () => {
         const db = new Database(':memory:')
         createSchema(db)
         expect(columnNames(db, 'accounts')).toEqual([
-            'id', 'orig_id', 'parent_id', 'acct_type', 'name', 'description', 'is_primary', 'is_deleted',
+            'id', 'orig_id', 'parent_ctg_id', 'acct_type', 'name', 'description', 'is_primary', 'is_deleted',
         ])
     })
 
@@ -77,7 +85,8 @@ describe('createSchema', () => {
         createSchema(db)
         expect(indexNames(db).sort()).toEqual(
             [
-                'accounts_parent_id_idx',
+                'account_categories_parent_ctg_id_idx',
+                'accounts_parent_ctg_id_idx',
                 'transactions_post_date_idx',
                 'transactions_vndr_id_idx',
                 'entries_transaction_id_idx',
@@ -90,9 +99,18 @@ describe('createSchema', () => {
     it('rejects a duplicate primary key on accounts', () => {
         const db = new Database(':memory:')
         createSchema(db)
-        db.run(`INSERT INTO accounts (id, orig_id, acct_type, name, description, is_primary) VALUES ('a', 'o', 'ASSET', 'n', '', 0)`)
+        db.run(`INSERT INTO accounts (id, orig_id, parent_ctg_id, acct_type, name, description, is_primary) VALUES ('a', 'o', 'c', 'ASSET', 'n', '', 0)`)
         expect(() =>
-            db.run(`INSERT INTO accounts (id, orig_id, acct_type, name, description, is_primary) VALUES ('a', 'o', 'ASSET', 'n', '', 0)`),
+            db.run(`INSERT INTO accounts (id, orig_id, parent_ctg_id, acct_type, name, description, is_primary) VALUES ('a', 'o', 'c', 'ASSET', 'n', '', 0)`),
+        ).toThrow()
+    })
+
+    it('rejects a duplicate primary key on account_categories', () => {
+        const db = new Database(':memory:')
+        createSchema(db)
+        db.run(`INSERT INTO account_categories (id, orig_id, acct_type, name, description) VALUES ('a', 'o', 'ASSET', 'n', '')`)
+        expect(() =>
+            db.run(`INSERT INTO account_categories (id, orig_id, acct_type, name, description) VALUES ('a', 'o', 'ASSET', 'n', '')`),
         ).toThrow()
     })
 })

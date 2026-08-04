@@ -8,7 +8,7 @@ import { setMetaValue } from './actionLog/meta'
 import { genOrigId } from '../../shared/domain/origins/OrigId'
 import { accountCreationEventSchema } from '../../shared/domain/accounts/Account'
 import { genAcctId } from '../../shared/domain/accounts/AcctId'
-import { acctIdAssets } from '../../shared/domain/accounts/AcctRoot'
+import { genAcctCtgId } from '../../shared/domain/accountCategories/AcctCtgId'
 import { originCreationEventSchema } from '../../shared/domain/origins/Origin'
 
 const tmpDir = mkdtempSync(join(tmpdir(), 'checquery-db-test-'))
@@ -80,6 +80,18 @@ describe('createNewFile', () => {
         expect(origins[0]!.id).toBe(origId!)
     })
 
+    it('seeds the predefined Net Worth account', async () => {
+        const name = freshName()
+        const result = await createNewFile(tmpDir, name, 'hunter2', 'enabled')
+        expect(result.ok).toBe(true)
+        if (!result.ok) return
+
+        const accounts = await result.store.svcs.accounts.findAccountsAll()
+        expect(accounts).toHaveLength(1)
+        expect(accounts[0]!.name as string).toBe('Net Worth')
+        expect(accounts[0]!.acctType).toBe('EQUITY')
+    })
+
     describe('when encryption is enabled, a password is required (documentation/test-mode.md)', () => {
         it('fails with password-required when no password is given', async () => {
             const name = freshName()
@@ -145,6 +157,20 @@ describe('openExistingFile', () => {
         expect(opened.ok).toBe(true)
         if (!opened.ok) return
         expect(opened.fileId).toBe(created.fileId)
+    })
+
+    it('does not re-seed Net Worth on reopen -- replay reconstructs the one from creation', async () => {
+        const name = freshName()
+        const created = await createNewFile(tmpDir, name, undefined, 'disabled')
+        expect(created.ok).toBe(true)
+        if (!created.ok) return
+
+        const opened = await openExistingFile(created.path)
+        expect(opened.ok).toBe(true)
+        if (!opened.ok) return
+
+        const accounts = await opened.store.svcs.accounts.findAccountsAll()
+        expect(accounts.filter((a) => a.acctType === 'EQUITY')).toHaveLength(1)
     })
 
     it('reuses the same origin on reopen instead of creating a second one for the same identity', async () => {
@@ -251,16 +277,18 @@ describe('getCurrentFileInfo', () => {
         expect(info!.path).toBe(created.path)
         expect(info!.sizeBytes).toBeGreaterThan(0)
         expect(new Date(info!.lastModifiedIso).getTime()).not.toBeNaN()
-        // origins:1 and actionLogEntryCount:1, not 0 -- creating a file bootstraps a "current origin" for
-        // this session (see bootstrapCurrentOrigin in db.ts), which is itself one action-log entry.
+        // origins:1 and accounts:1 (Net Worth), actionLogEntryCount:2 -- creating a file bootstraps a
+        // "current origin" for this session and seeds the predefined Net Worth account (see
+        // bootstrapCurrentOrigin/bootstrapNetWorthAccount in db.ts), each its own action-log entry.
         expect(info!.entityCounts).toEqual({
             origins: 1,
-            accounts: 0,
+            accounts: 1,
+            accountCategories: 0,
             vendors: 0,
             transactions: 0,
             balanceAssertions: 0,
         })
-        expect(info!.actionLogEntryCount).toBe(1)
+        expect(info!.actionLogEntryCount).toBe(2)
         expect(info!.meta.find((e) => e.key === 'file_id')?.value).toBe(created.fileId)
         expect(info!.meta.find((e) => e.key === 'encrypted')?.value).toBe('true')
     })
@@ -279,14 +307,15 @@ describe('getCurrentFileInfo', () => {
         await created.store.svcs.accounts.createAccount(accountCreationEventSchema.parse({
             id: genAcctId(),
             origId: origin!.id,
-            parentId: acctIdAssets,
+            parentCtgId: genAcctCtgId(),
             acctType: 'ASSET',
             name: 'Checking',
         }))
 
+        // 2 accounts: the predefined Net Worth account (seeded on createNewFile) plus this test's Checking.
         const info = await getCurrentFileInfo()
-        expect(info!.entityCounts.accounts).toBe(1)
+        expect(info!.entityCounts.accounts).toBe(2)
         expect(info!.entityCounts.origins).toBe(2)
-        expect(info!.actionLogEntryCount).toBe(3)
+        expect(info!.actionLogEntryCount).toBe(4)
     })
 })

@@ -7,6 +7,7 @@ import type {
     AccountPatchEvent,
 } from "../../../../shared/domain/accounts/Account";
 import type { AcctId } from "../../../../shared/domain/accounts/AcctId";
+import type { AcctCtgId } from "../../../../shared/domain/accountCategories/AcctCtgId";
 import type { AcctTypeStr } from "../../../../shared/domain/accounts/AcctType";
 import type { NameStr } from "../../../../shared/domain/core/Name";
 import type { DescriptionStr } from "../../../../shared/domain/core/Description";
@@ -15,7 +16,7 @@ import type { OrigId } from "../../../../shared/domain/origins/OrigId";
 type AccountRow = {
     id: string
     orig_id: string
-    parent_id: string | null
+    parent_ctg_id: string
     acct_type: string
     name: string
     description: string
@@ -26,7 +27,7 @@ function rowToAccount(row: AccountRow): Account {
     return {
         id: row.id as AcctId,
         origId: row.orig_id as OrigId,
-        parentId: row.parent_id !== null ? (row.parent_id as AcctId) : undefined,
+        parentCtgId: row.parent_ctg_id as AcctCtgId,
         acctType: row.acct_type as AcctTypeStr,
         name: row.name as NameStr,
         description: row.description as DescriptionStr,
@@ -43,12 +44,12 @@ export class AccountMaterializedStoreSvc implements IAccountSvc {
 
     async createAccount(account: AccountCreationEvent): Promise<AccountCreationEvent | null> {
         this.db.run(
-            `INSERT INTO accounts (id, orig_id, parent_id, acct_type, name, description, is_primary)
+            `INSERT INTO accounts (id, orig_id, parent_ctg_id, acct_type, name, description, is_primary)
              VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [
                 account.id,
                 account.origId,
-                account.parentId ?? null,
+                account.parentCtgId,
                 account.acctType,
                 account.name,
                 account.description,
@@ -62,9 +63,9 @@ export class AccountMaterializedStoreSvc implements IAccountSvc {
         const sets: string[] = ["orig_id = ?"]
         const params: SQLQueryBindings[] = [accountPatch.origId]
 
-        if (accountPatch.parentId !== undefined) {
-            sets.push("parent_id = ?")
-            params.push(accountPatch.parentId)
+        if (accountPatch.parentCtgId !== undefined) {
+            sets.push("parent_ctg_id = ?")
+            params.push(accountPatch.parentCtgId)
         }
         if (accountPatch.name !== undefined) {
             sets.push("name = ?")

@@ -2,6 +2,12 @@ import { Database } from "bun:sqlite";
 import type { CmdSvcBundle } from "../../../shared/crudServices/CmdSvcBundle";
 import type { AccountCreationEvent, AccountDeletionEvent, AccountPatchEvent } from "../../../shared/domain/accounts/Account";
 import type { AcctId } from "../../../shared/domain/accounts/AcctId";
+import type {
+    AccountCategoryCreationEvent,
+    AccountCategoryDeletionEvent,
+    AccountCategoryPatchEvent,
+} from "../../../shared/domain/accountCategories/AccountCategory";
+import type { AcctCtgId } from "../../../shared/domain/accountCategories/AcctCtgId";
 import type { VendorCreationEvent, VendorDeletionEvent, VendorPatchEvent } from "../../../shared/domain/vendors/Vendor";
 import type { VndrId } from "../../../shared/domain/vendors/VndrId";
 import type {
@@ -25,6 +31,7 @@ import type { ActionType } from "../../../shared/domain/actions/ActionType";
 import { runMigrations } from "./migrations/runMigrations";
 import type { PayloadCodec } from "./encryption/PayloadCodec";
 import { AccountActionLogCmdSvc } from "./crudServices/AccountActionLogCmdSvc";
+import { AccountCategoryActionLogCmdSvc } from "./crudServices/AccountCategoryActionLogCmdSvc";
 import { VendorActionLogCmdSvc } from "./crudServices/VendorActionLogCmdSvc";
 import { TransactionActionLogCmdSvc } from "./crudServices/TransactionActionLogCmdSvc";
 import { BalanceAssertionActionLogCmdSvc } from "./crudServices/BalanceAssertionActionLogCmdSvc";
@@ -45,6 +52,9 @@ const lookupTableFor: Record<ActionType, { table: string; column: string }> = {
     'create-account': { table: 'account_actions', column: 'acct_id' },
     'update-account': { table: 'account_actions', column: 'acct_id' },
     'delete-account': { table: 'account_actions', column: 'acct_id' },
+    'create-account-category': { table: 'account_category_actions', column: 'acct_ctg_id' },
+    'update-account-category': { table: 'account_category_actions', column: 'acct_ctg_id' },
+    'delete-account-category': { table: 'account_category_actions', column: 'acct_ctg_id' },
     'create-vendor': { table: 'vendor_actions', column: 'vndr_id' },
     'update-vendor': { table: 'vendor_actions', column: 'vndr_id' },
     'delete-vendor': { table: 'vendor_actions', column: 'vndr_id' },
@@ -82,6 +92,7 @@ export class ActionLog {
         this.masterHlc = this.loadMasterHlc()
         this.cmdSvcs = {
             accounts: new AccountActionLogCmdSvc(this),
+            accountCategories: new AccountCategoryActionLogCmdSvc(this),
             vendors: new VendorActionLogCmdSvc(this),
             transactions: new TransactionActionLogCmdSvc(this),
             balanceAssertions: new BalanceAssertionActionLogCmdSvc(this),
@@ -200,6 +211,10 @@ export class ActionLog {
         return this.readActionsForEntity('account_actions', 'acct_id', acctId)
     }
 
+    readActionsForAccountCategory(acctCtgId: AcctCtgId): IterableIterator<Action> {
+        return this.readActionsForEntity('account_category_actions', 'acct_ctg_id', acctCtgId)
+    }
+
     readActionsForVendor(vndrId: VndrId): IterableIterator<Action> {
         return this.readActionsForEntity('vendor_actions', 'vndr_id', vndrId)
     }
@@ -235,6 +250,15 @@ async function dispatchAction(target: CmdSvcBundle, action: Action): Promise<voi
             return
         case 'delete-account':
             await target.accounts.deleteAccount(action.payload as AccountDeletionEvent)
+            return
+        case 'create-account-category':
+            await target.accountCategories.createAccountCategory(action.payload as AccountCategoryCreationEvent)
+            return
+        case 'update-account-category':
+            await target.accountCategories.patchAccountCategory(action.payload as AccountCategoryPatchEvent)
+            return
+        case 'delete-account-category':
+            await target.accountCategories.deleteAccountCategory(action.payload as AccountCategoryDeletionEvent)
             return
         case 'create-vendor':
             await target.vendors.createVendor(action.payload as VendorCreationEvent)

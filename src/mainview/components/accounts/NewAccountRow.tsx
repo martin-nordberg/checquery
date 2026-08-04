@@ -1,20 +1,20 @@
 import { createMemo, createSignal } from "solid-js";
-import type { AcctId } from "../../../shared/domain/accounts/AcctId";
-import { acctRootId, acctRootName } from "../../../shared/domain/accounts/AcctRoot";
+import type { AcctCtgId } from "../../../shared/domain/accountCategories/AcctCtgId";
 import { acctTypeText } from "../../../shared/domain/accounts/AcctType";
 import { accountsClient } from "../../accounts/accountsClient";
+import { hasSiblingNameConflict } from "../../accountCategories/siblingNameConflict";
 import { useAccountTreeActions } from "./AccountTreeContext";
 
 type NewAccountRowProps = {
-	parentId: AcctId;
+	parentCtgId: AcctCtgId;
 };
 
 /**
- * Account-creation form. acctType and parentId are always supplied (acctType from context -- the page's
- * route param; parentId from wherever "add" was invoked in the tree) -- never picked by the user. There's
- * no parent field here at all (unlike EditableAccountRow's): where a new account goes is decided by which
- * "+ Add" affordance was clicked, not chosen in the form. See
- * documentation/account-list-implementation-plan.md §0/§4.
+ * Account-creation form. acctType and parentCtgId are always supplied (acctType from context -- the page's
+ * route param; parentCtgId from which category's "+ Add account" link was clicked) -- never picked by the
+ * user. There's no parent field here at all (unlike EditableAccountRow's): where a new account goes is
+ * decided by which "+ Add account" link was clicked, not chosen in the form. See
+ * documentation/account-categories-implementation-plan.md §0/§7.
  *
  * A modal, matching EditableAccountRow -- same reasoning: an inline row let a click elsewhere in the tree
  * silently discard whatever was typed here, with no warning. The overlay makes that impossible.
@@ -25,23 +25,26 @@ export default function NewAccountRow(props: NewAccountRowProps) {
 	const [description, setDescription] = createSignal("");
 	const [isPrimary, setIsPrimary] = createSignal(false);
 	const [isSaving, setIsSaving] = createSignal(false);
+	const [conflictError, setConflictError] = createSignal<string | null>(null);
 
 	const canSave = () => name().trim().length > 0 && !isSaving();
 
 	const parentLabel = createMemo(() => {
-		if (props.parentId === acctRootId[actions.acctType]) {
-			return `${acctRootName[actions.acctType]} (top level)`;
-		}
-		return actions.accounts().find((account) => account.id === props.parentId)?.name ?? "";
+		return actions.categories().find((category) => category.id === props.parentCtgId)?.name ?? "";
 	});
 
 	const handleSave = async () => {
 		if (!canSave()) return;
+		setConflictError(null);
+		if (hasSiblingNameConflict(actions.categories(), actions.accounts(), props.parentCtgId, name())) {
+			setConflictError(`"${name()}" already exists under ${parentLabel()}.`);
+			return;
+		}
 		setIsSaving(true);
 		try {
 			await accountsClient.createAccount({
 				acctType: actions.acctType,
-				parentId: props.parentId,
+				parentCtgId: props.parentCtgId,
 				name: name(),
 				description: description() || undefined,
 				isPrimary: isPrimary(),
@@ -64,7 +67,10 @@ export default function NewAccountRow(props: NewAccountRowProps) {
 							type="text"
 							class="rounded border border-slate-300 px-2 py-1.5 text-sm"
 							value={name()}
-							onInput={(e) => setName(e.currentTarget.value)}
+							onInput={(e) => {
+								setName(e.currentTarget.value);
+								setConflictError(null);
+							}}
 							autofocus
 						/>
 					</label>
@@ -86,6 +92,7 @@ export default function NewAccountRow(props: NewAccountRowProps) {
 						/>
 						Primary
 					</label>
+					{conflictError() && <p class="text-sm text-red-600">{conflictError()}</p>}
 				</div>
 				<div class="mt-6 flex justify-end gap-2">
 					<button

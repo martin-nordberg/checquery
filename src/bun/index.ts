@@ -9,6 +9,13 @@ import {
 	handlePatchAccount,
 } from "./accountHandlers";
 import {
+	handleCreateAccountCategory,
+	handleDeleteAccountCategory,
+	handleFindAccountCategoriesAll,
+	handleIsAccountCategoryInUse,
+	handlePatchAccountCategory,
+} from "./accountCategoryHandlers";
+import {
 	handleCreateVendor,
 	handleDeleteVendor,
 	handleFindVendorsAll,
@@ -68,6 +75,11 @@ const rpc: ReturnType<typeof BrowserView.defineRPC<AppSchema>> = BrowserView.def
 			patchAccount: (params) => handlePatchAccount(params),
 			deleteAccount: (params) => handleDeleteAccount(params),
 			isAccountInUse: (params) => handleIsAccountInUse(params),
+			findAccountCategoriesAll: () => handleFindAccountCategoriesAll(),
+			createAccountCategory: (params) => handleCreateAccountCategory(params),
+			patchAccountCategory: (params) => handlePatchAccountCategory(params),
+			deleteAccountCategory: (params) => handleDeleteAccountCategory(params),
+			isAccountCategoryInUse: (params) => handleIsAccountCategoryInUse(params),
 			findVendorsAll: () => handleFindVendorsAll(),
 			createVendor: (params) => handleCreateVendor(params),
 			patchVendor: (params) => handlePatchVendor(params),

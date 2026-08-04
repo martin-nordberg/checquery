@@ -1,5 +1,5 @@
 import { For } from "solid-js";
-import type { AccountTreeNode } from "../../accounts/buildAccountTree";
+import type { AccountTreeNode } from "../../accountCategories/buildAccountCategoryTree";
 import AccountTreeRow from "./AccountTreeRow";
 
 type AccountTreeProps = {

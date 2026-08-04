@@ -1,6 +1,7 @@
 import type { RPCSchema } from "electrobun/bun";
 import type { Account } from "./domain/accounts/Account";
 import type { AcctTypeStr } from "./domain/accounts/AcctType";
+import type { AccountCategory } from "./domain/accountCategories/AccountCategory";
 import type { Vendor } from "./domain/vendors/Vendor";
 import type { EncryptionMode } from "./encryptionMode";
 
@@ -31,6 +32,7 @@ export type FileInfoPayload = {
 	entityCounts: {
 		origins: number;
 		accounts: number;
+		accountCategories: number;
 		vendors: number;
 		transactions: number;
 		balanceAssertions: number;
@@ -39,12 +41,13 @@ export type FileInfoPayload = {
 	meta: Array<{ key: string; value: string }>;
 };
 
-/** Params for the bun-side createAccount request. acctType and parentId are always supplied by the page
- * (forced by the current account-list route / where in the tree "add" was invoked), never picked by the
- * user -- see documentation/account-list-implementation-plan.md §0. id/origId/hlc are filled in bun-side. */
+/** Params for the bun-side createAccount request. acctType and parentCtgId are always supplied by the page
+ * (forced by the current account-list route / which category's "+ Add account" was clicked), never picked
+ * by the user -- see documentation/account-categories-implementation-plan.md §0. id/origId/hlc are filled
+ * in bun-side. */
 export type CreateAccountParams = {
 	acctType: AcctTypeStr;
-	parentId?: string;
+	parentCtgId: string;
 	name: string;
 	description?: string;
 	isPrimary?: boolean;
@@ -54,10 +57,29 @@ export type CreateAccountParams = {
  * immutable after creation (accountPatchEventSchema omits it entirely; see Account.ts). */
 export type PatchAccountParams = {
 	id: string;
-	parentId?: string;
+	parentCtgId?: string;
 	name?: string;
 	description?: string;
 	isPrimary?: boolean;
+};
+
+/** Params for the bun-side createAccountCategory request. acctType and parentCtgId are always supplied by
+ * the page (forced by the current account-list route / which category's "+ Add category" was clicked),
+ * never picked by the user. id/origId/hlc are filled in bun-side. */
+export type CreateAccountCategoryParams = {
+	acctType: AcctTypeStr;
+	parentCtgId: string;
+	name: string;
+	description?: string;
+};
+
+/** Params for the bun-side patchAccountCategory request. Deliberately has no acctType field -- a category's
+ * type is immutable after creation (accountCategoryPatchEventSchema omits it entirely). */
+export type PatchAccountCategoryParams = {
+	id: string;
+	parentCtgId?: string;
+	name?: string;
+	description?: string;
 };
 
 /** Params for the bun-side createVendor request. isActive is deliberately omitted -- new vendors are always
@@ -88,6 +110,11 @@ export type AppSchema = {
 			patchAccount: { params: PatchAccountParams; response: void };
 			deleteAccount: { params: { id: string }; response: void };
 			isAccountInUse: { params: { id: string }; response: boolean };
+			findAccountCategoriesAll: { params: undefined; response: AccountCategory[] };
+			createAccountCategory: { params: CreateAccountCategoryParams; response: void };
+			patchAccountCategory: { params: PatchAccountCategoryParams; response: void };
+			deleteAccountCategory: { params: { id: string }; response: void };
+			isAccountCategoryInUse: { params: { id: string }; response: boolean };
 			findVendorsAll: { params: undefined; response: Vendor[] };
 			createVendor: { params: CreateVendorParams; response: void };
 			patchVendor: { params: PatchVendorParams; response: void };

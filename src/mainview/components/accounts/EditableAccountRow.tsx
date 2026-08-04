@@ -1,8 +1,8 @@
 import { createSignal } from "solid-js";
 import type { Account } from "../../../shared/domain/accounts/Account";
-import type { AcctId } from "../../../shared/domain/accounts/AcctId";
-import { acctRootId } from "../../../shared/domain/accounts/AcctRoot";
+import type { AcctCtgId } from "../../../shared/domain/accountCategories/AcctCtgId";
 import { accountsClient } from "../../accounts/accountsClient";
+import { hasSiblingNameConflict } from "../../accountCategories/siblingNameConflict";
 import { setErrorAlert } from "../../rpc";
 import AccountParentPicker from "./AccountParentPicker";
 import ConfirmDialog from "../common/ConfirmDialog";
@@ -15,7 +15,7 @@ type EditableAccountRowProps = {
 /**
  * Edit form for an existing account: name, description, isPrimary, parent. Deliberately has no acctType
  * field -- account type is immutable after creation (accountPatchEventSchema omits it entirely; see
- * Account.ts and documentation/account-list-implementation-plan.md §0).
+ * Account.ts).
  *
  * A modal (fixed overlay), not an inline row: an inline row let a click on a different account's name
  * silently swap editingId and discard whatever was typed here, with no warning. The overlay makes that
@@ -26,14 +26,23 @@ export default function EditableAccountRow(props: EditableAccountRowProps) {
 	const [name, setName] = createSignal(props.account.name as string);
 	const [description, setDescription] = createSignal(props.account.description as string);
 	const [isPrimary, setIsPrimary] = createSignal(props.account.isPrimary);
-	const [parentId, setParentId] = createSignal<AcctId>(props.account.parentId ?? acctRootId[actions.acctType]);
+	const [parentCtgId, setParentCtgId] = createSignal<AcctCtgId>(props.account.parentCtgId);
 	const [isSaving, setIsSaving] = createSignal(false);
 	const [showDeleteConfirm, setShowDeleteConfirm] = createSignal(false);
+	const [conflictError, setConflictError] = createSignal<string | null>(null);
 
 	const canSave = () => name().trim().length > 0 && !isSaving();
 
 	const handleSave = async () => {
 		if (!canSave()) return;
+		setConflictError(null);
+		// Always checked against the *target* parent (parentCtgId(), which reflects whatever's currently
+		// selected in the picker) -- if the user reparents to a category that already has a
+		// same-named child, that's a conflict even though nothing conflicted under the old parent.
+		if (hasSiblingNameConflict(actions.categories(), actions.accounts(), parentCtgId(), name(), props.account.id)) {
+			setConflictError(`"${name()}" already exists under the selected category.`);
+			return;
+		}
 		setIsSaving(true);
 		try {
 			await accountsClient.patchAccount({
@@ -41,7 +50,7 @@ export default function EditableAccountRow(props: EditableAccountRowProps) {
 				name: name(),
 				description: description(),
 				isPrimary: isPrimary(),
-				parentId: parentId(),
+				parentCtgId: parentCtgId(),
 			});
 			actions.onEdited();
 		} finally {
@@ -85,7 +94,10 @@ export default function EditableAccountRow(props: EditableAccountRowProps) {
 							type="text"
 							class="rounded border border-slate-300 px-2 py-1.5 text-sm"
 							value={name()}
-							onInput={(e) => setName(e.currentTarget.value)}
+							onInput={(e) => {
+								setName(e.currentTarget.value);
+								setConflictError(null);
+							}}
 							autofocus
 						/>
 					</label>
@@ -100,13 +112,15 @@ export default function EditableAccountRow(props: EditableAccountRowProps) {
 						/>
 					</label>
 					<label class="flex flex-col gap-1 text-sm text-slate-700">
-						Parent
+						Category
 						<AccountParentPicker
 							acctType={actions.acctType}
-							accounts={actions.accounts()}
-							excludeId={props.account.id}
-							value={parentId()}
-							onChange={setParentId}
+							categories={actions.categories()}
+							value={parentCtgId()}
+							onChange={(id) => {
+								setParentCtgId(id);
+								setConflictError(null);
+							}}
 						/>
 					</label>
 					<label class="flex items-center gap-2 text-sm text-slate-700">
@@ -117,6 +131,7 @@ export default function EditableAccountRow(props: EditableAccountRowProps) {
 						/>
 						Primary
 					</label>
+					{conflictError() && <p class="text-sm text-red-600">{conflictError()}</p>}
 				</div>
 				<div class="mt-6 flex items-center justify-between">
 					<button

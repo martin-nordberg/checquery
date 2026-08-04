@@ -7,22 +7,26 @@ import HoverableDropDown from "../../components/nav/HoverableDropDown";
 import AccountTree from "../../components/accounts/AccountTree";
 import NewAccountRow from "../../components/accounts/NewAccountRow";
 import EditableAccountRow from "../../components/accounts/EditableAccountRow";
-import { AccountTreeProvider, type AccountTreeActions } from "../../components/accounts/AccountTreeContext";
+import NewAccountCategoryRow from "../../components/accounts/NewAccountCategoryRow";
+import EditableAccountCategoryRow from "../../components/accounts/EditableAccountCategoryRow";
+import { AccountTreeProvider, type AccountTreeActions, type TreeNodeKind } from "../../components/accounts/AccountTreeContext";
 import { accountsIconPath } from "../../nav/icons";
 import { acctTypeCodes, acctTypeSchema, acctTypeText } from "../../../shared/domain/accounts/AcctType";
-import { acctRootId } from "../../../shared/domain/accounts/AcctRoot";
+import { acctCtgRootId } from "../../../shared/domain/accountCategories/AcctCtgRoot";
 import type { AcctId } from "../../../shared/domain/accounts/AcctId";
+import type { AcctCtgId } from "../../../shared/domain/accountCategories/AcctCtgId";
 import { accountsClient } from "../../accounts/accountsClient";
-import { buildAccountTree } from "../../accounts/buildAccountTree";
+import { accountCategoriesClient } from "../../accountCategories/accountCategoriesClient";
+import { buildAccountCategoryTree } from "../../accountCategories/buildAccountCategoryTree";
 
-// Net Worth (EQUITY) has no account-list page: it's a single predefined, childless root account, so
-// there's nothing to list or edit (see documentation/info-architecture.md §4, §5).
+// Net Worth (EQUITY) has no account-list page: it's a single predefined, childless-of-categories account
+// (see documentation/info-architecture.md §4, §5). Its category, Equity, has no other children either.
 const manageableAcctTypes = acctTypeCodes.filter((code) => code !== "EQUITY");
 
 export default function AccountListPage() {
 	const params = useParams<{ acctType: string }>();
 	const acctType = createMemo(() => acctTypeSchema.parse(params.acctType));
-	const rootId = createMemo(() => acctRootId[acctType()]);
+	const rootCtgId = createMemo(() => acctCtgRootId[acctType()]);
 
 	const labelFor = (code: (typeof acctTypeCodes)[number]) => `${acctTypeText(code)} Accounts`;
 
@@ -44,37 +48,53 @@ export default function AccountListPage() {
 
 	const label = createMemo(() => labelFor(acctType()));
 
-	// findAccountsAll() returns every account regardless of type -- buildAccountTree does the per-type
-	// filtering -- so this resource has no reactive source and never needs to refetch when acctType
-	// changes (switching between /accounts/ASSET and /accounts/LIABILITY reuses the same account list).
-	const [accounts, { refetch }] = createResource(() => accountsClient.findAccountsAll());
-	const tree = createMemo(() => buildAccountTree(accounts() ?? [], acctType()));
+	// Neither resource has a reactive source and never needs to refetch when acctType changes (switching
+	// between /accounts/ASSET and /accounts/LIABILITY reuses the same lists) -- buildAccountCategoryTree
+	// does the per-type filtering.
+	const [accounts, { refetch: refetchAccounts }] = createResource(() => accountsClient.findAccountsAll());
+	const [categories, { refetch: refetchCategories }] = createResource(() => accountCategoriesClient.findAccountCategoriesAll());
+	const refetchAll = () => Promise.all([refetchAccounts(), refetchCategories()]);
 
-	const [addingParentId, setAddingParentId] = createSignal<AcctId | null>(null);
-	const [editingId, setEditingId] = createSignal<AcctId | null>(null);
-	const editingAccount = createMemo(() => (accounts() ?? []).find((account) => account.id === editingId()));
+	const tree = createMemo(() => buildAccountCategoryTree(categories() ?? [], accounts() ?? [], acctType()));
+
+	const [addingRequest, setAddingRequest] = createSignal<{ kind: TreeNodeKind; parentCtgId: AcctCtgId } | null>(null);
+	const [editingRequest, setEditingRequest] = createSignal<{ kind: TreeNodeKind; id: AcctCtgId | AcctId } | null>(null);
+
+	const editingCategory = createMemo(() => {
+		const req = editingRequest();
+		if (!req || req.kind !== "category") return undefined;
+		return (categories() ?? []).find((category) => category.id === req.id);
+	});
+	const editingAccount = createMemo(() => {
+		const req = editingRequest();
+		if (!req || req.kind !== "account") return undefined;
+		return (accounts() ?? []).find((account) => account.id === req.id);
+	});
 
 	const treeActions: AccountTreeActions = {
 		get acctType() {
 			return acctType();
 		},
+		categories: () => categories() ?? [],
 		accounts: () => accounts() ?? [],
 
-		addingParentId,
-		requestAdd: (parentId) => setAddingParentId(parentId),
+		addingRequest,
+		requestAddCategory: (parentCtgId) => setAddingRequest({ kind: "category", parentCtgId }),
+		requestAddAccount: (parentCtgId) => setAddingRequest({ kind: "account", parentCtgId }),
 		onAdded: () => {
-			setAddingParentId(null);
-			void refetch();
+			setAddingRequest(null);
+			void refetchAll();
 		},
-		onCancelAdd: () => setAddingParentId(null),
+		onCancelAdd: () => setAddingRequest(null),
 
-		editingId,
-		requestEdit: (id) => setEditingId(id),
+		editingRequest,
+		requestEditCategory: (id) => setEditingRequest({ kind: "category", id }),
+		requestEditAccount: (id) => setEditingRequest({ kind: "account", id }),
 		onEdited: () => {
-			setEditingId(null);
-			void refetch();
+			setEditingRequest(null);
+			void refetchAll();
 		},
-		onCancelEdit: () => setEditingId(null),
+		onCancelEdit: () => setEditingRequest(null),
 	};
 
 	// EQUITY has no account-list page (see manageableAcctTypes above) -- someone reaching this route
@@ -91,16 +111,21 @@ export default function AccountListPage() {
 				<main class="p-4">
 					<h1 class="mb-4 text-lg font-semibold text-slate-700">{label()}</h1>
 					<AccountTreeProvider value={treeActions}>
-						{/* Both are modals (fixed overlays) -- rendered once here rather than at their tree
+						{/* All four are modals (fixed overlays) -- rendered once here rather than at their tree
 						    position, since floating dialogs have no need to live at a specific spot in the DOM. */}
-						<Show when={addingParentId()}>
-							{(parentId) => <NewAccountRow parentId={parentId()} />}
+						<Show when={addingRequest()}>
+							{(req) =>
+								req().kind === "category" ? (
+									<NewAccountCategoryRow parentCtgId={req().parentCtgId} />
+								) : (
+									<NewAccountRow parentCtgId={req().parentCtgId} />
+								)
+							}
 						</Show>
-						<Show when={editingAccount()}>
-							{(account) => <EditableAccountRow account={account()} />}
-						</Show>
+						<Show when={editingCategory()}>{(category) => <EditableAccountCategoryRow category={category()} />}</Show>
+						<Show when={editingAccount()}>{(account) => <EditableAccountRow account={account()} />}</Show>
 
-						<Show when={!accounts.loading} fallback={<p class="text-slate-500">Loading…</p>}>
+						<Show when={!accounts.loading && !categories.loading} fallback={<p class="text-slate-500">Loading…</p>}>
 							<div class="flex-1 overflow-auto rounded-lg bg-white shadow-lg">
 								<table class="min-w-full divide-y divide-gray-200">
 									<thead class="sticky top-0 z-10 bg-blue-100">
@@ -109,9 +134,9 @@ export default function AccountListPage() {
 												<button
 													type="button"
 													class="rounded p-1 text-green-600 hover:bg-gray-200 hover:text-green-800"
-													onClick={() => setAddingParentId(rootId())}
-													aria-label={`Add ${acctTypeText(acctType())} Account`}
-													title="Add account"
+													onClick={() => setAddingRequest({ kind: "category", parentCtgId: rootCtgId() })}
+													aria-label={`Add ${acctTypeText(acctType())} Category`}
+													title="Add category"
 												>
 													<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 														<path
@@ -145,7 +170,7 @@ export default function AccountListPage() {
 								</table>
 								<Show when={tree().length === 0}>
 									<p class="p-4 text-center text-gray-500">
-										No {acctTypeText(acctType())} accounts yet.
+										No {acctTypeText(acctType())} categories yet.
 									</p>
 								</Show>
 							</div>

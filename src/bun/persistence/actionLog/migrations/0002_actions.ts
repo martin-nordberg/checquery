@@ -25,6 +25,14 @@ export function up(db: Database): void {
     db.run(`CREATE INDEX account_actions_acct_id_idx ON account_actions (acct_id)`)
 
     db.run(`
+        CREATE TABLE account_category_actions (
+            actn_id     TEXT PRIMARY KEY REFERENCES actions (id),
+            acct_ctg_id TEXT NOT NULL
+        )
+    `)
+    db.run(`CREATE INDEX account_category_actions_acct_ctg_id_idx ON account_category_actions (acct_ctg_id)`)
+
+    db.run(`
         CREATE TABLE vendor_actions (
             actn_id TEXT PRIMARY KEY REFERENCES actions (id),
             vndr_id TEXT NOT NULL

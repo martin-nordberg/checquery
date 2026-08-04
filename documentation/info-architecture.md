@@ -14,7 +14,7 @@ Anyone using the functional spec as a reference should read this first.
 
 | Prior effort (`functional-spec.md`) | checquery2 (current code) | Navigation impact |
 |---|---|---|
-| Accounts are flat; `" : "` in the name is a display convention only | Accounts form a real parent/child tree (`Account.parentId`), rooted at five fixed, uneditable roots: Assets, Liabilities, Net Worth, Income, Expenses (`AcctRoot.ts`) | Account list pages become tree views, not flat alphabetical tables (§5) |
+| Accounts are flat; `" : "` in the name is a display convention only | Accounts are flat leaves again (`Account.parentCtgId`, always required); the recursive hierarchy lives in a separate `AccountCategory` entity instead, rooted at five fixed, uneditable root categories: Assets, Liabilities, Equity, Income, Expenses (`AcctCtgRoot.ts`). An earlier pass made accounts themselves hierarchical (`Account.parentId`); that was reverted in favor of this category/account split -- see `documentation/account-categories-implementation-plan.md` | Account list pages become tree views mixing two node kinds -- categories (branches) and accounts (always leaves) -- not flat alphabetical tables, and not a tree of accounts alone (§5) |
 | Account type "Equity" | Account type `EQUITY` displays as **"Net Worth"** (`acctTypeText`) | Use "Net Worth" in all nav labels, breadcrumbs, and page titles |
 | `Statement` entity: begin/end date, beginning/ending balance, list of transaction IDs, `isReconciled` flag; reconciliation is a checkbox-matching workflow in the register | `BalanceAssertion`: `acctId`, an `assertionDate`, and a `balance`. Asserts that summing every entry on that account whose *transaction* has cleared by `assertionDate` equals `balance`. No transaction list, no checkbox matching — it's a computed check, not a record of which entries participated | No more standalone "Statements" feature or page (§6 Register — Reconciliation) |
 | Entry has `status` (blank / Pending / Reconciled) and a `comment`, per posting line | `Entry` has only `acctId`, `debit`, `credit`. Clearing and review live on the **transaction**: `Transaction.clearedDate` (optional) and `Transaction.needsReview` (boolean) | Register no longer shows a per-line Status column; the transaction-level `clearedDate` is a hand-entered date field (not a checkbox), plus a `needsReview` flag indicator |
@@ -121,17 +121,19 @@ Notes:
   deeply-nested account can still be primary and get a direct shortcut here. This is unchanged from the old
   home page's behavior; only the account-management pages (§5) need to become tree-aware.
 - **There is no Net Worth column and no Net Worth account-management page.** Net Worth (`EQUITY`) is a
-  single predefined, uneditable root account (`acctIdNetWorth`) with no children — there is nothing to
-  list, edit, or drill into. Its balance is visible only via the Balance Sheet. This also means the
-  account-list tree view (§5) applies to four account types, not five — see §5.
+  single predefined, uneditable account (`acctIdNetWorth`), the only child of the Equity root category — it
+  has no children of its own and nothing else can ever be created alongside it under Equity, so there is
+  nothing to list, edit, or drill into. Its balance is visible only via the Balance Sheet. This also means
+  the account-list tree view (§5) applies to four account types, not five — see §5.
 
 ---
 
 ## 5. Account List
 
 Applies once per account type — **Asset, Liability, Income, or Expense only.** Net Worth is deliberately
-excluded: it's a single predefined, childless root account (§4), so there's no tree to show and no page for
-it. Each of the four applicable types gets the same page shape, scoped to a different root.
+excluded: it's a single predefined account with no siblings and no children (§4), so there's no tree to show
+and no page for it. Each of the four applicable types gets the same page shape, scoped to a different root
+category.
 
 ### Breadcrumbs
 
@@ -141,21 +143,29 @@ Dropdown at the `[Xxx Accounts]` segment offers the other three (of these four) 
 
 ### Content
 
-- **Tree view** of accounts of the given type, rooted at that type's fixed root account (e.g. all `ASSET`
-  accounts nest under the "Assets" root). Reflects `Account.parentId` directly — arbitrary depth,
-  expand/collapse per node.
-- A new account can be created inline (modal expansion of a row), specifying its parent within the tree.
-- An existing account can be edited inline (modal expansion of its row): name, description, `isPrimary`,
-  and re-parenting (subject to the existing schema rules — can't be its own parent, root accounts are
-  fixed).
-- Soft-deletion follows the existing in-use rule: blocked if referenced by any entry or as a vendor's
-  default account.
+- **Tree view** rooted at that type's fixed root *category* (e.g. all `ASSET` categories/accounts nest under
+  the "Assets" root category), mixing two node kinds: `AccountCategory` (a branch, can have child categories
+  and/or child accounts) and `Account` (always a leaf — accounts never parent other accounts). Reflects
+  `AccountCategory.parentCtgId`/`Account.parentCtgId` directly — arbitrary category depth, expand/collapse
+  per category node. Category and account names share one naming namespace within a parent category ("like
+  a file system with folders and files").
+- A new category or a new account can be created inline (modal expansion, via a category row's "+ Add
+  category" / "+ Add account" links respectively) — a category can be added at any depth including directly
+  under the root; an account can never be created directly under the root (only Net Worth, predefined, sits
+  there) so it's only offered from within a category row.
+- An existing category or account can be edited inline (modal expansion of its row): name, description, and
+  re-parenting to another category of the same type (subject to the existing schema rules — can't be its own
+  parent, no cycles, root categories are fixed); accounts additionally have `isPrimary`.
+- Soft-deletion follows an in-use rule per node kind: a category is blocked if it has any live child category
+  or child account; an account is blocked if referenced by any entry or as a vendor's default account.
 
 ### Summary
 
-Replaces the old flat, alphabetical account list. Because accounts now form a real hierarchy under five
-fixed type roots, this page's job is to expose and edit that tree rather than a flat table. *(Detailed
-interaction — drag-to-reparent vs. explicit parent picker, sort order within a level, etc. — TBD.)*
+Replaces the old flat, alphabetical account list. The recursive hierarchy lives in `AccountCategory` now,
+not `Account` — an earlier pass made accounts themselves hierarchical, but that had ramifications that
+weren't wanted, so accounts went back to being flat leaves and categories took over as the tree structure
+(see `documentation/account-categories-implementation-plan.md`). *(Detailed interaction — drag-to-reparent
+vs. explicit parent picker, sort order within a level, etc. — TBD.)*
 
 ---
 

@@ -1,41 +1,33 @@
 import { createMemo } from "solid-js";
-import type { Account } from "../../../shared/domain/accounts/Account";
-import type { AcctId } from "../../../shared/domain/accounts/AcctId";
+import type { AccountCategory } from "../../../shared/domain/accountCategories/AccountCategory";
+import type { AcctCtgId } from "../../../shared/domain/accountCategories/AcctCtgId";
 import type { AcctTypeStr } from "../../../shared/domain/accounts/AcctType";
-import { acctRootId, acctRootName } from "../../../shared/domain/accounts/AcctRoot";
-import { accountAndDescendants } from "../../accounts/accountDescendants";
 import AccountPicker from "./AccountPicker";
 
 type AccountParentPickerProps = {
 	acctType: AcctTypeStr;
-	/** The full account list (unfiltered) -- filtering to acctType and excluding invalid choices happens here. */
-	accounts: Account[];
-	/** The account being edited -- can't be its own parent, nor can any of its own descendants (a cycle). */
-	excludeId: AcctId;
-	value: AcctId;
-	onChange: (id: AcctId) => void;
+	/** The full category list (unfiltered) -- filtering to acctType and excluding the root happens here. */
+	categories: AccountCategory[];
+	value: AcctCtgId;
+	onChange: (id: AcctCtgId) => void;
 };
 
 /**
- * Picks a parent from accounts of the *same* acctType as the page being edited on -- reparenting across
- * types is never offered. Also excludes the account itself and all its descendants, since picking one of
- * those as the new parent would create a cycle (the "no cycles through other accounts" rule Account.ts's
- * comments describe as "enforced in application code" -- this is that code).
+ * Picks a *category* as an account's parent -- accounts are leaves now (they never parent other accounts,
+ * see account-categories-implementation-plan.md §0), so unlike the old account-to-account picker this
+ * component replaces, there's no self/descendant exclusion to do here: an account being edited has no
+ * descendants of its own.
+ *
+ * The type's root category is deliberately excluded from the options -- no account (other than the
+ * predefined Net Worth, which has no edit UI at all) may ever sit directly under a root category.
  */
 export default function AccountParentPicker(props: AccountParentPickerProps) {
-	const excludedIds = createMemo(() => accountAndDescendants(props.accounts, props.excludeId));
-
-	const options = createMemo(() => {
-		const rootOption = {
-			id: acctRootId[props.acctType] as string,
-			label: `${acctRootName[props.acctType]} (top level)`,
-		};
-		const accountOptions = props.accounts
-			.filter((account) => account.acctType === props.acctType && !excludedIds().has(account.id))
+	const options = createMemo(() =>
+		props.categories
+			.filter((category) => category.acctType === props.acctType && category.parentCtgId !== undefined)
 			.sort((a, b) => (a.name as string).localeCompare(b.name as string))
-			.map((account) => ({ id: account.id as string, label: account.name as string }));
-		return [rootOption, ...accountOptions];
-	});
+			.map((category) => ({ id: category.id as string, label: category.name as string })),
+	);
 
-	return <AccountPicker options={options()} value={props.value} onChange={(id) => props.onChange(id as AcctId)} />;
+	return <AccountPicker options={options()} value={props.value} onChange={(id) => props.onChange(id as AcctCtgId)} />;
 }

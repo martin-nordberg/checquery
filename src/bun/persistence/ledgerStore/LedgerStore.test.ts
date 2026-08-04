@@ -8,7 +8,7 @@ import {
     accountDeletionEventSchema,
 } from '../../../shared/domain/accounts/Account'
 import { genAcctId } from '../../../shared/domain/accounts/AcctId'
-import { acctIdAssets } from '../../../shared/domain/accounts/AcctRoot'
+import { genAcctCtgId } from '../../../shared/domain/accountCategories/AcctCtgId'
 import { originCreationEventSchema } from '../../../shared/domain/origins/Origin'
 import { genOrigId } from '../../../shared/domain/origins/OrigId'
 import { vendorCreationEventSchema } from '../../../shared/domain/vendors/Vendor'
@@ -28,7 +28,7 @@ describe('LedgerStore', () => {
             const event = accountCreationEventSchema.parse({
                 id: genAcctId(),
                 origId: origin.id,
-                parentId: acctIdAssets,
+                parentCtgId: genAcctCtgId(),
                 acctType: 'ASSET',
                 name: 'Checking',
             })
@@ -55,7 +55,7 @@ describe('LedgerStore', () => {
             const account = accountCreationEventSchema.parse({
                 id: genAcctId(),
                 origId: origin!.id,
-                parentId: acctIdAssets,
+                parentCtgId: genAcctCtgId(),
                 acctType: 'ASSET',
                 name: 'Pre-existing Account',
             })
@@ -93,7 +93,7 @@ describe('LedgerStore', () => {
             const created = accountCreationEventSchema.parse({
                 id: genAcctId(),
                 origId: origin.id,
-                parentId: acctIdAssets,
+                parentCtgId: genAcctCtgId(),
                 acctType: 'ASSET',
                 name: 'Original',
             })
@@ -135,7 +135,7 @@ describe('LedgerStore', () => {
             const event = accountCreationEventSchema.parse({
                 id: genAcctId(),
                 origId: origin.id,
-                parentId: acctIdAssets,
+                parentCtgId: genAcctCtgId(),
                 acctType: 'ASSET',
                 name: 'Only In A',
             })
@@ -151,7 +151,7 @@ describe('LedgerStore', () => {
             const account = accountCreationEventSchema.parse({
                 id: genAcctId(),
                 origId: genOrigId(),
-                parentId: acctIdAssets,
+                parentCtgId: genAcctCtgId(),
                 acctType: 'ASSET',
                 name: 'Not Replayed',
             })

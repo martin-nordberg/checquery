@@ -13,8 +13,8 @@
 This spec covers:
 
 - A `MaterializedStore` class wrapping an in-memory (`:memory:`) `bun:sqlite` `Database`, with ordinary tables for
-  accounts, vendors, transactions (+ entries), balance assertions, and origins — each holding only current
-  values, not history.
+  account categories, accounts, vendors, transactions (+ entries), balance assertions, and origins — each
+  holding only current values, not history.
 - How domain event types (`AccountCreationEvent`, `TransactionPatchEvent`, etc.) map onto SQL `INSERT`/`UPDATE`
   statements, implementing every `IXxxCmdSvc`.
 - How every `IXxxQrySvc` (`findAccountById`, `findVendorsAll`, `isAccountInUse`, etc.) is implemented as SQL
@@ -97,7 +97,7 @@ type QrySvcBundle = {
 
 | Domain type | SQL column type | Mapping |
 |---|---|---|
-| Branded ID (`AcctId`, `VndrId`, `TxnId`, `AsrtId`, `OrigId`) | `TEXT` | stored as-is — already a validated string |
+| Branded ID (`AcctId`, `AcctCtgId`, `VndrId`, `TxnId`, `AsrtId`, `OrigId`) | `TEXT` | stored as-is — already a validated string |
 | `NameStr` / `DescriptionStr` | `TEXT` | stored as-is |
 | `IsoDate` | `TEXT` | stored as-is; `'YYYY-MM-DD'` sorts lexically the same as chronologically |
 | `AcctTypeStr` (enum) | `TEXT` | stored as-is |
@@ -110,22 +110,44 @@ and `GROUP BY` them directly in SQL (§9) rather than pulling every row into JS 
 here at all rather than a plain in-memory `Map`. `toCents`/`fromCents` already exist in
 `src/shared/domain/core/CurrencyAmt.ts` and are the conversion boundary in both directions.
 
-### 4.1 `accounts`
+### 4.1 `account_categories` and `accounts`
+
+Accounts are flat leaves; the recursive hierarchy lives in `account_categories` instead (an earlier design
+made accounts themselves hierarchical via a self-referencing `parent_id` -- that was reverted in favor of
+this split, see `documentation/account-categories-implementation-plan.md`). Every account's `parent_ctg_id`
+is required and always references a category, never another account.
 
 ```sql
-CREATE TABLE accounts (
-    id          TEXT PRIMARY KEY,
-    orig_id     TEXT NOT NULL,
-    parent_id   TEXT REFERENCES accounts (id),
-    acct_type   TEXT NOT NULL,
-    name        TEXT NOT NULL,
-    description TEXT NOT NULL,
-    is_primary  INTEGER NOT NULL,
-    is_deleted  INTEGER NOT NULL DEFAULT 0
+CREATE TABLE account_categories (
+    id            TEXT PRIMARY KEY,
+    orig_id       TEXT NOT NULL,
+    parent_ctg_id TEXT REFERENCES account_categories (id),
+    acct_type     TEXT NOT NULL,
+    name          TEXT NOT NULL,
+    description   TEXT NOT NULL,
+    is_deleted    INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE INDEX accounts_parent_id_idx ON accounts (parent_id);
+CREATE INDEX account_categories_parent_ctg_id_idx ON account_categories (parent_ctg_id);
+
+CREATE TABLE accounts (
+    id            TEXT PRIMARY KEY,
+    orig_id       TEXT NOT NULL,
+    parent_ctg_id TEXT NOT NULL REFERENCES account_categories (id),
+    acct_type     TEXT NOT NULL,
+    name          TEXT NOT NULL,
+    description   TEXT NOT NULL,
+    is_primary    INTEGER NOT NULL,
+    is_deleted    INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX accounts_parent_ctg_id_idx ON accounts (parent_ctg_id);
 ```
+
+The five root categories (one per `AcctTypeStr`) are virtual, fixed IDs (`AcctCtgRoot.ts`) never inserted as
+real rows -- same convention the old per-type root accounts used. Net Worth (`acctIdNetWorth`) is the one
+exception on the `accounts` side: it *is* a real, seeded row (the only `EQUITY` account, a direct child of
+the Equity root category), since real ledger entries can post to it directly.
 
 ### 4.2 `vendors`
 
@@ -224,7 +246,7 @@ the first place.
 
 ## 5. Soft Deletion
 
-Every entity that supports deletion (`Account`, `Vendor`, `Transaction`, `BalanceAssertion` — not `Origin`, which
+Every entity that supports deletion (`Account`, `AccountCategory`, `Vendor`, `Transaction`, `BalanceAssertion` — not `Origin`, which
 has no delete action at all) carries `is_deleted`. A `delete-*` action sets `is_deleted = 1` and updates `orig_id`
 to the deleting event's `origId` (deletion is itself a "touch," same as a patch); it never clears other columns —
 "soft-delete... data is retained so that historical transactions remain valid" (`functional-spec.md` §3.1).
@@ -270,9 +292,9 @@ A straight `INSERT`, e.g.:
 ```ts
 createAccount(e: AccountCreationEvent) {
     db.run(
-        `INSERT INTO accounts (id, orig_id, parent_id, acct_type, name, description, is_primary)
+        `INSERT INTO accounts (id, orig_id, parent_ctg_id, acct_type, name, description, is_primary)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        e.id, e.origId, e.parentId ?? null, e.acctType, e.name, e.description, e.isPrimary ? 1 : 0
+        e.id, e.origId, e.parentCtgId, e.acctType, e.name, e.description, e.isPrimary ? 1 : 0
     )
     return e
 }
@@ -318,6 +340,10 @@ Each `IXxxQrySvc` method is a direct `SELECT`, applying §5's soft-delete asymme
 findAccountById(id: AcctId)   { /* SELECT * FROM accounts WHERE id = ?              (no is_deleted filter) */ }
 findAccountsAll()             { /* SELECT * FROM accounts WHERE is_deleted = 0 ORDER BY name */ }
 isAccountInUse(id: AcctId)    { /* §5 */ }
+
+findAccountCategoryById(id: AcctCtgId)  { /* SELECT * FROM account_categories WHERE id = ?    (no is_deleted filter) */ }
+findAccountCategoriesAll()              { /* SELECT * FROM account_categories WHERE is_deleted = 0 ORDER BY name */ }
+isAccountCategoryInUse(id: AcctCtgId)   { /* true iff any live child category or child account references id */ }
 
 findVendorById(id: VndrId)    { /* SELECT * FROM vendors WHERE id = ?               (no is_deleted filter) */ }
 findVendorsAll()               { /* SELECT * FROM vendors WHERE is_deleted = 0 ORDER BY name */ }
@@ -382,10 +408,11 @@ GROUP BY a.id;
 
 Two real design questions remain open for that follow-up spec, deliberately unresolved here:
 
-- **Hierarchical rollup.** Accounts form a parent/child tree under five predefined type roots
-  (`src/shared/domain/accounts/AcctRoot.ts`); a balance sheet section total needs a child account's balance
-  rolled up into its ancestors, which the per-account query above doesn't do (a recursive CTE over `parent_id`
-  is the likely shape, but isn't designed here).
+- **Hierarchical rollup.** Categories form a parent/child tree under five predefined root categories
+  (`src/shared/domain/accountCategories/AcctCtgRoot.ts`), with accounts as leaves under them; a balance sheet
+  section total needs an account's balance rolled up into its category ancestors, which the per-account query
+  above doesn't do (a recursive CTE over `account_categories.parent_ctg_id` joined out to `accounts` is the
+  likely shape, but isn't designed here).
 - **Where a running balance is computed.** The register example above uses a SQL window function; whether that's
   the actual implementation or an application-level running total is an open call for that spec, not this one.
 
@@ -407,7 +434,7 @@ Two real design questions remain open for that follow-up spec, deliberately unre
 
 - **No persistence, no migrations.** Purely in-memory; rebuilt from nothing on every construction (§3).
 - **No new report/register query interfaces.** Established as supportable (§9), not designed.
-- **No hierarchical account rollup logic** for balance-sheet section totals — deferred alongside §9.
+- **No hierarchical rollup logic** for balance-sheet section totals — deferred alongside §9.
 - **No HLC-based conflict resolution.** Replay and live writes both apply events in creation order today, so
   last-write-wins comparison isn't needed yet; `action-log.md` §7.2 already notes this is a natural extension
   point once real multi-device sync exists, and nothing here forecloses adding it later.

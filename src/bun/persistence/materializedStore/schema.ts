@@ -7,18 +7,31 @@ import type { Database } from "bun:sqlite";
  */
 export function createSchema(db: Database): void {
     db.run(`
-        CREATE TABLE accounts (
-            id          TEXT PRIMARY KEY,
-            orig_id     TEXT NOT NULL,
-            parent_id   TEXT REFERENCES accounts (id),
-            acct_type   TEXT NOT NULL,
-            name        TEXT NOT NULL,
-            description TEXT NOT NULL,
-            is_primary  INTEGER NOT NULL,
-            is_deleted  INTEGER NOT NULL DEFAULT 0
+        CREATE TABLE account_categories (
+            id            TEXT PRIMARY KEY,
+            orig_id       TEXT NOT NULL,
+            parent_ctg_id TEXT REFERENCES account_categories (id),
+            acct_type     TEXT NOT NULL,
+            name          TEXT NOT NULL,
+            description   TEXT NOT NULL,
+            is_deleted    INTEGER NOT NULL DEFAULT 0
         )
     `)
-    db.run(`CREATE INDEX accounts_parent_id_idx ON accounts (parent_id)`)
+    db.run(`CREATE INDEX account_categories_parent_ctg_id_idx ON account_categories (parent_ctg_id)`)
+
+    db.run(`
+        CREATE TABLE accounts (
+            id            TEXT PRIMARY KEY,
+            orig_id       TEXT NOT NULL,
+            parent_ctg_id TEXT NOT NULL REFERENCES account_categories (id),
+            acct_type     TEXT NOT NULL,
+            name          TEXT NOT NULL,
+            description   TEXT NOT NULL,
+            is_primary    INTEGER NOT NULL,
+            is_deleted    INTEGER NOT NULL DEFAULT 0
+        )
+    `)
+    db.run(`CREATE INDEX accounts_parent_ctg_id_idx ON accounts (parent_ctg_id)`)
 
     db.run(`
         CREATE TABLE vendors (

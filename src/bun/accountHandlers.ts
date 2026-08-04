@@ -14,7 +14,7 @@ export async function handleCreateAccount(params: CreateAccountParams): Promise<
 		id: genAcctId(),
 		origId,
 		acctType: params.acctType,
-		parentId: params.parentId,
+		parentCtgId: params.parentCtgId,
 		name: params.name,
 		description: params.description,
 		isPrimary: params.isPrimary,
@@ -27,7 +27,7 @@ export async function handlePatchAccount(params: PatchAccountParams): Promise<vo
 	const event = accountPatchEventSchema.parse({
 		id: acctIdSchema.parse(params.id),
 		origId,
-		parentId: params.parentId,
+		parentCtgId: params.parentCtgId,
 		name: params.name,
 		description: params.description,
 		isPrimary: params.isPrimary,

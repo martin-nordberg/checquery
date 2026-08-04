@@ -6,7 +6,7 @@ import {
     accountPatchEventSchema,
 } from '../../../../shared/domain/accounts/Account'
 import { genAcctId } from '../../../../shared/domain/accounts/AcctId'
-import { acctIdAssets } from '../../../../shared/domain/accounts/AcctRoot'
+import { genAcctCtgId } from '../../../../shared/domain/accountCategories/AcctCtgId'
 import { genOrigId } from '../../../../shared/domain/origins/OrigId'
 
 describe('AccountActionLogCmdSvc', () => {
@@ -15,7 +15,7 @@ describe('AccountActionLogCmdSvc', () => {
         const event = accountCreationEventSchema.parse({
             id: genAcctId(),
             origId: genOrigId(),
-            parentId: acctIdAssets,
+            parentCtgId: genAcctCtgId(),
             acctType: 'ASSET',
             name: 'Checking',
         })

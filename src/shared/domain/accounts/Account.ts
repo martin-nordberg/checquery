@@ -3,51 +3,44 @@ import {nameSchema} from "../core/Name";
 import {descriptionSchema} from "../core/Description";
 import {acctTypeSchema} from "./AcctType";
 import {acctIdSchema, type AcctId} from "./AcctId";
-import {acctTypeForRootId, isRootAcctId} from "./AcctRoot";
+import {acctIdNetWorth} from "./NetWorthAccount";
+import {acctCtgIdSchema, type AcctCtgId} from "../accountCategories/AcctCtgId";
+import {acctCtgIdEquity, acctCtgRootId} from "../accountCategories/AcctCtgRoot";
 import type {AcctTypeStr} from "./AcctType";
 import {hlcSchema} from "../core/HybridLogicalClock";
 import {origIdSchema} from "../origins/OrigId";
 
 /**
- * Checks that an account isn't its own parent. This is checkable purely from a delta, so it applies to
- * the patch schema too — everything else about hierarchy (parent's acctType must match, no cycles through
- * other accounts, the Net Worth root has no children) needs the full account set and is enforced in
- * application code.
+ * Checks that Net Worth is the one and only EQUITY account, pinned directly under the Equity root category
+ * -- and, in the other direction, that nothing else can claim Net Worth's predefined ID under a different
+ * type. Only applies to the read and creation schemas -- acctType is immutable after creation (see
+ * accountPatchEventSchema, which omits the field entirely), so there's nothing for this to check on a patch.
  */
-const noSelfParent = (acct: { id: AcctId, parentId?: AcctId }): boolean =>
-    acct.parentId === undefined || acct.parentId !== acct.id
-
-const noSelfParentMessage = "An account cannot be its own parent."
-
-/**
- * Checks that an account has no parent if and only if it is one of the five predefined root accounts.
- * This describes a *complete* account state, so it only applies to the read and creation schemas — a
- * patch that simply doesn't mention parentId isn't claiming anything about root-ness one way or the
- * other, so applying this to accountPatchEventSchema would wrongly reject any patch to a non-root
- * account that doesn't happen to touch parentId (the common case).
- */
-const rootIffNoParent = (acct: { id: AcctId, parentId?: AcctId }): boolean =>
-    (acct.parentId === undefined) === isRootAcctId(acct.id)
-
-const rootIffNoParentMessage =
-    "An account has no parent if and only if it is one of the five predefined root accounts."
-
-/**
- * Checks that if an account's id is a predefined root, its acctType matches the type that root
- * represents (e.g. the Assets root's acctType must be ASSET, never LIABILITY). Only applies to the read
- * and creation schemas -- acctType is immutable after creation (see accountPatchEventSchema, which omits
- * the field entirely), so there's nothing for this to check on a patch.
- */
-const rootAcctTypeMatches = (acct: { id: AcctId, acctType?: AcctTypeStr }): boolean => {
+const equityAccountIsNetWorth = (acct: { id: AcctId, parentCtgId: AcctCtgId, acctType?: AcctTypeStr }): boolean => {
     if (acct.acctType === undefined) return true
-    const expectedType = acctTypeForRootId(acct.id)
-    return expectedType === undefined || expectedType === acct.acctType
+    if (acct.acctType === 'EQUITY') {
+        return acct.id === acctIdNetWorth && acct.parentCtgId === acctCtgIdEquity
+    }
+    return acct.id !== acctIdNetWorth
 }
 
-const rootAcctTypeMatchesMessage =
-    "A predefined root account's acctType must match the type it represents."
+const equityAccountIsNetWorthMessage =
+    "Net Worth is the only EQUITY account, and only Net Worth may use its predefined ID."
 
-/** Base schema for a Stacquer account's details. */
+/**
+ * Checks that every account other than Net Worth has at least one level of categorization beyond its
+ * type's root category -- no account (besides Net Worth) may sit directly under a root. Only applies to
+ * the read and creation schemas, same reasoning as equityAccountIsNetWorth above.
+ */
+const nonEquityAccountBeyondRoot = (acct: { parentCtgId: AcctCtgId, acctType?: AcctTypeStr }): boolean => {
+    if (acct.acctType === undefined || acct.acctType === 'EQUITY') return true
+    return acct.parentCtgId !== acctCtgRootId[acct.acctType]
+}
+
+const nonEquityAccountBeyondRootMessage =
+    "Every account other than Net Worth must be categorized at least one level beneath its type's root category."
+
+/** Base schema for a Checquery account's details. */
 const accountAttributesSchema =
     z.strictObject({
         /** The unique ID of the account. */
@@ -56,11 +49,8 @@ const accountAttributesSchema =
         /** The ID of the origin (who/where) that created or most recently modified this account. */
         origId: origIdSchema,
 
-        /**
-         * The ID of this account's parent in the account hierarchy. Absent for the five predefined root
-         * accounts (see AcctRoot.ts); required (by application logic, not this schema) for all others.
-         */
-        parentId: acctIdSchema.optional(),
+        /** The ID of this account's parent category. Every account has one -- see AccountCategory.ts. */
+        parentCtgId: acctCtgIdSchema,
 
         /** The account type of the account. */
         acctType: acctTypeSchema,
@@ -82,9 +72,8 @@ const accountAttributesSchema =
 /** Schema for an account. */
 export const accountReadSchema =
     accountAttributesSchema
-        .refine(noSelfParent, noSelfParentMessage)
-        .refine(rootIffNoParent, rootIffNoParentMessage)
-        .refine(rootAcctTypeMatches, rootAcctTypeMatchesMessage)
+        .refine(equityAccountIsNetWorth, equityAccountIsNetWorthMessage)
+        .refine(nonEquityAccountBeyondRoot, nonEquityAccountBeyondRootMessage)
         .readonly()
 
 export type Account = z.infer<typeof accountReadSchema>
@@ -97,9 +86,8 @@ export const accountCreationEventSchema =
         isPrimary: accountAttributesSchema.shape.isPrimary.default(false),
         hlc: hlcSchema.optional(),
     })
-        .refine(noSelfParent, noSelfParentMessage)
-        .refine(rootIffNoParent, rootIffNoParentMessage)
-        .refine(rootAcctTypeMatches, rootAcctTypeMatchesMessage)
+        .refine(equityAccountIsNetWorth, equityAccountIsNetWorthMessage)
+        .refine(nonEquityAccountBeyondRoot, nonEquityAccountBeyondRootMessage)
         .readonly()
 
 export type AccountCreationEvent = z.infer<typeof accountCreationEventSchema>
@@ -128,14 +116,11 @@ export const accountPatchEventSchema =
     accountAttributesSchema.omit({acctType: true}).extend({
         hlc: hlcSchema.optional()
     }).partial({
-        parentId: true,
+        parentCtgId: true,
         name: true,
         description: true,
         isPrimary: true,
     })
-        .refine(noSelfParent, noSelfParentMessage)
         .readonly()
 
 export type AccountPatchEvent = z.infer<typeof accountPatchEventSchema>
-
-

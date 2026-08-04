@@ -15,6 +15,9 @@ import { ipAddressSchema } from "../../shared/domain/core/IpAddress";
 import { nameSchema } from "../../shared/domain/core/Name";
 import { genOrigId, type OrigId } from "../../shared/domain/origins/OrigId";
 import { originCreationEventSchema } from "../../shared/domain/origins/Origin";
+import { accountCreationEventSchema } from "../../shared/domain/accounts/Account";
+import { acctIdNetWorth, netWorthAccountName } from "../../shared/domain/accounts/NetWorthAccount";
+import { acctCtgIdEquity } from "../../shared/domain/accountCategories/AcctCtgRoot";
 import type { EncryptionMode } from "../../shared/encryptionMode";
 import { fileExtensionFor } from "../encryptionMode";
 
@@ -72,15 +75,36 @@ async function bootstrapCurrentOrigin(store: LedgerStore): Promise<OrigId> {
 	return created!.id;
 }
 
+/**
+ * Seeds the one predefined EQUITY account -- Net Worth -- directly under the Equity root category. Unlike
+ * the five virtual root categories (never inserted as real rows, see AcctCtgRoot.ts), Net Worth must be a
+ * genuine, insertable Account row so real ledger entries (e.g. an opening-balance posting) can reference it.
+ *
+ * Only called from createNewFile, never openExistingFile: an existing file's Net Worth account is already
+ * in its action log from whenever the file was created, and replay reconstructs it -- re-seeding on every
+ * open would mint a second, invalid EQUITY account and fail the equityAccountIsNetWorth schema invariant.
+ */
+async function bootstrapNetWorthAccount(store: LedgerStore, origId: OrigId): Promise<void> {
+	await store.svcs.accounts.createAccount(accountCreationEventSchema.parse({
+		id: acctIdNetWorth,
+		origId,
+		parentCtgId: acctCtgIdEquity,
+		acctType: 'EQUITY',
+		name: netWorthAccountName,
+		isPrimary: false,
+	}));
+}
+
 /** Assembles the File > Info payload for the currently open file, or null if none is open. */
 export async function getCurrentFileInfo(): Promise<FileInfoPayload | null> {
 	if (!currentPath || !currentLedgerStore || !currentDb) return null;
 
 	const stats = statSync(currentPath);
 	const { svcs, actionLog } = currentLedgerStore;
-	const [origins, accounts, vendors, transactions, balanceAssertions] = await Promise.all([
+	const [origins, accounts, accountCategories, vendors, transactions, balanceAssertions] = await Promise.all([
 		svcs.origins.countOriginsAll(),
 		svcs.accounts.countAccountsAll(),
+		svcs.accountCategories.countAccountCategoriesAll(),
 		svcs.vendors.countVendorsAll(),
 		svcs.transactions.countTransactionsAll(),
 		svcs.balanceAssertions.countBalanceAssertionsAll(),
@@ -91,7 +115,7 @@ export async function getCurrentFileInfo(): Promise<FileInfoPayload | null> {
 		path: currentPath,
 		sizeBytes: stats.size,
 		lastModifiedIso: stats.mtime.toISOString(),
-		entityCounts: { origins, accounts, vendors, transactions, balanceAssertions },
+		entityCounts: { origins, accounts, accountCategories, vendors, transactions, balanceAssertions },
 		actionLogEntryCount: actionLog.countActions(),
 		meta: getAllMetaEntries(currentDb),
 	};
@@ -185,6 +209,7 @@ export async function createNewFile(
 		const actionLog = new ActionLog(db, codec, nodeId);
 		const store = await LedgerStore.open(actionLog);
 		const origId = await bootstrapCurrentOrigin(store);
+		await bootstrapNetWorthAccount(store, origId);
 
 		closeCurrent();
 		currentDb = db;

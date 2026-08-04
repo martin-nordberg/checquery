@@ -1,5 +1,6 @@
 import type { SvcBundle } from "../../../shared/crudServices/SvcBundle";
 import { AccountTeeSvc } from "../../../shared/crudServices/accounts/AccountTeeSvc";
+import { AccountCategoryTeeSvc } from "../../../shared/crudServices/accountCategories/AccountCategoryTeeSvc";
 import { VendorTeeSvc } from "../../../shared/crudServices/vendors/VendorTeeSvc";
 import { TransactionTeeSvc } from "../../../shared/crudServices/transactions/TransactionTeeSvc";
 import { BalanceAssertionTeeSvc } from "../../../shared/crudServices/balanceAssertions/BalanceAssertionTeeSvc";
@@ -28,6 +29,10 @@ export class LedgerStore {
             accounts: new AccountTeeSvc(
                 materializedStore.qrySvcs.accounts,
                 [actionLog.cmdSvcs.accounts, materializedStore.cmdSvcs.accounts],
+            ),
+            accountCategories: new AccountCategoryTeeSvc(
+                materializedStore.qrySvcs.accountCategories,
+                [actionLog.cmdSvcs.accountCategories, materializedStore.cmdSvcs.accountCategories],
             ),
             vendors: new VendorTeeSvc(
                 materializedStore.qrySvcs.vendors,

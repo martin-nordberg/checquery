@@ -49,6 +49,10 @@ export default function FileInfoModal() {
 									<td class="text-right">{info().entityCounts.accounts}</td>
 								</tr>
 								<tr>
+									<td class="text-slate-500">Account Categories</td>
+									<td class="text-right">{info().entityCounts.accountCategories}</td>
+								</tr>
+								<tr>
 									<td class="text-slate-500">Vendors</td>
 									<td class="text-right">{info().entityCounts.vendors}</td>
 								</tr>

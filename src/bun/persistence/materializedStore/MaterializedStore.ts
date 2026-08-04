@@ -3,6 +3,7 @@ import type { CmdSvcBundle } from "../../../shared/crudServices/CmdSvcBundle";
 import type { QrySvcBundle } from "../../../shared/crudServices/QrySvcBundle";
 import { createSchema } from "./schema";
 import { AccountMaterializedStoreSvc } from "./crudServices/AccountMaterializedStoreSvc";
+import { AccountCategoryMaterializedStoreSvc } from "./crudServices/AccountCategoryMaterializedStoreSvc";
 import { VendorMaterializedStoreSvc } from "./crudServices/VendorMaterializedStoreSvc";
 import { TransactionMaterializedStoreSvc } from "./crudServices/TransactionMaterializedStoreSvc";
 import { BalanceAssertionMaterializedStoreSvc } from "./crudServices/BalanceAssertionMaterializedStoreSvc";
@@ -27,12 +28,13 @@ export class MaterializedStore {
         createSchema(this.db)
 
         const accounts = new AccountMaterializedStoreSvc(this.db)
+        const accountCategories = new AccountCategoryMaterializedStoreSvc(this.db)
         const vendors = new VendorMaterializedStoreSvc(this.db)
         const transactions = new TransactionMaterializedStoreSvc(this.db)
         const balanceAssertions = new BalanceAssertionMaterializedStoreSvc(this.db)
         const origins = new OriginMaterializedStoreSvc(this.db)
 
-        this.cmdSvcs = { accounts, vendors, transactions, balanceAssertions, origins }
-        this.qrySvcs = { accounts, vendors, transactions, balanceAssertions, origins }
+        this.cmdSvcs = { accounts, accountCategories, vendors, transactions, balanceAssertions, origins }
+        this.qrySvcs = { accounts, accountCategories, vendors, transactions, balanceAssertions, origins }
     }
 }
