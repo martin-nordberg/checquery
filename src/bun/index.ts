@@ -29,6 +29,13 @@ import {
 	handleIsVendorCategoryInUse,
 	handlePatchVendorCategory,
 } from "./vendorCategoryHandlers";
+import {
+	handleCreateTransaction,
+	handleDeleteTransaction,
+	handleFindLatestTransactionForVendorAndAccount,
+	handleFindTransactionsByAccount,
+	handlePatchTransaction,
+} from "./transactionHandlers";
 import { resolveEncryptionMode } from "./encryptionMode";
 
 // Fail fast, before any window or dialog exists, on a misconfigured CHECQUERY_ENCRYPTION_DISABLED --
@@ -97,6 +104,11 @@ const rpc: ReturnType<typeof BrowserView.defineRPC<AppSchema>> = BrowserView.def
 			patchVendorCategory: (params) => handlePatchVendorCategory(params),
 			deleteVendorCategory: (params) => handleDeleteVendorCategory(params),
 			isVendorCategoryInUse: (params) => handleIsVendorCategoryInUse(params),
+			findTransactionsByAccount: (params) => handleFindTransactionsByAccount(params),
+			findLatestTransactionForVendorAndAccount: (params) => handleFindLatestTransactionForVendorAndAccount(params),
+			createTransaction: (params) => handleCreateTransaction(params),
+			patchTransaction: (params) => handlePatchTransaction(params),
+			deleteTransaction: (params) => handleDeleteTransaction(params),
 		},
 		messages: {},
 	},

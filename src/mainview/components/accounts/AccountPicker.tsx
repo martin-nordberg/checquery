@@ -15,7 +15,7 @@ export default function AccountPicker(props: {
 }) {
 	return (
 		<select
-			class="rounded border border-slate-300 px-2 py-1 text-sm"
+			class="rounded border border-slate-300 bg-white px-2 py-1 text-sm"
 			value={props.value}
 			onChange={(e) => props.onChange(e.currentTarget.value)}
 		>

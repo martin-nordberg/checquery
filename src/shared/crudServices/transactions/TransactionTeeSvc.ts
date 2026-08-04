@@ -4,6 +4,8 @@ import {
     type TransactionPatchEvent
 } from "../../domain/transactions/Transaction";
 import {type TxnId} from "../../domain/transactions/TxnId";
+import {type AcctId} from "../../domain/accounts/AcctId";
+import {type VndrId} from "../../domain/vendors/VndrId";
 import type {ITransactionSvc} from "./ITransactionSvc";
 import type {ITransactionQrySvc} from "./ITransactionQrySvc";
 import type {ITransactionCmdSvc} from "./ITransactionCmdSvc";
@@ -43,6 +45,16 @@ export class TransactionTeeSvc implements ITransactionSvc {
     /** Counts non-deleted transactions. */
     async countTransactionsAll(): Promise<number> {
         return this.qrySvc.countTransactionsAll()
+    }
+
+    /** Every non-deleted transaction with an entry against this account. */
+    async findTransactionsByAccount(accountId: AcctId): Promise<Transaction[]> {
+        return this.qrySvc.findTransactionsByAccount(accountId)
+    }
+
+    /** The most recent non-deleted transaction with an entry against this account whose vndrId matches. */
+    async findLatestTransactionForVendorAndAccount(vndrId: VndrId, accountId: AcctId): Promise<Transaction | null> {
+        return this.qrySvc.findLatestTransactionForVendorAndAccount(vndrId, accountId)
     }
 
     /** Updates a transaction's attributes. */

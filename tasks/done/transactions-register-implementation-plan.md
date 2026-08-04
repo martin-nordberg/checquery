@@ -5,6 +5,22 @@
 > described in `documentation/info-architecture.md` §6/§7/§8, following the interaction design of the prior
 > effort's `../checquery/client/src/components/register/*` (and its `incomelog`/`expenselog` near-duplicates)
 > as closely as possible given checquery2's changed domain model, per `tasks/todo/transactions-register.md`.
+>
+> **Implemented as planned**, with a few implementation-level additions not spelled out below:
+> `useAbandonConfirm.ts` (a small hook, mirroring the old client's own, shared by `NewTransactionRow`/
+> `EditableTransactionRow`) and `VendorFieldWithAdd.tsx` (factored out because both rows need the exact same
+> vendor-picker-plus-"+"-plus-locally-owned-`NewVendorRow` block — §3 described the behavior per-row without
+> naming this as a separate file). One correctness note worth keeping: form fields must use the
+> label-*wraps*-control pattern (`<label>Text<input/></label>`, matching `NewVendorRow.tsx`'s existing style),
+> not label-as-sibling (`<label>Text</label><input/>`) — the latter has no programmatic association at all
+> (no `for`/`id`), which both breaks accessibility and made every field untestable via `getByLabelText` until
+> fixed. Relatedly, a wrapping `<label>` should cover exactly one form control — `VendorFieldWithAdd`'s "+"
+> button originally sat inside the same `<label>` as the vendor `<select>`, which is invalid for the same
+> reason from the other direction (one label, two labelable controls); the "Vendor" label now lives inside
+> `VendorFieldWithAdd` itself, wrapping only the `<select>`, with the button as a plain sibling.
+> `VendorListPage.tsx`'s `NewVendorRow` call site turned out not to need updating for the `onAdded` signature
+> change after all — TypeScript's parameter-count contravariance already accepts a zero-arg handler where
+> `(name: string) => void` is expected.
 
 ---
 

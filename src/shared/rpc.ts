@@ -4,6 +4,7 @@ import type { AcctTypeStr } from "./domain/accounts/AcctType";
 import type { AccountCategory } from "./domain/accountCategories/AccountCategory";
 import type { Vendor } from "./domain/vendors/Vendor";
 import type { VendorCategory } from "./domain/vendorCategories/VendorCategory";
+import type { Transaction } from "./domain/transactions/Transaction";
 import type { EncryptionMode } from "./encryptionMode";
 
 export type FileOpenedPayload = {
@@ -117,6 +118,31 @@ export type PatchVendorCategoryParams = {
 	description?: string;
 };
 
+/** Params for the bun-side createTransaction request. id/origId/hlc are filled in bun-side. entries is
+ * always the full entry list -- there's no per-entry id to patch incrementally. */
+export type CreateTransactionParams = {
+	postDate: string;
+	clearedDate?: string;
+	code?: string;
+	vndrId?: string;
+	description?: string;
+	needsReview?: boolean;
+	entries: { acctId: string; debit?: string; credit?: string }[];
+};
+
+/** Params for the bun-side patchTransaction request. entries, when present, fully replaces the transaction's
+ * entries (see TransactionMaterializedStoreSvc.patchTransaction) -- never a partial per-entry merge. */
+export type PatchTransactionParams = {
+	id: string;
+	postDate?: string;
+	clearedDate?: string;
+	code?: string;
+	vndrId?: string;
+	description?: string;
+	needsReview?: boolean;
+	entries?: { acctId: string; debit?: string; credit?: string }[];
+};
+
 export type AppSchema = {
 	bun: RPCSchema<{
 		requests: {
@@ -144,6 +170,14 @@ export type AppSchema = {
 			patchVendorCategory: { params: PatchVendorCategoryParams; response: void };
 			deleteVendorCategory: { params: { id: string }; response: void };
 			isVendorCategoryInUse: { params: { id: string }; response: boolean };
+			findTransactionsByAccount: { params: { accountId: string }; response: Transaction[] };
+			findLatestTransactionForVendorAndAccount: {
+				params: { vndrId: string; accountId: string };
+				response: Transaction | null;
+			};
+			createTransaction: { params: CreateTransactionParams; response: void };
+			patchTransaction: { params: PatchTransactionParams; response: void };
+			deleteTransaction: { params: { id: string }; response: void };
 		};
 	}>;
 	webview: RPCSchema<{

@@ -189,4 +189,114 @@ describe('TransactionMaterializedStoreSvc', () => {
             expect(await svc.countTransactionsAll()).toBe(1)
         })
     })
+
+    describe('findTransactionsByAccount', () => {
+        it('returns only transactions touching the account, oldest first, breaking same-day ties by insertion order', async () => {
+            const { svc } = makeSvc()
+            const acctC = genAcctId()
+
+            const early = transactionCreationEventSchema.parse({
+                id: genTxnId(), origId: genOrigId(), postDate: '2026-01-10', description: 'Early',
+                entries: [
+                    { acctId: acctA, debit: '$10.00', credit: '$0.00' },
+                    { acctId: acctB, debit: '$0.00', credit: '$10.00' },
+                ],
+            })
+            const sameDayFirst = transactionCreationEventSchema.parse({
+                id: genTxnId(), origId: genOrigId(), postDate: '2026-01-15', description: 'Same day, first',
+                entries: [
+                    { acctId: acctA, debit: '$20.00', credit: '$0.00' },
+                    { acctId: acctB, debit: '$0.00', credit: '$20.00' },
+                ],
+            })
+            const sameDaySecond = transactionCreationEventSchema.parse({
+                id: genTxnId(), origId: genOrigId(), postDate: '2026-01-15', description: 'Same day, second',
+                entries: [
+                    { acctId: acctA, debit: '$30.00', credit: '$0.00' },
+                    { acctId: acctB, debit: '$0.00', credit: '$30.00' },
+                ],
+            })
+            const otherAccount = transactionCreationEventSchema.parse({
+                id: genTxnId(), origId: genOrigId(), postDate: '2026-01-12', description: 'Not acctA',
+                entries: [
+                    { acctId: acctB, debit: '$40.00', credit: '$0.00' },
+                    { acctId: acctC, debit: '$0.00', credit: '$40.00' },
+                ],
+            })
+
+            await svc.createTransaction(early)
+            await svc.createTransaction(sameDayFirst)
+            await svc.createTransaction(otherAccount)
+            await svc.createTransaction(sameDaySecond)
+
+            const deleted = transactionCreationEventSchema.parse({
+                id: genTxnId(), origId: genOrigId(), postDate: '2026-01-20', description: 'Deleted',
+                entries: [
+                    { acctId: acctA, debit: '$1.00', credit: '$0.00' },
+                    { acctId: acctB, debit: '$0.00', credit: '$1.00' },
+                ],
+            })
+            await svc.createTransaction(deleted)
+            await svc.deleteTransaction(transactionDeletionEventSchema.parse({ id: deleted.id, origId: genOrigId() }))
+
+            const found = await svc.findTransactionsByAccount(acctA)
+            expect(found.map((t) => t.description as string)).toEqual(['Early', 'Same day, first', 'Same day, second'])
+        })
+
+        it('returns an empty array when the account has no transactions', async () => {
+            const { svc } = makeSvc()
+            expect(await svc.findTransactionsByAccount(genAcctId())).toEqual([])
+        })
+    })
+
+    describe('findLatestTransactionForVendorAndAccount', () => {
+        it('picks the most recent matching transaction, ignoring other vendors and other accounts', async () => {
+            const { svc } = makeSvc()
+            const vndrX = genVndrId()
+            const vndrY = genVndrId()
+            const acctC = genAcctId()
+
+            const older = transactionCreationEventSchema.parse({
+                id: genTxnId(), origId: genOrigId(), postDate: '2026-01-05', vndrId: vndrX, description: 'Older',
+                entries: [
+                    { acctId: acctA, debit: '$10.00', credit: '$0.00' },
+                    { acctId: acctB, debit: '$0.00', credit: '$10.00' },
+                ],
+            })
+            const newer = transactionCreationEventSchema.parse({
+                id: genTxnId(), origId: genOrigId(), postDate: '2026-01-20', vndrId: vndrX, description: 'Newer',
+                entries: [
+                    { acctId: acctA, debit: '$15.00', credit: '$0.00' },
+                    { acctId: acctB, debit: '$0.00', credit: '$15.00' },
+                ],
+            })
+            const wrongVendor = transactionCreationEventSchema.parse({
+                id: genTxnId(), origId: genOrigId(), postDate: '2026-01-25', vndrId: vndrY, description: 'Wrong vendor',
+                entries: [
+                    { acctId: acctA, debit: '$99.00', credit: '$0.00' },
+                    { acctId: acctB, debit: '$0.00', credit: '$99.00' },
+                ],
+            })
+            const wrongAccount = transactionCreationEventSchema.parse({
+                id: genTxnId(), origId: genOrigId(), postDate: '2026-01-26', vndrId: vndrX, description: 'Wrong account',
+                entries: [
+                    { acctId: acctB, debit: '$99.00', credit: '$0.00' },
+                    { acctId: acctC, debit: '$0.00', credit: '$99.00' },
+                ],
+            })
+
+            await svc.createTransaction(older)
+            await svc.createTransaction(newer)
+            await svc.createTransaction(wrongVendor)
+            await svc.createTransaction(wrongAccount)
+
+            const found = await svc.findLatestTransactionForVendorAndAccount(vndrX, acctA)
+            expect(found?.description as string).toBe('Newer')
+        })
+
+        it('returns null when there is no matching transaction', async () => {
+            const { svc } = makeSvc()
+            expect(await svc.findLatestTransactionForVendorAndAccount(genVndrId(), genAcctId())).toBeNull()
+        })
+    })
 })

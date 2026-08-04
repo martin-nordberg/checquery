@@ -144,18 +144,47 @@ export class TransactionMaterializedStoreSvc implements ITransactionSvc {
         return transactionDeletion
     }
 
+    private hydrate(row: TransactionRow): Transaction {
+        const entryRows = this.db
+            .query(`SELECT acct_id, debit_cents, credit_cents FROM entries WHERE transaction_id = ? ORDER BY ordinal`)
+            .all(row.id) as EntryRow[]
+        return rowToTransaction(row, entryRows)
+    }
+
     async findTransactionById(transactionId: TxnId): Promise<Transaction | null> {
         const row = this.db.query(`SELECT * FROM transactions WHERE id = ?`).get(transactionId) as TransactionRow | null
         if (!row) return null
-
-        const entryRows = this.db
-            .query(`SELECT acct_id, debit_cents, credit_cents FROM entries WHERE transaction_id = ? ORDER BY ordinal`)
-            .all(transactionId) as EntryRow[]
-        return rowToTransaction(row, entryRows)
+        return this.hydrate(row)
     }
 
     async countTransactionsAll(): Promise<number> {
         const row = this.db.query(`SELECT COUNT(*) as n FROM transactions WHERE is_deleted = 0`).get() as { n: number }
         return row.n
+    }
+
+    /** Every non-deleted transaction with an entry against this account, ordered oldest-first (post_date,
+     *  then rowid as an insertion-order tie-break -- the transactions table has no explicit insert-order
+     *  column, but as an ordinary SQLite table it has an implicit rowid that increases with insertion). */
+    async findTransactionsByAccount(accountId: AcctId): Promise<Transaction[]> {
+        const rows = this.db.query(
+            `SELECT * FROM transactions t
+             WHERE t.is_deleted = 0
+               AND EXISTS (SELECT 1 FROM entries e WHERE e.transaction_id = t.id AND e.acct_id = ?)
+             ORDER BY t.post_date, t.rowid`
+        ).all(accountId) as TransactionRow[]
+        return rows.map((row) => this.hydrate(row))
+    }
+
+    /** The most recent non-deleted transaction with an entry against this account whose vndr_id matches. */
+    async findLatestTransactionForVendorAndAccount(vndrId: VndrId, accountId: AcctId): Promise<Transaction | null> {
+        const row = this.db.query(
+            `SELECT * FROM transactions t
+             WHERE t.is_deleted = 0
+               AND t.vndr_id = ?
+               AND EXISTS (SELECT 1 FROM entries e WHERE e.transaction_id = t.id AND e.acct_id = ?)
+             ORDER BY t.post_date DESC, t.rowid DESC
+             LIMIT 1`
+        ).get(vndrId, accountId) as TransactionRow | null
+        return row ? this.hydrate(row) : null
     }
 }

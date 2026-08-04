@@ -12,7 +12,9 @@ type NewVendorRowProps = {
 	categories: VendorCategory[];
 	vendors: Vendor[];
 	accounts: Account[];
-	onAdded: () => void;
+	/** Receives the newly-created vendor's name (globally unique) once the create succeeds, so a caller that
+	 * needs to auto-select it (e.g. the register's inline "+ vendor" flow) can find it after refetching. */
+	onAdded: (name: string) => void;
 	onCancel: () => void;
 };
 
@@ -73,7 +75,7 @@ export default function NewVendorRow(props: NewVendorRowProps) {
 				ctgId: ctgId(),
 				defaultAcctId: defaultAcctId() || undefined,
 			});
-			props.onAdded();
+			props.onAdded(name());
 		} finally {
 			setIsSaving(false);
 		}
