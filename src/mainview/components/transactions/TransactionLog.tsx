@@ -19,6 +19,7 @@ import { accountDetailRoute } from "../../accounts/accountRoute";
 import TransactionRow from "./TransactionRow";
 import NewTransactionRow from "./NewTransactionRow";
 import EditableTransactionRow from "./EditableTransactionRow";
+import InlineCalculator from "./InlineCalculator";
 
 type TransactionLogProps = {
 	accountId: AcctId;
@@ -98,6 +99,9 @@ export default function TransactionLog(props: TransactionLogProps) {
 	const [isAddingNew, setIsAddingNew] = createSignal(false);
 	const [isDirty, setIsDirty] = createSignal(false);
 	const [stickyDate, setStickyDate] = createSignal<string | undefined>(undefined);
+	// Independent of the add/edit state above -- the calculator is a standalone scratchpad, not tied to
+	// whatever row is open (see calculator-implementation-plan.md §0/§3).
+	const [showCalculator, setShowCalculator] = createSignal(false);
 	let tableContainerRef: HTMLDivElement | undefined;
 
 	const handleAddNew = () => {
@@ -141,22 +145,37 @@ export default function TransactionLog(props: TransactionLogProps) {
 
 	return (
 		<>
-			<TopNav>
-				<FileBreadcrumb />
-				<Breadcrumb>
-					<Show when={account()} fallback="Loading…">
-						<HoverableDropDown options={typeOptions()} selectedOption={acctCtgRootName[account()!.acctType]} />
-					</Show>
-				</Breadcrumb>
-				<Show when={account()}>
+			<div class="flex items-center justify-between pr-4">
+				<TopNav>
+					<FileBreadcrumb />
 					<Breadcrumb>
-						<HoverableDropDown
-							options={accountOptions()}
-							selectedOption={accountCategoryPathLabel(account()!, categories() ?? [])}
-						/>
+						<Show when={account()} fallback="Loading…">
+							<HoverableDropDown options={typeOptions()} selectedOption={acctCtgRootName[account()!.acctType]} />
+						</Show>
 					</Breadcrumb>
-				</Show>
-			</TopNav>
+					<Show when={account()}>
+						<Breadcrumb>
+							<HoverableDropDown
+								options={accountOptions()}
+								selectedOption={accountCategoryPathLabel(account()!, categories() ?? [])}
+							/>
+						</Breadcrumb>
+					</Show>
+				</TopNav>
+				<div class="flex items-center gap-2">
+					<button
+						type="button"
+						class="rounded border border-slate-300 px-3 py-1 text-sm text-slate-600 hover:bg-slate-100"
+						aria-label="Toggle calculator"
+						onClick={() => setShowCalculator((v) => !v)}
+					>
+						Calculator
+					</button>
+				</div>
+			</div>
+			<Show when={showCalculator()}>
+				<InlineCalculator onClose={() => setShowCalculator(false)} />
+			</Show>
 			<main class="flex min-h-0 flex-1 flex-col p-4">
 				<h1 class="mb-4 text-lg font-semibold text-slate-700">{props.heading}</h1>
 				<Show when={!accounts.loading && !transactions.loading} fallback={<p class="text-slate-500">Loading…</p>}>

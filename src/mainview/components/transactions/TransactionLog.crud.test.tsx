@@ -461,3 +461,22 @@ describe("TransactionLog -- breadcrumb", () => {
 		expect(zzzLi.compareDocumentPosition(savingsLi) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 	});
 });
+
+describe("TransactionLog -- calculator", () => {
+	it("the 'Calculator' toggle button shows and hides the inline calculator bar", async () => {
+		const f = fixtures();
+		findAccountsAllMock.mockResolvedValue([f.checking]);
+		findAccountCategoriesAllMock.mockResolvedValue(f.categories);
+
+		const { findByRole, queryByLabelText } = renderRegister(f.checking.id);
+		await findByRole("heading", { name: "Register" });
+
+		expect(queryByLabelText("Calculator formula")).toBeNull();
+
+		fireEvent.click(await findByRole("button", { name: "Toggle calculator" }));
+		expect(queryByLabelText("Calculator formula")).toBeTruthy();
+
+		fireEvent.click(await findByRole("button", { name: "Toggle calculator" }));
+		expect(queryByLabelText("Calculator formula")).toBeNull();
+	});
+});

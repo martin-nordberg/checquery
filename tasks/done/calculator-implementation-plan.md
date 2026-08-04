@@ -3,6 +3,13 @@
 > Covers adding the inline calculator to Register/Income Log/Expense Log described in `tasks/todo/calculator.md`,
 > porting `../checquery/client/src/components/common/calculator/InlineCalculator.tsx`'s UX as closely as
 > possible, plus the two parsing improvements the todo asks for (commas, a leading `$`).
+>
+> **Implemented as planned.** `evaluateCalculatorExpression.ts` (16 unit tests), `InlineCalculator.tsx` (5
+> smoke tests), and the toggle wired into `TransactionLog.tsx` exactly as sketched in §3. `tsc --noEmit` and a
+> production `vite build` are both clean, and the full suite (1103 tests) passes. Not independently verified:
+> actually clicking through it in a running Electrobun window — no automated driver for that exists in this
+> environment (same caveat as the transactions-register and yaml-import passes); run `bun run dev:hmr` and
+> try it in Register/Income Log/Expense Log to confirm the debounce/Enter/copy/close feel right.
 
 ---
 
