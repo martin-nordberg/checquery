@@ -24,6 +24,22 @@ time — `tasks/todo/` and `tasks/planned/` may each hold multiple files awaitin
 
 This repository currently contains the unmodified **Electrobun + SolidJS** starter template (`electrobun-solid`). It is a desktop app scaffold — a Bun-powered native shell (Electrobun) hosting a SolidJS UI, built with Vite. There is no application-specific logic yet.
 
+## Domain Model Notes
+
+- **The Net Worth account (`acctIdNetWorth`, the singleton `EQUITY` account) is a bookkeeping device, not a
+  reportable account.** It exists only so opening balances and arbitrary asset revaluations (e.g. updating a
+  home's value from a Zillow estimate) have something to debit/credit against — it is never shown in the UI
+  as an account, never linked to, and has no register/detail page. Nothing in this app ever performs a
+  periodic "closing the books" entry that would move net income into it (unlike a corporation's books), so
+  its own running balance does **not** track actual net worth over time — it only reflects opening-balance
+  and revaluation postings, not the accumulated effect of income/expense activity.
+- **Net Worth for reporting purposes is always computed as `Assets − Liabilities`, as of whatever date is in
+  scope — never by summing the Net Worth account's own entries.** This is deliberate, not a simplification:
+  because there's no periodic closing entry, the two would silently diverge over time as income/expense
+  transactions change Asset balances with no corresponding entry against Net Worth. `Assets − Liabilities` is
+  the only value that actually equals net worth at any point in time; treat it as the source of truth
+  anywhere net worth needs to be displayed (balance sheet, and any future report that needs it).
+
 ## Commands
 
 Package manager is **Bun** (`bun.lock` present) — use `bun run <script>`, not npm/yarn.
