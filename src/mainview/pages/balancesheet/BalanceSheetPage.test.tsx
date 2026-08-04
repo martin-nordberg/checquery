@@ -74,11 +74,10 @@ describe("BalanceSheetPage", () => {
 		expect(getByText("Balance Sheet — 2026-03-15")).toBeTruthy();
 	});
 
-	it("offers Income Statement and Cash Flow Statement as sibling report links", () => {
+	it("offers Income Statement as a sibling report link", () => {
 		resetMocks();
 		const { getByText } = renderBalanceSheet("2026-03-15");
 		expect(getByText("Income Statement").closest("a")).toBeTruthy();
-		expect(getByText("Cash Flow Statement").closest("a")).toBeTruthy();
 	});
 
 	it("renders category/account rows with indentation and rolled-up subtotals, links leaf accounts, and shows a computed Net Worth total", async () => {

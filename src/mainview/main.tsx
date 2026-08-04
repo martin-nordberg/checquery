@@ -10,7 +10,6 @@ import IncomeLogPage from "./pages/incomelog/IncomeLogPage";
 import ExpenseLogPage from "./pages/expenselog/ExpenseLogPage";
 import BalanceSheetPage from "./pages/balancesheet/BalanceSheetPage";
 import IncomeStatementPage from "./pages/incomestatement/IncomeStatementPage";
-import CashFlowPage from "./pages/cashflow/CashFlowPage";
 import AnnualBudgetPage from "./pages/budget/AnnualBudgetPage";
 import { isoDateToday } from "../shared/domain/core/IsoDate";
 
@@ -39,8 +38,6 @@ render(
 				component={() => <Navigate href="./summary" />}
 			/>
 			<Route path="/incomestatement/:period/:view" component={IncomeStatementPage} />
-			<Route path="/cashflow" component={() => <Navigate href={`/cashflow/${currentMonthPeriod()}`} />} />
-			<Route path="/cashflow/:dateRange" component={CashFlowPage} />
 			<Route path="/budget" component={AnnualBudgetPage} />
 		</HashRouter>
 	),

@@ -16,10 +16,6 @@ export const balanceSheetIconPath =
 export const incomeStatementIconPath =
 	"M8 13v-1m4 1v-3m4 3V8M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z";
 
-/** New to checquery2 -- Cash Flow Statement has no old-app equivalent. Two opposing arrows ("exchange"). */
-export const cashFlowIconPath =
-	"M4 7h13m0 0l-3-3m3 3l-3 3M20 17H7m0 0l3 3m-3-3l3-3";
-
 export const registerIconPath =
 	"M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01";
 

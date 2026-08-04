@@ -7,7 +7,6 @@ import {
 	accountsIconPath,
 	balanceSheetIconPath,
 	budgetIconPath,
-	cashFlowIconPath,
 	expenseLogIconPath,
 	incomeLogIconPath,
 	incomeStatementIconPath,
@@ -32,7 +31,7 @@ function NavIcon(props: { path: string }) {
 	);
 }
 
-/** Default income-statement/cash-flow period link: the current calendar month. */
+/** Default income-statement period link: the current calendar month. */
 function currentMonthPeriod(): string {
 	const today = new Date();
 	return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
@@ -135,9 +134,6 @@ function FileHub() {
 					</A>
 					<A class={linkClass} href={`/incomestatement/${currentMonthPeriod()}/summary`}>
 						<NavIcon path={incomeStatementIconPath} /> Income Statement
-					</A>
-					<A class={linkClass} href={`/cashflow/${currentMonthPeriod()}`}>
-						<NavIcon path={cashFlowIconPath} /> Cash Flow Statement
 					</A>
 				</div>
 				<div class="flex flex-col gap-1">

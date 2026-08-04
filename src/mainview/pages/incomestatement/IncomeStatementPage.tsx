@@ -6,7 +6,7 @@ import FileBreadcrumb from "../../components/nav/FileBreadcrumb";
 import HoverableDropDown from "../../components/nav/HoverableDropDown";
 import IncomeStatementSummary from "../../components/incomestatement/IncomeStatementSummary";
 import IncomeStatementDetails from "../../components/incomestatement/IncomeStatementDetails";
-import { balanceSheetIconPath, cashFlowIconPath, incomeStatementIconPath } from "../../nav/icons";
+import { balanceSheetIconPath, incomeStatementIconPath } from "../../nav/icons";
 import { periodSchema } from "../../../shared/domain/core/Period";
 import { isoDateToday } from "../../../shared/domain/core/IsoDate";
 
@@ -20,13 +20,11 @@ function currentMonthPeriod(): string {
 const reportOptions = () => ({
 	"Balance Sheet": `/balancesheet/${isoDateToday()}`,
 	"Income Statement": `/incomestatement/${currentMonthPeriod()}/summary`,
-	"Cash Flow Statement": `/cashflow/${currentMonthPeriod()}`,
 });
 
 const reportIconPaths = {
 	"Balance Sheet": balanceSheetIconPath,
 	"Income Statement": incomeStatementIconPath,
-	"Cash Flow Statement": cashFlowIconPath,
 };
 
 /** Current year, the 12 preceding months, and each quarter of the current and prior year (§11). */

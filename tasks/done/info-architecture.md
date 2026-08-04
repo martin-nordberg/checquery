@@ -23,9 +23,6 @@ Anyone using the functional spec as a reference should read this first.
 | Client/server web app, multi-tab real-time sync over WebSocket | Single-window Electrobun desktop app; one encrypted local file open at a time, no multi-tab sync | Home page is genuinely two states — "no file open" vs. "file open" — rather than a login-free single app shell (§3, §4) |
 | Client-side routing (`@solidjs/router`), URL-addressable pages | No router wired up yet (no `@solidjs/router` dependency); navigation is currently signal/state-driven | This doc describes pages and transitions, not URL paths. Adding a router is an implementation choice, not a nav requirement |
 
-Cash Flow Statement (§12) has no prior implementation in either the functional spec or the old client — it
-is new to checquery2 and intentionally left as a stub for now.
-
 ---
 
 ## 1. Refactoring
@@ -106,7 +103,7 @@ carries no application data of its own.
 
 | Statements | Budgeting |
 |---|---|
-| [Balance Sheet](#10-balance-sheet), [Income Statement](#11-income-statement), [Cash Flow Statement](#12-cash-flow-statement) *(stub)* — stacked vertically, one under the other | [Annual Budget](#13-annual-budget) *(stub)* |
+| [Balance Sheet](#10-balance-sheet), [Income Statement](#11-income-statement) — stacked vertically, one under the other | [Annual Budget](#12-annual-budget) *(stub)* |
 
 **Row 5 — "Vendors"**
 - [Edit the List of Vendors](#9-vendor-list)
@@ -326,7 +323,7 @@ alphabetically on their own.
 
 `Checquery` › `[File Name]` › `Balance Sheet` › `[Date Dropdown]`
 
-`Balance Sheet` segment drops down to `Income Statement` or `Cash Flow Statement`.
+`Balance Sheet` segment drops down to `Income Statement`.
 
 ### Content
 
@@ -351,7 +348,7 @@ balances as before — *TBD*.
 
 `Checquery` › `[File Name]` › `Income Statement` › `[Period Dropdown]` › `[Summary/Details]`
 
-`Income Statement` segment drops down to `Balance Sheet` or `Cash Flow Statement`.
+`Income Statement` segment drops down to `Balance Sheet`.
 
 ### Content
 
@@ -369,27 +366,7 @@ nesting should surface as report subtotals.
 
 ---
 
-## 12. Cash Flow Statement
-
-### Breadcrumbs
-
-`Checquery` › `[File Name]` › `Cash Flow Statement` › `[Date Range Dropdown]`
-
-`Cash Flow Statement` segment drops down to `Balance Sheet` or `Income Statement`.
-
-### Content
-
-- *Stub for now.* Breadcrumb and routing exist; page renders a placeholder.
-
-### Summary
-
-New to checquery2 — no equivalent in the prior effort or its functional spec. Deliberately left undefined:
-period selection, direct vs. indirect method, and how it reads from the double-entry ledger are all open
-design questions for a later pass.
-
----
-
-## 13. Annual Budget
+## 12. Annual Budget
 
 ### Breadcrumbs
 

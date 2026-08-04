@@ -28,7 +28,6 @@ describe("HomePage", () => {
 		expect(getByText("Statements")).toBeTruthy();
 		expect(getByText("Balance Sheet")).toBeTruthy();
 		expect(getByText("Income Statement")).toBeTruthy();
-		expect(getByText("Cash Flow Statement")).toBeTruthy();
 		expect(getByText("Budgeting")).toBeTruthy();
 		expect(getByText("Annual Budget").closest("a")?.getAttribute("href")).toBe("/budget");
 		expect(getByText("Vendors")).toBeTruthy();

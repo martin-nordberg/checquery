@@ -32,8 +32,11 @@ encrypted `.checquery` file), accounts + account categories (a tree, accounts as
 vendor categories, transactions with double-entry entries and split support, balance assertions, the
 Register/Income Log/Expense Log pages, the inline calculator, the Balance Sheet and Income Statement
 (Summary + Details) reports, and a one-time `yaml-import` CLI that replays an old checquery client/server
-YAML action log into a new checquery2 file. Cash Flow Statement and Annual Budget are still stubs. Current
-work-in-progress and up-next items live in `tasks/todo/` and `tasks/planned/` (see Task Workflow above).
+YAML action log into a new checquery2 file. Annual Budget is still a stub. Cash Flow Statement was cut
+entirely (not enough distinct value for a personal-finance app over the Balance Sheet/Income Statement) — if
+it resurfaces in `documentation/functional-spec.md` or `../checquery`, treat that as historical, not a
+pending feature. Current work-in-progress and up-next items live in `tasks/todo/` and `tasks/planned/` (see
+Task Workflow above).
 
 Two reference documents live outside the `tasks/` pipeline:
 
@@ -143,8 +146,9 @@ component tests — see any `*.crud.test.tsx` or page test for the pattern).
 Routes are registered in `src/mainview/main.tsx` (`@solidjs/router`'s `HashRouter`, root `App`). `HomePage.tsx`
 (`src/mainview/pages/HomePage.tsx`) covers both the no-file-open and file-open states (info-architecture.md
 §3/§4); every other page lives one subfolder per feature under `src/mainview/pages/<feature>/` (`accounts`,
-`balancesheet`, `incomestatement`, `register`, `incomelog`, `expenselog`, `vendors`, `cashflow` and `budget` —
-the latter two still stubs). Shared, non-page-specific components live in `src/mainview/components/` (`nav/`
+`balancesheet`, `incomestatement`, `register`, `incomelog`, `expenselog`, `vendors` and `budget` — the last
+still a stub; there is no `cashflow` page — see Project state above). Shared, non-page-specific components
+live in `src/mainview/components/` (`nav/`
 for the breadcrumb system, `reports/` for `CategoryRollupTable` — shared by the balance sheet and income
 statement — and one folder per feature otherwise). Pure, unit-tested view-shaping logic (building a register's
 line items, a balance sheet's category rollup, etc.) lives in `src/mainview/<feature>/` *outside*

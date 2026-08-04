@@ -5,7 +5,7 @@ import Breadcrumb from "../../components/nav/Breadcrumb";
 import FileBreadcrumb from "../../components/nav/FileBreadcrumb";
 import HoverableDropDown from "../../components/nav/HoverableDropDown";
 import CategoryRollupTable from "../../components/reports/CategoryRollupTable";
-import { balanceSheetIconPath, cashFlowIconPath, incomeStatementIconPath } from "../../nav/icons";
+import { balanceSheetIconPath, incomeStatementIconPath } from "../../nav/icons";
 import { isoDateSchema, isoDateToday, type IsoDate } from "../../../shared/domain/core/IsoDate";
 import { accountsClient } from "../../accounts/accountsClient";
 import { accountCategoriesClient } from "../../accountCategories/accountCategoriesClient";
@@ -40,13 +40,11 @@ function dateOptions(): Record<string, string> {
 const reportOptions = () => ({
 	"Balance Sheet": `/balancesheet/${isoDateToday()}`,
 	"Income Statement": `/incomestatement/${currentMonthPeriod()}/summary`,
-	"Cash Flow Statement": `/cashflow/${currentMonthPeriod()}`,
 });
 
 const reportIconPaths = {
 	"Balance Sheet": balanceSheetIconPath,
 	"Income Statement": incomeStatementIconPath,
-	"Cash Flow Statement": cashFlowIconPath,
 };
 
 export default function BalanceSheetPage() {
