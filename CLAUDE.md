@@ -2,6 +2,24 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Task Workflow
+
+Work items live under `tasks/`, in three subfolders that double as a status pipeline:
+
+- **`tasks/todo/`** — one `.md` file per unit of work not yet started, written by the user.
+- **`tasks/planned/`** — implementation plans, one per task, not yet implemented.
+- **`tasks/done/`** — implementation plans for work that has been implemented.
+
+Process for a task file found in `tasks/todo/`:
+
+1. Read it, and ask clarifying questions as needed. Write a real implementation plan as a new `.md` file in
+   `tasks/planned/`, then delete the source file from `tasks/todo/`.
+2. Implement the plan, then move its file from `tasks/planned/` to `tasks/done/` (its content may also be
+   updated at this point to reflect what was actually built, if it diverged from the plan).
+
+These two steps do not need to happen in the same session, and tasks do not need to be worked one at a
+time — `tasks/todo/` and `tasks/planned/` may each hold multiple files awaiting their next step at once.
+
 ## Project state
 
 This repository currently contains the unmodified **Electrobun + SolidJS** starter template (`electrobun-solid`). It is a desktop app scaffold — a Bun-powered native shell (Electrobun) hosting a SolidJS UI, built with Vite. There is no application-specific logic yet.
