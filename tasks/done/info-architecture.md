@@ -173,9 +173,21 @@ vs. explicit parent picker, sort order within a level, etc. — TBD.)*
 
 ### Breadcrumbs
 
-`Checquery` › `[File Name]` › `[Account Name]`
+`Checquery` › `[File Name]` › `[Account Type]` › `[Category Path : Account Name]`
 
-Dropdown at `[Account Name]` offers other Asset/Liability accounts (register-bearing types).
+Two independent dropdown segments, not one:
+
+- `[Account Type]` (e.g. "Assets") offers the other three manageable types — Assets, Liabilities, Income,
+  Expenses (Net Worth excluded, same as §5 — it has no register/log page). Picking one jumps to that type's
+  alphabetically first *primary* account, or its alphabetically first account if none are primary, landing on
+  whichever page that type maps to (Register for Asset/Liability, Income Log for Income, Expense Log for
+  Expense — this is how a Register page can navigate to an Income Log and vice versa). A type with no accounts
+  at all is omitted from the dropdown, since there's nowhere to land.
+- `[Category Path : Account Name]` (e.g. "Banking : Checking") offers the other accounts of the *same* type
+  only, primary accounts listed first (each group sorted alphabetically by its own displayed label). Every
+  option — including the current selection — is shown using the same `" : "`-joined category-path convention
+  as §5's account tree, but **without the leading type/root name**, since that's already established by the
+  `[Account Type]` segment to its left.
 
 ### Content
 
@@ -233,22 +245,24 @@ computed sum against an asserted balance" rather than a checkbox-driven Statemen
 
 ### Breadcrumbs
 
-`Checquery` › `[File Name]` › `[Account Name]`
-
-Dropdown at `[Account Name]` offers other Income accounts.
+Same two-segment scheme as §6: `Checquery` › `[File Name]` › `[Account Type]` › `[Category Path : Account
+Name]`. `[Account Type]` here reads "Income" and offers the same cross-type jump to Assets/Liabilities/
+Expenses described in §6; `[Category Path : Account Name]` offers the other Income accounts, primary first.
 
 ### Content
 
 - Register-style view (§6) scoped to a single Income account: every transaction posting to it, in date
-  order, with the same columns and running balance. No reconciliation affordance — reconciliation only
-  applies to Asset/Liability accounts (Income accounts aren't the kind of thing a bank statement pins).
+  order, with the same columns **except running balance** — a running total of an income category isn't
+  meaningful the way a checking account's balance is, so this column is dropped rather than carried over.
+  No reconciliation affordance — reconciliation only applies to Asset/Liability accounts (Income accounts
+  aren't the kind of thing a bank statement pins).
 - Reachable from the file hub (§4) for accounts flagged `isPrimary`.
 
 ### Summary
 
 Undocumented in the prior draft of this file despite being linked from the file hub. Old checquery had this
-as its own `IncomeLogPage`/`IncomeLog` component, nearly identical to Register minus the reconcile panel;
-same shape carries over here.
+as its own `IncomeLogPage`/`IncomeLog` component, nearly identical to Register minus the reconcile panel (and,
+here, minus the running balance too); same shape otherwise carries over.
 
 ---
 
@@ -256,9 +270,8 @@ same shape carries over here.
 
 ### Breadcrumbs
 
-`Checquery` › `[File Name]` › `[Account Name]`
-
-Dropdown at `[Account Name]` offers other Expense accounts.
+Same two-segment scheme as §6/§7: `[Account Type]` reads "Expenses"; `[Category Path : Account Name]` offers
+the other Expense accounts, primary first.
 
 ### Content
 
