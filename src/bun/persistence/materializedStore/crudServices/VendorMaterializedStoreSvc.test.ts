@@ -8,6 +8,7 @@ import {
     vendorPatchEventSchema,
 } from '../../../../shared/domain/vendors/Vendor'
 import { genVndrId } from '../../../../shared/domain/vendors/VndrId'
+import { genVndrCtgId } from '../../../../shared/domain/vendorCategories/VndrCtgId'
 import { genOrigId } from '../../../../shared/domain/origins/OrigId'
 import { genAcctId } from '../../../../shared/domain/accounts/AcctId'
 import { genTxnId } from '../../../../shared/domain/transactions/TxnId'
@@ -23,11 +24,13 @@ describe('VendorMaterializedStoreSvc', () => {
         it('creates a vendor retrievable by id', async () => {
             const { svc } = makeSvc()
             const acctId = genAcctId()
+            const ctgId = genVndrCtgId()
             const event = vendorCreationEventSchema.parse({
                 id: genVndrId(),
                 origId: genOrigId(),
                 name: 'Acme Corp',
                 description: 'A fictional vendor',
+                ctgId,
                 defaultAcctId: acctId,
                 isActive: true,
             })
@@ -37,13 +40,16 @@ describe('VendorMaterializedStoreSvc', () => {
 
             expect(found).not.toBeNull()
             expect(found!.name as string).toBe('Acme Corp')
+            expect(found!.ctgId).toBe(ctgId)
             expect(found!.defaultAcctId).toBe(acctId)
             expect(found!.isActive).toBe(true)
         })
 
         it('leaves defaultAcctId undefined when absent', async () => {
             const { svc } = makeSvc()
-            const event = vendorCreationEventSchema.parse({ id: genVndrId(), origId: genOrigId(), name: 'No Default' })
+            const event = vendorCreationEventSchema.parse({
+                id: genVndrId(), origId: genOrigId(), ctgId: genVndrCtgId(), name: 'No Default',
+            })
             await svc.createVendor(event)
             const found = await svc.findVendorById(event.id)
             expect(found!.defaultAcctId).toBeUndefined()
@@ -51,8 +57,8 @@ describe('VendorMaterializedStoreSvc', () => {
 
         it('findVendorsAll only returns non-deleted vendors, ordered by name', async () => {
             const { svc } = makeSvc()
-            const b = vendorCreationEventSchema.parse({ id: genVndrId(), origId: genOrigId(), name: 'B Vendor' })
-            const a = vendorCreationEventSchema.parse({ id: genVndrId(), origId: genOrigId(), name: 'A Vendor' })
+            const b = vendorCreationEventSchema.parse({ id: genVndrId(), origId: genOrigId(), ctgId: genVndrCtgId(), name: 'B Vendor' })
+            const a = vendorCreationEventSchema.parse({ id: genVndrId(), origId: genOrigId(), ctgId: genVndrCtgId(), name: 'A Vendor' })
             await svc.createVendor(b)
             await svc.createVendor(a)
 
@@ -65,7 +71,7 @@ describe('VendorMaterializedStoreSvc', () => {
         it('updates only the fields present on the patch', async () => {
             const { svc } = makeSvc()
             const created = vendorCreationEventSchema.parse({
-                id: genVndrId(), origId: genOrigId(), name: 'Original', isActive: true,
+                id: genVndrId(), origId: genOrigId(), ctgId: genVndrCtgId(), name: 'Original', isActive: true,
             })
             await svc.createVendor(created)
 
@@ -75,6 +81,21 @@ describe('VendorMaterializedStoreSvc', () => {
             const found = await svc.findVendorById(created.id)
             expect(found!.name as string).toBe('Original')
             expect(found!.isActive).toBe(false)
+        })
+
+        it('recategorizes a vendor to a new category', async () => {
+            const { svc } = makeSvc()
+            const created = vendorCreationEventSchema.parse({
+                id: genVndrId(), origId: genOrigId(), ctgId: genVndrCtgId(), name: 'Movable',
+            })
+            await svc.createVendor(created)
+
+            const newCtgId = genVndrCtgId()
+            const patch = vendorPatchEventSchema.parse({ id: created.id, origId: genOrigId(), ctgId: newCtgId })
+            await svc.patchVendor(patch)
+
+            const found = await svc.findVendorById(created.id)
+            expect(found!.ctgId).toBe(newCtgId)
         })
 
         it('throws when patching an unknown id', async () => {
@@ -87,7 +108,9 @@ describe('VendorMaterializedStoreSvc', () => {
     describe('deleteVendor', () => {
         it('soft-deletes: findVendorById still resolves it, findVendorsAll excludes it', async () => {
             const { svc } = makeSvc()
-            const created = vendorCreationEventSchema.parse({ id: genVndrId(), origId: genOrigId(), name: 'Deleted' })
+            const created = vendorCreationEventSchema.parse({
+                id: genVndrId(), origId: genOrigId(), ctgId: genVndrCtgId(), name: 'Deleted',
+            })
             await svc.createVendor(created)
 
             const deletion = vendorDeletionEventSchema.parse({ id: created.id, origId: genOrigId() })
@@ -110,8 +133,8 @@ describe('VendorMaterializedStoreSvc', () => {
     describe('countVendorsAll', () => {
         it('counts only non-deleted vendors', async () => {
             const { svc } = makeSvc()
-            const a = vendorCreationEventSchema.parse({ id: genVndrId(), origId: genOrigId(), name: 'A' })
-            const b = vendorCreationEventSchema.parse({ id: genVndrId(), origId: genOrigId(), name: 'B' })
+            const a = vendorCreationEventSchema.parse({ id: genVndrId(), origId: genOrigId(), ctgId: genVndrCtgId(), name: 'A' })
+            const b = vendorCreationEventSchema.parse({ id: genVndrId(), origId: genOrigId(), ctgId: genVndrCtgId(), name: 'B' })
             await svc.createVendor(a)
             await svc.createVendor(b)
             expect(await svc.countVendorsAll()).toBe(2)
@@ -124,14 +147,18 @@ describe('VendorMaterializedStoreSvc', () => {
     describe('isVendorInUse', () => {
         it('is false for a vendor nothing references', async () => {
             const { svc } = makeSvc()
-            const created = vendorCreationEventSchema.parse({ id: genVndrId(), origId: genOrigId(), name: 'Unused' })
+            const created = vendorCreationEventSchema.parse({
+                id: genVndrId(), origId: genOrigId(), ctgId: genVndrCtgId(), name: 'Unused',
+            })
             await svc.createVendor(created)
             expect(await svc.isVendorInUse(created.id)).toBe(false)
         })
 
         it('is true when referenced by a live transaction, false once that transaction is deleted', async () => {
             const { db, svc } = makeSvc()
-            const created = vendorCreationEventSchema.parse({ id: genVndrId(), origId: genOrigId(), name: 'Used' })
+            const created = vendorCreationEventSchema.parse({
+                id: genVndrId(), origId: genOrigId(), ctgId: genVndrCtgId(), name: 'Used',
+            })
             await svc.createVendor(created)
 
             const txnId = genTxnId()

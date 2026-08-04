@@ -11,6 +11,12 @@ import type { AcctCtgId } from "../../../shared/domain/accountCategories/AcctCtg
 import type { VendorCreationEvent, VendorDeletionEvent, VendorPatchEvent } from "../../../shared/domain/vendors/Vendor";
 import type { VndrId } from "../../../shared/domain/vendors/VndrId";
 import type {
+    VendorCategoryCreationEvent,
+    VendorCategoryDeletionEvent,
+    VendorCategoryPatchEvent,
+} from "../../../shared/domain/vendorCategories/VendorCategory";
+import type { VndrCtgId } from "../../../shared/domain/vendorCategories/VndrCtgId";
+import type {
     TransactionCreationEvent,
     TransactionDeletionEvent,
     TransactionPatchEvent,
@@ -33,6 +39,7 @@ import type { PayloadCodec } from "./encryption/PayloadCodec";
 import { AccountActionLogCmdSvc } from "./crudServices/AccountActionLogCmdSvc";
 import { AccountCategoryActionLogCmdSvc } from "./crudServices/AccountCategoryActionLogCmdSvc";
 import { VendorActionLogCmdSvc } from "./crudServices/VendorActionLogCmdSvc";
+import { VendorCategoryActionLogCmdSvc } from "./crudServices/VendorCategoryActionLogCmdSvc";
 import { TransactionActionLogCmdSvc } from "./crudServices/TransactionActionLogCmdSvc";
 import { BalanceAssertionActionLogCmdSvc } from "./crudServices/BalanceAssertionActionLogCmdSvc";
 import { OriginActionLogCmdSvc } from "./crudServices/OriginActionLogCmdSvc";
@@ -58,6 +65,9 @@ const lookupTableFor: Record<ActionType, { table: string; column: string }> = {
     'create-vendor': { table: 'vendor_actions', column: 'vndr_id' },
     'update-vendor': { table: 'vendor_actions', column: 'vndr_id' },
     'delete-vendor': { table: 'vendor_actions', column: 'vndr_id' },
+    'create-vendor-category': { table: 'vendor_category_actions', column: 'vndr_ctg_id' },
+    'update-vendor-category': { table: 'vendor_category_actions', column: 'vndr_ctg_id' },
+    'delete-vendor-category': { table: 'vendor_category_actions', column: 'vndr_ctg_id' },
     'create-transaction': { table: 'transaction_actions', column: 'txn_id' },
     'update-transaction': { table: 'transaction_actions', column: 'txn_id' },
     'delete-transaction': { table: 'transaction_actions', column: 'txn_id' },
@@ -94,6 +104,7 @@ export class ActionLog {
             accounts: new AccountActionLogCmdSvc(this),
             accountCategories: new AccountCategoryActionLogCmdSvc(this),
             vendors: new VendorActionLogCmdSvc(this),
+            vendorCategories: new VendorCategoryActionLogCmdSvc(this),
             transactions: new TransactionActionLogCmdSvc(this),
             balanceAssertions: new BalanceAssertionActionLogCmdSvc(this),
             origins: new OriginActionLogCmdSvc(this),
@@ -219,6 +230,10 @@ export class ActionLog {
         return this.readActionsForEntity('vendor_actions', 'vndr_id', vndrId)
     }
 
+    readActionsForVendorCategory(vndrCtgId: VndrCtgId): IterableIterator<Action> {
+        return this.readActionsForEntity('vendor_category_actions', 'vndr_ctg_id', vndrCtgId)
+    }
+
     readActionsForTransaction(txnId: TxnId): IterableIterator<Action> {
         return this.readActionsForEntity('transaction_actions', 'txn_id', txnId)
     }
@@ -268,6 +283,15 @@ async function dispatchAction(target: CmdSvcBundle, action: Action): Promise<voi
             return
         case 'delete-vendor':
             await target.vendors.deleteVendor(action.payload as VendorDeletionEvent)
+            return
+        case 'create-vendor-category':
+            await target.vendorCategories.createVendorCategory(action.payload as VendorCategoryCreationEvent)
+            return
+        case 'update-vendor-category':
+            await target.vendorCategories.patchVendorCategory(action.payload as VendorCategoryPatchEvent)
+            return
+        case 'delete-vendor-category':
+            await target.vendorCategories.deleteVendorCategory(action.payload as VendorCategoryDeletionEvent)
             return
         case 'create-transaction':
             await target.transactions.createTransaction(action.payload as TransactionCreationEvent)

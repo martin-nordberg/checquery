@@ -4,6 +4,7 @@ import {vndrIdSchema} from "./VndrId";
 import {descriptionSchema} from "../core/Description";
 import {hlcSchema} from "../core/HybridLogicalClock";
 import {acctIdSchema} from "../accounts/AcctId";
+import {vndrCtgIdSchema} from "../vendorCategories/VndrCtgId";
 import {origIdSchema} from "../origins/OrigId";
 
 /** Base schema for a Checquery vendor's details. */
@@ -20,6 +21,9 @@ export const vendorAttributesSchema =
 
         /* A short description of the vendor. */
         description: descriptionSchema,
+
+        /** The ID of this vendor's category. Every vendor has one -- see VendorCategory.ts. */
+        ctgId: vndrCtgIdSchema,
 
         /** The ID of the default account for transactions with this vendor. */
         defaultAcctId: acctIdSchema.optional(),
@@ -67,6 +71,7 @@ export const vendorPatchEventSchema =
     }).partial({
         name: true,
         description: true,
+        ctgId: true,
         defaultAcctId: true,
         isActive: true,
     }).readonly()

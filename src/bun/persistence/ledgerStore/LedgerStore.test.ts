@@ -13,6 +13,7 @@ import { originCreationEventSchema } from '../../../shared/domain/origins/Origin
 import { genOrigId } from '../../../shared/domain/origins/OrigId'
 import { vendorCreationEventSchema } from '../../../shared/domain/vendors/Vendor'
 import { genVndrId } from '../../../shared/domain/vendors/VndrId'
+import { genVndrCtgId } from '../../../shared/domain/vendorCategories/VndrCtgId'
 
 function makeOrigin() {
     return originCreationEventSchema.parse({ id: genOrigId(), name: 'Tester', ipAddress: '127.0.0.1' })
@@ -64,6 +65,7 @@ describe('LedgerStore', () => {
             const vendor = vendorCreationEventSchema.parse({
                 id: genVndrId(),
                 origId: origin!.id,
+                ctgId: genVndrCtgId(),
                 name: 'Pre-existing Vendor',
             })
             await actionLog.cmdSvcs.vendors.createVendor(vendor)

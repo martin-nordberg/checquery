@@ -22,6 +22,13 @@ import {
 	handleIsVendorInUse,
 	handlePatchVendor,
 } from "./vendorHandlers";
+import {
+	handleCreateVendorCategory,
+	handleDeleteVendorCategory,
+	handleFindVendorCategoriesAll,
+	handleIsVendorCategoryInUse,
+	handlePatchVendorCategory,
+} from "./vendorCategoryHandlers";
 import { resolveEncryptionMode } from "./encryptionMode";
 
 // Fail fast, before any window or dialog exists, on a misconfigured CHECQUERY_ENCRYPTION_DISABLED --
@@ -85,6 +92,11 @@ const rpc: ReturnType<typeof BrowserView.defineRPC<AppSchema>> = BrowserView.def
 			patchVendor: (params) => handlePatchVendor(params),
 			deleteVendor: (params) => handleDeleteVendor(params),
 			isVendorInUse: (params) => handleIsVendorInUse(params),
+			findVendorCategoriesAll: () => handleFindVendorCategoriesAll(),
+			createVendorCategory: (params) => handleCreateVendorCategory(params),
+			patchVendorCategory: (params) => handlePatchVendorCategory(params),
+			deleteVendorCategory: (params) => handleDeleteVendorCategory(params),
+			isVendorCategoryInUse: (params) => handleIsVendorCategoryInUse(params),
 		},
 		messages: {},
 	},

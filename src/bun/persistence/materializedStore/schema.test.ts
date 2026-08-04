@@ -18,11 +18,14 @@ function indexNames(db: Database): string[] {
 }
 
 describe('createSchema', () => {
-    it('creates all seven tables', () => {
+    it('creates all nine tables', () => {
         const db = new Database(':memory:')
         createSchema(db)
         expect(tableNames(db).sort()).toEqual(
-            ['account_categories', 'accounts', 'balance_assertions', 'entries', 'origins', 'transactions', 'vendors'].sort(),
+            [
+                'account_categories', 'accounts', 'balance_assertions', 'entries', 'origins',
+                'transactions', 'vendor_categories', 'vendors',
+            ].sort(),
         )
     })
 
@@ -42,11 +45,19 @@ describe('createSchema', () => {
         ])
     })
 
+    it('creates vendor_categories with the expected columns', () => {
+        const db = new Database(':memory:')
+        createSchema(db)
+        expect(columnNames(db, 'vendor_categories')).toEqual([
+            'id', 'orig_id', 'name', 'description', 'is_deleted',
+        ])
+    })
+
     it('creates vendors with the expected columns', () => {
         const db = new Database(':memory:')
         createSchema(db)
         expect(columnNames(db, 'vendors')).toEqual([
-            'id', 'orig_id', 'name', 'description', 'default_acct_id', 'is_active', 'is_deleted',
+            'id', 'orig_id', 'name', 'description', 'ctg_id', 'default_acct_id', 'is_active', 'is_deleted',
         ])
     })
 
@@ -87,6 +98,7 @@ describe('createSchema', () => {
             [
                 'account_categories_parent_ctg_id_idx',
                 'accounts_parent_ctg_id_idx',
+                'vendors_ctg_id_idx',
                 'transactions_post_date_idx',
                 'transactions_vndr_id_idx',
                 'entries_transaction_id_idx',
@@ -111,6 +123,15 @@ describe('createSchema', () => {
         db.run(`INSERT INTO account_categories (id, orig_id, acct_type, name, description) VALUES ('a', 'o', 'ASSET', 'n', '')`)
         expect(() =>
             db.run(`INSERT INTO account_categories (id, orig_id, acct_type, name, description) VALUES ('a', 'o', 'ASSET', 'n', '')`),
+        ).toThrow()
+    })
+
+    it('rejects a duplicate primary key on vendor_categories', () => {
+        const db = new Database(':memory:')
+        createSchema(db)
+        db.run(`INSERT INTO vendor_categories (id, orig_id, name, description) VALUES ('a', 'o', 'n', '')`)
+        expect(() =>
+            db.run(`INSERT INTO vendor_categories (id, orig_id, name, description) VALUES ('a', 'o', 'n', '')`),
         ).toThrow()
     })
 })

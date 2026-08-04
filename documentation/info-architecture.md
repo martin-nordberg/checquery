@@ -280,16 +280,30 @@ Same as Income Log (§7): undocumented gap in the prior draft, filled in to matc
 
 ### Content
 
-- Searchable list of vendors with a status filter (Active / Inactive / All), matching the old app.
-- Inline create/edit, same pattern as accounts.
-- `defaultAcctId` now points at a (possibly deeply nested) account — the account picker should probably
-  reuse whatever autocomplete/typeahead the tree view (§5) uses rather than a flat dropdown. *(TBD.)*
-- Deletion blocked if referenced by any transaction; deactivate instead.
+- **Grouped list**, not flat: every vendor belongs to a required, flat (non-nesting) `VendorCategory` —
+  category rows (expand/collapse, bold name) contain their vendors as leaf rows underneath, one level only.
+  No separate "Vendor Categories" page and no category column/filter — category is conveyed by grouping,
+  the same way account type is conveyed by which account-list tree you're looking at (§5). See
+  `documentation/vendor-categories-implementation-plan.md`.
+- Modal create/edit (not inline), matching the account list's pattern. The page header's "+" icon creates a
+  top-level category only; a vendor can only be created via a category row's "+ Add vendor" link, since
+  every vendor requires an existing category — a brand-new file has none, so the user creates one first.
+  Nothing is seeded automatically.
+- Status filter (Active / Inactive / Both radios, top-right) filters which vendors show within each
+  category; categories themselves always render regardless of the filter.
+- `defaultAcctId` picker is a plain dropdown scoped to Expense/Income accounts (`AccountPicker`, reused
+  as-is) — not the account tree's autocomplete, which turned out unnecessary once `AccountPicker` was
+  already generic enough to reuse directly.
+- Vendor names are unique globally (not scoped per category); vendor category names are unique globally
+  too — two independent flat namespaces, unlike the account/account-category shared per-parent namespace.
+- Deletion blocked if referenced by any transaction (vendor) or if it still has vendors assigned (category);
+  deactivate a vendor instead of deleting it.
 
 ### Summary
 
-Unchanged in spirit from the prior effort's vendor list — the only ripple from the account-hierarchy change
-is how a vendor's default account is picked.
+Diverged further from the prior effort's flat vendor list once vendor categories were introduced: vendors
+are still flat leaves, but they're now grouped under a required, single-level category rather than listed
+alphabetically on their own.
 
 ---
 

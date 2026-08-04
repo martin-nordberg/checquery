@@ -101,11 +101,12 @@ export async function getCurrentFileInfo(): Promise<FileInfoPayload | null> {
 
 	const stats = statSync(currentPath);
 	const { svcs, actionLog } = currentLedgerStore;
-	const [origins, accounts, accountCategories, vendors, transactions, balanceAssertions] = await Promise.all([
+	const [origins, accounts, accountCategories, vendors, vendorCategories, transactions, balanceAssertions] = await Promise.all([
 		svcs.origins.countOriginsAll(),
 		svcs.accounts.countAccountsAll(),
 		svcs.accountCategories.countAccountCategoriesAll(),
 		svcs.vendors.countVendorsAll(),
+		svcs.vendorCategories.countVendorCategoriesAll(),
 		svcs.transactions.countTransactionsAll(),
 		svcs.balanceAssertions.countBalanceAssertionsAll(),
 	]);
@@ -115,7 +116,7 @@ export async function getCurrentFileInfo(): Promise<FileInfoPayload | null> {
 		path: currentPath,
 		sizeBytes: stats.size,
 		lastModifiedIso: stats.mtime.toISOString(),
-		entityCounts: { origins, accounts, accountCategories, vendors, transactions, balanceAssertions },
+		entityCounts: { origins, accounts, accountCategories, vendors, vendorCategories, transactions, balanceAssertions },
 		actionLogEntryCount: actionLog.countActions(),
 		meta: getAllMetaEntries(currentDb),
 	};

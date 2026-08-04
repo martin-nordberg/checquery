@@ -1,6 +1,7 @@
 import { requireCurrentSession } from "./currentSession";
 import { vendorCreationEventSchema, vendorDeletionEventSchema, vendorPatchEventSchema, type Vendor } from "../shared/domain/vendors/Vendor";
 import { genVndrId, vndrIdSchema } from "../shared/domain/vendors/VndrId";
+import { vndrCtgIdSchema } from "../shared/domain/vendorCategories/VndrCtgId";
 import { acctIdSchema } from "../shared/domain/accounts/AcctId";
 import type { CreateVendorParams, PatchVendorParams } from "../shared/rpc";
 
@@ -16,6 +17,7 @@ export async function handleCreateVendor(params: CreateVendorParams): Promise<vo
 		origId,
 		name: params.name,
 		description: params.description,
+		ctgId: vndrCtgIdSchema.parse(params.ctgId),
 		defaultAcctId: params.defaultAcctId ? acctIdSchema.parse(params.defaultAcctId) : undefined,
 	});
 	await store.svcs.vendors.createVendor(event);
@@ -28,6 +30,7 @@ export async function handlePatchVendor(params: PatchVendorParams): Promise<void
 		origId,
 		name: params.name,
 		description: params.description,
+		ctgId: params.ctgId !== undefined ? vndrCtgIdSchema.parse(params.ctgId) : undefined,
 		defaultAcctId: params.defaultAcctId !== undefined ? acctIdSchema.parse(params.defaultAcctId) : undefined,
 		isActive: params.isActive,
 	});

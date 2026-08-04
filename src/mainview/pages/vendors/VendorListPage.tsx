@@ -2,32 +2,47 @@ import { createMemo, createResource, createSignal, For, Show } from "solid-js";
 import TopNav from "../../components/nav/TopNav";
 import Breadcrumb from "../../components/nav/Breadcrumb";
 import FileBreadcrumb from "../../components/nav/FileBreadcrumb";
-import VendorRow from "../../components/vendors/VendorRow";
+import VendorCategoryRow from "../../components/vendors/VendorCategoryRow";
 import NewVendorRow from "../../components/vendors/NewVendorRow";
 import EditableVendorRow from "../../components/vendors/EditableVendorRow";
+import NewVendorCategoryRow from "../../components/vendors/NewVendorCategoryRow";
+import EditableVendorCategoryRow from "../../components/vendors/EditableVendorCategoryRow";
 import { vendorsClient } from "../../vendors/vendorsClient";
+import { vendorCategoriesClient } from "../../vendorCategories/vendorCategoriesClient";
 import { accountsClient } from "../../accounts/accountsClient";
 import { filterAndSortVendors, type VendorStatusFilter } from "../../vendors/filterAndSortVendors";
+import { groupVendorsByCategory } from "../../vendorCategories/groupVendorsByCategory";
 import type { VndrId } from "../../../shared/domain/vendors/VndrId";
+import type { VndrCtgId } from "../../../shared/domain/vendorCategories/VndrCtgId";
 
 export default function VendorListPage() {
-	const [vendors, { refetch }] = createResource(() => vendorsClient.findVendorsAll());
+	const [vendors, { refetch: refetchVendors }] = createResource(() => vendorsClient.findVendorsAll());
+	const [categories, { refetch: refetchCategories }] = createResource(() => vendorCategoriesClient.findVendorCategoriesAll());
 	const [accounts] = createResource(() => accountsClient.findAccountsAll());
+	const refetchAll = () => Promise.all([refetchVendors(), refetchCategories()]);
 
 	const [statusFilter, setStatusFilter] = createSignal<VendorStatusFilter>("active");
-	const visibleVendors = createMemo(() => filterAndSortVendors(vendors() ?? [], statusFilter()));
+	const groups = createMemo(() =>
+		groupVendorsByCategory(categories() ?? [], filterAndSortVendors(vendors() ?? [], statusFilter())),
+	);
 
-	const [addingNew, setAddingNew] = createSignal(false);
-	const [editingId, setEditingId] = createSignal<VndrId | null>(null);
-	const editingVendor = createMemo(() => (vendors() ?? []).find((vendor) => vendor.id === editingId()));
+	const [addingCategory, setAddingCategory] = createSignal(false);
+	const [addingVendorForCtgId, setAddingVendorForCtgId] = createSignal<VndrCtgId | null>(null);
+	const [editingCategoryId, setEditingCategoryId] = createSignal<VndrCtgId | null>(null);
+	const [editingVendorId, setEditingVendorId] = createSignal<VndrId | null>(null);
+
+	const editingCategory = createMemo(() => (categories() ?? []).find((c) => c.id === editingCategoryId()));
+	const editingVendor = createMemo(() => (vendors() ?? []).find((v) => v.id === editingVendorId()));
 
 	const onAdded = () => {
-		setAddingNew(false);
-		void refetch();
+		setAddingCategory(false);
+		setAddingVendorForCtgId(null);
+		void refetchAll();
 	};
 	const onEdited = () => {
-		setEditingId(null);
-		void refetch();
+		setEditingCategoryId(null);
+		setEditingVendorId(null);
+		void refetchAll();
 	};
 
 	return (
@@ -70,23 +85,51 @@ export default function VendorListPage() {
 			<main class="p-4">
 				<h1 class="mb-4 text-lg font-semibold text-slate-700">Vendors</h1>
 
-				{/* Both are modals (fixed overlays) -- rendered once here rather than per-row, matching
-				    AccountListPage's approach (see documentation/vendor-list-implementation-plan.md §4). */}
-				<Show when={addingNew()}>
-					<NewVendorRow accounts={accounts() ?? []} onAdded={onAdded} onCancel={() => setAddingNew(false)} />
+				{/* All four are modals (fixed overlays), rendered once here rather than per-row, matching
+				    AccountListPage's approach. */}
+				<Show when={addingCategory()}>
+					<NewVendorCategoryRow
+						categories={categories() ?? []}
+						onAdded={onAdded}
+						onCancel={() => setAddingCategory(false)}
+					/>
+				</Show>
+				<Show when={addingVendorForCtgId()}>
+					{(ctgId) => (
+						<NewVendorRow
+							ctgId={ctgId()}
+							categories={categories() ?? []}
+							vendors={vendors() ?? []}
+							accounts={accounts() ?? []}
+							onAdded={onAdded}
+							onCancel={() => setAddingVendorForCtgId(null)}
+						/>
+					)}
+				</Show>
+				<Show when={editingCategory()}>
+					{(category) => (
+						<EditableVendorCategoryRow
+							category={category()}
+							categories={categories() ?? []}
+							onEdited={onEdited}
+							onCancel={() => setEditingCategoryId(null)}
+						/>
+					)}
 				</Show>
 				<Show when={editingVendor()}>
 					{(vendor) => (
 						<EditableVendorRow
 							vendor={vendor()}
+							categories={categories() ?? []}
+							vendors={vendors() ?? []}
 							accounts={accounts() ?? []}
 							onEdited={onEdited}
-							onCancel={() => setEditingId(null)}
+							onCancel={() => setEditingVendorId(null)}
 						/>
 					)}
 				</Show>
 
-				<Show when={!vendors.loading} fallback={<p class="text-slate-500">Loading…</p>}>
+				<Show when={!vendors.loading && !categories.loading} fallback={<p class="text-slate-500">Loading…</p>}>
 					<div class="flex-1 overflow-auto rounded-lg bg-white shadow-lg">
 						<table class="min-w-full divide-y divide-gray-200">
 							<thead class="sticky top-0 z-10 bg-blue-100">
@@ -95,9 +138,9 @@ export default function VendorListPage() {
 										<button
 											type="button"
 											class="rounded p-1 text-green-600 hover:bg-gray-200 hover:text-green-800"
-											onClick={() => setAddingNew(true)}
-											aria-label="Add Vendor"
-											title="Add vendor"
+											onClick={() => setAddingCategory(true)}
+											aria-label="Add Vendor Category"
+											title="Add category"
 										>
 											<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 												<path
@@ -121,18 +164,29 @@ export default function VendorListPage() {
 									<th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500">
 										Status
 									</th>
+									<th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500">
+										Add
+									</th>
 								</tr>
 							</thead>
 							<tbody class="divide-y divide-gray-200 bg-white">
-								<For each={visibleVendors()}>
-									{(vendor) => (
-										<VendorRow vendor={vendor} accounts={accounts() ?? []} onEdit={() => setEditingId(vendor.id)} />
+								<For each={groups()}>
+									{(group) => (
+										<VendorCategoryRow
+											group={group}
+											accounts={accounts() ?? []}
+											onEditCategory={() => setEditingCategoryId(group.category.id)}
+											onAddVendor={() => setAddingVendorForCtgId(group.category.id)}
+											onEditVendor={(id) => setEditingVendorId(id)}
+										/>
 									)}
 								</For>
 							</tbody>
 						</table>
-						<Show when={visibleVendors().length === 0}>
-							<p class="p-4 text-center text-gray-500">No vendors yet.</p>
+						<Show when={groups().length === 0}>
+							<p class="p-4 text-center text-gray-500">
+								No vendor categories yet. Add one to get started.
+							</p>
 						</Show>
 					</div>
 				</Show>

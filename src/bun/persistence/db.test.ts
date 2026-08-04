@@ -285,6 +285,7 @@ describe('getCurrentFileInfo', () => {
             accounts: 1,
             accountCategories: 0,
             vendors: 0,
+            vendorCategories: 0,
             transactions: 0,
             balanceAssertions: 0,
         })

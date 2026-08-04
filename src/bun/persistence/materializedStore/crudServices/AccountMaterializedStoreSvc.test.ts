@@ -11,6 +11,7 @@ import { genAcctId } from '../../../../shared/domain/accounts/AcctId'
 import { genAcctCtgId } from '../../../../shared/domain/accountCategories/AcctCtgId'
 import { genOrigId } from '../../../../shared/domain/origins/OrigId'
 import { genVndrId } from '../../../../shared/domain/vendors/VndrId'
+import { genVndrCtgId } from '../../../../shared/domain/vendorCategories/VndrCtgId'
 import { genTxnId } from '../../../../shared/domain/transactions/TxnId'
 
 function makeSvc() {
@@ -205,8 +206,8 @@ describe('AccountMaterializedStoreSvc', () => {
 
             const vndrId = genVndrId()
             db.run(
-                `INSERT INTO vendors (id, orig_id, name, description, default_acct_id, is_active) VALUES (?, ?, ?, ?, ?, ?)`,
-                [vndrId, genOrigId(), 'A Vendor', '', created.id, 1],
+                `INSERT INTO vendors (id, orig_id, name, description, ctg_id, default_acct_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                [vndrId, genOrigId(), 'A Vendor', '', genVndrCtgId(), created.id, 1],
             )
 
             expect(await svc.isAccountInUse(created.id)).toBe(true)

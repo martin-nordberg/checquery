@@ -3,6 +3,7 @@ import type { Account } from "./domain/accounts/Account";
 import type { AcctTypeStr } from "./domain/accounts/AcctType";
 import type { AccountCategory } from "./domain/accountCategories/AccountCategory";
 import type { Vendor } from "./domain/vendors/Vendor";
+import type { VendorCategory } from "./domain/vendorCategories/VendorCategory";
 import type { EncryptionMode } from "./encryptionMode";
 
 export type FileOpenedPayload = {
@@ -34,6 +35,7 @@ export type FileInfoPayload = {
 		accounts: number;
 		accountCategories: number;
 		vendors: number;
+		vendorCategories: number;
 		transactions: number;
 		balanceAssertions: number;
 	};
@@ -83,10 +85,14 @@ export type PatchAccountCategoryParams = {
 };
 
 /** Params for the bun-side createVendor request. isActive is deliberately omitted -- new vendors are always
- * created active; see documentation/vendor-list-implementation-plan.md §0. */
+ * created active; see documentation/vendor-list-implementation-plan.md §0. ctgId is required -- every
+ * vendor must have a category, forced by which category row's "+ Add vendor" was clicked (still shown/
+ * changeable in the form itself, unlike account/parentCtgId which is fully implicit) -- see
+ * documentation/vendor-categories-implementation-plan.md §0/§7. */
 export type CreateVendorParams = {
 	name: string;
 	description?: string;
+	ctgId: string;
 	defaultAcctId?: string;
 };
 
@@ -94,8 +100,21 @@ export type PatchVendorParams = {
 	id: string;
 	name?: string;
 	description?: string;
+	ctgId?: string;
 	defaultAcctId?: string;
 	isActive?: boolean;
+};
+
+/** Params for the bun-side createVendorCategory request. id/origId/hlc are filled in bun-side. */
+export type CreateVendorCategoryParams = {
+	name: string;
+	description?: string;
+};
+
+export type PatchVendorCategoryParams = {
+	id: string;
+	name?: string;
+	description?: string;
 };
 
 export type AppSchema = {
@@ -120,6 +139,11 @@ export type AppSchema = {
 			patchVendor: { params: PatchVendorParams; response: void };
 			deleteVendor: { params: { id: string }; response: void };
 			isVendorInUse: { params: { id: string }; response: boolean };
+			findVendorCategoriesAll: { params: undefined; response: VendorCategory[] };
+			createVendorCategory: { params: CreateVendorCategoryParams; response: void };
+			patchVendorCategory: { params: PatchVendorCategoryParams; response: void };
+			deleteVendorCategory: { params: { id: string }; response: void };
+			isVendorCategoryInUse: { params: { id: string }; response: boolean };
 		};
 	}>;
 	webview: RPCSchema<{

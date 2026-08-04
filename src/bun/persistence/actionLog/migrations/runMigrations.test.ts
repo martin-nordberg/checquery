@@ -25,7 +25,7 @@ describe('runMigrations', () => {
         expect(readSchemaVersion(db)).toBe(latestKnownVersion)
     })
 
-    it('creates _checquery_meta, actions, and the six per-entity lookup tables', () => {
+    it('creates _checquery_meta, actions, and the seven per-entity lookup tables', () => {
         const db = new Database(':memory:')
         runMigrations(db)
         const names = tableNames(db)
@@ -34,6 +34,7 @@ describe('runMigrations', () => {
         expect(names).toContain('account_actions')
         expect(names).toContain('account_category_actions')
         expect(names).toContain('vendor_actions')
+        expect(names).toContain('vendor_category_actions')
         expect(names).toContain('transaction_actions')
         expect(names).toContain('balance_assertion_actions')
         expect(names).toContain('origin_actions')
@@ -50,6 +51,7 @@ describe('runMigrations', () => {
         ['account_actions', ['actn_id', 'acct_id']],
         ['account_category_actions', ['actn_id', 'acct_ctg_id']],
         ['vendor_actions', ['actn_id', 'vndr_id']],
+        ['vendor_category_actions', ['actn_id', 'vndr_ctg_id']],
         ['transaction_actions', ['actn_id', 'txn_id']],
         ['balance_assertion_actions', ['actn_id', 'asrt_id']],
         ['origin_actions', ['actn_id', 'orig_id']],

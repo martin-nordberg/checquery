@@ -4,6 +4,12 @@
 > described in `info-architecture.md` §9, with functionality and look-and-feel matching the account list
 > page (`documentation/account-list-implementation-plan.md`) rather than the old checquery client's inline-
 > row editing — reusing that plan's patterns and components wherever they fit directly.
+>
+> **Superseded in part by `documentation/vendor-categories-implementation-plan.md`**: the flat vendor table
+> described below (§1, §3, §4's `VendorRow`-only shape) was later replaced by a grouped list once every
+> vendor was required to belong to a category. This document is kept for its still-accurate pieces (RPC
+> bridge shape, modal conventions, Default Account picker, delete-guard pattern) — see the newer plan for
+> what actually changed.
 
 ---
 

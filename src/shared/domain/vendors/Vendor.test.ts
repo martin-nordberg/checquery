@@ -3,6 +3,7 @@ import {z} from 'zod'
 import {vendorCreationEventSchema, vendorDeletionEventSchema, vendorReadSchema, vendorPatchEventSchema} from './Vendor'
 import {genVndrId} from './VndrId'
 import {genAcctId} from '../accounts/AcctId'
+import {genVndrCtgId} from '../vendorCategories/VndrCtgId'
 import {getHLClock} from '../core/HybridLogicalClock'
 import {genOrigId} from '../origins/OrigId'
 
@@ -13,6 +14,7 @@ describe('vendorSchema', () => {
             origId: genOrigId(),
             name: 'Acme Corporation',
             description: 'A fictional company',
+            ctgId: genVndrCtgId(),
             isActive: true
         }
 
@@ -22,6 +24,7 @@ describe('vendorSchema', () => {
         expect(result.origId).toBe(input.origId)
         expect(result.name as string).toBe(input.name)
         expect(result.description as string).toBe(input.description)
+        expect(result.ctgId).toBe(input.ctgId)
         expect(result.isActive).toBe(true)
     })
 
@@ -31,6 +34,7 @@ describe('vendorSchema', () => {
             origId: genOrigId(),
             name: '  Acme Corporation  ',
             description: 'A fictional company',
+            ctgId: genVndrCtgId(),
             isActive: true
         }
 
@@ -43,6 +47,7 @@ describe('vendorSchema', () => {
         const input = {
             id: genVndrId(),
             origId: genOrigId(),
+            ctgId: genVndrCtgId(),
             name: ''
         }
 
@@ -53,6 +58,7 @@ describe('vendorSchema', () => {
         const input = {
             id: genVndrId(),
             origId: genOrigId(),
+            ctgId: genVndrCtgId(),
             name: '   '
         }
 
@@ -63,6 +69,7 @@ describe('vendorSchema', () => {
         const input = {
             id: genVndrId(),
             origId: genOrigId(),
+            ctgId: genVndrCtgId(),
             name: 'x'.repeat(201)
         }
 
@@ -73,6 +80,7 @@ describe('vendorSchema', () => {
         const input = {
             id: genVndrId(),
             origId: genOrigId(),
+            ctgId: genVndrCtgId(),
             name: 'Acme\nCorporation'
         }
 
@@ -83,6 +91,7 @@ describe('vendorSchema', () => {
         const input = {
             id: 'invalid-id',
             origId: genOrigId(),
+            ctgId: genVndrCtgId(),
             name: 'Acme Corporation'
         }
 
@@ -93,6 +102,7 @@ describe('vendorSchema', () => {
         const input = {
             id: 'acctabcdefghij1234567890',
             origId: genOrigId(),
+            ctgId: genVndrCtgId(),
             name: 'Acme Corporation'
         }
 
@@ -103,6 +113,7 @@ describe('vendorSchema', () => {
         const input = {
             id: genVndrId(),
             origId: genOrigId(),
+            ctgId: genVndrCtgId(),
             name: 'Acme Corporation',
             description: 'x'.repeat(201)
         }
@@ -114,6 +125,7 @@ describe('vendorSchema', () => {
         const input = {
             id: genVndrId(),
             origId: genOrigId(),
+            ctgId: genVndrCtgId(),
             name: 'Acme Corporation',
             description: 'Line one\nLine two'
         }
@@ -125,6 +137,7 @@ describe('vendorSchema', () => {
         const input = {
             id: genVndrId(),
             origId: genOrigId(),
+            ctgId: genVndrCtgId(),
             name: 'Acme Corporation',
             unknownField: 'should fail'
         }
@@ -139,6 +152,7 @@ describe('origId', () => {
             id: genVndrId(),
             name: 'Acme Corporation',
             description: '',
+            ctgId: genVndrCtgId(),
             isActive: true,
         })).toThrow()
     })
@@ -149,6 +163,7 @@ describe('origId', () => {
             origId: 'not-an-orig-id',
             name: 'Acme Corporation',
             description: '',
+            ctgId: genVndrCtgId(),
             isActive: true,
         })).toThrow()
     })
@@ -159,6 +174,7 @@ describe('origId', () => {
             origId: genVndrId(),
             name: 'Acme Corporation',
             description: '',
+            ctgId: genVndrCtgId(),
             isActive: true,
         })).toThrow()
     })
@@ -166,6 +182,7 @@ describe('origId', () => {
     it('rejects a missing origId on creation', () => {
         expect(() => vendorCreationEventSchema.parse({
             id: genVndrId(),
+            ctgId: genVndrCtgId(),
             name: 'New Vendor',
         })).toThrow()
     })
@@ -184,13 +201,79 @@ describe('origId', () => {
     })
 })
 
+describe('ctgId', () => {
+    it('is required on vendorReadSchema', () => {
+        expect(() => vendorReadSchema.parse({
+            id: genVndrId(),
+            origId: genOrigId(),
+            name: 'Acme Corporation',
+            description: '',
+            isActive: true,
+        })).toThrow()
+    })
+
+    it('is required on vendorCreationEventSchema', () => {
+        expect(() => vendorCreationEventSchema.parse({
+            id: genVndrId(),
+            origId: genOrigId(),
+            name: 'New Vendor',
+        })).toThrow()
+    })
+
+    it('rejects a malformed ctgId', () => {
+        expect(() => vendorCreationEventSchema.parse({
+            id: genVndrId(),
+            origId: genOrigId(),
+            name: 'New Vendor',
+            ctgId: 'not-a-vndr-ctg-id',
+        })).toThrow()
+    })
+
+    it('rejects a ctgId with the wrong entity prefix (a vendor ID, not a vendor category ID)', () => {
+        expect(() => vendorCreationEventSchema.parse({
+            id: genVndrId(),
+            origId: genOrigId(),
+            name: 'New Vendor',
+            ctgId: genVndrId(),
+        })).toThrow()
+    })
+
+    it('is optional on a patch (recategorizing is an ordinary patch, not required every time)', () => {
+        const vendor = vendorPatchEventSchema.parse({
+            id: genVndrId(),
+            origId: genOrigId(),
+            name: 'Renamed',
+        })
+        expect(vendor.ctgId).toBeUndefined()
+    })
+
+    it('can be changed via a patch (recategorizing)', () => {
+        const newCtgId = genVndrCtgId()
+        const vendor = vendorPatchEventSchema.parse({
+            id: genVndrId(),
+            origId: genOrigId(),
+            ctgId: newCtgId,
+        })
+        expect(vendor.ctgId).toBe(newCtgId)
+    })
+
+    it('rejects a malformed ctgId in a patch', () => {
+        expect(() => vendorPatchEventSchema.parse({
+            id: genVndrId(),
+            origId: genOrigId(),
+            ctgId: 'not-a-vndr-ctg-id',
+        })).toThrow()
+    })
+})
+
 describe('vendorCreationSchema', () => {
     it('parses valid creation input', () => {
         const input = {
             id: genVndrId(),
             origId: genOrigId(),
             name: 'New Vendor',
-            description: 'Created for testing'
+            description: 'Created for testing',
+            ctgId: genVndrCtgId(),
         }
 
         const result = vendorCreationEventSchema.parse(input)
@@ -199,11 +282,13 @@ describe('vendorCreationSchema', () => {
         expect(result.origId).toBe(input.origId)
         expect(result.name as string).toBe(input.name)
         expect(result.description as string).toBe(input.description)
+        expect(result.ctgId).toBe(input.ctgId)
     })
 
     it('requires id field', () => {
         const input = {
             origId: genOrigId(),
+            ctgId: genVndrCtgId(),
             name: 'New Vendor'
         }
 
@@ -214,6 +299,7 @@ describe('vendorCreationSchema', () => {
         const input = {
             id: genVndrId(),
             origId: genOrigId(),
+            ctgId: genVndrCtgId(),
         }
 
         expect(() => vendorCreationEventSchema.parse(input)).toThrow()
@@ -223,6 +309,7 @@ describe('vendorCreationSchema', () => {
         const result = vendorCreationEventSchema.parse({
             id: genVndrId(),
             origId: genOrigId(),
+            ctgId: genVndrCtgId(),
             name: 'New Vendor',
         })
         expect(result.description as string).toBe('')
@@ -232,6 +319,7 @@ describe('vendorCreationSchema', () => {
         const result = vendorCreationEventSchema.parse({
             id: genVndrId(),
             origId: genOrigId(),
+            ctgId: genVndrCtgId(),
             name: 'New Vendor',
         })
         expect(result.isActive).toBe(true)
@@ -241,6 +329,7 @@ describe('vendorCreationSchema', () => {
         expect(() => vendorCreationEventSchema.parse({
             id: genVndrId(),
             origId: genOrigId(),
+            ctgId: genVndrCtgId(),
             name: 'New Vendor',
             unknownField: 'should fail',
         })).toThrow()
@@ -250,6 +339,7 @@ describe('vendorCreationSchema', () => {
         expect(() => vendorCreationEventSchema.parse({
             id: genVndrId(),
             origId: genOrigId(),
+            ctgId: genVndrCtgId(),
             name: 'New Vendor',
             defaultAcctId: 'not-an-acct-id',
         })).toThrow()
@@ -293,6 +383,16 @@ describe('vendorCreationSchema', () => {
                     pattern: "^[^\\r\\n]*$",
                     type: "string",
                 },
+                ctgId: {
+                    allOf: [
+                        {pattern: "^[0-9a-z]+$"},
+                        {pattern: "^vctg.*"},
+                    ],
+                    maxLength: 28,
+                    minLength: 28,
+                    format: "cuid2",
+                    type: "string",
+                },
                 defaultAcctId: {
                     allOf: [
                         {pattern: "^[0-9a-z]+$"},
@@ -314,6 +414,7 @@ describe('vendorCreationSchema', () => {
                 "origId",
                 "name",
                 "description",
+                "ctgId",
                 "isActive",
             ],
             type: "object",
@@ -396,6 +497,7 @@ describe('hlc field in vendor event schemas', () => {
             const vendor = vendorCreationEventSchema.parse({
                 id: genVndrId(),
                 origId: genOrigId(),
+                ctgId: genVndrCtgId(),
                 name: 'Acme Corp',
                 hlc,
             })
@@ -406,6 +508,7 @@ describe('hlc field in vendor event schemas', () => {
             const vendor = vendorCreationEventSchema.parse({
                 id: genVndrId(),
                 origId: genOrigId(),
+                ctgId: genVndrCtgId(),
                 name: 'Acme Corp',
             })
             expect(vendor.hlc).toBeUndefined()
@@ -415,6 +518,7 @@ describe('hlc field in vendor event schemas', () => {
             expect(() => vendorCreationEventSchema.parse({
                 id: genVndrId(),
                 origId: genOrigId(),
+                ctgId: genVndrCtgId(),
                 name: 'Acme Corp',
                 hlc: 'not-valid',
             })).toThrow()
@@ -499,6 +603,7 @@ describe('defaultAcctId', () => {
             origId: genOrigId(),
             name: 'Acme Corporation',
             description: '',
+            ctgId: genVndrCtgId(),
             isActive: true,
         })
         expect(vendor.defaultAcctId).toBeUndefined()
@@ -511,6 +616,7 @@ describe('defaultAcctId', () => {
             origId: genOrigId(),
             name: 'Acme Corporation',
             description: '',
+            ctgId: genVndrCtgId(),
             defaultAcctId: acctId,
             isActive: true,
         })
@@ -523,6 +629,7 @@ describe('defaultAcctId', () => {
             origId: genOrigId(),
             name: 'Acme Corporation',
             description: '',
+            ctgId: genVndrCtgId(),
             defaultAcctId: 'not-an-acct-id',
             isActive: true,
         })).toThrow()
@@ -534,6 +641,7 @@ describe('defaultAcctId', () => {
             origId: genOrigId(),
             name: 'Acme Corporation',
             description: '',
+            ctgId: genVndrCtgId(),
             defaultAcctId: genVndrId(),
             isActive: true,
         })).toThrow()
@@ -544,6 +652,7 @@ describe('defaultAcctId', () => {
         const vendor = vendorCreationEventSchema.parse({
             id: genVndrId(),
             origId: genOrigId(),
+            ctgId: genVndrCtgId(),
             name: 'Acme Corporation',
             defaultAcctId: acctId,
         })

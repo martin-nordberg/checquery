@@ -34,16 +34,28 @@ export function createSchema(db: Database): void {
     db.run(`CREATE INDEX accounts_parent_ctg_id_idx ON accounts (parent_ctg_id)`)
 
     db.run(`
+        CREATE TABLE vendor_categories (
+            id          TEXT PRIMARY KEY,
+            orig_id     TEXT NOT NULL,
+            name        TEXT NOT NULL,
+            description TEXT NOT NULL,
+            is_deleted  INTEGER NOT NULL DEFAULT 0
+        )
+    `)
+
+    db.run(`
         CREATE TABLE vendors (
             id              TEXT PRIMARY KEY,
             orig_id         TEXT NOT NULL,
             name            TEXT NOT NULL,
             description     TEXT NOT NULL,
+            ctg_id          TEXT NOT NULL REFERENCES vendor_categories (id),
             default_acct_id TEXT REFERENCES accounts (id),
             is_active       INTEGER NOT NULL,
             is_deleted      INTEGER NOT NULL DEFAULT 0
         )
     `)
+    db.run(`CREATE INDEX vendors_ctg_id_idx ON vendors (ctg_id)`)
 
     db.run(`
         CREATE TABLE transactions (

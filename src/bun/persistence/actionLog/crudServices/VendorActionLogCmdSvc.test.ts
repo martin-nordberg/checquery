@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import { createInMemoryActionLog } from '../inMemory'
 import { vendorCreationEventSchema, vendorDeletionEventSchema, vendorPatchEventSchema } from '../../../../shared/domain/vendors/Vendor'
 import { genVndrId } from '../../../../shared/domain/vendors/VndrId'
+import { genVndrCtgId } from '../../../../shared/domain/vendorCategories/VndrCtgId'
 import { genOrigId } from '../../../../shared/domain/origins/OrigId'
 
 describe('VendorActionLogCmdSvc', () => {
@@ -10,6 +11,7 @@ describe('VendorActionLogCmdSvc', () => {
         const event = vendorCreationEventSchema.parse({
             id: genVndrId(),
             origId: genOrigId(),
+            ctgId: genVndrCtgId(),
             name: 'Acme Corp',
         })
 

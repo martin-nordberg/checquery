@@ -29,6 +29,11 @@ function recordingTarget(): { target: CmdSvcBundle; calls: Map<string, unknown[]
             patchVendor: record('vendors.patchVendor'),
             deleteVendor: record('vendors.deleteVendor'),
         } as any,
+        vendorCategories: {
+            createVendorCategory: record('vendorCategories.createVendorCategory'),
+            patchVendorCategory: record('vendorCategories.patchVendorCategory'),
+            deleteVendorCategory: record('vendorCategories.deleteVendorCategory'),
+        } as any,
         transactions: {
             createTransaction: record('transactions.createTransaction'),
             patchTransaction: record('transactions.patchTransaction'),
@@ -57,6 +62,9 @@ const expectedMethodFor: Record<ActionType, string> = {
     'create-vendor': 'vendors.createVendor',
     'update-vendor': 'vendors.patchVendor',
     'delete-vendor': 'vendors.deleteVendor',
+    'create-vendor-category': 'vendorCategories.createVendorCategory',
+    'update-vendor-category': 'vendorCategories.patchVendorCategory',
+    'delete-vendor-category': 'vendorCategories.deleteVendorCategory',
     'create-transaction': 'transactions.createTransaction',
     'update-transaction': 'transactions.patchTransaction',
     'delete-transaction': 'transactions.deleteTransaction',
@@ -67,7 +75,7 @@ const expectedMethodFor: Record<ActionType, string> = {
 }
 
 describe('replayInto dispatch table', () => {
-    it('dispatches every one of the 16 action types to its matching method with its matching payload', async () => {
+    it('dispatches every one of the 19 action types to its matching method with its matching payload', async () => {
         const log = createInMemoryActionLog()
         for (const actionType of ACTION_TYPES) {
             const payload: { id: string; marker: ActionType; hlc?: HLClock } = { id: `id-${actionType}`, marker: actionType }
