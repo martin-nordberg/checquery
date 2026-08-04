@@ -1,5 +1,14 @@
 # Balance Sheet — Implementation Plan
 
+> **Implemented as planned**, sections §1–§4 built essentially as designed. `bun --conditions=browser test`
+> (the project's actual `bun run test` invocation — note the `--conditions=browser` flag, easy to miss when
+> running a single file directly with plain `bun test`) passes all 1115 tests including the new coverage;
+> `tsc --noEmit` and a production `vite build` are both clean. Not independently verified: actually opening
+> the Electrobun window and eyeballing the report — no automated driver for that exists in this environment
+> (same caveat as the transactions-register, calculator, and yaml-import passes). Run `bun run dev:hmr`,
+> open a file with some Asset/Liability activity, and check the Balance Sheet page to confirm the visual
+> layout, indentation, and Net Worth total look right.
+
 > Covers turning `BalanceSheetPage.tsx` (currently a "coming soon" stub, breadcrumbs already wired — see
 > `documentation/info-architecture.md` §10) into the real Assets/Liabilities/Net Worth snapshot described
 > there, following `../checquery/client`'s `BalanceSheetPage`/`BalanceSheet` as closely as checquery2's

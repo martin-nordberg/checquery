@@ -5,6 +5,7 @@ import type { AccountCategory } from "./domain/accountCategories/AccountCategory
 import type { Vendor } from "./domain/vendors/Vendor";
 import type { VendorCategory } from "./domain/vendorCategories/VendorCategory";
 import type { Transaction } from "./domain/transactions/Transaction";
+import type { AccountBalance } from "./domain/transactions/AccountBalance";
 import type { EncryptionMode } from "./encryptionMode";
 
 export type FileOpenedPayload = {
@@ -178,6 +179,7 @@ export type AppSchema = {
 			createTransaction: { params: CreateTransactionParams; response: void };
 			patchTransaction: { params: PatchTransactionParams; response: void };
 			deleteTransaction: { params: { id: string }; response: void };
+			findAccountBalancesAsOf: { params: { asOfDate: string }; response: AccountBalance[] };
 		};
 	}>;
 	webview: RPCSchema<{

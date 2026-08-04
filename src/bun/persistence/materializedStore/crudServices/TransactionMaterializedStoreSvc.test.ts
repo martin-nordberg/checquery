@@ -11,6 +11,7 @@ import { genTxnId } from '../../../../shared/domain/transactions/TxnId'
 import { genAcctId } from '../../../../shared/domain/accounts/AcctId'
 import { genVndrId } from '../../../../shared/domain/vendors/VndrId'
 import { genOrigId } from '../../../../shared/domain/origins/OrigId'
+import { isoDateSchema } from '../../../../shared/domain/core/IsoDate'
 
 function makeSvc() {
     const db = new Database(':memory:')
@@ -297,6 +298,92 @@ describe('TransactionMaterializedStoreSvc', () => {
         it('returns null when there is no matching transaction', async () => {
             const { svc } = makeSvc()
             expect(await svc.findLatestTransactionForVendorAndAccount(genVndrId(), genAcctId())).toBeNull()
+        })
+    })
+
+    describe('findAccountBalancesAsOf', () => {
+        it('sums multiple entries per account', async () => {
+            const { svc } = makeSvc()
+            const first = transactionCreationEventSchema.parse({
+                id: genTxnId(), origId: genOrigId(), postDate: '2026-01-10', description: 'First',
+                entries: [
+                    { acctId: acctA, debit: '$100.00', credit: '$0.00' },
+                    { acctId: acctB, debit: '$0.00', credit: '$100.00' },
+                ],
+            })
+            const second = transactionCreationEventSchema.parse({
+                id: genTxnId(), origId: genOrigId(), postDate: '2026-01-11', description: 'Second',
+                entries: [
+                    { acctId: acctA, debit: '$50.00', credit: '$0.00' },
+                    { acctId: acctB, debit: '$0.00', credit: '$50.00' },
+                ],
+            })
+            await svc.createTransaction(first)
+            await svc.createTransaction(second)
+
+            const balances = await svc.findAccountBalancesAsOf(isoDateSchema.parse('2026-01-31'))
+            const acctABalance = balances.find((b) => b.acctId === acctA)
+            const acctBBalance = balances.find((b) => b.acctId === acctB)
+            expect(acctABalance!.debit as string).toBe('$150.00')
+            expect(acctABalance!.credit as string).toBe('$0.00')
+            expect(acctBBalance!.debit as string).toBe('$0.00')
+            expect(acctBBalance!.credit as string).toBe('$150.00')
+        })
+
+        it('excludes entries whose transaction is soft-deleted', async () => {
+            const { svc } = makeSvc()
+            const kept = transactionCreationEventSchema.parse({
+                id: genTxnId(), origId: genOrigId(), postDate: '2026-01-10', description: 'Kept',
+                entries: [
+                    { acctId: acctA, debit: '$10.00', credit: '$0.00' },
+                    { acctId: acctB, debit: '$0.00', credit: '$10.00' },
+                ],
+            })
+            const deleted = transactionCreationEventSchema.parse({
+                id: genTxnId(), origId: genOrigId(), postDate: '2026-01-11', description: 'Deleted',
+                entries: [
+                    { acctId: acctA, debit: '$999.00', credit: '$0.00' },
+                    { acctId: acctB, debit: '$0.00', credit: '$999.00' },
+                ],
+            })
+            await svc.createTransaction(kept)
+            await svc.createTransaction(deleted)
+            await svc.deleteTransaction(transactionDeletionEventSchema.parse({ id: deleted.id, origId: genOrigId() }))
+
+            const balances = await svc.findAccountBalancesAsOf(isoDateSchema.parse('2026-01-31'))
+            const acctABalance = balances.find((b) => b.acctId === acctA)
+            expect(acctABalance!.debit as string).toBe('$10.00')
+        })
+
+        it('excludes entries whose transaction postDate is after asOfDate, includes postDate equal to asOfDate', async () => {
+            const { svc } = makeSvc()
+            const onDate = transactionCreationEventSchema.parse({
+                id: genTxnId(), origId: genOrigId(), postDate: '2026-01-15', description: 'On date',
+                entries: [
+                    { acctId: acctA, debit: '$10.00', credit: '$0.00' },
+                    { acctId: acctB, debit: '$0.00', credit: '$10.00' },
+                ],
+            })
+            const afterDate = transactionCreationEventSchema.parse({
+                id: genTxnId(), origId: genOrigId(), postDate: '2026-01-16', description: 'After date',
+                entries: [
+                    { acctId: acctA, debit: '$999.00', credit: '$0.00' },
+                    { acctId: acctB, debit: '$0.00', credit: '$999.00' },
+                ],
+            })
+            await svc.createTransaction(onDate)
+            await svc.createTransaction(afterDate)
+
+            const balances = await svc.findAccountBalancesAsOf(isoDateSchema.parse('2026-01-15'))
+            const acctABalance = balances.find((b) => b.acctId === acctA)
+            expect(acctABalance!.debit as string).toBe('$10.00')
+        })
+
+        it('an account with no qualifying entries is simply absent from the result', async () => {
+            const { svc } = makeSvc()
+            const balances = await svc.findAccountBalancesAsOf(isoDateSchema.parse('2026-01-31'))
+            expect(balances.find((b) => b.acctId === genAcctId())).toBeUndefined()
+            expect(balances).toEqual([])
         })
     })
 })

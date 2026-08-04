@@ -32,6 +32,7 @@ import {
 import {
 	handleCreateTransaction,
 	handleDeleteTransaction,
+	handleFindAccountBalancesAsOf,
 	handleFindLatestTransactionForVendorAndAccount,
 	handleFindTransactionsByAccount,
 	handlePatchTransaction,
@@ -109,6 +110,7 @@ const rpc: ReturnType<typeof BrowserView.defineRPC<AppSchema>> = BrowserView.def
 			createTransaction: (params) => handleCreateTransaction(params),
 			patchTransaction: (params) => handlePatchTransaction(params),
 			deleteTransaction: (params) => handleDeleteTransaction(params),
+			findAccountBalancesAsOf: (params) => handleFindAccountBalancesAsOf(params),
 		},
 		messages: {},
 	},

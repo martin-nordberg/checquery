@@ -6,6 +6,8 @@ import {
 import {type TxnId} from "../../domain/transactions/TxnId";
 import {type AcctId} from "../../domain/accounts/AcctId";
 import {type VndrId} from "../../domain/vendors/VndrId";
+import {type IsoDate} from "../../domain/core/IsoDate";
+import {type AccountBalance} from "../../domain/transactions/AccountBalance";
 import type {ITransactionSvc} from "./ITransactionSvc";
 import type {ITransactionQrySvc} from "./ITransactionQrySvc";
 import type {ITransactionCmdSvc} from "./ITransactionCmdSvc";
@@ -55,6 +57,11 @@ export class TransactionTeeSvc implements ITransactionSvc {
     /** The most recent non-deleted transaction with an entry against this account whose vndrId matches. */
     async findLatestTransactionForVendorAndAccount(vndrId: VndrId, accountId: AcctId): Promise<Transaction | null> {
         return this.qrySvc.findLatestTransactionForVendorAndAccount(vndrId, accountId)
+    }
+
+    /** Net debit/credit totals per account, as of a date. */
+    async findAccountBalancesAsOf(asOfDate: IsoDate): Promise<AccountBalance[]> {
+        return this.qrySvc.findAccountBalancesAsOf(asOfDate)
     }
 
     /** Updates a transaction's attributes. */

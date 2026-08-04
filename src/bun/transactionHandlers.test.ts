@@ -6,6 +6,7 @@ import { closeCurrentFile, createNewFile } from './persistence/db'
 import {
     handleCreateTransaction,
     handleDeleteTransaction,
+    handleFindAccountBalancesAsOf,
     handleFindLatestTransactionForVendorAndAccount,
     handleFindTransactionsByAccount,
     handlePatchTransaction,
@@ -176,5 +177,27 @@ describe('transaction RPC handlers, end to end against a real (temp) file', () =
                 ],
             }),
         ).rejects.toThrow('No file open')
+    })
+
+    it('findAccountBalancesAsOf reflects created transactions, and rejects when no file is open', async () => {
+        const acctA = genAcctId()
+        const acctB = genAcctId()
+
+        await handleCreateTransaction({
+            postDate: '2026-01-15',
+            description: 'Opening balance',
+            entries: [
+                { acctId: acctA, debit: '$100.00', credit: '$0.00' },
+                { acctId: acctB, debit: '$0.00', credit: '$100.00' },
+            ],
+        })
+
+        const balances = await handleFindAccountBalancesAsOf({ asOfDate: '2026-01-31' })
+        const acctABalance = balances.find((b) => b.acctId === acctA)
+        expect(acctABalance!.debit as string).toBe('$100.00')
+        expect(acctABalance!.credit as string).toBe('$0.00')
+
+        closeCurrentFile()
+        await expect(handleFindAccountBalancesAsOf({ asOfDate: '2026-01-31' })).rejects.toThrow('No file open')
     })
 })

@@ -8,6 +8,8 @@ import {
 import { genTxnId, txnIdSchema } from "../shared/domain/transactions/TxnId";
 import { acctIdSchema } from "../shared/domain/accounts/AcctId";
 import { vndrIdSchema } from "../shared/domain/vendors/VndrId";
+import { isoDateSchema } from "../shared/domain/core/IsoDate";
+import type { AccountBalance } from "../shared/domain/transactions/AccountBalance";
 import type { CreateTransactionParams, PatchTransactionParams } from "../shared/rpc";
 
 export async function handleFindTransactionsByAccount(params: { accountId: string }): Promise<Transaction[]> {
@@ -65,4 +67,9 @@ export async function handleDeleteTransaction(params: { id: string }): Promise<v
 		origId,
 	});
 	await store.svcs.transactions.deleteTransaction(event);
+}
+
+export async function handleFindAccountBalancesAsOf(params: { asOfDate: string }): Promise<AccountBalance[]> {
+	const { store } = requireCurrentSession();
+	return store.svcs.transactions.findAccountBalancesAsOf(isoDateSchema.parse(params.asOfDate));
 }

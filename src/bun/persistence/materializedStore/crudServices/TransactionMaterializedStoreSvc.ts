@@ -14,6 +14,7 @@ import type { IsoDate } from "../../../../shared/domain/core/IsoDate";
 import type { DescriptionStr } from "../../../../shared/domain/core/Description";
 import { fromCents, toCents } from "../../../../shared/domain/core/CurrencyAmt";
 import type { OrigId } from "../../../../shared/domain/origins/OrigId";
+import type { AccountBalance } from "../../../../shared/domain/transactions/AccountBalance";
 
 type TransactionRow = {
     id: string
@@ -186,5 +187,26 @@ export class TransactionMaterializedStoreSvc implements ITransactionSvc {
              LIMIT 1`
         ).get(vndrId, accountId) as TransactionRow | null
         return row ? this.hydrate(row) : null
+    }
+
+    /** Net debit/credit totals per account, summed over every live entry whose transaction's post_date is on
+     *  or before asOfDate. Grouped by account only -- no join out to accounts for acct_type/name, so this
+     *  stays a reusable low-level primitive; see materialized-store.md §9 and buildBalanceSheet.ts for how
+     *  callers turn this into a report. */
+    async findAccountBalancesAsOf(asOfDate: IsoDate): Promise<AccountBalance[]> {
+        const rows = this.db.query(
+            `SELECT e.acct_id AS acct_id,
+                    COALESCE(SUM(e.debit_cents), 0) AS debit_cents,
+                    COALESCE(SUM(e.credit_cents), 0) AS credit_cents
+             FROM entries e
+             JOIN transactions t ON t.id = e.transaction_id
+             WHERE t.is_deleted = 0 AND t.post_date <= ?
+             GROUP BY e.acct_id`
+        ).all(asOfDate) as { acct_id: string; debit_cents: number; credit_cents: number }[]
+        return rows.map((row) => ({
+            acctId: row.acct_id as AcctId,
+            debit: fromCents(row.debit_cents),
+            credit: fromCents(row.credit_cents),
+        }))
     }
 }

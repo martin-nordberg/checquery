@@ -2,6 +2,8 @@ import {type Transaction} from "../../domain/transactions/Transaction";
 import {type TxnId} from "../../domain/transactions/TxnId";
 import {type AcctId} from "../../domain/accounts/AcctId";
 import {type VndrId} from "../../domain/vendors/VndrId";
+import {type IsoDate} from "../../domain/core/IsoDate";
+import {type AccountBalance} from "../../domain/transactions/AccountBalance";
 
 
 export interface ITransactionQrySvc {
@@ -19,5 +21,12 @@ export interface ITransactionQrySvc {
     /** The most recent non-deleted transaction with an entry against this account whose vndrId matches, or
      *  null if none -- backs the register's "Repeat Prior" action. */
     findLatestTransactionForVendorAndAccount(vndrId: VndrId, accountId: AcctId): Promise<Transaction | null>
+
+    /** Net debit/credit totals (not sign-flipped for account normal balance -- see buildBalanceSheet.ts) for
+     *  every account with at least one live entry whose transaction's postDate is on or before asOfDate.
+     *  Accounts with no qualifying entries are simply absent from the result, not zero-rows -- the caller
+     *  defaults them to $0.00. Spans every account type, not just ASSET/LIABILITY; the balance sheet filters
+     *  client-side using the same accounts list it already fetches for the category tree. */
+    findAccountBalancesAsOf(asOfDate: IsoDate): Promise<AccountBalance[]>
 
 }
