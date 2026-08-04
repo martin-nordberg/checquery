@@ -4,6 +4,18 @@
 > checquery client/server's YAML action log and producing a new `.checquery` file via checquery2's own
 > persistence stack. Isolated in a new top-level `yaml-import/` folder (sibling to `src/`), not wired into the
 > app itself, per the todo's "expected to be discarded soon."
+>
+> **Implemented as planned**, plus a `yaml-import/tsconfig.json` (extends the root config, `include: ["**/*
+> .ts"]`) so the isolated folder still gets real type-checking during development, and `ImportState`'s "eager
+> constructor" became a static async `ImportState.create(store, origId)` factory (plain constructors can't be
+> async). Verified end-to-end against the real `checquery-test-log-2010.yaml` (2163 directives) with
+> `CHECQUERY_ENCRYPTION_DISABLED=true`: 100 accounts / 101 vendors / 1915 transactions / 36 categories created,
+> 6 deletes and 8 updates replayed, 31 statement directives skipped — and, opening the resulting file back up
+> through checquery2's own `openExistingFile`, every live count reconciles exactly (99 accounts including the
+> one real Net Worth row, 100 vendors, 1912 transactions, after accounting for the deletes), "Banking :
+> Checking" split into the right category/account pair, "Kroger"'s `defaultAccount` resolved to the right
+> account, and the very first transaction ("Opening Balances", 13 entries, balanced against the single real
+> Net Worth account) round-tripped correctly.
 
 ---
 
@@ -49,12 +61,16 @@
   splits into precisely two parts on `" : "` (e.g. `"Banking : Checking"` → category `"Banking"`, account
   `"Checking"`); none have zero or two-or-more occurrences of the separator. The importer's `splitAccountName`
   takes the *first* `" : "` as the split point (category = everything before, account = everything after,
-  even if that remainder itself still contains `" : "` — untested by this file, but a defined, sane fallback
-  rather than silently mis-splitting) and **throws** for a non-EQUITY name with no separator at all, rather
-  than inventing an unrequested "Uncategorized"-for-accounts convention the todo never asked for — a name
-  shaped unexpectedly is exactly the kind of thing this tool should surface for a human to look at, not guess
-  through. Categories are cached per `(acctType, categoryName)` the first time they're needed and reused after
-  that, created directly under that type's fixed root (`acctCtgRootId[acctType]`).
+  even if that remainder itself still contains `" : "` — a defined, sane fallback rather than silently
+  mis-splitting). Categories are cached per `(acctType, categoryName)` the first time they're needed and
+  reused after that, created directly under that type's fixed root (`acctCtgRootId[acctType]`).
+  **Revised after a real run**: a non-EQUITY name with no separator at all (e.g. an account literally named
+  `"Ebates"`, from a real user's actual log — not present in the test file, which is why this wasn't caught
+  during planning) originally **threw**, on the reasoning that an unexpected shape should surface for a human
+  rather than be guessed through. In practice that just aborted an otherwise-good import over one oddly-named
+  account. Changed to fall back to a fixed category **"Other"** (per account type, via the same
+  `getOrCreateCategory` cache — so "Other" under `ASSET` and "Other" under `EXPENSE` are independent
+  categories, same as any other name) rather than failing the whole run.
 - **Vendors get exactly one category, "Uncategorized," created once up front** (per the todo, verbatim).
   Every imported vendor's `ctgId` points at it; nothing about vendor categorization is inferred from the data.
 - **Name references (transaction entries' `account`, a vendor's `defaultAccount`, a transaction's `vendor`)

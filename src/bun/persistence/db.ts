@@ -150,7 +150,7 @@ export type FileErrorCode =
 	| "io-error";
 
 export type FileResult =
-	| { ok: true; path: string; fileId: string; name: string; store: LedgerStore }
+	| { ok: true; path: string; fileId: string; name: string; store: LedgerStore; origId: OrigId }
 	| { ok: false; error: string; code: FileErrorCode };
 
 /**
@@ -217,7 +217,7 @@ export async function createNewFile(
 		currentPath = path;
 		currentLedgerStore = store;
 		currentOrigId = origId;
-		return { ok: true, path, fileId, name: basename(path), store };
+		return { ok: true, path, fileId, name: basename(path), store, origId };
 	} catch (err) {
 		db?.close();
 		return {
@@ -317,7 +317,7 @@ export async function openExistingFile(path: string, password?: string): Promise
 		currentPath = path;
 		currentLedgerStore = store;
 		currentOrigId = origId;
-		return { ok: true, path, fileId, name: basename(path), store };
+		return { ok: true, path, fileId, name: basename(path), store, origId };
 	} catch (err) {
 		db.close();
 		return {
