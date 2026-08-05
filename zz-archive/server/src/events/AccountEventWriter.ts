@@ -1,0 +1,47 @@
+import {
+    type AccountCreationEvent,
+    type AccountDeletionEvent,
+    type AccountPatchEvent,
+} from "$shared/domain/accounts/Account";
+import {type IAccountCmdSvc} from "$shared/services/accounts/IAccountCmdSvc";
+import {appendDirective} from "./ChecqueryYamlAppender";
+import {logger} from "../logger";
+
+
+export class AccountEventWriter implements IAccountCmdSvc {
+
+    async createAccount(accountCreation: AccountCreationEvent): Promise<AccountCreationEvent | null> {
+        logger.info('create-account', {id: accountCreation.id, name: accountCreation.name})
+        await appendDirective({action: 'create-account', payload: {
+            id: accountCreation.id,
+            name: accountCreation.name,
+            acctType: accountCreation.acctType,
+            acctNumber: accountCreation.acctNumber,
+            description: accountCreation.description,
+            isPrimary: accountCreation.isPrimary,
+        }})
+        return accountCreation
+    }
+
+    async deleteAccount(accountDeletion: AccountDeletionEvent): Promise<AccountDeletionEvent | null> {
+        logger.info('delete-account', {id: accountDeletion.id})
+        await appendDirective({action: 'delete-account', payload: {
+            id: accountDeletion.id,
+        }})
+        return accountDeletion
+    }
+
+    async patchAccount(accountPatch: AccountPatchEvent): Promise<AccountPatchEvent | null> {
+        logger.info('update-account', {id: accountPatch.id})
+        await appendDirective({action: 'update-account', payload: {
+            id: accountPatch.id,
+            acctType: accountPatch.acctType,
+            name: accountPatch.name,
+            acctNumber: accountPatch.acctNumber,
+            description: accountPatch.description,
+            isPrimary: accountPatch.isPrimary,
+        }})
+        return accountPatch
+    }
+
+}

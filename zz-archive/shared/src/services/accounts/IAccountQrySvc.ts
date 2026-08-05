@@ -1,0 +1,16 @@
+import {type Account} from "../../domain/accounts/Account";
+import {type AcctId} from "../../domain/accounts/AcctId";
+
+
+export interface IAccountQrySvc {
+
+    /** Finds the account with given unique ID */
+    findAccountById(accountId: AcctId): Promise<Account | null>
+
+    /** Finds the entire list of accounts */
+    findAccountsAll(): Promise<Account[]>
+
+    /** Checks if an account is used in any transaction entry or default for a vendor. */
+    isAccountInUse(accountId: AcctId): Promise<boolean>
+
+}

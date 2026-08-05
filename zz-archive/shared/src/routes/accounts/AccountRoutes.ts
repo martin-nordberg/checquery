@@ -1,0 +1,72 @@
+import {Hono} from 'hono'
+import {
+    type AccountCreationEvent,
+    accountCreationEventSchema,
+    type AccountPatchEvent,
+    accountPatchEventSchema
+} from "../../domain/accounts/Account";
+import {zxValidator} from "../validation/zxvalidator";
+import {z} from "zod";
+import {type IAccountSvc} from "../../services/accounts/IAccountSvc";
+import {acctIdSchema} from "../../domain/accounts/AcctId";
+
+/** REST routes for accounts. */
+export const accountRoutes = (accountService: IAccountSvc) => {
+    return new Hono()
+        .post(
+            '/',
+            zxValidator('json', accountCreationEventSchema),
+            async (c) => {
+                const account: AccountCreationEvent = c.req.valid('json')
+                try {
+                    await accountService.createAccount(account)
+                    return c.body(null, 201)
+                } catch (e: unknown) {
+                    const msg = e instanceof Error ? e.message.toUpperCase() : ''
+                    if (msg.includes('UNIQUE') || msg.includes('DUPLICATE')) {
+                        return c.json({error: `Cannot create account: the name "${account.name}" is already in use.`}, 409)
+                    }
+                    throw e
+                }
+            }
+        )
+        .delete(
+            '/:accountId',
+            zxValidator('param', z.object({accountId: acctIdSchema})),
+            async (c) => {
+                const {accountId} = c.req.valid('param')
+                const inUse = await accountService.isAccountInUse(accountId)
+                if (inUse) {
+                    return c.json({error: 'Account is used in transactions and cannot be deleted'}, 409)
+                }
+                await accountService.deleteAccount({id:accountId})
+                return c.body(null, 204)
+            }
+        )
+        .patch(
+            '/:accountId',
+            zxValidator('param', z.object({accountId: acctIdSchema})),
+            zxValidator('json', accountPatchEventSchema),
+            async (c) => {
+                const {accountId} = c.req.valid('param')
+                const account: AccountPatchEvent = c.req.valid('json')
+                try {
+                    await accountService.patchAccount({...account, id: accountId})
+                    return c.body(null, 201)
+                } catch (e: unknown) {
+                    const msg = e instanceof Error ? e.message.toUpperCase() : ''
+                    if (msg.includes('UNIQUE') || msg.includes('DUPLICATE')) {
+                        return c.json({error: `Cannot rename account: the name "${account.name}" is already in use.`}, 409)
+                    }
+                    throw e
+                }
+            }
+        )
+}
+
+/* Unused local function defined purely for its return type, needed by Hono Client. */
+const acctRoutes = (acctApp: ReturnType<typeof accountRoutes>) => new Hono().route('/accounts', acctApp)
+
+export type AccountRoutes = ReturnType<typeof acctRoutes>
+
+

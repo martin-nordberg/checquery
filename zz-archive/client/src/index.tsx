@@ -1,0 +1,121 @@
+/* @refresh reload */
+import {render} from 'solid-js/web'
+import {createSignal} from 'solid-js'
+import {Navigate, Route, Router} from "@solidjs/router";
+import App from './App.tsx'
+import {lazy} from "solid-js";
+
+import "./index.css"
+import {HomePage} from "./pages/HomePage.tsx";
+import {isoDateToday} from "$shared/domain/core/IsoDate.ts";
+import IncomeStatementPage from "./pages/incomestatement/IncomeStatementPage.tsx";
+import {createPgLiteDb} from "$shared/database/PgLiteDb.ts";
+import {runChecqueryPgDdl} from "$shared/database/CheckqueryPgDdl.ts";
+import {AccountRepo} from "$shared/database/accounts/AccountRepo.ts";
+import {StatementRepo} from "$shared/database/statements/StatementRepo.ts";
+import {TransactionRepo} from "$shared/database/transactions/TransactionRepo.ts";
+import {VendorRepo} from "$shared/database/vendors/VendorRepo.ts";
+import {BalanceSheetRepo} from "$shared/database/balancesheet/BalanceSheetRepo.ts";
+import {IncomeStatementRepo} from "$shared/database/incomestatement/IncomeStatementRepo.ts";
+import {RegisterRepo} from "$shared/database/register/RegisterRepo.ts";
+import {ExpenseLogRepo} from "$shared/database/expenselog/ExpenseLogRepo.ts";
+import {IncomeLogRepo} from "$shared/database/incomelog/IncomeLogRepo.ts";
+import {AccountClientSvc} from "./clients/accounts/AccountClientSvc.ts";
+import {VendorClientSvc} from "./clients/vendors/VendorClientSvc.ts";
+import {TransactionClientSvc} from "./clients/transactions/TransactionClientSvc.ts";
+import {StatementClientSvc} from "./clients/statements/StatementClientSvc.ts";
+import {AccountTeeSvc} from "$shared/services/accounts/AccountTeeSvc.ts";
+import {TransactionTeeSvc} from "$shared/services/transactions/TransactionTeeSvc.ts";
+import {VendorTeeSvc} from "$shared/services/vendors/VendorTeeSvc.ts";
+import {StatementTeeSvc} from "$shared/services/statements/StatementTeeSvc.ts";
+import {WsClient} from "./ws/WsClient.ts";
+import {ServicesContext} from "./services/ServicesContext.ts";
+
+const BalanceSheetPage = lazy(() => import("./pages/balancesheet/BalanceSheetPage"));
+const RegisterPage = lazy(() => import("./pages/register/RegisterPage"));
+const ExpenseLogPage = lazy(() => import("./pages/expenselog/ExpenseLogPage"));
+const IncomeLogPage = lazy(() => import("./pages/incomelog/IncomeLogPage"));
+const VendorsPage = lazy(() => import("./pages/vendors/VendorsPage"));
+const AccountsPage = lazy(() => import("./pages/accounts/AccountsPage"));
+
+const root = document.getElementById('root')
+
+const db = await createPgLiteDb("001")
+runChecqueryPgDdl(db)
+
+// Database repos
+const accountRepo = new AccountRepo(db)
+const statementRepo = new StatementRepo(db)
+const transactionRepo = new TransactionRepo(db)
+const vendorRepo = new VendorRepo(db)
+
+// HTTP client services
+const accountHttpSvc = new AccountClientSvc()
+const vendorHttpSvc = new VendorClientSvc()
+const transactionHttpSvc = new TransactionClientSvc()
+const statementHttpSvc = new StatementClientSvc()
+
+// UI services: reads from local DB, writes to HTTP server only (local DB updated via WS broadcast)
+const acctSvc = new AccountTeeSvc(accountRepo, [accountHttpSvc])
+const vndrSvc = new VendorTeeSvc(vendorRepo, [vendorHttpSvc])
+const txnSvc = new TransactionTeeSvc(transactionRepo, [transactionHttpSvc])
+const stmtSvc = new StatementTeeSvc(statementRepo, [statementHttpSvc])
+const regSvc = new RegisterRepo(db)
+const expSvc = new ExpenseLogRepo(db)
+const incSvc = new IncomeLogRepo(db)
+const bsSvc = new BalanceSheetRepo(db)
+const isSvc = new IncomeStatementRepo(db)
+
+// WS dispatch services: write incoming server events to local DB
+const wsAcctSvc = new AccountTeeSvc(accountRepo, [accountRepo])
+const wsTransactionSvc = new TransactionTeeSvc(transactionRepo, [transactionRepo])
+const wsVndrSvc = new VendorTeeSvc(vendorRepo, [vendorRepo])
+const wsStmtSvc = new StatementTeeSvc(statementRepo, [statementRepo])
+
+const wsClient = new WsClient(wsAcctSvc, wsTransactionSvc, wsVndrSvc, wsStmtSvc)
+
+const [isReady, setIsReady] = createSignal(false)
+const [isConnected, setIsConnected] = createSignal(false)
+
+const serverHost = `${window.location.hostname}:3001`
+fetch(`http://${serverHost}/replay`)
+    .then(r => r.json())
+    .then(async (directives: {action: string, payload: Record<string, unknown>}[]) => {
+        for (const directive of directives) {
+            await wsClient.dispatchAsync(directive)
+        }
+    })
+    .then(() => {
+        wsClient.connect(`ws://${serverHost}/ws`, setIsConnected)
+        setIsReady(true)
+    })
+    .catch((e) => console.error('[Replay] Failed to load initial data', e))
+
+render(() => (
+    <ServicesContext.Provider value={{db, acctSvc, vndrSvc, txnSvc, stmtSvc, regSvc, expSvc, incSvc, bsSvc, isSvc}}>
+        {isReady() ? (
+            <>
+                {!isConnected() && (
+                    <div style="position:fixed;top:0;left:0;right:0;background:#f59e0b;color:#000;text-align:center;padding:4px;z-index:1000">
+                        Reconnecting…
+                    </div>
+                )}
+                <Router root={App}>
+                    <Route path="/" component={HomePage}/>
+                    <Route path="/balancesheet" component={() => <Navigate href={"./" + isoDateToday}/>}/>
+                    <Route path="/balancesheet/:endingDate" component={BalanceSheetPage}/>
+                    <Route path="/incomestatement" component={() => <Navigate href={"./2026-01/summary"}/>}/>
+                    <Route path="/incomestatement/:period" component={() => <Navigate href={"./summary"}/>}/>
+                    <Route path="/incomestatement/:period/:view" component={IncomeStatementPage}/>
+                    <Route path="/register/:accountId" component={RegisterPage}/>
+                    <Route path="/expenselog/:accountId" component={ExpenseLogPage}/>
+                    <Route path="/incomelog/:accountId" component={IncomeLogPage}/>
+                    <Route path="/vendors" component={VendorsPage}/>
+                    <Route path="/accounts" component={AccountsPage}/>
+                </Router>
+            </>
+        ) : (
+            <p>Loading…</p>
+        )}
+    </ServicesContext.Provider>
+), root!)
