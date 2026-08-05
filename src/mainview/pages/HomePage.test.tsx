@@ -18,7 +18,8 @@ describe("HomePage", () => {
 		setCurrentFile({ path: "C:\\ledgers\\test.checquery", fileId: "file123", name: "test.checquery" });
 		const { getByText, queryByText } = renderPage("/", "/", HomePage);
 
-		expect(getByText("test.checquery")).toBeTruthy();
+		expect(getByText("test")).toBeTruthy();
+		expect(queryByText("test.checquery")).toBeNull();
 		expect(getByText("File Info")).toBeTruthy();
 		expect(getByText("Close This File")).toBeTruthy();
 		expect(getByText("Edit the List of Asset Accounts")).toBeTruthy();

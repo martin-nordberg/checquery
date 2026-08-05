@@ -10,17 +10,25 @@ describe("FileBreadcrumb", () => {
 		expect(container.querySelector("li")).toBeNull();
 	});
 
-	it("renders the file name as a link back home by default", () => {
+	it("renders the file name as a link back home by default, without the .checquery extension", () => {
 		setCurrentFile({ path: "C:\\ledgers\\test.checquery", fileId: "file123", name: "test.checquery" });
-		const { getByText } = renderPage("/", "/", () => <FileBreadcrumb />);
-		expect(getByText("test.checquery").closest("a")?.getAttribute("href")).toBe("/");
+		const { getByText, queryByText } = renderPage("/", "/", () => <FileBreadcrumb />);
+		expect(getByText("test").closest("a")?.getAttribute("href")).toBe("/");
+		expect(queryByText("test.checquery")).toBeNull();
 		setCurrentFile(null);
 	});
 
 	it("renders the file name as plain text (no link) when linkHome is false", () => {
 		setCurrentFile({ path: "C:\\ledgers\\test.checquery", fileId: "file123", name: "test.checquery" });
 		const { getByText } = renderPage("/", "/", () => <FileBreadcrumb linkHome={false} />);
-		expect(getByText("test.checquery").closest("a")).toBeNull();
+		expect(getByText("test").closest("a")).toBeNull();
+		setCurrentFile(null);
+	});
+
+	it("strips the .checquery-test extension too (unencrypted test-mode files)", () => {
+		setCurrentFile({ path: "C:\\ledgers\\test.checquery-test", fileId: "file123", name: "test.checquery-test" });
+		const { getByText } = renderPage("/", "/", () => <FileBreadcrumb />);
+		expect(getByText("test")).toBeTruthy();
 		setCurrentFile(null);
 	});
 });

@@ -8,6 +8,12 @@ type FileBreadcrumbProps = {
 	linkHome?: boolean;
 };
 
+/** Strips a trailing ".checquery" or ".checquery-test" extension for display -- the breadcrumb shows just
+ * the file's name, not its on-disk extension. */
+function displayName(name: string): string {
+	return name.replace(/\.checquery(-test)?$/, "");
+}
+
 /** The `[File Name]` breadcrumb segment. Renders nothing when no file is open. There's only ever one
  * file open at a time, so unlike other breadcrumbs this never becomes a HoverableDropDown -- it has no
  * siblings to switch between. */
@@ -17,10 +23,10 @@ export default function FileBreadcrumb(props: FileBreadcrumbProps) {
 			{(file) => (
 				<Breadcrumb>
 					{props.linkHome === false ? (
-						file().name
+						displayName(file().name)
 					) : (
 						<A class="hover:underline" href="/">
-							{file().name}
+							{displayName(file().name)}
 						</A>
 					)}
 				</Breadcrumb>
