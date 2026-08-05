@@ -5,6 +5,7 @@ import Breadcrumb from "../../components/nav/Breadcrumb";
 import FileBreadcrumb from "../../components/nav/FileBreadcrumb";
 import HoverableDropDown from "../../components/nav/HoverableDropDown";
 import CategoryRollupTable from "../../components/reports/CategoryRollupTable";
+import NetTotalTable from "../../components/reports/NetTotalTable";
 import { balanceSheetIconPath, incomeStatementIconPath } from "../../nav/icons";
 import { isoDateSchema, isoDateToday, type IsoDate } from "../../../shared/domain/core/IsoDate";
 import { accountsClient } from "../../accounts/accountsClient";
@@ -76,14 +77,11 @@ export default function BalanceSheetPage() {
 					when={!accounts.loading && !categories.loading && !balances.loading}
 					fallback={<p class="text-slate-500">Loading…</p>}
 				>
-					<div class="flex gap-4">
-						<CategoryRollupTable section={balanceSheet().assets} acctType="ASSET" />
+					<div class="flex items-start gap-4">
+						<CategoryRollupTable section={balanceSheet().assets} acctType="ASSET" valueHeading="Balance" />
 						<div class="flex flex-1 flex-col gap-4">
-							<CategoryRollupTable section={balanceSheet().liabilities} acctType="LIABILITY" />
-							<div class="flex items-center justify-between rounded-lg bg-blue-50 px-6 py-3 shadow-lg">
-								<span class="text-sm font-semibold text-gray-900">Net Worth</span>
-								<span class="text-sm font-semibold text-gray-900">{balanceSheet().netWorth}</span>
-							</div>
+							<CategoryRollupTable section={balanceSheet().liabilities} acctType="LIABILITY" valueHeading="Balance" />
+							<NetTotalTable heading="Equity" valueHeading="Balance" rowLabel="Net Worth" amount={balanceSheet().netWorth} />
 						</div>
 					</div>
 				</Show>

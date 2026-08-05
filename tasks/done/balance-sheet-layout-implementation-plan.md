@@ -1,6 +1,24 @@
 # Balance Sheet / Income Statement Layout — Implementation Plan
 
-> Covers the task's source todo (+ its adjacent `tasks/planned/balance-sheet-layout.png` mockup of the old
+> **Implemented as planned**, with one correction made mid-implementation: §0's original whitespace-bug
+> diagnosis put the `items-start` fix on the *inner* right-hand column. That's wrong — `align-items` on a
+> `flex-col` controls the **horizontal** (cross-axis) sizing of its children, not vertical, so it would have
+> been a no-op for the height-stretch bug and would additionally have broken the Liabilities/Equity tables'
+> intended full-width stretch. The fix actually belongs on the **outer row** (`<div class="flex gap-4">` →
+> `flex items-start gap-4`), whose cross-axis *is* vertical — that's what was stretching the right-hand
+> column tall in the first place, which is what gave the inner `flex-1` Liabilities table extra vertical
+> space to grow into. §0 and the code snippets below have been corrected in place to match what was actually
+> built. Also hit, and worth flagging again: `getByText`/`queryByText` throw on *multiple* matches, not just
+> zero — `NetTotalTable`'s heading (`"Net Income"`) and its data-row label (also `"Net Income"`, by design)
+> collide, so the test uses `getAllByText(...).find(el => el.tagName === "TD")` to disambiguate (same class of
+> mistake as the one flagged in `income-statement-implementation-plan.md`'s own "Implemented as planned"
+> note — this is clearly a recurring trap worth remembering, not a one-off). `bun run test` passes all 1144
+> tests including the extended coverage; `tsc --noEmit` and a production `vite build` are both clean. Not
+> independently verified: actually opening the Electrobun window and eyeballing the layout against
+> `tasks/done/balance-sheet-layout.png` — no automated driver exists in this environment (same caveat as
+> every prior UI-facing pass in this repo).
+
+> Covers the task's source todo (+ its adjacent `tasks/done/balance-sheet-layout.png` mockup of the old
 > checquery balance sheet): fixing a layout bug in the Balance Sheet's right-hand column, turning the Net
 > Worth/Net Income "highlighted bar" into a proper table matching the Assets/Liabilities/Expenses/Income
 > table style, and one column-header text tweak on the Income Statement Summary view. Purely presentational —
@@ -18,18 +36,24 @@
   about reverting checquery2's category-tree/indentation work: *"this figure is not meant to propose any
   changes to the current hierarchical asset and liability rows."* Nothing about `CategoryRollupTable`'s
   category-rollup rendering changes.
-- **Root cause of the Liabilities whitespace bug**: `CategoryRollupTable`'s own root `<div>` carries
-  `class="flex-1 ..."`. That's correct when it's the width-flexed child of the top-level `flex gap-4` *row*
-  (Assets vs. the right-hand column), but the *same* component is also placed as a plain child inside the
-  right-hand column's `flex flex-1 flex-col gap-4` — a flex **column** — where default cross-axis
-  `align-items: stretch` makes that `flex-1` stretch the Liabilities table's own height to fill the column
-  (which itself has been stretched tall to match Assets' height by the outer row). The result: genuine empty
-  space inside the Liabilities table's rounded box, below its last row. Fix: add `items-start` to the
-  right-hand column's classes in both `BalanceSheetPage.tsx` and `IncomeStatementSummary.tsx` (which has the
-  identical two-column structure) — this overrides the column's cross-axis alignment so each child (the
-  `CategoryRollupTable` and the new Equity/Net-Income table) sizes to its own content instead of stretching.
-  This one class change is what makes "the EQUITY table aligns just below the LIABILITIES table" true as a
-  consequence, not something that needs separate handling.
+- **Root cause of the Liabilities whitespace bug, and where the fix actually belongs**: the top-level
+  `<div class="flex gap-4">` *row* has Assets and the right-hand column as its two direct children, with no
+  `items-start` of its own — so default cross-axis (vertical, for a row) `align-items: stretch` stretches the
+  right-hand column's height to match Assets' (taller) height. *Inside* that now-artificially-tall column
+  (`flex flex-1 flex-col gap-4`), the Liabilities `CategoryRollupTable`'s own root `<div>` carries
+  `class="flex-1 ..."` — correct for its *other* role (the width-flexed child of the outer row when it's used
+  as Assets), but here, as a plain child of a `flex-col`, `flex-1` governs the **main axis**, i.e. vertical
+  grow — so it grabs all of the column's artificial extra height, stretching its own rounded box past its
+  actual content. The fix therefore belongs on the **outer row**, not the inner column: add `items-start` to
+  `<div class="flex gap-4">` (→ `flex items-start gap-4`). That stops the outer row from stretching the
+  right-hand column tall in the first place, so the column's own height collapses to its natural content
+  height (Liabilities + gap + the new Equity table), leaving Liabilities' `flex-1` nothing extra to grow into.
+  Putting `items-start` on the *inner* column instead would be a no-op for this bug (that column's cross axis
+  is horizontal, not vertical — `align-items` there controls the children's *width*, not height) and would
+  additionally break the intended full-width stretch of the Liabilities/Equity tables, which needs the inner
+  column's default `align-items: stretch` left alone. This one outer-row class change is also what makes "the
+  EQUITY table aligns just below the LIABILITIES table" true as a consequence, not something that needs
+  separate handling.
 - **A new shared component, `NetTotalTable.tsx`**, replaces the existing inline "highlighted bar" `<div>` for
   both Net Worth (Balance Sheet) and Net Income (Income Statement **Summary** view only — see below):
   same visual family as `CategoryRollupTable` (`<table>`, sticky `bg-blue-100` header row, `bg-blue-50` total
@@ -78,7 +102,7 @@ type NetTotalTableProps = {
 /**
  * A CategoryRollupTable-styled table for a single already-computed derived total, shown twice (once as the
  * "account-shaped" data row, once as the closing "Total {heading}" row) -- matches the old app's EQUITY
- * table shape (see tasks/planned/balance-sheet-layout.png): one row plus a total row with the same figure.
+ * table shape (see tasks/done/balance-sheet-layout.png): one row plus a total row with the same figure.
  * Reused for Net Worth (Balance Sheet) and Net Income (Income Statement Summary) -- see
  * documentation/balance-sheet-layout-implementation-plan.md §0.
  */
@@ -142,22 +166,18 @@ file.
 ```tsx
 import NetTotalTable from "../../components/reports/NetTotalTable";
 // ...
-<div class="flex gap-4">
+<div class="flex items-start gap-4">
 	<CategoryRollupTable section={balanceSheet().assets} acctType="ASSET" valueHeading="Balance" />
-	<div class="flex flex-1 flex-col items-start gap-4">
+	<div class="flex flex-1 flex-col gap-4">
 		<CategoryRollupTable section={balanceSheet().liabilities} acctType="LIABILITY" valueHeading="Balance" />
 		<NetTotalTable heading="Equity" valueHeading="Balance" rowLabel="Net Worth" amount={balanceSheet().netWorth} />
 	</div>
 </div>
 ```
 
-Two changes from today: `items-start` added to the right-hand column's class list (§0's whitespace fix,
-`w-full` is not needed since neither child needs forcing to the column's full width — `CategoryRollupTable`
-still has its own `flex-1` for width, which continues to work fine at `items-start` since `flex-1` governs
-main-axis, not cross-axis, sizing in a `flex-row` context, but this column is a `flex-col`, so `flex-1` here
-governs *height* only, which is exactly what `items-start` neutralizes; width is unaffected either way since
-block-level table content already fills the column's width by default), and the inline Net Worth `<div>`
-replaced by `<NetTotalTable>`.
+Two changes from today: `items-start` added to the **outer row's** class list (§0's whitespace fix — not the
+inner column, which keeps its default stretch so the Liabilities/Equity tables still fill the column's full
+width), and the inline Net Worth `<div>` replaced by `<NetTotalTable>`.
 
 ---
 
@@ -166,9 +186,9 @@ replaced by `<NetTotalTable>`.
 ```tsx
 import NetTotalTable from "../reports/NetTotalTable";
 // ...
-<div class="flex gap-4">
+<div class="flex items-start gap-4">
 	<CategoryRollupTable section={summary().expenses} acctType="EXPENSE" valueHeading="Amount" />
-	<div class="flex flex-1 flex-col items-start gap-4">
+	<div class="flex flex-1 flex-col gap-4">
 		<CategoryRollupTable section={summary().income} acctType="INCOME" valueHeading="Amount" />
 		<NetTotalTable heading="Net Income" valueHeading="Amount" rowLabel="Net Income" amount={summary().netIncome} />
 	</div>
@@ -176,7 +196,7 @@ import NetTotalTable from "../reports/NetTotalTable";
 ```
 
 Same three changes as Balance Sheet: `valueHeading="Amount"` on both `CategoryRollupTable` calls (the text
-tweak the todo asks for), `items-start` on the right-hand column, inline Net Income `<div>` replaced by
+tweak the todo asks for), `items-start` on the outer row, inline Net Income `<div>` replaced by
 `<NetTotalTable>`.
 
 ---
@@ -187,12 +207,12 @@ tweak the todo asks for), `items-start` on the right-hand column, inline Net Inc
   existing Net-Worth-is-not-a-link assertion, add checks that the Equity table's headers read `"Equity"`/
   `"Balance"`, the `"Total Equity"` row's `<tr>` textContent contains the same `$600.00` figure as the `"Net
   Worth"` row, and (a cheap regression guard for §0's whitespace fix, since happy-dom doesn't compute real
-  layout so the whitespace itself isn't otherwise testable) the right-hand column element carries the
-  `items-start` class.
+  layout so the whitespace itself isn't otherwise testable) the outer row element carries the `items-start`
+  class.
 - `IncomeStatementPage.test.tsx` — extend the existing "summary view" test the same way (`"Net Income"`/
-  `"Amount"` headers, `"Total Net Income"` row matching `$2,600.00`, `items-start` present) and add one
-  assertion that `queryByText("Balance")` is `null` in the Summary view (mirroring the Details view's existing
-  "Balance shouldn't appear" test) now that Summary's tables say `"Amount"` instead.
+  `"Amount"` headers, `"Total Net Income"` row matching `$2,600.00`, `items-start` on the outer row) and add
+  one assertion that `queryByText("Balance")` is `null` in the Summary view (mirroring the Details view's
+  existing "Balance shouldn't appear" test) now that Summary's tables say `"Amount"` instead.
 - No test for the whitespace bug's actual visual absence — confirmed only by eye. See §6.
 
 ## 6. Suggested order of work
@@ -205,7 +225,7 @@ tweak the todo asks for), `items-start` on the right-hand column, inline Net Inc
 4. Extend the two test files (§5).
 5. `tsc --noEmit`, `bun run test`, production `vite build`.
 6. Manual check: `bun run dev:hmr`, open a file with both Asset/Liability and Expense/Income activity, and
-   visually confirm — against `tasks/planned/balance-sheet-layout.png` — that the Liabilities table has no
+   visually confirm — against `tasks/done/balance-sheet-layout.png` — that the Liabilities table has no
    trailing blank space, the Equity table sits directly below it with the same width, and the Income Statement
    Summary looks the same way for Income/Net Income. No automated driver exists in this environment for this
    check (same caveat as every prior UI-facing pass in this repo).

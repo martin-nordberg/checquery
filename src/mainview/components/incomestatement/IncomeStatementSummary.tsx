@@ -1,6 +1,7 @@
 import { createMemo, createResource, Show } from "solid-js";
 import { type Period, getEndDate, getStartDate } from "../../../shared/domain/core/Period";
 import CategoryRollupTable from "../reports/CategoryRollupTable";
+import NetTotalTable from "../reports/NetTotalTable";
 import { accountsClient } from "../../accounts/accountsClient";
 import { accountCategoriesClient } from "../../accountCategories/accountCategoriesClient";
 import { transactionsClient } from "../../transactions/transactionsClient";
@@ -30,14 +31,11 @@ export default function IncomeStatementSummary(props: IncomeStatementSummaryProp
 			when={!accounts.loading && !categories.loading && !balances.loading}
 			fallback={<p class="text-slate-500">Loading…</p>}
 		>
-			<div class="flex gap-4">
-				<CategoryRollupTable section={summary().expenses} acctType="EXPENSE" />
+			<div class="flex items-start gap-4">
+				<CategoryRollupTable section={summary().expenses} acctType="EXPENSE" valueHeading="Amount" />
 				<div class="flex flex-1 flex-col gap-4">
-					<CategoryRollupTable section={summary().income} acctType="INCOME" />
-					<div class="flex items-center justify-between rounded-lg bg-blue-50 px-6 py-3 shadow-lg">
-						<span class="text-sm font-semibold text-gray-900">Net Income</span>
-						<span class="text-sm font-semibold text-gray-900">{summary().netIncome}</span>
-					</div>
+					<CategoryRollupTable section={summary().income} acctType="INCOME" valueHeading="Amount" />
+					<NetTotalTable heading="Net Income" valueHeading="Amount" rowLabel="Net Income" amount={summary().netIncome} />
 				</div>
 			</div>
 		</Show>

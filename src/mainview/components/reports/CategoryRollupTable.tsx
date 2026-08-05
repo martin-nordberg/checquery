@@ -7,6 +7,7 @@ import type { CategoryRollupLine, CategoryRollupSection } from "../../reports/bu
 type CategoryRollupTableProps = {
 	section: CategoryRollupSection;
 	acctType: AcctTypeStr;
+	valueHeading: string; // "Balance" (Balance Sheet) | "Amount" (Income Statement Summary)
 };
 
 /**
@@ -24,7 +25,9 @@ export default function CategoryRollupTable(props: CategoryRollupTableProps) {
 						<th class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500">
 							{props.section.heading}
 						</th>
-						<th class="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-gray-500">Balance</th>
+						<th class="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-gray-500">
+							{props.valueHeading}
+						</th>
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-gray-200 bg-white">

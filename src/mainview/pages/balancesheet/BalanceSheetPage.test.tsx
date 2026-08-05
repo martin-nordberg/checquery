@@ -94,7 +94,7 @@ describe("BalanceSheetPage", () => {
 			balance(creditCard.id, "$0.00", "$400.00"),
 		]);
 
-		const { findByText, getByText } = renderBalanceSheet("2026-03-15");
+		const { findByText, getByText, container } = renderBalanceSheet("2026-03-15");
 		await findByText("Checking");
 
 		// Category row shows its own rolled-up subtotal, indented less than its child account.
@@ -112,9 +112,17 @@ describe("BalanceSheetPage", () => {
 		expect(checkingCell.closest("a")).toBeTruthy();
 		expect(getByText("Credit Card").closest("a")).toBeTruthy();
 
-		// Net Worth is a computed total, not an account row -- never a link.
+		// Equity renders as its own table (headers "Equity"/"Balance"), matching the Assets/Liabilities
+		// tables' shape -- a "Net Worth" data row and a "Total Equity" row, both showing the same computed
+		// total. Never a link -- it's a derived total, not an account row.
+		expect(getByText("Equity")).toBeTruthy();
 		const netWorthLabel = getByText("Net Worth");
 		expect(netWorthLabel.closest("a")).toBeNull();
-		expect(netWorthLabel.closest("div")!.textContent).toContain("$600.00");
+		expect(netWorthLabel.closest("tr")!.textContent).toContain("$600.00");
+		expect(getByText("Total Equity").closest("tr")!.textContent).toContain("$600.00");
+
+		// Regression guard for the Liabilities-table whitespace fix: the outer row (not the inner column --
+		// see balance-sheet-layout-implementation-plan.md §0) must not stretch its children to equal height.
+		expect(container.querySelector(".flex.items-start.gap-4")).toBeTruthy();
 	});
 });

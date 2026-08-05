@@ -133,7 +133,10 @@ describe("IncomeStatementPage", () => {
 				balance(salary.id, "$0.00", "$3,000.00"),
 			]);
 
-			const { findByText, getByText } = renderIncomeStatement("2026-03", "summary");
+			const { findByText, getByText, getAllByText, queryByText, container } = renderIncomeStatement(
+				"2026-03",
+				"summary",
+			);
 			await findByText("Electric");
 
 			const billsCell = getByText("Bills");
@@ -147,8 +150,23 @@ describe("IncomeStatementPage", () => {
 			expect(electricCell.closest("a")).toBeTruthy();
 			expect(getByText("Salary").closest("a")).toBeTruthy();
 
-			const netIncomeLabel = getByText("Net Income");
-			expect(netIncomeLabel.closest("div")!.textContent).toContain("$2,600.00");
+			// Expenses/Income tables say "Amount", not "Balance" (Balance Sheet's convention).
+			expect(queryByText("Balance")).toBeNull();
+
+			// Net Income renders as its own table (headers "Net Income"/"Amount"), matching the
+			// Expenses/Income tables' shape -- a "Net Income" data row and a "Total Net Income" row, both
+			// showing the same computed total. "Net Income" matches both the table's <th> heading and its
+			// data row's <td>, so disambiguate by tag.
+			const netIncomeMatches = getAllByText("Net Income");
+			expect(netIncomeMatches).toHaveLength(2);
+			const netIncomeRow = netIncomeMatches.find((el) => el.tagName === "TD")!;
+			expect(netIncomeRow.closest("a")).toBeNull();
+			expect(netIncomeRow.closest("tr")!.textContent).toContain("$2,600.00");
+			expect(getByText("Total Net Income").closest("tr")!.textContent).toContain("$2,600.00");
+
+			// Regression guard for the Income-table whitespace fix (see
+			// balance-sheet-layout-implementation-plan.md §0 -- same outer-row fix as Balance Sheet).
+			expect(container.querySelector(".flex.items-start.gap-4")).toBeTruthy();
 		});
 	});
 
