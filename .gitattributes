@@ -1,0 +1,10 @@
+# Force LF line endings for text files in this repo, regardless of the
+# platform or the local core.autocrlf setting.
+* text=auto eol=lf
+
+*.checquery binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
