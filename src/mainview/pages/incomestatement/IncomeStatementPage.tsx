@@ -6,6 +6,7 @@ import FileBreadcrumb from "../../components/nav/FileBreadcrumb";
 import HoverableDropDown from "../../components/nav/HoverableDropDown";
 import IncomeStatementSummary from "../../components/incomestatement/IncomeStatementSummary";
 import IncomeStatementDetails from "../../components/incomestatement/IncomeStatementDetails";
+import PrintButton from "../../components/common/PrintButton";
 import { balanceSheetIconPath, incomeStatementIconPath } from "../../nav/icons";
 import { periodSchema } from "../../../shared/domain/core/Period";
 import { isoDateToday } from "../../../shared/domain/core/IsoDate";
@@ -66,7 +67,7 @@ export default function IncomeStatementPage() {
 
 	return (
 		<>
-			<TopNav>
+			<TopNav right={<PrintButton />}>
 				<FileBreadcrumb />
 				<Breadcrumb>
 					<HoverableDropDown

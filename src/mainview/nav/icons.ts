@@ -25,3 +25,7 @@ export const incomeLogIconPath = "M6 18L18 6M18 6H10M18 6v8";
 
 /** New to checquery2 -- a simple bar-chart glyph for the Budgeting section / Annual Budget page. */
 export const budgetIconPath = "M4 20h16M7 20V10m5 10V4m5 16v-7";
+
+/** Printer glyph for the Balance Sheet / Income Statement print buttons -- see PrintButton.tsx. */
+export const printIconPath =
+	"M6 9V4a1 1 0 011-1h10a1 1 0 011 1v5M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6v-7z";

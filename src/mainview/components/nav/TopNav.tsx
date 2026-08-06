@@ -3,6 +3,8 @@ import type { JSXElement } from "solid-js";
 
 type TopNavProps = {
 	children?: JSXElement;
+	/** Optional content pinned to the right edge of the nav bar, e.g. a page-level print button. */
+	right?: JSXElement;
 };
 
 const CheckbookIcon = () => (
@@ -28,7 +30,7 @@ const CheckbookIcon = () => (
 
 const TopNav = (props: TopNavProps) => {
 	return (
-		<nav class="flex p-1" aria-label="Breadcrumb">
+		<nav class="flex items-center justify-between p-1" aria-label="Breadcrumb">
 			<ol class="inline-flex items-center space-x-1">
 				<li class="font-bold text-xl text-blue-700 p-1">
 					<A class="hover:underline" href="/">
@@ -38,6 +40,7 @@ const TopNav = (props: TopNavProps) => {
 				</li>
 				{props.children}
 			</ol>
+			{props.right}
 		</nav>
 	);
 };

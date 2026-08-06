@@ -6,6 +6,7 @@ import FileBreadcrumb from "../../components/nav/FileBreadcrumb";
 import HoverableDropDown from "../../components/nav/HoverableDropDown";
 import CategoryRollupTable from "../../components/reports/CategoryRollupTable";
 import NetTotalTable from "../../components/reports/NetTotalTable";
+import PrintButton from "../../components/common/PrintButton";
 import { balanceSheetIconPath, incomeStatementIconPath } from "../../nav/icons";
 import { isoDateSchema, isoDateToday, type IsoDate } from "../../../shared/domain/core/IsoDate";
 import { accountsClient } from "../../accounts/accountsClient";
@@ -62,7 +63,7 @@ export default function BalanceSheetPage() {
 
 	return (
 		<>
-			<TopNav>
+			<TopNav right={<PrintButton />}>
 				<FileBreadcrumb />
 				<Breadcrumb>
 					<HoverableDropDown options={reportOptions()} selectedOption="Balance Sheet" iconPaths={reportIconPaths} />
