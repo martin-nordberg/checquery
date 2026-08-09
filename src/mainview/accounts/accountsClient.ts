@@ -7,7 +7,7 @@ import type { CreateAccountParams, PatchAccountParams } from "../../shared/rpc";
  * so it can be swapped out wholesale via `mock.module` in component tests without also having to stub out
  * rpc.ts's file-lifecycle signals/handlers -- see documentation/account-list-implementation-plan.md §1a.
  *
- * There's no push/live-update from bun (checquery2 is single-window, so there's no second tab to keep in
+ * There's no push/live-update from bun (checquery is single-window, so there's no second tab to keep in
  * sync) -- callers refetch findAccountsAll() themselves after a mutation succeeds.
  */
 export const accountsClient = {

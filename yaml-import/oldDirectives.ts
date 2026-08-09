@@ -1,11 +1,11 @@
 /**
- * Shapes from the old checquery client/server's YAML action log (see
- * ../checquery/server/src/events/ChecqueryYamlAppender.ts for the writer, and
- * ../checquery/shared/src/domain/{accounts,vendors,transactions,statements}/*.ts for the fields each action's
- * payload can carry). checquery2 never needs to re-validate these at the field level -- they just get
- * translated and handed to checquery2's own domain schemas, which validate for real (see importState.ts) --
- * so these types are deliberately loose (every field but `id` optional, matching how update/delete payloads
- * only ever carry `id` plus whichever fields changed).
+ * Shapes from the old checquery client/server's YAML action log (formerly ChecqueryYamlAppender.ts as the
+ * writer, and the {accounts,vendors,transactions,statements}/*.ts domain files for the fields each action's
+ * payload can carry -- both from the prior effort's codebase, since removed from this repo). This app never
+ * needs to re-validate these at the field level -- they just get translated and handed to this app's own
+ * domain schemas, which validate for real (see importState.ts) -- so these types are deliberately loose
+ * (every field but `id` optional, matching how update/delete payloads only ever carry `id` plus whichever
+ * fields changed).
  */
 
 export type OldAction =

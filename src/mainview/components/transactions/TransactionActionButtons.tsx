@@ -10,7 +10,7 @@ type TransactionActionButtonsProps = {
 };
 
 /** Save / Delete (edit only) / Add Entry / Repeat Prior (new only, when onRepeatPrior is given) -- same
- * layout as the old client's RegisterActionButtons.tsx, restyled to checquery2's existing button classes. */
+ * layout as the old client's RegisterActionButtons.tsx, restyled to checquery's existing button classes. */
 export default function TransactionActionButtons(props: TransactionActionButtonsProps) {
 	return (
 		<div class="mt-2 flex items-center gap-2">

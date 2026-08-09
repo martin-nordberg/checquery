@@ -8,7 +8,7 @@ import { ImportState } from "./importState";
 import { isOldDirective, type OldDirective } from "./oldDirectives";
 
 /**
- * One-time-use CLI: replays an old checquery client/server YAML action log through checquery2's own
+ * One-time-use CLI: replays an old checquery client/server YAML action log through this app's own
  * persistence stack, producing a new .checquery(-test) file with the same path and base name as the input.
  * See tasks/planned/yaml-import-implementation-plan.md.
  *

@@ -22,30 +22,31 @@ time — `tasks/todo/` and `tasks/planned/` may each hold multiple files awaitin
 
 ## Project state
 
-Checquery2 is a from-scratch rewrite of **Checquery**, a single-user, single-window desktop personal-finance
-app (double-entry accounts/vendors/transactions, balance sheet, income statement) — built on the
-**Electrobun + SolidJS** starter template (`electrobun-solid`: a Bun-powered native shell hosting a SolidJS
-UI, built with Vite), now with substantial application-specific logic on top of that scaffold.
+Checquery is a single-user, single-window desktop personal-finance app (double-entry
+accounts/vendors/transactions, balance sheet, income statement) — built on the **Electrobun + SolidJS**
+starter template (`electrobun-solid`: a Bun-powered native shell hosting a SolidJS UI, built with Vite), now
+with substantial application-specific logic on top of that scaffold. It is a from-scratch rewrite of an
+earlier version of the same app (formerly kept alongside it in this repo under `zz-archive/`, since deleted
+— its domain model, code, and `documentation/functional-spec.md` are historical only, not authoritative).
 
 Built so far (see `tasks/done/` for the implementation plan behind each): file lifecycle (new/open/close an
 encrypted `.checquery` file), accounts + account categories (a tree, accounts as flat leaves), vendors +
 vendor categories, transactions with double-entry entries and split support, balance assertions, the
 Register/Income Log/Expense Log pages, the inline calculator, the Balance Sheet and Income Statement
 (Summary + Details) reports, and a one-time `yaml-import` CLI that replays an old checquery client/server
-YAML action log into a new checquery2 file. Annual Budget is still a stub. Cash Flow Statement was cut
+YAML action log into a new checquery file. Annual Budget is still a stub. Cash Flow Statement was cut
 entirely (not enough distinct value for a personal-finance app over the Balance Sheet/Income Statement) — if
-it resurfaces in `documentation/functional-spec.md` or `../checquery`, treat that as historical, not a
-pending feature. Current work-in-progress and up-next items live in `tasks/todo/` and `tasks/planned/` (see
-Task Workflow above).
+it resurfaces in `documentation/functional-spec.md`, treat that as historical, not a pending feature. Current
+work-in-progress and up-next items live in `tasks/todo/` and `tasks/planned/` (see Task Workflow above).
 
 Two reference documents live outside the `tasks/` pipeline:
 
-- `documentation/functional-spec.md` — an unmodified copy of the **prior effort's** (`../checquery`)
-  functional spec, kept for reference. checquery2's domain model has since diverged from it in several
-  material ways — `tasks/done/info-architecture.md` §0 has the full diff table (accounts vs. account
-  categories, `BalanceAssertion` replacing `Statement`, two transaction dates instead of one, etc.); this
-  CLAUDE.md's Domain Model Notes below covers one more (Net Worth). When the two disagree, checquery2's
-  current source and `tasks/done/info-architecture.md` take precedence.
+- `documentation/functional-spec.md` — an unmodified copy of the **prior effort's** functional spec, kept
+  for reference. This app's domain model has since diverged from it in several material ways —
+  `tasks/done/info-architecture.md` §0 has the full diff table (accounts vs. account categories,
+  `BalanceAssertion` replacing `Statement`, two transaction dates instead of one, etc.); this CLAUDE.md's
+  Domain Model Notes below covers one more (Net Worth). When the two disagree, this app's current source and
+  `tasks/done/info-architecture.md` take precedence.
 - `tasks/done/*.md` — despite the folder name, these are the durable architecture references for this
   codebase, not just a changelog: `action-log.md`, `materialized-store.md`, and `ledger-store.md` specify the
   persistence stack; `info-architecture.md` specifies navigation/page structure; the rest are per-feature
@@ -84,7 +85,7 @@ Package manager is **Bun** (`bun.lock` present) — use `bun run <script>`, not 
   bug but is purely a module-resolution flag. To run a single file, append the path:
   `bun --conditions=browser test path/to/File.test.ts`.
 - `bun run yaml-import/import.ts <old-log.yaml>` — one-time-use CLI that replays an old checquery
-  client/server YAML action log through checquery2's own persistence stack, producing a new
+  client/server YAML action log through this app's own persistence stack, producing a new
   `.checquery`/`.checquery-test` file alongside the input (see `tasks/done/yaml-import-implementation-plan.md`).
 
 Also useful, not wired into `package.json`:

@@ -40,7 +40,7 @@ type AccountInfo = { currentName: string; acctType: AcctTypeStr };
 type VendorInfo = { currentName: string };
 
 /**
- * The stateful translation core: replays old directives in order against a real checquery2 LedgerStore,
+ * The stateful translation core: replays old directives in order against a real checquery LedgerStore,
  * tracking enough of the old model's current state (which account/vendor id currently holds which name,
  * which account categories already exist) to resolve the old model's name-based references the same way the
  * old app's own database-backed services would have at that point in the stream. See
@@ -121,7 +121,7 @@ export class ImportState {
 		if (!payload.name) throw new Error(`create-account ${payload.id} is missing name.`);
 
 		if (payload.acctType === "EQUITY") {
-			// Collapses onto checquery2's single seeded Net Worth account -- see plan §0.
+			// Collapses onto checquery's single seeded Net Worth account -- see plan §0.
 			this.accountsById.set(payload.id, { currentName: payload.name, acctType: "EQUITY" });
 			this.accountIdByCurrentName.set(payload.name, payload.id);
 			return;

@@ -1,7 +1,7 @@
 /**
  * Recursive-descent parser/evaluator for simple arithmetic expressions (+, -, *, /, parens, decimals, unary
  * minus) -- ported near-verbatim from the old client's InlineCalculator.tsx, since it's a small,
- * self-contained piece of code with no checquery2-specific coupling. See
+ * self-contained piece of code with no checquery-specific coupling. See
  * calculator-implementation-plan.md §0/§1.
  *
  * Number tokens additionally tolerate a single leading "$" and any number of "," anywhere in the digits
