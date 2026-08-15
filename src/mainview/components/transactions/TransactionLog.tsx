@@ -216,6 +216,7 @@ export default function TransactionLog(props: TransactionLogProps) {
 									<Show when={isAddingNew()}>
 										<NewTransactionRow
 											accountId={props.accountId}
+											acctType={account()!.acctType}
 											showCode={showCode()}
 											accounts={accounts() ?? []}
 											categories={categories() ?? []}
@@ -248,6 +249,7 @@ export default function TransactionLog(props: TransactionLogProps) {
 													<EditableTransactionRow
 														transaction={transaction()}
 														accountId={props.accountId}
+														acctType={account()!.acctType}
 														showCode={showCode()}
 														accounts={accounts() ?? []}
 														categories={categories() ?? []}

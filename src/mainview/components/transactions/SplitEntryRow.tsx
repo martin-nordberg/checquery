@@ -2,8 +2,10 @@ import { Show } from "solid-js";
 import type { Account } from "../../../shared/domain/accounts/Account";
 import type { AccountCategory } from "../../../shared/domain/accountCategories/AccountCategory";
 import type { AcctId } from "../../../shared/domain/accounts/AcctId";
+import type { AcctTypeStr } from "../../../shared/domain/accounts/AcctType";
 import { type CurrencyAmt, toCents } from "../../../shared/domain/core/CurrencyAmt";
 import AccountFullPathPicker from "../accounts/AccountFullPathPicker";
+import { entryAmountPlaceholders } from "../../transactions/entryAmountPlaceholders";
 import AmountInput from "./AmountInput";
 import { zeroAmt, type EditableEntry } from "./useTransactionRowForm";
 
@@ -18,6 +20,9 @@ type SplitEntryRowProps = {
 	/** acctIds already used by another entry in this transaction -- excluded from this entry's own picker. */
 	excludeAcctIds: Set<AcctId>;
 	accountLabel?: string;
+	/** This register's own account type -- picks the Debit/Credit amount placeholders (see
+	 * entryAmountPlaceholders.ts), not the offset entry's own type. */
+	acctType: AcctTypeStr;
 };
 
 /**
@@ -29,6 +34,7 @@ type SplitEntryRowProps = {
 export default function SplitEntryRow(props: SplitEntryRowProps) {
 	const hasDebit = () => toCents(props.entry.debit) !== 0;
 	const hasCredit = () => toCents(props.entry.credit) !== 0;
+	const placeholders = () => entryAmountPlaceholders(props.acctType);
 
 	const handleDebitChange = (debit: CurrencyAmt) => {
 		props.onUpdate({ ...props.entry, debit, credit: zeroAmt });
@@ -62,7 +68,7 @@ export default function SplitEntryRow(props: SplitEntryRowProps) {
 						</div>
 					}
 				>
-					<AmountInput value={props.entry.debit} onChange={handleDebitChange} disabled={hasCredit()} placeholder="Debit" />
+					<AmountInput value={props.entry.debit} onChange={handleDebitChange} disabled={hasCredit()} placeholder={hasCredit() ? "" : placeholders().debit} />
 				</Show>
 			</div>
 			<div class="w-28">
@@ -74,7 +80,7 @@ export default function SplitEntryRow(props: SplitEntryRowProps) {
 						</div>
 					}
 				>
-					<AmountInput value={props.entry.credit} onChange={handleCreditChange} disabled={hasDebit()} placeholder="Credit" />
+					<AmountInput value={props.entry.credit} onChange={handleCreditChange} disabled={hasDebit()} placeholder={hasDebit() ? "" : placeholders().credit} />
 				</Show>
 			</div>
 			<div class="w-6 text-center">

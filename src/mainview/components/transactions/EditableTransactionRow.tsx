@@ -1,7 +1,8 @@
-import { createEffect, createMemo, createSignal, For, onCleanup, Show } from "solid-js";
+import { createEffect, createMemo, createSignal, Index, onCleanup, Show } from "solid-js";
 import type { Account } from "../../../shared/domain/accounts/Account";
 import type { AccountCategory } from "../../../shared/domain/accountCategories/AccountCategory";
 import type { AcctId } from "../../../shared/domain/accounts/AcctId";
+import type { AcctTypeStr } from "../../../shared/domain/accounts/AcctType";
 import type { Vendor } from "../../../shared/domain/vendors/Vendor";
 import type { VendorCategory } from "../../../shared/domain/vendorCategories/VendorCategory";
 import type { Transaction } from "../../../shared/domain/transactions/Transaction";
@@ -16,6 +17,7 @@ import useTransactionRowForm, { type EditableEntry } from "./useTransactionRowFo
 type EditableTransactionRowProps = {
 	transaction: Transaction;
 	accountId: AcctId;
+	acctType: AcctTypeStr;
 	showCode: boolean;
 	accounts: Account[];
 	categories: AccountCategory[];
@@ -247,33 +249,34 @@ export default function EditableTransactionRow(props: EditableTransactionRowProp
 									<div class="w-28 text-right">Credit</div>
 									<div class="w-6" />
 								</div>
-								<For each={form.balancedEntries()}>
+								<Index each={form.balancedEntries()}>
 									{(entry, index) => {
 										const excludeAcctIds = createMemo(
 											() =>
 												new Set(
 													form
 														.balancedEntries()
-														.filter((_, i) => i !== index())
+														.filter((_, i) => i !== index)
 														.map((e) => e.acctId)
 														.filter((acctId): acctId is AcctId => acctId !== ""),
 												),
 										);
 										return (
 											<SplitEntryRow
-												entry={entry}
-												onUpdate={(updated) => form.updateEntry(index(), updated)}
-												onRemove={() => form.removeEntry(index())}
-												canRemove={form.entries().length > 2 && index() > 0}
-												isPrimary={index() === 0}
-												accountLabel={index() === 0 ? ownAccountLabel() : undefined}
+												entry={entry()}
+												onUpdate={(updated) => form.updateEntry(index, updated)}
+												onRemove={() => form.removeEntry(index)}
+												canRemove={form.entries().length > 2 && index > 0}
+												isPrimary={index === 0}
+												accountLabel={index === 0 ? ownAccountLabel() : undefined}
 												accounts={props.accounts}
 												categories={props.categories}
 												excludeAcctIds={excludeAcctIds()}
+												acctType={props.acctType}
 											/>
 										);
 									}}
-								</For>
+								</Index>
 							</div>
 						</div>
 

@@ -222,7 +222,7 @@ describe("TransactionLog -- create flow", () => {
 		const accountSelect = container.querySelectorAll("td select")[1] as HTMLSelectElement;
 		fireEvent.change(accountSelect, { target: { value: f.groceries.id as string } });
 
-		const debitInput = getByPlaceholderText("Debit") as HTMLInputElement;
+		const debitInput = getByPlaceholderText("Expense") as HTMLInputElement;
 		fireEvent.input(debitInput, { target: { value: "25" } });
 		fireEvent.blur(debitInput);
 
@@ -265,7 +265,7 @@ describe("TransactionLog -- create flow", () => {
 
 		const accountSelect = container.querySelectorAll("td select")[1] as HTMLSelectElement;
 		fireEvent.change(accountSelect, { target: { value: f.groceries.id as string } });
-		const debitInput = getByPlaceholderText("Debit") as HTMLInputElement;
+		const debitInput = getByPlaceholderText("Expense") as HTMLInputElement;
 		fireEvent.input(debitInput, { target: { value: "10" } });
 		fireEvent.blur(debitInput);
 
@@ -324,6 +324,40 @@ describe("TransactionLog -- create flow", () => {
 		expect(secondEntrySelect.value).toBe(f.salary.id as string);
 	});
 
+	it("leaves Debit/Credit blank by default and clears the other's placeholder once one has a value", async () => {
+		const f = fixtures();
+		findAccountsAllMock.mockResolvedValue([f.checking, f.groceries]);
+		findAccountCategoriesAllMock.mockResolvedValue(f.categories);
+
+		const { findByRole, getByPlaceholderText, queryByPlaceholderText } = renderRegister(f.checking.id);
+		fireEvent.click(await findByRole("button", { name: "Add transaction" }));
+
+		const debitInput = getByPlaceholderText("Expense") as HTMLInputElement;
+		const creditInput = getByPlaceholderText("Income") as HTMLInputElement;
+		expect(debitInput.value).toBe("");
+		expect(creditInput.value).toBe("");
+
+		fireEvent.input(debitInput, { target: { value: "25" } });
+		fireEvent.blur(debitInput);
+		expect(debitInput.value).toBe("$25.00");
+		expect(creditInput.placeholder).toBe("");
+		expect(queryByPlaceholderText("Income")).toBeNull();
+	});
+
+	it("uses Purchase/Payment placeholders for a Liability register instead of Expense/Income", async () => {
+		const f = fixtures();
+		findAccountsAllMock.mockResolvedValue([f.visa, f.groceries]);
+		findAccountCategoriesAllMock.mockResolvedValue(f.categories);
+
+		const { findByRole, getByPlaceholderText, queryByPlaceholderText } = renderRegister(f.visa.id);
+		fireEvent.click(await findByRole("button", { name: "Add transaction" }));
+
+		expect(getByPlaceholderText("Purchase")).toBeTruthy();
+		expect(getByPlaceholderText("Payment")).toBeTruthy();
+		expect(queryByPlaceholderText("Expense")).toBeNull();
+		expect(queryByPlaceholderText("Income")).toBeNull();
+	});
+
 	it("creates a new vendor inline via the '+' icon and auto-selects it", async () => {
 		const f = fixtures();
 		findAccountsAllMock.mockResolvedValue([f.checking, f.groceries]);
@@ -375,7 +409,7 @@ describe("TransactionLog -- create flow", () => {
 
 		await waitFor(() => expect(findLatestTransactionForVendorAndAccountMock).toHaveBeenCalledTimes(1));
 		expect(findLatestTransactionForVendorAndAccountMock.mock.calls[0]).toEqual([f.acme.id, f.checking.id]);
-		await waitFor(() => expect((getByPlaceholderText("Debit") as HTMLInputElement).value).toBe("$25.00"));
+		await waitFor(() => expect((getByPlaceholderText("Expense") as HTMLInputElement).value).toBe("$25.00"));
 	});
 
 	it("blocks a stray cancel while dirty behind an abandon-confirm dialog", async () => {

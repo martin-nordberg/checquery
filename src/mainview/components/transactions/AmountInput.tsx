@@ -1,5 +1,5 @@
 import { createEffect, createSignal } from "solid-js";
-import { type CurrencyAmt, fromCents } from "../../../shared/domain/core/CurrencyAmt";
+import { type CurrencyAmt, fromCents, toCents } from "../../../shared/domain/core/CurrencyAmt";
 
 type AmountInputProps = {
 	value: CurrencyAmt;
@@ -17,6 +17,12 @@ function parseToCents(raw: string): number {
 	return Math.round(value * 100);
 }
 
+/** A zero amount renders as blank (so the placeholder shows) rather than as "$0.00" -- there's no meaningful
+ * default debit/credit for a new entry, only an empty field prompting the user to type one. */
+function displayText(value: CurrencyAmt): string {
+	return toCents(value) === 0 ? "" : (value as string);
+}
+
 /**
  * Small text input holding a CurrencyAmt-formatted string. Lets the user type freely (e.g. "12.3") and only
  * parses/reformats on blur -- reformatting on every keystroke would fight the user mid-edit. Kept in sync
@@ -25,12 +31,13 @@ function parseToCents(raw: string): number {
  * autofill both replace entries wholesale.
  */
 export default function AmountInput(props: AmountInputProps) {
-	const [text, setText] = createSignal(props.value as string);
-	createEffect(() => setText(props.value as string));
+	const [text, setText] = createSignal(displayText(props.value));
+	createEffect(() => setText(displayText(props.value)));
 
 	const handleBlur = () => {
-		const formatted = fromCents(parseToCents(text()));
-		setText(formatted as string);
+		const cents = parseToCents(text());
+		const formatted = fromCents(cents);
+		setText(cents === 0 ? "" : (formatted as string));
 		if (formatted !== props.value) props.onChange(formatted);
 	};
 
