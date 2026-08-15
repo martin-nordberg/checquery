@@ -300,6 +300,30 @@ describe("TransactionLog -- create flow", () => {
 		expect(container.querySelectorAll("td select").length).toBe(2);
 	});
 
+	it("keeps an already-picked entry account selected after adding another entry, or after picking a different entry's account", async () => {
+		const f = fixtures();
+		findAccountsAllMock.mockResolvedValue([f.checking, f.groceries, f.salary]);
+		findAccountCategoriesAllMock.mockResolvedValue(f.categories);
+
+		const { findByRole, container } = renderRegister(f.checking.id);
+		fireEvent.click(await findByRole("button", { name: "Add transaction" }));
+
+		const firstEntrySelect = () => container.querySelectorAll("td select")[1] as HTMLSelectElement;
+		fireEvent.change(firstEntrySelect(), { target: { value: f.groceries.id as string } });
+		expect(firstEntrySelect().value).toBe(f.groceries.id as string);
+
+		// Adding a split entry recomputes every other entry's excluded-account set, which must not disturb
+		// an already-picked account's <select> element (regression: it used to reset to blank).
+		fireEvent.click(await findByRole("button", { name: "+ Add Entry" }));
+		expect(firstEntrySelect().value).toBe(f.groceries.id as string);
+
+		// Likewise, picking the new entry's own account must not clear the first entry's selection.
+		const secondEntrySelect = container.querySelectorAll("td select")[2] as HTMLSelectElement;
+		fireEvent.change(secondEntrySelect, { target: { value: f.salary.id as string } });
+		expect(firstEntrySelect().value).toBe(f.groceries.id as string);
+		expect(secondEntrySelect.value).toBe(f.salary.id as string);
+	});
+
 	it("creates a new vendor inline via the '+' icon and auto-selects it", async () => {
 		const f = fixtures();
 		findAccountsAllMock.mockResolvedValue([f.checking, f.groceries]);
