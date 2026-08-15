@@ -239,7 +239,7 @@ describe("TransactionLog -- create flow", () => {
 				],
 			}),
 		]);
-		fireEvent.click(await findByRole("button", { name: "Save" }));
+		fireEvent.click(await findByRole("button", { name: "Save and Close" }));
 
 		await waitFor(() => expect(createTransactionMock).toHaveBeenCalledTimes(1));
 		const params = createTransactionMock.mock.calls[0]![0] as Record<string, unknown>;
@@ -247,6 +247,44 @@ describe("TransactionLog -- create flow", () => {
 			{ acctId: f.checking.id, debit: "$0.00", credit: "$25.00" },
 			{ acctId: f.groceries.id, debit: "$25.00", credit: "$0.00" },
 		]);
+	});
+
+	it("Save and Add Another saves the transaction, then reopens a fresh blank New Transaction row", async () => {
+		const f = fixtures();
+		findAccountsAllMock.mockResolvedValue([f.checking, f.groceries]);
+		findAccountCategoriesAllMock.mockResolvedValue(f.categories);
+
+		const { findByRole, findByPlaceholderText, getByPlaceholderText, container } = renderRegister(f.checking.id);
+		fireEvent.click(await findByRole("button", { name: "Add transaction" }));
+
+		const accountSelect = container.querySelectorAll("td select")[1] as HTMLSelectElement;
+		fireEvent.change(accountSelect, { target: { value: f.groceries.id as string } });
+
+		const debitInput = getByPlaceholderText("Expense") as HTMLInputElement;
+		fireEvent.input(debitInput, { target: { value: "25" } });
+		fireEvent.blur(debitInput);
+
+		const descriptionInput = getByPlaceholderText("Description") as HTMLInputElement;
+		fireEvent.input(descriptionInput, { target: { value: "Weekly stock-up" } });
+
+		findTransactionsByAccountMock.mockResolvedValueOnce([
+			transaction({
+				postDate: "2026-06-01",
+				description: "Weekly stock-up",
+				entries: [
+					{ acctId: f.groceries.id, debit: "$25.00", credit: "$0.00" },
+					{ acctId: f.checking.id, debit: "$0.00", credit: "$25.00" },
+				],
+			}),
+		]);
+		fireEvent.click(await findByRole("button", { name: "Save and Add Another" }));
+
+		await waitFor(() => expect(createTransactionMock).toHaveBeenCalledTimes(1));
+
+		// The New Transaction row is still open, but reset to a fresh blank form (not the just-saved data).
+		expect(await findByRole("button", { name: "Save and Close" })).toBeTruthy();
+		expect(((await findByPlaceholderText("Description")) as HTMLInputElement).value).toBe("");
+		await waitFor(() => expect(container.querySelectorAll("td select")[1]!).toHaveProperty("value", ""));
 	});
 
 	it("defaults Posted from Cleared when Posted is left blank", async () => {
@@ -272,7 +310,7 @@ describe("TransactionLog -- create flow", () => {
 		const descriptionInput = getByPlaceholderText("Description") as HTMLInputElement;
 		fireEvent.input(descriptionInput, { target: { value: "Small purchase" } });
 
-		fireEvent.click(await findByRole("button", { name: "Save" }));
+		fireEvent.click(await findByRole("button", { name: "Save and Close" }));
 
 		await waitFor(() => expect(createTransactionMock).toHaveBeenCalledTimes(1));
 		const params = createTransactionMock.mock.calls[0]![0] as Record<string, unknown>;

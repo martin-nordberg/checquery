@@ -27,6 +27,7 @@ type NewTransactionRowProps = {
 	columnCount: number;
 	onCancel: () => void;
 	onSaved: (usedPostDate: string) => void;
+	onSavedAndAddAnother: (usedPostDate: string) => void;
 	onDirtyChange: (isDirty: boolean) => void;
 };
 
@@ -110,10 +111,12 @@ export default function NewTransactionRow(props: NewTransactionRowProps) {
 		if (!form.description() && prior.description) form.setDescription(prior.description);
 	};
 
-	const handleSave = async () => {
+	/** Shared by both "Save and Close" and "Save and Add Another" -- returns the postDate used on success, or
+	 * null (with `form.error()` set) on failure. */
+	const performSave = async (): Promise<string | null> => {
 		form.setError(null);
 		const result = form.validateForSave();
-		if (!result) return;
+		if (!result) return null;
 		form.setIsSaving(true);
 		try {
 			const postDate = form.postDate() || form.clearedDate();
@@ -126,12 +129,23 @@ export default function NewTransactionRow(props: NewTransactionRowProps) {
 				needsReview: form.needsReview(),
 				entries: result.entries.map((e) => ({ acctId: e.acctId, debit: e.debit, credit: e.credit })),
 			});
-			props.onSaved(postDate);
+			return postDate;
 		} catch (e) {
 			form.setError(e instanceof Error ? e.message : "Failed to save");
+			return null;
 		} finally {
 			form.setIsSaving(false);
 		}
+	};
+
+	const handleSave = async () => {
+		const postDate = await performSave();
+		if (postDate !== null) props.onSaved(postDate);
+	};
+
+	const handleSaveAndAddAnother = async () => {
+		const postDate = await performSave();
+		if (postDate !== null) props.onSavedAndAddAnother(postDate);
 	};
 
 	return (
@@ -269,6 +283,8 @@ export default function NewTransactionRow(props: NewTransactionRowProps) {
 
 						<TransactionActionButtons
 							onSave={() => void handleSave()}
+							saveLabel="Save and Close"
+							onSaveAndAddAnother={() => void handleSaveAndAddAnother()}
 							onAddEntry={form.addEntry}
 							onRepeatPrior={() => void handleRepeatPrior()}
 							canRepeatPrior={canRepeatPrior()}

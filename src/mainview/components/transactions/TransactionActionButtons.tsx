@@ -2,6 +2,8 @@ import { Show } from "solid-js";
 
 type TransactionActionButtonsProps = {
 	onSave: () => void;
+	saveLabel?: string;
+	onSaveAndAddAnother?: () => void;
 	onDelete?: () => void;
 	onAddEntry: () => void;
 	onRepeatPrior?: () => void;
@@ -9,8 +11,9 @@ type TransactionActionButtonsProps = {
 	isSaving: boolean;
 };
 
-/** Save / Delete (edit only) / Add Entry / Repeat Prior (new only, when onRepeatPrior is given) -- same
- * layout as the old client's RegisterActionButtons.tsx, restyled to checquery's existing button classes. */
+/** Save / Save and Add Another (new only, when onSaveAndAddAnother is given) / Delete (edit only) / Add Entry
+ * / Repeat Prior (new only, when onRepeatPrior is given) -- same layout as the old client's
+ * RegisterActionButtons.tsx, restyled to checquery's existing button classes. */
 export default function TransactionActionButtons(props: TransactionActionButtonsProps) {
 	return (
 		<div class="mt-2 flex items-center gap-2">
@@ -20,8 +23,18 @@ export default function TransactionActionButtons(props: TransactionActionButtons
 				disabled={props.isSaving}
 				onClick={props.onSave}
 			>
-				{props.isSaving ? "Saving…" : "Save"}
+				{props.isSaving ? "Saving…" : (props.saveLabel ?? "Save")}
 			</button>
+			<Show when={props.onSaveAndAddAnother}>
+				<button
+					type="button"
+					class="rounded border border-blue-600 px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 disabled:opacity-50"
+					disabled={props.isSaving}
+					onClick={props.onSaveAndAddAnother}
+				>
+					Save and Add Another
+				</button>
+			</Show>
 			<Show when={props.onDelete}>
 				<button
 					type="button"

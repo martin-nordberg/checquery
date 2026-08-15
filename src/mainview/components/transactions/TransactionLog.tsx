@@ -99,6 +99,9 @@ export default function TransactionLog(props: TransactionLogProps) {
 	const [isAddingNew, setIsAddingNew] = createSignal(false);
 	const [isDirty, setIsDirty] = createSignal(false);
 	const [stickyDate, setStickyDate] = createSignal<string | undefined>(undefined);
+	// Bumped on "Save and Add Another" to force NewTransactionRow to remount with a fresh, blank form (see
+	// the keyed Show below) rather than reusing stale form state.
+	const [newRowKey, setNewRowKey] = createSignal(1);
 	// Independent of the add/edit state above -- the calculator is a standalone scratchpad, not tied to
 	// whatever row is open (see calculator-implementation-plan.md §0/§3).
 	const [showCalculator, setShowCalculator] = createSignal(false);
@@ -118,6 +121,12 @@ export default function TransactionLog(props: TransactionLogProps) {
 		setStickyDate(usedPostDate);
 		setIsAddingNew(false);
 		setIsDirty(false);
+		void refetchAll();
+	};
+	const handleNewSavedAndAddAnother = (usedPostDate: string) => {
+		setStickyDate(usedPostDate);
+		setIsDirty(false);
+		setNewRowKey((k) => k + 1);
 		void refetchAll();
 	};
 
@@ -213,7 +222,10 @@ export default function TransactionLog(props: TransactionLogProps) {
 									</tr>
 								</thead>
 								<tbody class="divide-y divide-gray-200 bg-white">
-									<Show when={isAddingNew()}>
+									{/* Keyed on newRowKey (only while isAddingNew) so "Save and Add Another" -- which bumps
+									newRowKey without clearing isAddingNew -- forces a remount into a fresh, blank form
+									instead of reusing the just-saved one's state. */}
+									<Show when={isAddingNew() ? newRowKey() : false} keyed>
 										<NewTransactionRow
 											accountId={props.accountId}
 											acctType={account()!.acctType}
@@ -227,6 +239,7 @@ export default function TransactionLog(props: TransactionLogProps) {
 											columnCount={columnCount()}
 											onCancel={handleCancelNew}
 											onSaved={handleNewSaved}
+											onSavedAndAddAnother={handleNewSavedAndAddAnother}
 											onDirtyChange={setIsDirty}
 										/>
 									</Show>
