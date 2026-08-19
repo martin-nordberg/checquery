@@ -11,6 +11,30 @@ import type {
 	ErrorAlertPayload,
 } from "../shared/rpc";
 
+/**
+ * The native file/folder-picker dialogs run in their own top-level OS window; closing one doesn't
+ * synchronously hand OS keyboard focus back to our window, so firing `window.activate()` and immediately
+ * asking the webview to focus a field can lose that race and leave nothing focused (see the callers below).
+ * Wait for the window's own "focus" event before proceeding, falling back to a short timeout in case the
+ * window already had focus and the OS never re-fires the event.
+ */
+function reclaimWindowFocus(window: BrowserWindow<any>, timeoutMs = 500): Promise<void> {
+	return new Promise((resolve) => {
+		let settled = false;
+		const finish = () => {
+			if (settled) return;
+			settled = true;
+			resolve();
+		};
+		// electrobun's window event API has no "off" yet (see its own todo comment), so this listener
+		// outlives this call; that's harmless here since `finish` is idempotent and each open/new-file
+		// action is infrequent, user-initiated, single-window activity.
+		window.on("focus", finish);
+		window.activate();
+		setTimeout(finish, timeoutMs);
+	});
+}
+
 type AppRpc = {
 	request: {
 		promptNewFileName: (params: {
@@ -36,6 +60,8 @@ export async function handleNewFile(window: BrowserWindow<any>, rpc: AppRpc, enc
 	});
 	const folder = folders?.[0];
 	if (!folder) return;
+
+	await reclaimWindowFocus(window);
 
 	const promptResult = await rpc.request.promptNewFileName({
 		suggestedFolder: folder,
@@ -81,6 +107,8 @@ export async function handleOpenFile(window: BrowserWindow<any>, rpc: AppRpc, en
 	});
 	const path = files?.[0];
 	if (!path) return;
+
+	await reclaimWindowFocus(window);
 
 	let password: string | undefined;
 	if (encryptionMode === "enabled") {
