@@ -14,9 +14,14 @@ import {
 	accountsIconPath,
 	balanceSheetIconPath,
 	budgetIconPath,
+	closeFileIconPath,
+	exitIconPath,
 	expenseLogIconPath,
+	fileInfoIconPath,
 	incomeLogIconPath,
 	incomeStatementIconPath,
+	newFileIconPath,
+	openFileIconPath,
 	registerIconPath,
 	vendorsIconPath,
 } from "../nav/icons";
@@ -69,17 +74,17 @@ function NoFileHub() {
 	return (
 		<div class="grid max-w-xl grid-cols-2 gap-4">
 			<button type="button" class={buttonClass} onClick={() => void requestNewFile()}>
-				Create a New File
+				<NavIcon path={newFileIconPath} /> Create a New File
 			</button>
 			<button type="button" class={buttonClass} onClick={() => void requestOpenFile()}>
-				Open an Existing File
+				<NavIcon path={openFileIconPath} /> Open an Existing File
 			</button>
 			{/* Blank row, same height as the button rows above/below, purely for vertical spacing. */}
 			<div class={`${buttonClass} col-span-2 invisible`} aria-hidden="true">
 				&nbsp;
 			</div>
 			<button type="button" class={buttonClass} onClick={() => void requestQuitApp()}>
-				Exit the Program
+				<NavIcon path={exitIconPath} /> Exit the Program
 			</button>
 		</div>
 	);
@@ -93,10 +98,10 @@ function FileHub() {
 		<div class="flex flex-col gap-6">
 			<div class="flex gap-3">
 				<button type="button" class={buttonClass} onClick={() => void requestFileInfo()}>
-					File Info
+					<NavIcon path={fileInfoIconPath} /> File Info
 				</button>
 				<button type="button" class={buttonClass} onClick={() => void requestCloseFile()}>
-					Close This File
+					<NavIcon path={closeFileIconPath} /> Close This File
 				</button>
 			</div>
 

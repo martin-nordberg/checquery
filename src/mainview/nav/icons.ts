@@ -29,3 +29,20 @@ export const budgetIconPath = "M4 20h16M7 20V10m5 10V4m5 16v-7";
 /** Printer glyph for the Balance Sheet / Income Statement print buttons -- see PrintButton.tsx. */
 export const printIconPath =
 	"M6 9V4a1 1 0 011-1h10a1 1 0 011 1v5M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6v-7z";
+
+/** Document-with-plus glyph for HomePage's "Create a New File" button. */
+export const newFileIconPath =
+	"M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z";
+
+/** Folder glyph for HomePage's "Open an Existing File" button. */
+export const openFileIconPath = "M3 7a2 2 0 012-2h4l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z";
+
+/** "Sign out of a door" glyph for HomePage's "Exit the Program" button. */
+export const exitIconPath =
+	"M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1";
+
+/** Circled "i" glyph for HomePage's "File Info" button. */
+export const fileInfoIconPath = "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z";
+
+/** Circled "x" glyph for HomePage's "Close This File" button. */
+export const closeFileIconPath = "M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z";
