@@ -1,11 +1,29 @@
-import { A } from "@solidjs/router";
+import { A, useNavigate } from "@solidjs/router";
 import type { JSXElement } from "solid-js";
+import { canGoBack, canGoForward, goBack, goForward } from "../../navigationHistory";
 
 type TopNavProps = {
 	children?: JSXElement;
 	/** Optional content pinned to the right edge of the nav bar, e.g. a page-level print button. */
 	right?: JSXElement;
 };
+
+const navButtonClass =
+	"w-6 h-6 inline-flex items-center justify-center rounded-full text-blue-700 cursor-pointer disabled:cursor-not-allowed disabled:opacity-30 enabled:hover:bg-blue-100";
+
+const BackIcon = () => (
+	<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+		<circle cx="12" cy="12" r="10" />
+		<polyline points="14 7 8 12 14 17" />
+	</svg>
+);
+
+const ForwardIcon = () => (
+	<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+		<circle cx="12" cy="12" r="10" />
+		<polyline points="10 7 16 12 10 17" />
+	</svg>
+);
 
 const CheckbookIcon = () => (
 	<svg
@@ -29,9 +47,37 @@ const CheckbookIcon = () => (
 );
 
 const TopNav = (props: TopNavProps) => {
+	const navigate = useNavigate();
 	return (
 		<nav class="flex items-center justify-between p-1" aria-label="Breadcrumb">
 			<ol class="inline-flex items-center space-x-1">
+				{/* Fixed h-9 matches the breadcrumb entries' own height (text-xl line-height + p-1
+				padding), so the icon centers against them by construction instead of depending on
+				how the row happens to compute its cross-axis size. */}
+				<li class="h-9 flex items-center">
+					<button
+						type="button"
+						class={navButtonClass}
+						aria-label="Back"
+						title="Back"
+						disabled={!canGoBack()}
+						onClick={() => goBack(navigate)}
+					>
+						<BackIcon />
+					</button>
+				</li>
+				<li class="h-9 flex items-center mr-2">
+					<button
+						type="button"
+						class={navButtonClass}
+						aria-label="Forward"
+						title="Forward"
+						disabled={!canGoForward()}
+						onClick={() => goForward(navigate)}
+					>
+						<ForwardIcon />
+					</button>
+				</li>
 				<li class="font-bold text-xl text-blue-700 p-1">
 					<A class="hover:underline" href="/">
 						<CheckbookIcon />
