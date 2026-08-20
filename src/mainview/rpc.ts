@@ -71,6 +71,7 @@ new Electroview({ rpc });
 export const requestNewFile = () => rpc.request.startNewFile();
 export const requestOpenFile = () => rpc.request.startOpenFile();
 export const requestFileInfo = () => rpc.request.getFileInfo();
+export const requestQuitApp = () => rpc.request.quitApp();
 
 export async function requestCloseFile(): Promise<void> {
 	const { closed } = await rpc.request.closeFile();

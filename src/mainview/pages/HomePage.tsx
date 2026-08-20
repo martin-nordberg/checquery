@@ -2,7 +2,14 @@ import { A } from "@solidjs/router";
 import { createResource, For, Show } from "solid-js";
 import TopNav from "../components/nav/TopNav";
 import FileBreadcrumb from "../components/nav/FileBreadcrumb";
-import { currentFile, requestCloseFile, requestFileInfo, requestNewFile, requestOpenFile } from "../rpc";
+import {
+	currentFile,
+	requestCloseFile,
+	requestFileInfo,
+	requestNewFile,
+	requestOpenFile,
+	requestQuitApp,
+} from "../rpc";
 import {
 	accountsIconPath,
 	balanceSheetIconPath,
@@ -66,6 +73,13 @@ function NoFileHub() {
 			</button>
 			<button type="button" class={buttonClass} onClick={() => void requestOpenFile()}>
 				Open an Existing File
+			</button>
+			{/* Blank row, same height as the button rows above/below, purely for vertical spacing. */}
+			<div class={`${buttonClass} col-span-2 invisible`} aria-hidden="true">
+				&nbsp;
+			</div>
+			<button type="button" class={buttonClass} onClick={() => void requestQuitApp()}>
+				Exit the Program
 			</button>
 		</div>
 	);

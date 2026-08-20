@@ -86,7 +86,13 @@ const rpc: ReturnType<typeof BrowserView.defineRPC<AppSchema>> = BrowserView.def
 			startNewFile: () => handleNewFile(mainWindow, rpc, encryptionMode),
 			startOpenFile: () => handleOpenFile(mainWindow, rpc, encryptionMode),
 			getFileInfo: () => handleFileInfo(rpc),
-			closeFile: () => handleCloseFile(mainWindow),
+			closeFile: () => handleCloseFile(mainWindow, rpc),
+			quitApp: () => {
+				// Mirrors the OS window chrome's close control exactly: electrobun's BrowserWindow already
+				// quits the whole app once the last window closes (see its own "close" event handler), so a
+				// plain close() here needs no separate quit call.
+				mainWindow.close();
+			},
 			findAccountsAll: () => handleFindAccountsAll(),
 			createAccount: (params) => handleCreateAccount(params),
 			patchAccount: (params) => handlePatchAccount(params),

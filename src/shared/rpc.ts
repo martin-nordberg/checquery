@@ -151,6 +151,7 @@ export type AppSchema = {
 			startOpenFile: { params: undefined; response: void };
 			getFileInfo: { params: undefined; response: void };
 			closeFile: { params: undefined; response: { closed: boolean } };
+			quitApp: { params: undefined; response: void };
 			findAccountsAll: { params: undefined; response: Account[] };
 			createAccount: { params: CreateAccountParams; response: void };
 			patchAccount: { params: PatchAccountParams; response: void };

@@ -11,6 +11,7 @@ describe("HomePage", () => {
 		expect(getByText("Checquery")).toBeTruthy();
 		expect(getByText("Create a New File")).toBeTruthy();
 		expect(getByText("Open an Existing File")).toBeTruthy();
+		expect(getByText("Exit the Program")).toBeTruthy();
 		expect(queryByText("Close This File")).toBeNull();
 	});
 

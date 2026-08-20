@@ -1,6 +1,7 @@
 import { Utils, type BrowserWindow } from "electrobun/bun";
 import { basename } from "node:path";
 import { closeCurrentFile, createNewFile, getCurrentFile, getCurrentFileInfo, openExistingFile } from "./persistence/db";
+import { backupFile } from "./persistence/backup";
 import { fileExtensionFor } from "./encryptionMode";
 import type { EncryptionMode } from "../shared/encryptionMode";
 import type {
@@ -133,9 +134,23 @@ export async function handleOpenFile(window: BrowserWindow<any>, rpc: AppRpc, en
 	});
 }
 
-export function handleCloseFile(window: BrowserWindow<any>): { closed: boolean } {
-	const hadFile = getCurrentFile() !== null;
+/**
+ * Explicit "Close This File" only -- not fired when the app quits (via the window's "X" or the
+ * no-file-open page's "Exit the Program") while a file happens to be open; see quitApp in bun/index.ts.
+ * closeCurrentFile() flushes/closes the sqlite handle before backupFile() copies it, so the backup always
+ * sees a consistent file, not a partially-written one.
+ */
+export function handleCloseFile(window: BrowserWindow<any>, rpc: AppRpc): { closed: boolean } {
+	const current = getCurrentFile();
 	closeCurrentFile();
 	window.setTitle("Checquery");
-	return { closed: hadFile };
+
+	if (current) {
+		const result = backupFile(current.path);
+		if (!result.ok) {
+			rpc.send.showError({ title: "Backup Failed", message: result.error });
+		}
+	}
+
+	return { closed: current !== null };
 }
