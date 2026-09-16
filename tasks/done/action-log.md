@@ -499,8 +499,9 @@ password verification. That's a `content_version` meta key, parallel to but inde
   no-op past the one meta read.
 - **The upgrade** (`upgradeFileContent.ts`) is build-then-swap, not rename-then-build: build a fully verified
   replacement at a temp path first, and only then touch the original —
-  1. Fresh DB at `<path>.upgrading-tmp`, migrated via §5's `runMigrations` (current DDL, no vendor-category
-     residue).
+  1. Fresh DB at `<path>.upgrading-tmp`, migrated via §5's `runMigrations` — the same DDL every file gets
+     (§6.2's `CHECK` constraint is a frozen historical literal, not derived from the live domain layer, so it
+     still permits the vendor-category action types even here; only the *content* streamed in next is clean).
   2. Copy `_checquery_meta`'s identity/crypto keys (`file_id`, `kdf_salt`, `kdf_params`, `verify_iv`,
      `verify_ciphertext`, `node_id`, `created_at`, `encrypted`) verbatim — same password, same HLC node, same
      file identity. Stamp `content_version = CURRENT_CONTENT_VERSION`.

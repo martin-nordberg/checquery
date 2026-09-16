@@ -42,16 +42,24 @@
   every surviving action's content, order, and `hlc`, and the original is preserved as a backup. That's the
   mechanism this plan uses (§2) instead of the "keep three dead action types forever" shim from the prior draft
   of this plan.
-- **End state matches pre-vendor-categories exactly** in the UI: one flat, globally-unique-by-name vendor list.
-  And unlike the prior draft, the end state matches it in the *persistence layer* too — `ActionType.ts`,
-  `dispatchAction`, `0002_actions.ts`'s `CHECK` constraint, and the materialized-store schema all go back to
-  having no vendor-category concept whatsoever, for every file the app will ever open again.
-- **`0002_actions.ts` (the DDL migration) is safe to edit in place**, which was not true in the prior draft of
-  this plan. Editing it only changes what a *brand-new* `runMigrations(db)` call produces; a file already at
-  `schema_version = 2` never re-runs it. Once the content-migration in §2 guarantees that no old-shape file
-  survives past its first post-upgrade open, every file the running app ever constructs an `ActionLog` over —
-  old (now rewritten) or new — was built from the *current* `0002`. So: remove the three vendor-category `CHECK`
-  values and the `vendor_category_actions` table/index from `0002_actions.ts` directly.
+- **End state matches pre-vendor-categories exactly** in the UI, and in every layer of TypeScript application
+  code: `ActionType.ts`, `ActionLog.ts`'s `dispatchAction`/`lookupTableFor`, and the materialized-store schema
+  all go back to having no vendor-category concept whatsoever, for every file the app will ever open again.
+- **`0002_actions.ts` (the DDL migration) is *not* edited** — correcting an earlier draft of this plan, which
+  assumed it was safe to strip the three vendor-category `CHECK` values and the `vendor_category_actions`
+  table/index from it directly, reasoning that a file already at `schema_version = 2` never re-runs a migration
+  anyway. That reasoning missed a real bug: `0002_actions.ts` generated its `CHECK` list *dynamically* from the
+  live `ActionType.ts` at the time — so simply removing the three vendor-category values from `ActionType.ts`
+  would have silently redefined what "schema_version 2" produces for any file created afterward, without the
+  version number ever moving. Two files both honestly reporting `schema_version 2` would then have two
+  different actual `CHECK` constraints — exactly the kind of drift `_checquery_meta.schema_version` exists to
+  prevent. **The fix: `0002_actions.ts` now hardcodes its `CHECK` list as a frozen literal**, independent of
+  `ActionType.ts`, so its `up()` produces the same DDL forever regardless of later domain-layer changes — the
+  three vendor-category values (and the `vendor_category_actions` table) stay in every file's SQL schema
+  permanently, inert, even though nothing in the application ever produces them again. Actually dropping them
+  would require a genuine new migration (bumping `schema_version` to 3) — not warranted just to tidy up an
+  allow-list, and see §12 for why it's harder than it looks (the old `CHECK` can't simply be tightened without
+  running into files that still contain the very rows being disallowed).
 
 ---
 
@@ -104,7 +112,9 @@ Deliberately safer sequencing than "rename the original away, then build fresh a
 file is never touched until a verified-good replacement already exists.
 
 1. Build a fresh SQLite database at a temp path beside the original (e.g. `<path>.upgrading-tmp`) —
-   `runMigrations(db)` against it gets the *current* `0002` (no vendor-category DDL at all, per §0).
+   `runMigrations(db)` against it gets the same (frozen) `0002` DDL every file gets, vendor-category `CHECK`
+   values and `vendor_category_actions` table included (§0) — this step is about the *content* the DB ends up
+   holding, not its schema.
 2. Copy `_checquery_meta`'s per-file identity verbatim into the temp db: `file_id`, `kdf_salt`, `kdf_params`,
    `verify_iv`, `verify_ciphertext`, `node_id`, `created_at` — same password, same HLC node, same file identity,
    only the history and the version markers change. Set `content_version = CURRENT_CONTENT_VERSION` there.
@@ -187,11 +197,15 @@ on. Cheap to add now, deleted along with the rest of the mechanism in Phase 2.
 
 ### 2g. Where this leaves the "old" plan draft
 
-Fully superseded: **no** permanent entries survive in `ActionType.ts`, `ActionLog.ts`'s `dispatchAction`/
-`lookupTableFor`, or `0002_actions.ts`. `readActionsForVendorCategory` and the `vendor_category_actions` table
-are gone outright, not just unused. The only things this plan keeps that the original vendor-categories work
-added are the backup files themselves (on whichever user machines actually had vendor-category data) — inert,
-outside the app's code entirely.
+Superseded at the TypeScript layer: **no** permanent entries survive in `ActionType.ts` or `ActionLog.ts`'s
+`dispatchAction`/`lookupTableFor`. `readActionsForVendorCategory` is gone outright, not just unused.
+
+**Not** superseded at the SQL layer, correcting an earlier version of this note: `0002_actions.ts`'s `CHECK`
+constraint and the `vendor_category_actions` table stay in every file's schema forever (see §0's corrected
+bullet on `0002_actions.ts`) — inert DDL text and an always-empty table, never referenced by any TypeScript
+type or application code again, but not literally deleted. And, as already true before this correction: any
+real vendor-categories history that existed lives on inside the pre-upgrade backup file(s) on whichever
+machines had them — inert, outside the app's code entirely.
 
 ### 2h. Testing
 
@@ -367,6 +381,9 @@ extra code completely."
   as part of this without you separately asking.
 - `_checquery_meta.content_version` values already written into files (harmless orphaned key once nothing reads
   it — not worth a further migration to strip).
+- `0002_actions.ts`'s frozen `CHECK` constraint and `vendor_category_actions` table (§0) — not part of this
+  mechanism at all (it's a permanent DDL-migration artifact, not scaffolding), so Phase 2 has nothing to do
+  there either.
 - Everything from Phase 1's §1/§3–§9 (the actual vendor-category application removal) — that's permanent from
   Phase 1 onward regardless of Phase 2.
 
@@ -398,3 +415,13 @@ comments point at and running the test suite. No production code outside `conten
   implementation notices the overlap, not worth merging the two now.
 - **Test-suite size** for §3–§8 is unchanged from the prior draft (~50 files touched) — still recommend working
   through §10 in order and testing after each section.
+- **The `CHECK` constraint / `vendor_category_actions` table can't just be tightened later by a normal forward
+  migration**, if that's ever revisited. `runMigrations(db)` runs on a file *before* password verification —
+  before any content migration has had a chance to strip legacy rows out. A migration that recreates `actions`
+  with a stricter `CHECK` would run against the *original*, still-unstripped file first (per `openExistingFile`'s
+  ordering) and fail outright (`SQLITE_CONSTRAINT_CHECK`) on any file that still has real `create-vendor-category`
+  rows — exactly the files such a migration would be trying to help. Actually dropping the legacy values would
+  need either reordering when DDL migrations run relative to content migrations (a bigger architectural change
+  than it sounds), or teaching a migration about specific row content (which `action-log.md` §5's "migrations
+  are schema-only" principle deliberately avoids). Not attempted here — the frozen, permissive `CHECK` (§0) is
+  the accepted, safe trade-off instead.

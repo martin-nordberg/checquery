@@ -289,29 +289,11 @@ describe('openExistingFile', () => {
             closeCurrentFile()
 
             // Simulate a pre-existing file: no content_version key at all (implicit v1), plus a raw action row
-            // of a type that no longer exists in the current ActionType union -- exactly what a real file
-            // still carrying vendor-category history looks like. The live actions table's CHECK constraint no
-            // longer allows that type (it's generated from the current ACTION_TYPES), so it's rebuilt here
-            // with the old, more permissive constraint first, carrying its existing rows over unchanged.
+            // of a type no longer produced by any current code path. 0002_actions.ts's CHECK constraint is
+            // frozen (not derived from the live ActionType union -- see its own doc comment), so it already
+            // permits this legacy type on a freshly-created file too; no DDL rebuild needed here.
             const db = new Database(created.path, { create: false, readwrite: true })
             db.run(`DELETE FROM _checquery_meta WHERE key = 'content_version'`)
-            db.run(`ALTER TABLE actions RENAME TO actions_old`)
-            db.run(`
-                CREATE TABLE actions (
-                    id                TEXT PRIMARY KEY,
-                    action_type       TEXT NOT NULL CHECK (action_type IN (
-                        'create-account', 'update-account', 'delete-account',
-                        'create-vendor', 'update-vendor', 'delete-vendor',
-                        'create-vendor-category', 'update-vendor-category', 'delete-vendor-category',
-                        'create-origin'
-                    )),
-                    hlc               TEXT NOT NULL,
-                    iv                TEXT NOT NULL,
-                    encrypted_payload TEXT NOT NULL
-                )
-            `)
-            db.run(`INSERT INTO actions SELECT * FROM actions_old`)
-            db.run(`DROP TABLE actions_old`)
 
             const kdfSalt = getMetaValue(db, 'kdf_salt')!
             const kdfParams = JSON.parse(getMetaValue(db, 'kdf_params')!) as KdfParams
