@@ -32,11 +32,13 @@ earlier version of the same app (formerly kept alongside it in this repo under `
 Built so far (see `tasks/done/` for the implementation plan behind each): file lifecycle (new/open/close an
 encrypted `.checquery` file), accounts + account categories (a tree, accounts as flat leaves), vendors +
 vendor categories, transactions with double-entry entries and split support, balance assertions, the
-Register/Income Log/Expense Log pages, the inline calculator, the Balance Sheet and Income Statement
-(Summary + Details) reports, and a one-time `yaml-import` CLI that replays an old checquery client/server
-YAML action log into a new checquery file. Annual Budget is still a stub. Cash Flow Statement was cut
-entirely (not enough distinct value for a personal-finance app over the Balance Sheet/Income Statement) — if
-it resurfaces in `documentation/functional-spec.md`, treat that as historical, not a pending feature. Current
+Register/Income Log/Expense Log pages, the inline calculator, and the Balance Sheet and Income Statement
+(Summary + Details) reports. Annual Budget is still a stub. Cash Flow Statement was cut entirely (not enough
+distinct value for a personal-finance app over the Balance Sheet/Income Statement) — if it resurfaces in
+`documentation/functional-spec.md`, treat that as historical, not a pending feature. The one-time `yaml-import`
+CLI that once replayed an old checquery client/server YAML action log into a new checquery file has since been
+removed (its job was done, and the YAML representation it read is now obsolete) — see
+`tasks/done/yaml-import-implementation-plan.md` for the historical record if that need ever comes back. Current
 work-in-progress and up-next items live in `tasks/todo/` and `tasks/planned/` (see Task Workflow above).
 
 Two reference documents live outside the `tasks/` pipeline:
@@ -84,9 +86,6 @@ Package manager is **Bun** (`bun.lock` present) — use `bun run <script>`, not 
   `@solidjs/router`'s `<A>` fails with "Client-only API called on the server side," which looks like a test
   bug but is purely a module-resolution flag. To run a single file, append the path:
   `bun --conditions=browser test path/to/File.test.ts`.
-- `bun run yaml-import/import.ts <old-log.yaml>` — one-time-use CLI that replays an old checquery
-  client/server YAML action log through this app's own persistence stack, producing a new
-  `.checquery`/`.checquery-test` file alongside the input (see `tasks/done/yaml-import-implementation-plan.md`).
 
 Also useful, not wired into `package.json`:
 

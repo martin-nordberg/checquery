@@ -1,5 +1,10 @@
 # YAML Import — Implementation Plan
 
+> **Removed.** This was always a one-time-use tool (see its own "expected to be discarded soon" note below) —
+> it did its job importing the old checquery client/server's YAML action log, and the `yaml-import/` folder has
+> since been deleted from the repo entirely. This document is kept only as the historical record of how it
+> worked, in case that need ever comes back.
+
 > Covers building the one-time-use Bun CLI utility described in `tasks/todo/yaml-import.md`: reading the old
 > checquery client/server's YAML action log and producing a new `.checquery` file via checquery2's own
 > persistence stack. Isolated in a new top-level `yaml-import/` folder (sibling to `src/`), not wired into the
