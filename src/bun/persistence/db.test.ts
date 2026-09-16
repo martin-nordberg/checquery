@@ -4,9 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'bun:test'
 import { closeCurrentFile, createNewFile, getCurrentFile, getCurrentFileInfo, getCurrentLedgerStore, getCurrentOrigId, openExistingFile } from './db'
-import { getMetaValue, setMetaValue } from './actionLog/meta'
-import { AesGcmCodec } from './actionLog/encryption/AesGcmCodec'
-import { deriveKey, type KdfParams } from './actionLog/encryption/crypto'
+import { setMetaValue } from './actionLog/meta'
 import { genOrigId } from '../../shared/domain/origins/OrigId'
 import { accountCreationEventSchema } from '../../shared/domain/accounts/Account'
 import { genAcctId } from '../../shared/domain/accounts/AcctId'
@@ -260,67 +258,6 @@ describe('openExistingFile', () => {
         expect(result.code).toBe('unsupported-version')
     })
 
-    // TEMPORARY SCAFFOLDING -- these two cover db.ts's wiring of the content-migration mechanism (see
-    // contentMigrations/upgradeFileContent.test.ts for thorough coverage of the mechanism itself). Delete
-    // along with the rest of contentMigrations/ once every real file has been confirmed upgraded (Phase 2 of
-    // tasks/done/remove-vendor-categories-implementation-plan.md).
-    describe('content_version (contentMigrations/)', () => {
-        it('fails with unsupported-version for a content_version newer than this build knows', async () => {
-            const name = freshName()
-            const created = await createNewFile(tmpDir, name, 'correct horse', 'enabled')
-            expect(created.ok).toBe(true)
-            if (!created.ok) return
-
-            const db = new Database(created.path, { create: false, readwrite: true })
-            setMetaValue(db, 'content_version', '9999')
-            db.close()
-
-            const result = await openExistingFile(created.path, 'correct horse')
-            expect(result.ok).toBe(false)
-            if (result.ok) return
-            expect(result.code).toBe('unsupported-version')
-        })
-
-        it('transparently upgrades an old-shape file on open, backing up the original', async () => {
-            const name = freshName()
-            const created = await createNewFile(tmpDir, name, 'correct horse', 'enabled')
-            expect(created.ok).toBe(true)
-            if (!created.ok) return
-            closeCurrentFile()
-
-            // Simulate a pre-existing file: no content_version key at all (implicit v1), plus a raw action row
-            // of a type no longer produced by any current code path. 0002_actions.ts's CHECK constraint is
-            // frozen (not derived from the live ActionType union -- see its own doc comment), so it already
-            // permits this legacy type on a freshly-created file too; no DDL rebuild needed here.
-            const db = new Database(created.path, { create: false, readwrite: true })
-            db.run(`DELETE FROM _checquery_meta WHERE key = 'content_version'`)
-
-            const kdfSalt = getMetaValue(db, 'kdf_salt')!
-            const kdfParams = JSON.parse(getMetaValue(db, 'kdf_params')!) as KdfParams
-            const key = deriveKey('correct horse', kdfSalt, kdfParams)
-            const codec = new AesGcmCodec(key)
-
-            const hlc = '0000000000001AAA'
-            const { iv, payload } = codec.encode(JSON.stringify({ id: 'legacyctg1', name: 'Legacy', hlc }))
-            db.run(
-                `INSERT INTO actions (id, action_type, hlc, iv, encrypted_payload) VALUES (?, 'create-vendor-category', ?, ?, ?)`,
-                ['actnlegacy0000000000000001', hlc, iv, payload],
-            )
-            db.close()
-
-            const result = await openExistingFile(created.path, 'correct horse')
-            expect(result.ok).toBe(true)
-            if (!result.ok) return
-
-            expect(existsSync(`${created.path}-v1`)).toBe(true)
-
-            const info = await getCurrentFileInfo()
-            expect(info).not.toBeNull()
-            // The freshly-created file already had 2 actions (the bootstrapped origin + Net Worth account);
-            // the legacy create-vendor-category action added above was dropped by the upgrade, not kept.
-            expect(info!.actionLogEntryCount).toBe(2)
-        })
-    })
 })
 
 describe('getCurrentFileInfo', () => {
@@ -355,7 +292,6 @@ describe('getCurrentFileInfo', () => {
         expect(info!.actionLogEntryCount).toBe(2)
         expect(info!.meta.find((e) => e.key === 'file_id')?.value).toBe(created.fileId)
         expect(info!.meta.find((e) => e.key === 'encrypted')?.value).toBe('true')
-        expect(info!.contentVersionIsCurrent).toBe(true)
     })
 
     it('reflects writes made through the ledger store', async () => {

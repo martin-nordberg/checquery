@@ -10,8 +10,6 @@ import { PlaintextCodec } from "./actionLog/encryption/PlaintextCodec";
 import { generateFileCryptoMaterial, generateNodeId, verifyPassword, type KdfParams } from "./actionLog/encryption/crypto";
 import { getAllMetaEntries, getMetaValue, metaTableExists, setMetaValue } from "./actionLog/meta";
 import { latestKnownVersion, readSchemaVersion, runMigrations } from "./actionLog/migrations/runMigrations";
-import { CURRENT_CONTENT_VERSION, readContentVersion } from "./actionLog/contentMigrations/runContentMigrations";
-import { upgradeFileContent } from "./actionLog/contentMigrations/upgradeFileContent";
 import { LedgerStore } from "./ledgerStore/LedgerStore";
 import { ipAddressSchema } from "../../shared/domain/core/IpAddress";
 import { nameSchema } from "../../shared/domain/core/Name";
@@ -120,7 +118,6 @@ export async function getCurrentFileInfo(): Promise<FileInfoPayload | null> {
 		entityCounts: { origins, accounts, accountCategories, vendors, transactions, balanceAssertions },
 		actionLogEntryCount: actionLog.countActions(),
 		meta: getAllMetaEntries(currentDb),
-		contentVersionIsCurrent: readContentVersion(currentDb) === CURRENT_CONTENT_VERSION,
 	};
 }
 
@@ -208,9 +205,6 @@ export async function createNewFile(
 				})()
 			: new PlaintextCodec();
 		setMetaValue(db, "encrypted", shouldEncrypt ? "true" : "false");
-		// A brand-new file is current from day one and never runs the upgrade path below -- see
-		// contentMigrations/runContentMigrations.ts (temporary scaffolding, removed once no longer needed).
-		setMetaValue(db, "content_version", String(CURRENT_CONTENT_VERSION));
 
 		const actionLog = new ActionLog(db, codec, nodeId);
 		const store = await LedgerStore.open(actionLog);
@@ -311,31 +305,6 @@ export async function openExistingFile(path: string, password?: string): Promise
 			codec = new AesGcmCodec(key);
 		} else {
 			codec = new PlaintextCodec();
-		}
-
-		// TEMPORARY SCAFFOLDING (see contentMigrations/ -- Phase 2 of
-		// tasks/done/remove-vendor-categories-implementation-plan.md removes this block entirely once every
-		// real file has been confirmed upgraded). content_version tracks the shape of the domain events in
-		// the log, separately from schema_version's SQL DDL -- see runContentMigrations.ts.
-		const contentVersion = readContentVersion(db);
-		if (contentVersion > CURRENT_CONTENT_VERSION) {
-			db.close();
-			return {
-				ok: false,
-				error: "This file's content was upgraded by a newer version of Checquery. Please update the app.",
-				code: "unsupported-version",
-			};
-		}
-		if (contentVersion < CURRENT_CONTENT_VERSION) {
-			const upgrade = await upgradeFileContent(path, db, codec, nodeId, contentVersion);
-			if (!upgrade.ok) {
-				return {
-					ok: false,
-					error: upgrade.error,
-					code: "io-error",
-				};
-			}
-			db = upgrade.db;
 		}
 
 		const actionLog = new ActionLog(db, codec, nodeId);

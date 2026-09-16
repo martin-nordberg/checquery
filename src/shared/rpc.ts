@@ -41,12 +41,6 @@ export type FileInfoPayload = {
 	};
 	actionLogEntryCount: number;
 	meta: Array<{ key: string; value: string }>;
-	/** TEMPORARY SCAFFOLDING (see src/bun/persistence/actionLog/contentMigrations/) -- whether this file's
-	 * action log is on the current content_version. Lets FileInfoModal show a concrete confirmation that a
-	 * given file has actually gone through the vendor-categories content-migration upgrade, rather than the
-	 * user having to trust it happened silently. Removed along with the rest of contentMigrations/ in Phase 2
-	 * of tasks/done/remove-vendor-categories-implementation-plan.md. */
-	contentVersionIsCurrent: boolean;
 };
 
 /** Params for the bun-side createAccount request. acctType and parentCtgId are always supplied by the page

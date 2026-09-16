@@ -1,14 +1,25 @@
 # Remove Vendor Categories — Implementation Plan
 
-> **Phase 1 implemented as planned**, with a few small implementation-time additions not called out in the
-> original plan text: `upgradeFileContent`'s meta copy also carries the `encrypted` flag (needed so a future
-> open of the rewritten file still knows whether to derive a key at all — an oversight in the original
-> §2c bullet list, not a deliberate omission); a stale `<path>.upgrading-tmp` left over from a prior failed
-> attempt is deleted before starting (the plan only specified refusing to clobber an existing *backup*, not
-> the disposable temp path); and the "verify the rewritten file" step does a full re-decode-every-row pass,
-> not just a row-count check, catching a decrypt/JSON failure at upgrade time rather than at the next real
-> open. **Phase 2 (§11) is deliberately not done yet** — it waits on your explicit go-ahead once you've opened
-> every real file you care about under this build; see §11 for the trigger and exactly what it removes.
+> **Both phases implemented.** Phase 1 as planned, with a few small implementation-time additions not called
+> out in the original plan text: `upgradeFileContent`'s meta copy also carried the `encrypted` flag (needed so
+> a future open of the rewritten file still knows whether to derive a key at all — an oversight in the
+> original §2c bullet list, not a deliberate omission); a stale `<path>.upgrading-tmp` left over from a prior
+> failed attempt was deleted before starting (the plan only specified refusing to clobber an existing
+> *backup*, not the disposable temp path); and the "verify the rewritten file" step did a full
+> re-decode-every-row pass, not just a row-count check. **Phase 2 is now also done** — you confirmed every real
+> file you cared about had been opened and upgraded under a Phase-1 build, and §11's entire deletion list was
+> executed exactly as specified: `contentMigrations/` and its `db.ts`/`FileInfoModal.tsx`/`rpc.ts` hooks are
+> gone, and `action-log.md` §14 was replaced with the short historical note per §11's own instructions. **§2
+> and the "TEMPORARY SCAFFOLDING" comments referenced throughout this document now describe code that no
+> longer exists** — read them as the historical record of Phase 1's design, not as a description of the
+> current codebase; `git log` for this plan's file (or the two Phase 2 commits following it) has the exact
+> diffs. One separately-shipped follow-up worth noting since it touches the same migration machinery: a latent
+> bug was found and fixed where `0002_actions.ts`'s `CHECK` constraint was derived dynamically from
+> `ActionType.ts` instead of being a frozen literal (meaning `schema_version` could silently stop describing a
+> fixed DDL shape) — see the commit fixing it for details; it doesn't change anything about this plan's Phase
+> 1/Phase 2 split, but is the reason `0002_actions.ts` still permanently lists the three vendor-category action
+> types in its `CHECK` constraint even after Phase 2's cleanup (§0's corrected bullet, unaffected by Phase 2 —
+> see §11's "what does not get touched").
 >
 > Reverses `tasks/done/vendor-categories-implementation-plan.md` in full: vendor categories have proved to be a
 > mistake in practice and are being removed from the entire application — domain model, persistence, RPC, UI,

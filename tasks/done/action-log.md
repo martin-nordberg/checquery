@@ -478,45 +478,13 @@ error, not be silently swallowed.
 
 ---
 
-## 14. Content Migrations (temporary — see `remove-vendor-categories-implementation-plan.md`)
+## 14. Content Migrations (historical)
 
-> **This section documents `src/bun/persistence/actionLog/contentMigrations/`, disposable scaffolding built
-> for one specific removal (vendor categories) and deleted once every real file has been confirmed upgraded
-> (that plan's "Phase 2"). Once deleted, replace this section with a one-line historical note** — it is
-> deliberately not written as durable as §5's DDL migrations, which this mechanism is a sibling to, not a
-> replacement for.
-
-§5's migrations are schema-only DDL, run via `up(db): void`, requiring no encryption key so `db.ts` can run
-them before deriving one. Removing vendor categories needed something §5 can't do: dropping specific actions
-and stripping a field from others, which means decrypting and re-encrypting every row — only possible *after*
-password verification. That's a `content_version` meta key, parallel to but independent of `schema_version`:
-
-- Missing key ⇒ implicitly version `1` (every file predating the concept). `createNewFile` stamps
-  `CURRENT_CONTENT_VERSION` into new files immediately, so they never run the upgrade below.
-- `openExistingFile`, right after password verification (so a working `codec` exists) and before constructing
-  the live `ActionLog`, compares the file's `content_version` against `CURRENT_CONTENT_VERSION`: higher fails
-  `unsupported-version` (symmetric with §4.3's `schema_version` check); lower runs the upgrade; equal is a
-  no-op past the one meta read.
-- **The upgrade** (`upgradeFileContent.ts`) is build-then-swap, not rename-then-build: build a fully verified
-  replacement at a temp path first, and only then touch the original —
-  1. Fresh DB at `<path>.upgrading-tmp`, migrated via §5's `runMigrations` — the same DDL every file gets
-     (§6.2's `CHECK` constraint is a frozen historical literal, not derived from the live domain layer, so it
-     still permits the vendor-category action types even here; only the *content* streamed in next is clean).
-  2. Copy `_checquery_meta`'s identity/crypto keys (`file_id`, `kdf_salt`, `kdf_params`, `verify_iv`,
-     `verify_ciphertext`, `node_id`, `created_at`, `encrypted`) verbatim — same password, same HLC node, same
-     file identity. Stamp `content_version = CURRENT_CONTENT_VERSION`.
-  3. Stream every action from the original via `readActions()` (already decrypting, already open) through a
-     registered transform (`runContentMigrations.ts`'s `applyContentMigrations`; today just one step,
-     `0001_removeVendorCategories.ts`), and `appendAction` surviving ones into the destination under the same
-     key — preserving each one's original `hlc` exactly (§8: `appendAction`'s "already has an hlc" branch sets
-     `rowHlc = event.hlc` directly, so this is exactly the cross-log-copy pattern §7.2 already established).
-  4. Reopen the temp file fresh and fully re-decode every row as an integrity check before trusting it.
-  5. Only now: close the original, rename it to `<path>-v<oldContentVersion>` as a backup (refusing to
-     overwrite an existing one — that state means a prior attempt partially completed and needs a human), then
-     rename the temp file into place.
-- Every file this mechanism touches carries a `// TEMPORARY SCAFFOLDING` comment pointing at Phase 2 of
-  `remove-vendor-categories-implementation-plan.md` — the removal plan itself lists exactly what to delete.
-
-This mechanism generalizes to a future domain-model change the same shape (drop/transform specific actions,
-rewrite the file) would reuse — but it isn't kept around "just in case": per the plan above, it's deleted once
-this specific migration is confirmed no longer needed, and rebuilt then if the need recurs.
+A one-time content migration removing vendor categories existed here (`src/bun/persistence/actionLog/
+contentMigrations/`, plus a `content_version` meta key and hooks in `db.ts`/`FileInfoModal.tsx`) between the
+2026-09 vendor-categories removal and its Phase 2 cleanup, both weeks later. It decrypted, transformed
+(dropping vendor-category actions and stripping their `ctgId` field off vendor events), and re-encrypted an
+existing file's entire action log on first open under the new code, backing up the original as `<path>-v1`.
+Deleted once every real file was confirmed upgraded — see `tasks/done/remove-vendor-categories-implementation-
+plan.md` for the full design if this kind of migration (something DDL alone can't do, because it needs the
+decryption key) is needed again.
