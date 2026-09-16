@@ -11,8 +11,6 @@ import { transactionReadSchema, type Transaction } from '../../shared/domain/tra
 import { genTxnId } from '../../shared/domain/transactions/TxnId'
 import { vendorReadSchema, type Vendor } from '../../shared/domain/vendors/Vendor'
 import { genVndrId, type VndrId } from '../../shared/domain/vendors/VndrId'
-import { vendorCategoryReadSchema, type VendorCategory } from '../../shared/domain/vendorCategories/VendorCategory'
-import { genVndrCtgId } from '../../shared/domain/vendorCategories/VndrCtgId'
 import { periodSchema } from '../../shared/domain/core/Period'
 
 function category(overrides: { id?: AcctCtgId; parentCtgId?: AcctCtgId; acctType?: AcctTypeStr; name: string }): AccountCategory {
@@ -37,16 +35,7 @@ function account(overrides: { id?: AcctId; parentCtgId: AcctCtgId; acctType?: Ac
 	})
 }
 
-function vendorCategory(overrides: { name: string }): VendorCategory {
-	return vendorCategoryReadSchema.parse({
-		id: genVndrCtgId(),
-		origId: genOrigId(),
-		description: '',
-		...overrides,
-	})
-}
-
-function vendor(overrides: { name: string; ctgId: ReturnType<typeof genVndrCtgId> }): Vendor {
+function vendor(overrides: { name: string }): Vendor {
 	return vendorReadSchema.parse({
 		id: genVndrId(),
 		origId: genOrigId(),
@@ -97,7 +86,7 @@ describe('buildIncomeStatementDetails', () => {
 			],
 		})
 
-		const details = buildIncomeStatementDetails([bills], [electric, other], [later, earlier], [], [], period)
+		const details = buildIncomeStatementDetails([bills], [electric, other], [later, earlier], [], period)
 
 		const electricLine = details.expenses.lines.find((l) => l.label === 'Electric')!
 		expect(electricLine.kind).toBe('account')
@@ -125,7 +114,7 @@ describe('buildIncomeStatementDetails', () => {
 			],
 		})
 
-		const details = buildIncomeStatementDetails([jobs], [salary, bonus, cash], [txn], [], [], period)
+		const details = buildIncomeStatementDetails([jobs], [salary, bonus, cash], [txn], [], period)
 
 		const salaryLine = details.income.lines.find((l) => l.label === 'Salary')!
 		const bonusLine = details.income.lines.find((l) => l.label === 'Bonus')!
@@ -140,7 +129,7 @@ describe('buildIncomeStatementDetails', () => {
 		const bills = category({ name: 'Bills' })
 		const electric = account({ name: 'Electric', parentCtgId: bills.id })
 
-		const details = buildIncomeStatementDetails([bills], [electric], [], [], [], period)
+		const details = buildIncomeStatementDetails([bills], [electric], [], [], period)
 
 		const electricLine = details.expenses.lines.find((l) => l.label === 'Electric')!
 		if (electricLine.kind !== 'account') throw new Error('unreachable')
@@ -152,8 +141,7 @@ describe('buildIncomeStatementDetails', () => {
 		const bills = category({ name: 'Bills' })
 		const electric = account({ name: 'Electric', parentCtgId: bills.id })
 		const other = account({ name: 'Other', acctType: 'ASSET', parentCtgId: bills.id })
-		const utilities = vendorCategory({ name: 'Utilities' })
-		const powerCo = vendor({ name: 'PowerCo', ctgId: utilities.id })
+		const powerCo = vendor({ name: 'PowerCo' })
 
 		const withVendor = transaction({
 			postDate: '2026-01-05',
@@ -178,13 +166,12 @@ describe('buildIncomeStatementDetails', () => {
 			[electric, other],
 			[withVendor, withoutVendor],
 			[powerCo],
-			[utilities],
 			period,
 		)
 
 		const electricLine = details.expenses.lines.find((l) => l.label === 'Electric')!
 		if (electricLine.kind !== 'account') throw new Error('unreachable')
-		expect(electricLine.entries[0]!.vendorLabel).toBe('Utilities : PowerCo')
+		expect(electricLine.entries[0]!.vendorLabel).toBe('PowerCo')
 		expect(electricLine.entries[1]!.vendorLabel).toBeUndefined()
 	})
 
@@ -217,7 +204,6 @@ describe('buildIncomeStatementDetails', () => {
 			[electric, salary, other],
 			[expenseTxn, incomeTxn],
 			[],
-			[],
 			period,
 		)
 
@@ -227,14 +213,14 @@ describe('buildIncomeStatementDetails', () => {
 
 describe('formatVendorDescription', () => {
 	it('combines vendor and description when both are present', () => {
-		expect(formatVendorDescription({ vendorLabel: 'Utilities : PowerCo', description: 'January bill' as never })).toBe(
-			'Utilities : PowerCo -- January bill',
+		expect(formatVendorDescription({ vendorLabel: 'PowerCo', description: 'January bill' as never })).toBe(
+			'PowerCo -- January bill',
 		)
 	})
 
 	it('returns just the vendor when there is no description', () => {
-		expect(formatVendorDescription({ vendorLabel: 'Utilities : PowerCo', description: '' as never })).toBe(
-			'Utilities : PowerCo',
+		expect(formatVendorDescription({ vendorLabel: 'PowerCo', description: '' as never })).toBe(
+			'PowerCo',
 		)
 	})
 

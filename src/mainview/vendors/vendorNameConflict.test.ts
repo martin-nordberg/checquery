@@ -2,14 +2,12 @@ import { describe, expect, it } from 'bun:test'
 import { hasVendorNameConflict } from './vendorNameConflict'
 import { vendorReadSchema, type Vendor } from '../../shared/domain/vendors/Vendor'
 import { genVndrId } from '../../shared/domain/vendors/VndrId'
-import { genVndrCtgId } from '../../shared/domain/vendorCategories/VndrCtgId'
 import { genOrigId } from '../../shared/domain/origins/OrigId'
 
 function vendor(overrides: { name: string }): Vendor {
     return vendorReadSchema.parse({
         id: genVndrId(),
         origId: genOrigId(),
-        ctgId: genVndrCtgId(),
         description: '',
         isActive: true,
         ...overrides,

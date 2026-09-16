@@ -3,7 +3,6 @@ import type { Account } from "./domain/accounts/Account";
 import type { AcctTypeStr } from "./domain/accounts/AcctType";
 import type { AccountCategory } from "./domain/accountCategories/AccountCategory";
 import type { Vendor } from "./domain/vendors/Vendor";
-import type { VendorCategory } from "./domain/vendorCategories/VendorCategory";
 import type { Transaction } from "./domain/transactions/Transaction";
 import type { AccountBalance } from "./domain/transactions/AccountBalance";
 import type { EncryptionMode } from "./encryptionMode";
@@ -37,12 +36,17 @@ export type FileInfoPayload = {
 		accounts: number;
 		accountCategories: number;
 		vendors: number;
-		vendorCategories: number;
 		transactions: number;
 		balanceAssertions: number;
 	};
 	actionLogEntryCount: number;
 	meta: Array<{ key: string; value: string }>;
+	/** TEMPORARY SCAFFOLDING (see src/bun/persistence/actionLog/contentMigrations/) -- whether this file's
+	 * action log is on the current content_version. Lets FileInfoModal show a concrete confirmation that a
+	 * given file has actually gone through the vendor-categories content-migration upgrade, rather than the
+	 * user having to trust it happened silently. Removed along with the rest of contentMigrations/ in Phase 2
+	 * of tasks/done/remove-vendor-categories-implementation-plan.md. */
+	contentVersionIsCurrent: boolean;
 };
 
 /** Params for the bun-side createAccount request. acctType and parentCtgId are always supplied by the page
@@ -87,14 +91,10 @@ export type PatchAccountCategoryParams = {
 };
 
 /** Params for the bun-side createVendor request. isActive is deliberately omitted -- new vendors are always
- * created active; see documentation/vendor-list-implementation-plan.md §0. ctgId is required -- every
- * vendor must have a category, forced by which category row's "+ Add vendor" was clicked (still shown/
- * changeable in the form itself, unlike account/parentCtgId which is fully implicit) -- see
- * documentation/vendor-categories-implementation-plan.md §0/§7. */
+ * created active; see documentation/vendor-list-implementation-plan.md §0. */
 export type CreateVendorParams = {
 	name: string;
 	description?: string;
-	ctgId: string;
 	defaultAcctId?: string;
 };
 
@@ -102,21 +102,8 @@ export type PatchVendorParams = {
 	id: string;
 	name?: string;
 	description?: string;
-	ctgId?: string;
 	defaultAcctId?: string;
 	isActive?: boolean;
-};
-
-/** Params for the bun-side createVendorCategory request. id/origId/hlc are filled in bun-side. */
-export type CreateVendorCategoryParams = {
-	name: string;
-	description?: string;
-};
-
-export type PatchVendorCategoryParams = {
-	id: string;
-	name?: string;
-	description?: string;
 };
 
 /** Params for the bun-side createTransaction request. id/origId/hlc are filled in bun-side. entries is
@@ -167,11 +154,6 @@ export type AppSchema = {
 			patchVendor: { params: PatchVendorParams; response: void };
 			deleteVendor: { params: { id: string }; response: void };
 			isVendorInUse: { params: { id: string }; response: boolean };
-			findVendorCategoriesAll: { params: undefined; response: VendorCategory[] };
-			createVendorCategory: { params: CreateVendorCategoryParams; response: void };
-			patchVendorCategory: { params: PatchVendorCategoryParams; response: void };
-			deleteVendorCategory: { params: { id: string }; response: void };
-			isVendorCategoryInUse: { params: { id: string }; response: boolean };
 			findTransactionsByAccount: { params: { accountId: string }; response: Transaction[] };
 			findLatestTransactionForVendorAndAccount: {
 				params: { vndrId: string; accountId: string };

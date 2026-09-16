@@ -12,7 +12,6 @@ import { currencyAmtSchema } from "../../../shared/domain/core/CurrencyAmt";
 import { transactionReadSchema, type Transaction } from "../../../shared/domain/transactions/Transaction";
 import { genTxnId } from "../../../shared/domain/transactions/TxnId";
 import type { Vendor } from "../../../shared/domain/vendors/Vendor";
-import type { VendorCategory } from "../../../shared/domain/vendorCategories/VendorCategory";
 
 function category(overrides: { id?: AcctCtgId; parentCtgId?: AcctCtgId; acctType?: AcctTypeStr; name: string }): AccountCategory {
 	return accountCategoryReadSchema.parse({
@@ -58,7 +57,6 @@ function transaction(overrides: {
 const findAccountsAllMock = mock(async (): Promise<Account[]> => []);
 const findAccountCategoriesAllMock = mock(async (): Promise<AccountCategory[]> => []);
 const findVendorsAllMock = mock(async (): Promise<Vendor[]> => []);
-const findVendorCategoriesAllMock = mock(async (): Promise<VendorCategory[]> => []);
 const findAccountBalancesForPeriodMock = mock(async (): Promise<AccountBalance[]> => []);
 const findTransactionsForPeriodMock = mock(async (): Promise<Transaction[]> => []);
 
@@ -70,9 +68,6 @@ mock.module("../../accountCategories/accountCategoriesClient", () => ({
 }));
 mock.module("../../vendors/vendorsClient", () => ({
 	vendorsClient: { findVendorsAll: findVendorsAllMock },
-}));
-mock.module("../../vendorCategories/vendorCategoriesClient", () => ({
-	vendorCategoriesClient: { findVendorCategoriesAll: findVendorCategoriesAllMock },
 }));
 mock.module("../../transactions/transactionsClient", () => ({
 	transactionsClient: {
@@ -87,13 +82,11 @@ function resetMocks() {
 	findAccountsAllMock.mockReset();
 	findAccountCategoriesAllMock.mockReset();
 	findVendorsAllMock.mockReset();
-	findVendorCategoriesAllMock.mockReset();
 	findAccountBalancesForPeriodMock.mockReset();
 	findTransactionsForPeriodMock.mockReset();
 	findAccountsAllMock.mockResolvedValue([]);
 	findAccountCategoriesAllMock.mockResolvedValue([]);
 	findVendorsAllMock.mockResolvedValue([]);
-	findVendorCategoriesAllMock.mockResolvedValue([]);
 	findAccountBalancesForPeriodMock.mockResolvedValue([]);
 	findTransactionsForPeriodMock.mockResolvedValue([]);
 }

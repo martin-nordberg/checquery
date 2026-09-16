@@ -10,7 +10,6 @@ import HoverableDropDown from "../nav/HoverableDropDown";
 import { accountsClient } from "../../accounts/accountsClient";
 import { accountCategoriesClient } from "../../accountCategories/accountCategoriesClient";
 import { vendorsClient } from "../../vendors/vendorsClient";
-import { vendorCategoriesClient } from "../../vendorCategories/vendorCategoriesClient";
 import { transactionsClient } from "../../transactions/transactionsClient";
 import { buildRegisterLineItems } from "../../transactions/buildRegisterLineItems";
 import { accountCategoryPathLabel } from "../../accounts/accountFullPathLabel";
@@ -47,7 +46,6 @@ export default function TransactionLog(props: TransactionLogProps) {
 	const [accounts, { refetch: refetchAccounts }] = createResource(() => accountsClient.findAccountsAll());
 	const [categories] = createResource(() => accountCategoriesClient.findAccountCategoriesAll());
 	const [vendors, { refetch: refetchVendors }] = createResource(() => vendorsClient.findVendorsAll());
-	const [vendorCategories] = createResource(() => vendorCategoriesClient.findVendorCategoriesAll());
 	const [transactions, { refetch: refetchTransactions }] = createResource(
 		() => props.accountId,
 		(accountId) => transactionsClient.findTransactionsByAccount(accountId),
@@ -63,7 +61,6 @@ export default function TransactionLog(props: TransactionLogProps) {
 			transactions() ?? [],
 			accounts() ?? [],
 			vendors() ?? [],
-			vendorCategories() ?? [],
 			props.accountId,
 			acct.acctType,
 		);
@@ -233,7 +230,6 @@ export default function TransactionLog(props: TransactionLogProps) {
 											accounts={accounts() ?? []}
 											categories={categories() ?? []}
 											vendors={vendors() ?? []}
-											vendorCategories={vendorCategories() ?? []}
 											refetchVendors={refetchVendors}
 											initialPostDate={stickyDate()}
 											columnCount={columnCount()}
@@ -267,7 +263,6 @@ export default function TransactionLog(props: TransactionLogProps) {
 														accounts={accounts() ?? []}
 														categories={categories() ?? []}
 														vendors={vendors() ?? []}
-														vendorCategories={vendorCategories() ?? []}
 														refetchVendors={refetchVendors}
 														columnCount={columnCount()}
 														onCancel={handleCancelEdit}

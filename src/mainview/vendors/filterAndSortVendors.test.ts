@@ -2,7 +2,6 @@ import { describe, expect, it } from 'bun:test'
 import { filterAndSortVendors } from './filterAndSortVendors'
 import { vendorReadSchema, type Vendor } from '../../shared/domain/vendors/Vendor'
 import { genVndrId } from '../../shared/domain/vendors/VndrId'
-import { genVndrCtgId } from '../../shared/domain/vendorCategories/VndrCtgId'
 import { genOrigId } from '../../shared/domain/origins/OrigId'
 
 type VendorFixtureOverrides = {
@@ -14,7 +13,6 @@ function vendor(overrides: VendorFixtureOverrides): Vendor {
     return vendorReadSchema.parse({
         id: genVndrId(),
         origId: genOrigId(),
-        ctgId: genVndrCtgId(),
         description: '',
         isActive: true,
         ...overrides,

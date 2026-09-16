@@ -4,7 +4,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'bun:test'
 import { closeCurrentFile, createNewFile, getCurrentFile, getCurrentFileInfo, getCurrentLedgerStore, getCurrentOrigId, openExistingFile } from './db'
-import { setMetaValue } from './actionLog/meta'
+import { getMetaValue, setMetaValue } from './actionLog/meta'
+import { AesGcmCodec } from './actionLog/encryption/AesGcmCodec'
+import { deriveKey, type KdfParams } from './actionLog/encryption/crypto'
 import { genOrigId } from '../../shared/domain/origins/OrigId'
 import { accountCreationEventSchema } from '../../shared/domain/accounts/Account'
 import { genAcctId } from '../../shared/domain/accounts/AcctId'
@@ -257,6 +259,86 @@ describe('openExistingFile', () => {
         if (result.ok) return
         expect(result.code).toBe('unsupported-version')
     })
+
+    // TEMPORARY SCAFFOLDING -- these two cover db.ts's wiring of the content-migration mechanism (see
+    // contentMigrations/upgradeFileContent.test.ts for thorough coverage of the mechanism itself). Delete
+    // along with the rest of contentMigrations/ once every real file has been confirmed upgraded (Phase 2 of
+    // tasks/done/remove-vendor-categories-implementation-plan.md).
+    describe('content_version (contentMigrations/)', () => {
+        it('fails with unsupported-version for a content_version newer than this build knows', async () => {
+            const name = freshName()
+            const created = await createNewFile(tmpDir, name, 'correct horse', 'enabled')
+            expect(created.ok).toBe(true)
+            if (!created.ok) return
+
+            const db = new Database(created.path, { create: false, readwrite: true })
+            setMetaValue(db, 'content_version', '9999')
+            db.close()
+
+            const result = await openExistingFile(created.path, 'correct horse')
+            expect(result.ok).toBe(false)
+            if (result.ok) return
+            expect(result.code).toBe('unsupported-version')
+        })
+
+        it('transparently upgrades an old-shape file on open, backing up the original', async () => {
+            const name = freshName()
+            const created = await createNewFile(tmpDir, name, 'correct horse', 'enabled')
+            expect(created.ok).toBe(true)
+            if (!created.ok) return
+            closeCurrentFile()
+
+            // Simulate a pre-existing file: no content_version key at all (implicit v1), plus a raw action row
+            // of a type that no longer exists in the current ActionType union -- exactly what a real file
+            // still carrying vendor-category history looks like. The live actions table's CHECK constraint no
+            // longer allows that type (it's generated from the current ACTION_TYPES), so it's rebuilt here
+            // with the old, more permissive constraint first, carrying its existing rows over unchanged.
+            const db = new Database(created.path, { create: false, readwrite: true })
+            db.run(`DELETE FROM _checquery_meta WHERE key = 'content_version'`)
+            db.run(`ALTER TABLE actions RENAME TO actions_old`)
+            db.run(`
+                CREATE TABLE actions (
+                    id                TEXT PRIMARY KEY,
+                    action_type       TEXT NOT NULL CHECK (action_type IN (
+                        'create-account', 'update-account', 'delete-account',
+                        'create-vendor', 'update-vendor', 'delete-vendor',
+                        'create-vendor-category', 'update-vendor-category', 'delete-vendor-category',
+                        'create-origin'
+                    )),
+                    hlc               TEXT NOT NULL,
+                    iv                TEXT NOT NULL,
+                    encrypted_payload TEXT NOT NULL
+                )
+            `)
+            db.run(`INSERT INTO actions SELECT * FROM actions_old`)
+            db.run(`DROP TABLE actions_old`)
+
+            const kdfSalt = getMetaValue(db, 'kdf_salt')!
+            const kdfParams = JSON.parse(getMetaValue(db, 'kdf_params')!) as KdfParams
+            const key = deriveKey('correct horse', kdfSalt, kdfParams)
+            const codec = new AesGcmCodec(key)
+
+            const hlc = '0000000000001AAA'
+            const { iv, payload } = codec.encode(JSON.stringify({ id: 'legacyctg1', name: 'Legacy', hlc }))
+            db.run(
+                `INSERT INTO actions (id, action_type, hlc, iv, encrypted_payload) VALUES (?, 'create-vendor-category', ?, ?, ?)`,
+                ['actnlegacy0000000000000001', hlc, iv, payload],
+            )
+            db.close()
+
+            const result = await openExistingFile(created.path, 'correct horse')
+            expect(result.ok).toBe(true)
+            if (!result.ok) return
+
+            expect(existsSync(`${created.path}-v1`)).toBe(true)
+
+            const info = await getCurrentFileInfo()
+            expect(info).not.toBeNull()
+            // The freshly-created file already had 2 actions (the bootstrapped origin + Net Worth account);
+            // the legacy create-vendor-category action added above was dropped by the upgrade, not kept.
+            expect(info!.actionLogEntryCount).toBe(2)
+        })
+    })
 })
 
 describe('getCurrentFileInfo', () => {
@@ -285,13 +367,13 @@ describe('getCurrentFileInfo', () => {
             accounts: 1,
             accountCategories: 0,
             vendors: 0,
-            vendorCategories: 0,
             transactions: 0,
             balanceAssertions: 0,
         })
         expect(info!.actionLogEntryCount).toBe(2)
         expect(info!.meta.find((e) => e.key === 'file_id')?.value).toBe(created.fileId)
         expect(info!.meta.find((e) => e.key === 'encrypted')?.value).toBe('true')
+        expect(info!.contentVersionIsCurrent).toBe(true)
     })
 
     it('reflects writes made through the ledger store', async () => {

@@ -1,5 +1,9 @@
 # Vendor Categories — Implementation Plan
 
+> **Superseded.** Vendor categories proved to be a mistake in practice and were removed from the entire
+> application — see `tasks/done/remove-vendor-categories-implementation-plan.md`. Kept here only as the
+> historical record of how this was originally built.
+
 > Covers introducing `VendorCategory` (per `vendor-categories.md`) and making every `Vendor` require one.
 > Unlike `AccountCategory`, vendor categories are **flat, single-level, no subcategories, no root concept** —
 > per your direction, the Vendor List UI otherwise becomes as close to the Account List's tree UI as that

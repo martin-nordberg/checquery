@@ -1,5 +1,15 @@
 # Remove Vendor Categories — Implementation Plan
 
+> **Phase 1 implemented as planned**, with a few small implementation-time additions not called out in the
+> original plan text: `upgradeFileContent`'s meta copy also carries the `encrypted` flag (needed so a future
+> open of the rewritten file still knows whether to derive a key at all — an oversight in the original
+> §2c bullet list, not a deliberate omission); a stale `<path>.upgrading-tmp` left over from a prior failed
+> attempt is deleted before starting (the plan only specified refusing to clobber an existing *backup*, not
+> the disposable temp path); and the "verify the rewritten file" step does a full re-decode-every-row pass,
+> not just a row-count check, catching a decrypt/JSON failure at upgrade time rather than at the next real
+> open. **Phase 2 (§11) is deliberately not done yet** — it waits on your explicit go-ahead once you've opened
+> every real file you care about under this build; see §11 for the trigger and exactly what it removes.
+>
 > Reverses `tasks/done/vendor-categories-implementation-plan.md` in full: vendor categories have proved to be a
 > mistake in practice and are being removed from the entire application — domain model, persistence, RPC, UI,
 > and docs — with **zero permanent trace left in the application code**. (The `yaml-import` CLI, which also

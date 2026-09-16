@@ -7,7 +7,6 @@ import type {
     VendorPatchEvent,
 } from "../../../../shared/domain/vendors/Vendor";
 import type { VndrId } from "../../../../shared/domain/vendors/VndrId";
-import type { VndrCtgId } from "../../../../shared/domain/vendorCategories/VndrCtgId";
 import type { AcctId } from "../../../../shared/domain/accounts/AcctId";
 import type { NameStr } from "../../../../shared/domain/core/Name";
 import type { DescriptionStr } from "../../../../shared/domain/core/Description";
@@ -18,7 +17,6 @@ type VendorRow = {
     orig_id: string
     name: string
     description: string
-    ctg_id: string
     default_acct_id: string | null
     is_active: number
 }
@@ -29,7 +27,6 @@ function rowToVendor(row: VendorRow): Vendor {
         origId: row.orig_id as OrigId,
         name: row.name as NameStr,
         description: row.description as DescriptionStr,
-        ctgId: row.ctg_id as VndrCtgId,
         defaultAcctId: row.default_acct_id !== null ? (row.default_acct_id as AcctId) : undefined,
         isActive: row.is_active === 1,
     } as Vendor
@@ -42,14 +39,13 @@ export class VendorMaterializedStoreSvc implements IVendorSvc {
 
     async createVendor(vendorCreation: VendorCreationEvent): Promise<VendorCreationEvent | null> {
         this.db.run(
-            `INSERT INTO vendors (id, orig_id, name, description, ctg_id, default_acct_id, is_active)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO vendors (id, orig_id, name, description, default_acct_id, is_active)
+             VALUES (?, ?, ?, ?, ?, ?)`,
             [
                 vendorCreation.id,
                 vendorCreation.origId,
                 vendorCreation.name,
                 vendorCreation.description,
-                vendorCreation.ctgId,
                 vendorCreation.defaultAcctId ?? null,
                 vendorCreation.isActive ? 1 : 0,
             ],
@@ -68,10 +64,6 @@ export class VendorMaterializedStoreSvc implements IVendorSvc {
         if (vendorPatch.description !== undefined) {
             sets.push("description = ?")
             params.push(vendorPatch.description)
-        }
-        if (vendorPatch.ctgId !== undefined) {
-            sets.push("ctg_id = ?")
-            params.push(vendorPatch.ctgId)
         }
         if (vendorPatch.defaultAcctId !== undefined) {
             sets.push("default_acct_id = ?")

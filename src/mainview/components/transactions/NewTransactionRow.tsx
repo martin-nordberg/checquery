@@ -4,7 +4,6 @@ import type { AccountCategory } from "../../../shared/domain/accountCategories/A
 import type { AcctId } from "../../../shared/domain/accounts/AcctId";
 import type { AcctTypeStr } from "../../../shared/domain/accounts/AcctType";
 import type { Vendor } from "../../../shared/domain/vendors/Vendor";
-import type { VendorCategory } from "../../../shared/domain/vendorCategories/VendorCategory";
 import { isoDateToday } from "../../../shared/domain/core/IsoDate";
 import { transactionsClient } from "../../transactions/transactionsClient";
 import ConfirmDialog from "../common/ConfirmDialog";
@@ -21,7 +20,6 @@ type NewTransactionRowProps = {
 	accounts: Account[];
 	categories: AccountCategory[];
 	vendors: Vendor[];
-	vendorCategories: VendorCategory[];
 	refetchVendors: (info?: unknown) => Vendor[] | Promise<Vendor[] | undefined> | null | undefined;
 	initialPostDate?: string;
 	columnCount: number;
@@ -210,7 +208,6 @@ export default function NewTransactionRow(props: NewTransactionRowProps) {
 							<div class="col-span-2">
 								<VendorFieldWithAdd
 									vendors={props.vendors}
-									vendorCategories={props.vendorCategories}
 									accounts={props.accounts}
 									value={form.vndrId()}
 									onChange={form.setVndrId}

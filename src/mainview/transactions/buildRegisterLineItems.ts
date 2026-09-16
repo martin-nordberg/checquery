@@ -3,7 +3,6 @@ import type { Account } from "../../shared/domain/accounts/Account";
 import type { AcctId } from "../../shared/domain/accounts/AcctId";
 import type { AcctTypeStr } from "../../shared/domain/accounts/AcctType";
 import type { Vendor } from "../../shared/domain/vendors/Vendor";
-import type { VendorCategory } from "../../shared/domain/vendorCategories/VendorCategory";
 import type { VndrId } from "../../shared/domain/vendors/VndrId";
 import type { TxnId } from "../../shared/domain/transactions/TxnId";
 import type { IsoDate } from "../../shared/domain/core/IsoDate";
@@ -42,7 +41,6 @@ export function buildRegisterLineItems(
 	transactions: readonly Transaction[],
 	accounts: readonly Account[],
 	vendors: readonly Vendor[],
-	vendorCategories: readonly VendorCategory[],
 	accountId: AcctId,
 	acctType: AcctTypeStr,
 ): RegisterLineItem[] {
@@ -78,7 +76,7 @@ export function buildRegisterLineItems(
 			clearedDate: transaction.clearedDate,
 			code: transaction.code,
 			vndrId: transaction.vndrId,
-			vendorLabel: vendor ? vendorPickerLabel(vendor, vendorCategories) : undefined,
+			vendorLabel: vendor ? vendorPickerLabel(vendor) : undefined,
 			description: transaction.description,
 			offsetAccountName:
 				offsetAccountNames.length === 1

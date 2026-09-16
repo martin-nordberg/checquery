@@ -6,7 +6,6 @@ import type { AccountTreeNode } from "../accountCategories/buildAccountCategoryT
 import { buildAccountCategoryTree } from "../accountCategories/buildAccountCategoryTree";
 import type { Transaction } from "../../shared/domain/transactions/Transaction";
 import type { Vendor } from "../../shared/domain/vendors/Vendor";
-import type { VendorCategory } from "../../shared/domain/vendorCategories/VendorCategory";
 import type { Period } from "../../shared/domain/core/Period";
 import type { IsoDate } from "../../shared/domain/core/IsoDate";
 import type { DescriptionStr } from "../../shared/domain/core/Description";
@@ -112,7 +111,6 @@ export function buildIncomeStatementDetails(
 	accounts: readonly Account[],
 	transactions: readonly Transaction[],
 	vendors: readonly Vendor[],
-	vendorCategories: readonly VendorCategory[],
 	period: Period,
 ): IncomeStatementDetails {
 	const accountsById = new Map(accounts.map((account) => [account.id, account]));
@@ -133,7 +131,7 @@ export function buildIncomeStatementDetails(
 			const vendor = transaction.vndrId ? vendorsById.get(transaction.vndrId) : undefined;
 			const detail: IncStmtEntryDetail = {
 				date: transaction.postDate,
-				vendorLabel: vendor ? vendorPickerLabel(vendor, vendorCategories) : undefined,
+				vendorLabel: vendor ? vendorPickerLabel(vendor) : undefined,
 				description: transaction.description,
 				amount: fromCents(signedCents),
 			};

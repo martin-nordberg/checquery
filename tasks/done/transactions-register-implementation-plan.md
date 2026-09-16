@@ -88,17 +88,16 @@
   — the active row (`NewTransactionRow`/`EditableTransactionRow`) owns its own `addingVendor` signal and
   renders `NewVendorRow` directly. **One small, backward-compatible signature change is needed**: `NewVendorRow`'s
   `onAdded` callback currently takes no argument; it becomes `onAdded: (name: string) => void` so the caller
-  can find the freshly-created vendor (by its globally-unique name, per
-  `vendor-categories-implementation-plan.md`) after refetching and auto-select it in the picker.
-  `VendorListPage.tsx`'s call site (`actions.onAdded`) is updated to accept and ignore the new argument.
-  `ctgId` defaults to the first vendor category alphabetically; if the file has none yet, the "+" button is
-  disabled with a title pointing at the Vendor List page (mirrors the existing constraint that a brand-new
-  file has no vendor categories to begin with).
-- **Vendor picker lists every vendor, active or inactive**, labeled `"<Category> : <Name>"` per the todo,
-  with `" (Inactive)"` appended for inactive ones, sorted by category then name. Unlike the Vendor List page's
-  Active/Inactive/Both filter, there's no radio here to hide anything — a register must stay able to display
-  and re-edit old transactions against a vendor that's since been deactivated, so the picker always includes
-  it rather than silently blanking the field.
+  can find the freshly-created vendor (by its globally-unique name) after refetching and auto-select it in
+  the picker. `VendorListPage.tsx`'s call site (`actions.onAdded`) is updated to accept and ignore the new
+  argument.
+  (Vendor categories briefly existed between this plan and `remove-vendor-categories-implementation-plan.md`
+  — mentions of `ctgId`/category-gating below are historical, not current; see that plan for the reversion.)
+- **Vendor picker lists every vendor, active or inactive**, labeled by name, with `" (Inactive)"` appended for
+  inactive ones, sorted alphabetically. Unlike the Vendor List page's Active/Inactive/Both filter, there's no
+  radio here to hide anything — a register must stay able to display and re-edit old transactions against a
+  vendor that's since been deactivated, so the picker always includes it rather than silently blanking the
+  field.
 - **Account pickers (split-entry rows) show the full category path, no type filtering.** The todo asks for
   `"<Root> : <Category> : <Subcategory> : ... : <Name>"`; a new pure helper (`accountFullPathLabel.ts`) walks
   `parentCtgId` up to the type's root category (same walk shape as `accountCategoryDescendants.ts`, just in
@@ -296,11 +295,12 @@ export function buildRegisterLineItems(
     transactions: Transaction[],
     accounts: Account[],
     vendors: Vendor[],
-    vendorCategories: VendorCategory[],
     accountId: AcctId,
     acctType: AcctTypeStr,
 ): RegisterLineItem[]
 ```
+(Signature shown current as of vendor categories' removal — briefly had a `vendorCategories` parameter in
+between; see `remove-vendor-categories-implementation-plan.md`.)
 
 Stably sorts by `postDate` only (trusting the backend's `post_date, rowid` ordering for same-date ties, since
 `Transaction` carries no rowid client-side), accumulates a running balance using the same debit/credit-normal
@@ -354,11 +354,12 @@ same testing style as `buildAccountCategoryTree.test.ts` (small hand-built categ
 ### 2c. `src/mainview/vendors/vendorPickerLabel.ts` + test
 
 ```ts
-export function vendorPickerLabel(vendor: Vendor, categories: VendorCategory[]): string
+export function vendorPickerLabel(vendor: Vendor): string
 ```
 
-`"<Category name> : <Vendor name>"`, with `" (Inactive)"` appended when `!vendor.isActive`. A missing
-category (shouldn't happen — `ctgId` is required) falls back to just the vendor name.
+Just the vendor's name, with `" (Inactive)"` appended when `!vendor.isActive`. (Briefly took a `categories`
+parameter and produced `"<Category name> : <Vendor name>"` while vendor categories existed; reverted along
+with their removal — see `remove-vendor-categories-implementation-plan.md`.)
 
 ---
 

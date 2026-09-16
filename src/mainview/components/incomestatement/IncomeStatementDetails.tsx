@@ -5,21 +5,18 @@ import { accountsClient } from "../../accounts/accountsClient";
 import { accountCategoriesClient } from "../../accountCategories/accountCategoriesClient";
 import { transactionsClient } from "../../transactions/transactionsClient";
 import { vendorsClient } from "../../vendors/vendorsClient";
-import { vendorCategoriesClient } from "../../vendorCategories/vendorCategoriesClient";
 import { buildIncomeStatementDetails } from "../../incomestatement/buildIncomeStatementDetails";
 
 type IncomeStatementDetailsProps = { period: Period };
 
 /**
- * Fetches findTransactionsForPeriod (plus vendors/vendor categories, for vendor labels) -- the heavier query
- * Summary avoids by staying on the cheap aggregate. See documentation/income-statement-implementation-plan.md
- * §0.
+ * Fetches findTransactionsForPeriod (plus vendors, for vendor labels) -- the heavier query Summary avoids by
+ * staying on the cheap aggregate. See documentation/income-statement-implementation-plan.md §0.
  */
 export default function IncomeStatementDetails(props: IncomeStatementDetailsProps) {
 	const [accounts] = createResource(() => accountsClient.findAccountsAll());
 	const [categories] = createResource(() => accountCategoriesClient.findAccountCategoriesAll());
 	const [vendors] = createResource(() => vendorsClient.findVendorsAll());
-	const [vendorCategories] = createResource(() => vendorCategoriesClient.findVendorCategoriesAll());
 	const [transactions] = createResource(
 		() => props.period,
 		(period) => transactionsClient.findTransactionsForPeriod(getStartDate(period), getEndDate(period)),
@@ -31,14 +28,13 @@ export default function IncomeStatementDetails(props: IncomeStatementDetailsProp
 			accounts() ?? [],
 			transactions() ?? [],
 			vendors() ?? [],
-			vendorCategories() ?? [],
 			props.period,
 		),
 	);
 
 	return (
 		<Show
-			when={!accounts.loading && !categories.loading && !vendors.loading && !vendorCategories.loading && !transactions.loading}
+			when={!accounts.loading && !categories.loading && !vendors.loading && !transactions.loading}
 			fallback={<p class="text-slate-500">Loading…</p>}
 		>
 			<div class="mx-auto flex max-w-5xl flex-col gap-4">

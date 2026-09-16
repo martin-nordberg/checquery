@@ -9,9 +9,7 @@ type VendorRowProps = {
 	onEdit: () => void;
 };
 
-/** One vendor row -- always a leaf, nested under its category (VendorCategoryRow). No recursion, no
- * context, unlike AccountTreeRow -- vendor categories never nest, so a vendor's own row never needs to
- * account for depth beyond "one level under its category." */
+/** One vendor row in the flat vendor list. */
 export default function VendorRow(props: VendorRowProps) {
 	return (
 		<tr class="hover:bg-gray-50">
@@ -33,12 +31,7 @@ export default function VendorRow(props: VendorRowProps) {
 					</svg>
 				</button>
 			</td>
-			<td class="px-4 py-2 text-sm text-gray-900">
-				<div class="flex items-center gap-2" style={{ "padding-left": "1.5rem" }}>
-					<span class="w-4 shrink-0" />
-					{props.vendor.name}
-				</div>
-			</td>
+			<td class="px-4 py-2 text-sm text-gray-900">{props.vendor.name}</td>
 			<td class="px-4 py-2 text-sm text-gray-500">
 				{defaultAccountName(props.accounts, props.vendor.defaultAcctId)}
 			</td>
@@ -48,7 +41,6 @@ export default function VendorRow(props: VendorRowProps) {
 					<span class="text-green-600">Active</span>
 				</Show>
 			</td>
-			<td class="px-4 py-2 text-sm" />
 		</tr>
 	);
 }

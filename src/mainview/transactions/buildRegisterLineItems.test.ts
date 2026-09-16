@@ -7,8 +7,6 @@ import { genAcctId, type AcctId } from '../../shared/domain/accounts/AcctId'
 import { genAcctCtgId } from '../../shared/domain/accountCategories/AcctCtgId'
 import { vendorReadSchema, type Vendor } from '../../shared/domain/vendors/Vendor'
 import { genVndrId, type VndrId } from '../../shared/domain/vendors/VndrId'
-import { vendorCategoryReadSchema, type VendorCategory } from '../../shared/domain/vendorCategories/VendorCategory'
-import { genVndrCtgId } from '../../shared/domain/vendorCategories/VndrCtgId'
 import { genOrigId } from '../../shared/domain/origins/OrigId'
 import type { AcctTypeStr } from '../../shared/domain/accounts/AcctType'
 
@@ -24,16 +22,7 @@ function account(overrides: { id?: AcctId; name: string; acctType?: AcctTypeStr 
     })
 }
 
-function vendorCategory(overrides: { name: string }): VendorCategory {
-    return vendorCategoryReadSchema.parse({
-        id: genVndrCtgId(),
-        origId: genOrigId(),
-        description: '',
-        ...overrides,
-    })
-}
-
-function vendor(overrides: { name: string; ctgId: ReturnType<typeof genVndrCtgId> }): Vendor {
+function vendor(overrides: { name: string }): Vendor {
     return vendorReadSchema.parse({
         id: genVndrId(),
         origId: genOrigId(),
@@ -73,7 +62,7 @@ describe('buildRegisterLineItems', () => {
             ],
         })
 
-        const [item] = buildRegisterLineItems([txn], [checking, groceries], [], [], checking.id, 'ASSET')
+        const [item] = buildRegisterLineItems([txn], [checking, groceries], [], checking.id, 'ASSET')
 
         expect(item!.offsetAccountName).toBe('Groceries')
         expect(item!.debit as string).toBe('$0.00')
@@ -94,7 +83,7 @@ describe('buildRegisterLineItems', () => {
             ],
         })
 
-        const [item] = buildRegisterLineItems([txn], [checking, groceries, gas], [], [], checking.id, 'ASSET')
+        const [item] = buildRegisterLineItems([txn], [checking, groceries, gas], [], checking.id, 'ASSET')
 
         expect(item!.offsetAccountName).toBe('-- Split --')
     })
@@ -119,7 +108,7 @@ describe('buildRegisterLineItems', () => {
             ],
         })
 
-        const items = buildRegisterLineItems([deposit, withdrawal], [checking, other], [], [], checking.id, 'ASSET')
+        const items = buildRegisterLineItems([deposit, withdrawal], [checking, other], [], checking.id, 'ASSET')
 
         // Reversed for display: most recent first.
         expect(items.map((i) => i.description as string)).toEqual(['Withdrawal', 'Deposit'])
@@ -139,7 +128,7 @@ describe('buildRegisterLineItems', () => {
             ],
         })
 
-        const [item] = buildRegisterLineItems([charge], [creditCard, other], [], [], creditCard.id, 'LIABILITY')
+        const [item] = buildRegisterLineItems([charge], [creditCard, other], [], creditCard.id, 'LIABILITY')
 
         expect(item!.balance as string).toBe('$50.00')
     })
@@ -147,8 +136,7 @@ describe('buildRegisterLineItems', () => {
     it('resolves the vendor label via vendorPickerLabel, and leaves it undefined when there is no vendor', () => {
         const checking = account({ name: 'Checking', acctType: 'ASSET' })
         const other = account({ name: 'Other', acctType: 'EXPENSE' })
-        const suppliers = vendorCategory({ name: 'Suppliers' })
-        const acme = vendor({ name: 'Acme', ctgId: suppliers.id })
+        const acme = vendor({ name: 'Acme' })
 
         const withVendor = transaction({
             postDate: '2026-01-10',
@@ -172,14 +160,13 @@ describe('buildRegisterLineItems', () => {
             [withVendor, withoutVendor],
             [checking, other],
             [acme],
-            [suppliers],
             checking.id,
             'ASSET',
         )
 
         const withVendorItem = items.find((i) => i.description as string === 'Purchase')
         const withoutVendorItem = items.find((i) => i.description as string === 'No vendor')
-        expect(withVendorItem!.vendorLabel).toBe('Suppliers : Acme')
+        expect(withVendorItem!.vendorLabel).toBe('Acme')
         expect(withoutVendorItem!.vendorLabel).toBeUndefined()
     })
 
@@ -203,7 +190,7 @@ describe('buildRegisterLineItems', () => {
             ],
         })
 
-        const items = buildRegisterLineItems([first, second], [checking, other], [], [], checking.id, 'ASSET')
+        const items = buildRegisterLineItems([first, second], [checking, other], [], checking.id, 'ASSET')
 
         // Reversed for display, so "Second" (given later in input order for the same date) shows first.
         expect(items.map((i) => i.description as string)).toEqual(['Second', 'First'])

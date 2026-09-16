@@ -1,13 +1,11 @@
-import { createMemo, createSignal, Show } from "solid-js";
+import { createSignal, Show } from "solid-js";
 import type { Account } from "../../../shared/domain/accounts/Account";
 import type { Vendor } from "../../../shared/domain/vendors/Vendor";
-import type { VendorCategory } from "../../../shared/domain/vendorCategories/VendorCategory";
 import VendorPicker from "../vendors/VendorPicker";
 import NewVendorRow from "../vendors/NewVendorRow";
 
 type VendorFieldWithAddProps = {
 	vendors: Vendor[];
-	vendorCategories: VendorCategory[];
 	accounts: Account[];
 	value: string;
 	onChange: (vndrId: string) => void;
@@ -25,10 +23,6 @@ type VendorFieldWithAddProps = {
 export default function VendorFieldWithAdd(props: VendorFieldWithAddProps) {
 	const [addingVendor, setAddingVendor] = createSignal(false);
 
-	const firstCategory = createMemo(() =>
-		props.vendorCategories.slice().sort((a, b) => (a.name as string).localeCompare(b.name as string))[0],
-	);
-
 	const handleAdded = async (name: string) => {
 		const updated = (await props.refetchVendors()) ?? props.vendors;
 		setAddingVendor(false);
@@ -40,29 +34,24 @@ export default function VendorFieldWithAdd(props: VendorFieldWithAddProps) {
 		<div class="flex items-end gap-1">
 			<label class="flex flex-1 flex-col gap-1 text-xs font-medium text-gray-500">
 				Vendor
-				<VendorPicker vendors={props.vendors} categories={props.vendorCategories} value={props.value} onChange={props.onChange} />
+				<VendorPicker vendors={props.vendors} value={props.value} onChange={props.onChange} />
 			</label>
 			<button
 				type="button"
-				class="rounded p-1.5 text-green-600 hover:bg-gray-200 disabled:opacity-50"
-				disabled={!firstCategory()}
-				title={firstCategory() ? "Add a new vendor" : "Create a vendor category first"}
+				class="rounded p-1.5 text-green-600 hover:bg-gray-200"
+				title="Add a new vendor"
 				aria-label="Add a new vendor"
 				onClick={() => setAddingVendor(true)}
 			>
 				+
 			</button>
-			<Show when={addingVendor() && firstCategory()}>
-				{(category) => (
-					<NewVendorRow
-						ctgId={category().id}
-						categories={props.vendorCategories}
-						vendors={props.vendors}
-						accounts={props.accounts}
-						onAdded={(name) => void handleAdded(name)}
-						onCancel={() => setAddingVendor(false)}
-					/>
-				)}
+			<Show when={addingVendor()}>
+				<NewVendorRow
+					vendors={props.vendors}
+					accounts={props.accounts}
+					onAdded={(name) => void handleAdded(name)}
+					onCancel={() => setAddingVendor(false)}
+				/>
 			</Show>
 		</div>
 	);

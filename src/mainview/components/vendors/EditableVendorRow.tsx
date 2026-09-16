@@ -1,8 +1,6 @@
 import { createMemo, createSignal } from "solid-js";
 import type { Account } from "../../../shared/domain/accounts/Account";
 import type { Vendor } from "../../../shared/domain/vendors/Vendor";
-import type { VendorCategory } from "../../../shared/domain/vendorCategories/VendorCategory";
-import type { VndrCtgId } from "../../../shared/domain/vendorCategories/VndrCtgId";
 import { vendorsClient } from "../../vendors/vendorsClient";
 import { hasVendorNameConflict } from "../../vendors/vendorNameConflict";
 import { setErrorAlert } from "../../rpc";
@@ -11,7 +9,6 @@ import ConfirmDialog from "../common/ConfirmDialog";
 
 type EditableVendorRowProps = {
 	vendor: Vendor;
-	categories: VendorCategory[];
 	vendors: Vendor[];
 	accounts: Account[];
 	onEdited: () => void;
@@ -19,9 +16,8 @@ type EditableVendorRowProps = {
 };
 
 /**
- * Edit form for an existing vendor: name, description, category, default account, isActive. Unlike
- * accounts there's no immutable-after-creation field to omit -- every vendor field is patchable here,
- * including category (recategorizing).
+ * Edit form for an existing vendor: name, description, default account, isActive. Every vendor field is
+ * patchable here -- no immutable-after-creation field to omit, unlike accounts.
  *
  * A modal, matching EditableAccountRow -- an inline row let a click elsewhere in the list silently discard
  * whatever was typed here, with no warning. The overlay makes that impossible.
@@ -30,7 +26,6 @@ export default function EditableVendorRow(props: EditableVendorRowProps) {
 	let nameInputRef: HTMLInputElement | undefined;
 	const [name, setName] = createSignal(props.vendor.name as string);
 	const [description, setDescription] = createSignal(props.vendor.description as string);
-	const [ctgId, setCtgId] = createSignal<VndrCtgId>(props.vendor.ctgId);
 	const [defaultAcctId, setDefaultAcctId] = createSignal((props.vendor.defaultAcctId as string) ?? "");
 	const [isActive, setIsActive] = createSignal(props.vendor.isActive);
 	const [isSaving, setIsSaving] = createSignal(false);
@@ -38,13 +33,6 @@ export default function EditableVendorRow(props: EditableVendorRowProps) {
 	const [conflictError, setConflictError] = createSignal<string | null>(null);
 
 	const canSave = () => name().trim().length > 0 && !isSaving();
-
-	const categoryOptions = createMemo(() =>
-		props.categories
-			.slice()
-			.sort((a, b) => (a.name as string).localeCompare(b.name as string))
-			.map((category) => ({ id: category.id as string, label: category.name as string })),
-	);
 
 	const accountOptions = createMemo(() => [
 		{ id: "", label: "(none)" },
@@ -68,7 +56,6 @@ export default function EditableVendorRow(props: EditableVendorRowProps) {
 				id: props.vendor.id,
 				name: name(),
 				description: description(),
-				ctgId: ctgId(),
 				defaultAcctId: defaultAcctId() || undefined,
 				isActive: isActive(),
 			});
@@ -121,10 +108,6 @@ export default function EditableVendorRow(props: EditableVendorRowProps) {
 							}}
 							autofocus
 						/>
-					</label>
-					<label class="flex flex-col gap-1 text-sm text-slate-700">
-						Category
-						<AccountPicker options={categoryOptions()} value={ctgId()} onChange={(id) => setCtgId(id as VndrCtgId)} />
 					</label>
 					<label class="flex flex-col gap-1 text-sm text-slate-700">
 						Default Account

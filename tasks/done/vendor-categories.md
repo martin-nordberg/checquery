@@ -1,6 +1,10 @@
 
 # Vendor Categories
 
+> **Superseded.** Vendor categories proved to be a mistake in practice and were removed from the entire
+> application — see `tasks/done/remove-vendor-categories-implementation-plan.md`. Kept here only as the
+> historical record of what was originally asked for and why.
+
 Make vendors fall into categories much like accounts but with key differences: 
 
 * There is no such thing as a vendor subcategory and no need for root vendor categories. 

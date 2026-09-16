@@ -33,6 +33,11 @@ export default function FileInfoModal() {
 							<span>{new Date(info().lastModifiedIso).toLocaleString()}</span>
 							<span class="text-slate-500">Action log entries</span>
 							<span>{info().actionLogEntryCount}</span>
+							{/* TEMPORARY SCAFFOLDING -- see src/bun/persistence/actionLog/contentMigrations/. Removed
+							    along with the rest of that mechanism once every real file has been confirmed
+							    upgraded (Phase 2 of tasks/done/remove-vendor-categories-implementation-plan.md). */}
+							<span class="text-slate-500">Content schema</span>
+							<span>{info().contentVersionIsCurrent ? "current" : "not current (unexpected)"}</span>
 						</div>
 
 						<h3 class="mb-1 text-sm font-semibold text-slate-800">
@@ -55,10 +60,6 @@ export default function FileInfoModal() {
 								<tr>
 									<td class="text-slate-500">Vendors</td>
 									<td class="text-right">{info().entityCounts.vendors}</td>
-								</tr>
-								<tr>
-									<td class="text-slate-500">Vendor Categories</td>
-									<td class="text-right">{info().entityCounts.vendorCategories}</td>
 								</tr>
 								<tr>
 									<td class="text-slate-500">Transactions</td>

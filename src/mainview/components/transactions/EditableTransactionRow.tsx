@@ -4,7 +4,6 @@ import type { AccountCategory } from "../../../shared/domain/accountCategories/A
 import type { AcctId } from "../../../shared/domain/accounts/AcctId";
 import type { AcctTypeStr } from "../../../shared/domain/accounts/AcctType";
 import type { Vendor } from "../../../shared/domain/vendors/Vendor";
-import type { VendorCategory } from "../../../shared/domain/vendorCategories/VendorCategory";
 import type { Transaction } from "../../../shared/domain/transactions/Transaction";
 import { transactionsClient } from "../../transactions/transactionsClient";
 import ConfirmDialog from "../common/ConfirmDialog";
@@ -22,7 +21,6 @@ type EditableTransactionRowProps = {
 	accounts: Account[];
 	categories: AccountCategory[];
 	vendors: Vendor[];
-	vendorCategories: VendorCategory[];
 	refetchVendors: (info?: unknown) => Vendor[] | Promise<Vendor[] | undefined> | null | undefined;
 	columnCount: number;
 	onCancel: () => void;
@@ -213,7 +211,6 @@ export default function EditableTransactionRow(props: EditableTransactionRowProp
 							<div class="col-span-2">
 								<VendorFieldWithAdd
 									vendors={props.vendors}
-									vendorCategories={props.vendorCategories}
 									accounts={props.accounts}
 									value={form.vndrId()}
 									onChange={form.setVndrId}

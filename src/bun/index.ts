@@ -23,13 +23,6 @@ import {
 	handlePatchVendor,
 } from "./vendorHandlers";
 import {
-	handleCreateVendorCategory,
-	handleDeleteVendorCategory,
-	handleFindVendorCategoriesAll,
-	handleIsVendorCategoryInUse,
-	handlePatchVendorCategory,
-} from "./vendorCategoryHandlers";
-import {
 	handleCreateTransaction,
 	handleDeleteTransaction,
 	handleFindAccountBalancesAsOf,
@@ -108,11 +101,6 @@ const rpc: ReturnType<typeof BrowserView.defineRPC<AppSchema>> = BrowserView.def
 			patchVendor: (params) => handlePatchVendor(params),
 			deleteVendor: (params) => handleDeleteVendor(params),
 			isVendorInUse: (params) => handleIsVendorInUse(params),
-			findVendorCategoriesAll: () => handleFindVendorCategoriesAll(),
-			createVendorCategory: (params) => handleCreateVendorCategory(params),
-			patchVendorCategory: (params) => handlePatchVendorCategory(params),
-			deleteVendorCategory: (params) => handleDeleteVendorCategory(params),
-			isVendorCategoryInUse: (params) => handleIsVendorCategoryInUse(params),
 			findTransactionsByAccount: (params) => handleFindTransactionsByAccount(params),
 			findLatestTransactionForVendorAndAccount: (params) => handleFindLatestTransactionForVendorAndAccount(params),
 			createTransaction: (params) => handleCreateTransaction(params),

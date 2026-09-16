@@ -78,11 +78,12 @@
   codebase's pure-function layer does (`buildRegisterLineItems`, `buildAccountCategoryTree`,
   `sortAccountsForNav` are all concrete, non-generic functions) — matching that established style outweighs
   saving one small function.
-- **Vendor labels in Details use `vendorPickerLabel` ("Category : Name"), not the old app's bare vendor
-  name.** The old app displayed just `Vendor.name` because it had no vendor categories. Every other place in
-  checquery2 that shows a vendor (the register, income/expense logs) uses the "Category : Name" convention via
-  `vendorPickerLabel` — Income Statement Details follows the same app-wide convention rather than the old
-  app's now-outdated literal format.
+- **Vendor labels in Details use `vendorPickerLabel`**, the same helper the register/income/expense logs use,
+  rather than reading `Vendor.name` directly. (This briefly meant a `"Category : Name"` format while vendor
+  categories existed; they were later removed as a mistake, and `vendorPickerLabel` reverted to just the
+  vendor's name — see `remove-vendor-categories-implementation-plan.md`. The old app displayed just
+  `Vendor.name` too, for the unrelated reason that it never had vendor categories to begin with — the two
+  apps agree on this point again now, coincidentally for different reasons.)
 - **Layout matches the old app's actual code, not just its general description**: Summary uses a two-column
   layout (Expenses alone on the left; Income, then a Net Income box, stacked on the right) — the same
   arrangement the balance sheet plan already copied for Assets/Liabilities/Net-Worth. Details uses a single
@@ -355,17 +356,18 @@ export function buildIncomeStatementDetails(
 	accounts: readonly Account[],
 	transactions: readonly Transaction[],
 	vendors: readonly Vendor[],
-	vendorCategories: readonly VendorCategory[],
 	period: Period,
 ): IncomeStatementDetails
 ```
+(Signature shown current as of vendor categories' removal — briefly had a `vendorCategories` parameter in
+between; see `remove-vendor-categories-implementation-plan.md`.)
 
 Internals:
 
 1. Build `entriesByAcct: Map<AcctId, IncStmtEntryDetail[]>`: for every transaction, for every entry whose
    account (looked up via a local `Map<AcctId, Account>`) has `acctType` `EXPENSE` or `INCOME`, compute the
    signed amount with the same debit/credit-normal formula as §3, and push `{ date: transaction.postDate,
-   vendorLabel: transaction.vndrId ? vendorPickerLabel(vendor, vendorCategories) : undefined, description:
+   vendorLabel: transaction.vndrId ? vendorPickerLabel(vendor) : undefined, description:
    transaction.description, amount }`. Each entry becomes its own detail row (matching the old app's
    entry-level, not transaction-level, grouping) -- a split transaction touching two Expense accounts produces
    two separate rows, one under each account.

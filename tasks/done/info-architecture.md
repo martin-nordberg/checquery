@@ -290,30 +290,24 @@ Same as Income Log (§7): undocumented gap in the prior draft, filled in to matc
 
 ### Content
 
-- **Grouped list**, not flat: every vendor belongs to a required, flat (non-nesting) `VendorCategory` —
-  category rows (expand/collapse, bold name) contain their vendors as leaf rows underneath, one level only.
-  No separate "Vendor Categories" page and no category column/filter — category is conveyed by grouping,
-  the same way account type is conveyed by which account-list tree you're looking at (§5). See
-  `documentation/vendor-categories-implementation-plan.md`.
+- **Flat list**, sorted alphabetically by name — no category concept at all. (Vendor categories were tried
+  and later removed entirely as a mistake; see `remove-vendor-categories-implementation-plan.md`. If
+  `vendor-categories-implementation-plan.md` or `documentation/functional-spec.md` describe a grouped-by-
+  category shape, treat that as historical, not current.)
 - Modal create/edit (not inline), matching the account list's pattern. The page header's "+" icon creates a
-  top-level category only; a vendor can only be created via a category row's "+ Add vendor" link, since
-  every vendor requires an existing category — a brand-new file has none, so the user creates one first.
-  Nothing is seeded automatically.
-- Status filter (Active / Inactive / Both radios, top-right) filters which vendors show within each
-  category; categories themselves always render regardless of the filter.
+  vendor directly.
+- Status filter (Active / Inactive / Both radios, top-right) filters which vendors show.
 - `defaultAcctId` picker is a plain dropdown scoped to Expense/Income accounts (`AccountPicker`, reused
   as-is) — not the account tree's autocomplete, which turned out unnecessary once `AccountPicker` was
   already generic enough to reuse directly.
-- Vendor names are unique globally (not scoped per category); vendor category names are unique globally
-  too — two independent flat namespaces, unlike the account/account-category shared per-parent namespace.
-- Deletion blocked if referenced by any transaction (vendor) or if it still has vendors assigned (category);
-  deactivate a vendor instead of deleting it.
+- Vendor names are unique globally.
+- Deletion blocked if referenced by any transaction; deactivate a vendor instead of deleting it.
 
 ### Summary
 
-Diverged further from the prior effort's flat vendor list once vendor categories were introduced: vendors
-are still flat leaves, but they're now grouped under a required, single-level category rather than listed
-alphabetically on their own.
+Diverges from the prior effort mainly in having no vendor-category concept at all (the prior effort's own
+functional-spec.md predates vendor categories too, so on this point the two now agree) — a flat, globally-
+unique-by-name vendor list, matching the account list's create/edit/delete conventions otherwise.
 
 ---
 

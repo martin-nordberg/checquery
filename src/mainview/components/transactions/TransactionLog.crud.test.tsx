@@ -9,8 +9,6 @@ import { genAcctId, type AcctId } from "../../../shared/domain/accounts/AcctId";
 import type { AcctTypeStr } from "../../../shared/domain/accounts/AcctType";
 import { vendorReadSchema, type Vendor } from "../../../shared/domain/vendors/Vendor";
 import { genVndrId, type VndrId } from "../../../shared/domain/vendors/VndrId";
-import { vendorCategoryReadSchema, type VendorCategory } from "../../../shared/domain/vendorCategories/VendorCategory";
-import { genVndrCtgId, type VndrCtgId } from "../../../shared/domain/vendorCategories/VndrCtgId";
 import { transactionReadSchema, type Transaction } from "../../../shared/domain/transactions/Transaction";
 import { genTxnId } from "../../../shared/domain/transactions/TxnId";
 import { genOrigId } from "../../../shared/domain/origins/OrigId";
@@ -34,16 +32,7 @@ function account(overrides: { parentCtgId: AcctCtgId; acctType: AcctTypeStr; nam
 	});
 }
 
-function vendorCategory(overrides: { name: string }): VendorCategory {
-	return vendorCategoryReadSchema.parse({
-		id: genVndrCtgId(),
-		origId: genOrigId(),
-		description: "",
-		...overrides,
-	});
-}
-
-function vendor(overrides: { name: string; ctgId: VndrCtgId; defaultAcctId?: AcctId; isActive?: boolean }): Vendor {
+function vendor(overrides: { name: string; defaultAcctId?: AcctId; isActive?: boolean }): Vendor {
 	return vendorReadSchema.parse({
 		id: genVndrId(),
 		origId: genOrigId(),
@@ -84,8 +73,7 @@ function fixtures() {
 	const salary = account({ name: "Salary", acctType: "INCOME", parentCtgId: pay.id, isPrimary: true });
 	const visa = account({ name: "Visa", acctType: "LIABILITY", parentCtgId: creditCards.id, isPrimary: true });
 
-	const suppliers = vendorCategory({ name: "Suppliers" });
-	const acme = vendor({ name: "Acme", ctgId: suppliers.id, defaultAcctId: groceries.id });
+	const acme = vendor({ name: "Acme", defaultAcctId: groceries.id });
 
 	const deposit = transaction({
 		postDate: "2026-01-05",
@@ -112,7 +100,6 @@ function fixtures() {
 		groceries,
 		salary,
 		visa,
-		suppliers,
 		acme,
 		deposit,
 		purchase,
@@ -123,7 +110,6 @@ const findAccountsAllMock = mock(async (): Promise<Account[]> => []);
 const findAccountCategoriesAllMock = mock(async (): Promise<AccountCategory[]> => []);
 const findVendorsAllMock = mock(async (): Promise<Vendor[]> => []);
 const createVendorMock = mock(async (_params: unknown) => {});
-const findVendorCategoriesAllMock = mock(async (): Promise<VendorCategory[]> => []);
 const findTransactionsByAccountMock = mock(async (): Promise<Transaction[]> => []);
 const findLatestTransactionForVendorAndAccountMock = mock(
 	async (_vndrId?: string, _accountId?: string): Promise<Transaction | null> => null,
@@ -140,9 +126,6 @@ mock.module("../../accountCategories/accountCategoriesClient", () => ({
 }));
 mock.module("../../vendors/vendorsClient", () => ({
 	vendorsClient: { findVendorsAll: findVendorsAllMock, createVendor: createVendorMock },
-}));
-mock.module("../../vendorCategories/vendorCategoriesClient", () => ({
-	vendorCategoriesClient: { findVendorCategoriesAll: findVendorCategoriesAllMock },
 }));
 mock.module("../../transactions/transactionsClient", () => ({
 	transactionsClient: {
@@ -161,7 +144,6 @@ beforeEach(() => {
 	findAccountCategoriesAllMock.mockReset();
 	findVendorsAllMock.mockReset();
 	createVendorMock.mockReset();
-	findVendorCategoriesAllMock.mockReset();
 	findTransactionsByAccountMock.mockReset();
 	findLatestTransactionForVendorAndAccountMock.mockReset();
 	createTransactionMock.mockReset();
@@ -172,7 +154,6 @@ beforeEach(() => {
 	findAccountCategoriesAllMock.mockResolvedValue([]);
 	findVendorsAllMock.mockResolvedValue([]);
 	createVendorMock.mockResolvedValue(undefined);
-	findVendorCategoriesAllMock.mockResolvedValue([]);
 	findTransactionsByAccountMock.mockResolvedValue([]);
 	findLatestTransactionForVendorAndAccountMock.mockResolvedValue(null);
 	createTransactionMock.mockResolvedValue(undefined);
@@ -192,7 +173,6 @@ describe("TransactionLog -- rendering line items", () => {
 		findAccountsAllMock.mockResolvedValue([f.checking, f.groceries, f.salary]);
 		findAccountCategoriesAllMock.mockResolvedValue(f.categories);
 		findVendorsAllMock.mockResolvedValue([f.acme]);
-		findVendorCategoriesAllMock.mockResolvedValue([f.suppliers]);
 		findTransactionsByAccountMock.mockResolvedValue([f.deposit, f.purchase]);
 
 		const { findByText, container } = renderRegister(f.checking.id);
@@ -201,7 +181,7 @@ describe("TransactionLog -- rendering line items", () => {
 		const rows = Array.from(container.querySelectorAll("tbody tr"));
 		// Most recent (purchase, $40 against Groceries via Acme) first, then the older deposit.
 		expect(rows[0]!.textContent).toContain("Groceries");
-		expect(rows[0]!.textContent).toContain("Suppliers : Acme");
+		expect(rows[0]!.textContent).toContain("Acme");
 		expect(rows[0]!.textContent).toContain("$960.00"); // 1000 debit - 40 credit
 		expect(rows[1]!.textContent).toContain("Paycheck deposit");
 		expect(rows[1]!.textContent).toContain("$1,000.00");
@@ -401,7 +381,6 @@ describe("TransactionLog -- create flow", () => {
 		findAccountsAllMock.mockResolvedValue([f.checking, f.groceries]);
 		findAccountCategoriesAllMock.mockResolvedValue(f.categories);
 		findVendorsAllMock.mockResolvedValue([]);
-		findVendorCategoriesAllMock.mockResolvedValue([f.suppliers]);
 
 		const { findByRole, getByLabelText } = renderRegister(f.checking.id);
 		fireEvent.click(await findByRole("button", { name: "Add transaction" }));
@@ -410,7 +389,7 @@ describe("TransactionLog -- create flow", () => {
 		const nameInput = getByLabelText("Name") as HTMLInputElement;
 		fireEvent.input(nameInput, { target: { value: "New Vendor" } });
 
-		const newVendor = vendor({ name: "New Vendor", ctgId: f.suppliers.id });
+		const newVendor = vendor({ name: "New Vendor" });
 		findVendorsAllMock.mockResolvedValueOnce([newVendor]);
 		fireEvent.click(await findByRole("button", { name: "Add" }));
 
@@ -424,7 +403,6 @@ describe("TransactionLog -- create flow", () => {
 		findAccountsAllMock.mockResolvedValue([f.checking, f.groceries]);
 		findAccountCategoriesAllMock.mockResolvedValue(f.categories);
 		findVendorsAllMock.mockResolvedValue([f.acme]);
-		findVendorCategoriesAllMock.mockResolvedValue([f.suppliers]);
 		findLatestTransactionForVendorAndAccountMock.mockResolvedValue(
 			transaction({
 				postDate: "2026-01-01",
