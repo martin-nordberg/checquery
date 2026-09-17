@@ -41,6 +41,17 @@ function rowToEntry(row: EntryRow): Entry {
     } as Entry
 }
 
+/** Clamps clearedDate up to postDate when it would otherwise be earlier -- covers both a defensive fresh
+ * write (the schema-level refine in Transaction.ts already rejects this on a normal single-payload save, but
+ * doesn't run during replay) and a historical replayed action from before the postDate<=clearedDate
+ * constraint existed, since replay dispatches straight into createTransaction/patchTransaction below with no
+ * schema re-validation in between (see ActionLog.ts's replayDispatch). Returns the (possibly adjusted)
+ * clearedDate, still possibly undefined. */
+function normalizeClearedDate(postDate: IsoDate, clearedDate: IsoDate | undefined): IsoDate | undefined {
+    if (clearedDate !== undefined && clearedDate < postDate) return postDate
+    return clearedDate
+}
+
 function rowToTransaction(row: TransactionRow, entryRows: EntryRow[]): Transaction {
     return {
         id: row.id as TxnId,
@@ -73,6 +84,7 @@ export class TransactionMaterializedStoreSvc implements ITransactionSvc {
     }
 
     async createTransaction(transactionCreation: TransactionCreationEvent): Promise<TransactionCreationEvent | null> {
+        const clearedDate = normalizeClearedDate(transactionCreation.postDate, transactionCreation.clearedDate)
         this.db.run(
             `INSERT INTO transactions (id, orig_id, post_date, cleared_date, code, vndr_id, description, needs_review)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -80,7 +92,7 @@ export class TransactionMaterializedStoreSvc implements ITransactionSvc {
                 transactionCreation.id,
                 transactionCreation.origId,
                 transactionCreation.postDate,
-                transactionCreation.clearedDate ?? null,
+                clearedDate ?? null,
                 transactionCreation.code,
                 transactionCreation.vndrId ?? null,
                 transactionCreation.description,
@@ -95,13 +107,25 @@ export class TransactionMaterializedStoreSvc implements ITransactionSvc {
         const sets: string[] = ["orig_id = ?"]
         const params: SQLQueryBindings[] = [transactionPatch.origId]
 
-        if (transactionPatch.postDate !== undefined) {
-            sets.push("post_date = ?")
-            params.push(transactionPatch.postDate)
-        }
-        if (transactionPatch.clearedDate !== undefined) {
-            sets.push("cleared_date = ?")
-            params.push(transactionPatch.clearedDate)
+        if (transactionPatch.postDate !== undefined || transactionPatch.clearedDate !== undefined) {
+            // Either date is changing -- resolve both final values (falling back to what's already stored for
+            // whichever one isn't part of this patch) so the postDate<=clearedDate clamp can be applied
+            // correctly even when the patch only touches one of the two fields.
+            const current = this.db
+                .query(`SELECT post_date, cleared_date FROM transactions WHERE id = ?`)
+                .get(transactionPatch.id) as { post_date: string; cleared_date: string | null } | null
+            if (!current) {
+                throw new Error(`patchTransaction: no transaction with id ${transactionPatch.id}`)
+            }
+            const postDate = transactionPatch.postDate ?? (current.post_date as IsoDate)
+            const rawClearedDate =
+                transactionPatch.clearedDate !== undefined
+                    ? transactionPatch.clearedDate
+                    : ((current.cleared_date ?? undefined) as IsoDate | undefined)
+            const clearedDate = normalizeClearedDate(postDate, rawClearedDate)
+
+            sets.push("post_date = ?", "cleared_date = ?")
+            params.push(postDate, clearedDate ?? null)
         }
         if (transactionPatch.code !== undefined) {
             sets.push("code = ?")
@@ -163,15 +187,20 @@ export class TransactionMaterializedStoreSvc implements ITransactionSvc {
         return row.n
     }
 
-    /** Every non-deleted transaction with an entry against this account, ordered oldest-first (post_date,
-     *  then rowid as an insertion-order tie-break -- the transactions table has no explicit insert-order
-     *  column, but as an ordinary SQLite table it has an implicit rowid that increases with insertion). */
+    /** Every non-deleted transaction with an entry against this account, ordered oldest-first by transaction
+     *  date (clearedDate when present, otherwise postDate -- see Transaction.ts's transactionDate()), then
+     *  rowid as an insertion-order tie-break (the transactions table has no explicit insert-order column, but
+     *  as an ordinary SQLite table it has an implicit rowid that increases with insertion). Ordering by
+     *  transaction date rather than post_date matters for the tie-break: two transactions can share a
+     *  transaction date via different post_date/cleared_date combinations, and the register's "last entered"
+     *  tie-break (buildRegisterLineItems.ts) only comes out right if same-transaction-date rows already
+     *  arrive in entry order. */
     async findTransactionsByAccount(accountId: AcctId): Promise<Transaction[]> {
         const rows = this.db.query(
             `SELECT * FROM transactions t
              WHERE t.is_deleted = 0
                AND EXISTS (SELECT 1 FROM entries e WHERE e.transaction_id = t.id AND e.acct_id = ?)
-             ORDER BY t.post_date, t.rowid`
+             ORDER BY COALESCE(t.cleared_date, t.post_date), t.rowid`
         ).all(accountId) as TransactionRow[]
         return rows.map((row) => this.hydrate(row))
     }

@@ -1,5 +1,18 @@
 # Balance Assertions + Transaction Date
 
+> **Implemented as planned**, with one naming difference: the mainview client landed at
+> `src/mainview/balanceAssertions/balanceAssertionsClient.ts` (the plan's own preferred option in §2, chosen
+> for symmetry with `transactionsClient.ts`'s sibling placement). `bunx tsc --noEmit` and the full suite (1089
+> tests, including new coverage for the checkbox-creates-assertion flow, the pencil-edit dialog's save/delete,
+> the gray assertion row's matched/mismatched rendering, and the historical-clamp/tie-break cases from §1/§1c)
+> are all clean. One test-infrastructure wrinkle worth recording: `bun test`'s `mock.module` mocks leak across
+> test files within a single run, so every existing test file that renders a `showBalance` `TransactionLog`
+> (`TransactionLog.crud.test.tsx`, `RegisterPage.test.tsx`) needed its own explicit (empty-returning)
+> `balanceAssertionsClient` mock added alongside the new `TransactionLog.balanceAssertions.test.tsx` — not a
+> plan change, just an implementation detail worth knowing before adding a fourth such file. Not independently
+> verified: actually clicking through it in a running Electrobun window -- no automated driver for that exists
+> in this codebase (same caveat as calculator-implementation-plan.md).
+
 Source task: `tasks/todo/balance-assertions.md`. This plan covers three tied-together changes: (1) a new
 `postDate <= clearedDate` constraint plus a `transactionDate` computed domain concept, (2) surfacing the
 already-fully-built `BalanceAssertion` backend in the mainview register for the first time, and (3) a new

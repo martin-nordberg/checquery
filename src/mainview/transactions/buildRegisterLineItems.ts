@@ -1,4 +1,4 @@
-import type { Transaction } from "../../shared/domain/transactions/Transaction";
+import { type Transaction, transactionDate } from "../../shared/domain/transactions/Transaction";
 import type { Account } from "../../shared/domain/accounts/Account";
 import type { AcctId } from "../../shared/domain/accounts/AcctId";
 import type { AcctTypeStr } from "../../shared/domain/accounts/AcctType";
@@ -14,6 +14,7 @@ export type RegisterLineItem = {
 	txnId: TxnId;
 	postDate: IsoDate;
 	clearedDate?: IsoDate;
+	transactionDate: IsoDate;
 	code: string;
 	vndrId?: VndrId;
 	vendorLabel?: string;
@@ -30,9 +31,11 @@ const SPLIT_LABEL = "-- Split --";
 /**
  * Builds one line item per transaction touching accountId, in reverse-chronological (most-recent-first)
  * order with a running balance -- the mainview-side replacement for the old app's server-computed Register
- * DTO (see transactions-register-implementation-plan.md §0/§2a). Stably sorts by postDate only, trusting the
- * caller's input order (TransactionMaterializedStoreSvc's post_date/rowid ordering) to break same-day ties,
- * since Transaction carries no rowid client-side.
+ * DTO (see transactions-register-implementation-plan.md §0/§2a). Ordered (and the running balance
+ * accumulated) by transaction date -- clearedDate when present, otherwise postDate; see Transaction.ts's
+ * transactionDate() -- not raw postDate, per balance-assertions-implementation-plan.md §0/§3a. Stably sorts by
+ * that key only, trusting the caller's input order (TransactionMaterializedStoreSvc's transaction-date/rowid
+ * ordering) to break same-transaction-date ties, since Transaction carries no rowid client-side.
  *
  * balance is always computed regardless of account type -- it's up to the caller (TransactionRow/
  * TransactionLog) whether to actually render it (Register only, per the plan's showBalance).
@@ -50,7 +53,7 @@ export function buildRegisterLineItems(
 
 	const ascending = transactions
 		.slice()
-		.sort((a, b) => (a.postDate as string).localeCompare(b.postDate as string));
+		.sort((a, b) => (transactionDate(a) as string).localeCompare(transactionDate(b) as string));
 
 	let runningCents = 0;
 	const lineItems = ascending.map((transaction): RegisterLineItem => {
@@ -74,6 +77,7 @@ export function buildRegisterLineItems(
 			txnId: transaction.id,
 			postDate: transaction.postDate,
 			clearedDate: transaction.clearedDate,
+			transactionDate: transactionDate(transaction),
 			code: transaction.code,
 			vndrId: transaction.vndrId,
 			vendorLabel: vendor ? vendorPickerLabel(vendor) : undefined,

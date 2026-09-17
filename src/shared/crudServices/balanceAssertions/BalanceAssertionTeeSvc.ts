@@ -5,6 +5,7 @@ import {
     type BalanceAssertionPatchEvent
 } from "../../domain/balanceAssertions/BalanceAssertion";
 import {type AsrtId} from "../../domain/balanceAssertions/AsrtId";
+import {type AcctId} from "../../domain/accounts/AcctId";
 import type {IBalanceAssertionSvc} from "./IBalanceAssertionSvc";
 import type {IBalanceAssertionQrySvc} from "./IBalanceAssertionQrySvc";
 import type {IBalanceAssertionCmdSvc} from "./IBalanceAssertionCmdSvc";
@@ -44,6 +45,11 @@ export class BalanceAssertionTeeSvc implements IBalanceAssertionSvc {
     /** Finds the entire list of balance assertions */
     async findBalanceAssertionsAll(): Promise<BalanceAssertion[]> {
         return this.qrySvc.findBalanceAssertionsAll()
+    }
+
+    /** Every non-deleted balance assertion for this account. */
+    async findBalanceAssertionsByAccount(accountId: AcctId): Promise<BalanceAssertion[]> {
+        return this.qrySvc.findBalanceAssertionsByAccount(accountId)
     }
 
     /** Counts non-deleted balance assertions. */

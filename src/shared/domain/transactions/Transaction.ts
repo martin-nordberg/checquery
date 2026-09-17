@@ -1,7 +1,7 @@
 import {z} from "zod";
 import {descriptionSchema, type DescriptionStr} from "../core/Description";
 import {txnIdSchema} from "./TxnId";
-import {isoDateSchema} from "../core/IsoDate";
+import {isoDateSchema, type IsoDate} from "../core/IsoDate";
 import {entriesWriteSchema, entriesReadSchema} from "./Entries";
 import {hlcSchema} from "../core/HybridLogicalClock";
 import {vndrIdSchema, type VndrId} from "../vendors/VndrId";
@@ -56,6 +56,30 @@ function hasVendorOrDescription(txn: { vndrId?: VndrId | undefined, description?
 const hasVendorOrDescriptionMessage = "A transaction must have a vendor or a description (or both)."
 
 
+/** Validates that, whenever both dates are present in the same payload, postDate is on or before clearedDate.
+ * Only ever sees what's actually in this payload -- a patch that touches just one of the two dates can't be
+ * fully checked here (the other value lives in whatever's already stored), but the mainview always submits
+ * both together on save (see useTransactionRowForm.ts), so this covers the real save path. Historical actions
+ * from before this constraint existed are fixed up at materialization time instead, not rejected here -- see
+ * TransactionMaterializedStoreSvc's createTransaction/patchTransaction. */
+function postDateOnOrBeforeClearedDate(txn: { postDate?: IsoDate; clearedDate?: IsoDate }) {
+    if (txn.postDate === undefined || txn.clearedDate === undefined) {
+        return true
+    }
+    return txn.postDate <= txn.clearedDate // ISO "YYYY-MM-DD" strings compare lexically
+}
+
+const postDateOnOrBeforeClearedDateMessage = "Posted date must be on or before cleared date."
+
+
+/** The date used for register/log display, sorting, and balance-assertion cutoffs: clearedDate when present,
+ * otherwise postDate. Deliberately a plain function, not a schema field -- it's fully derived from the other
+ * two fields and has no storage of its own (see tasks/done/balance-assertions-implementation-plan.md §1a). */
+export function transactionDate(txn: { postDate: IsoDate; clearedDate?: IsoDate }): IsoDate {
+    return txn.clearedDate ?? txn.postDate
+}
+
+
 /** Sub-schema for transaction before it has entries added. */
 export const transactionBeforeEntriesSchema =
     transactionAttributesSchema.readonly()
@@ -82,7 +106,10 @@ export const transactionCreationEventSchema =
 
         /** The two or more entries in the transaction. */
         entries: entriesWriteSchema
-    }).refine(hasVendorOrDescription, {error: hasVendorOrDescriptionMessage}).readonly()
+    })
+        .refine(hasVendorOrDescription, {error: hasVendorOrDescriptionMessage})
+        .refine(postDateOnOrBeforeClearedDate, {error: postDateOnOrBeforeClearedDateMessage})
+        .readonly()
 
 export type TransactionCreationEvent = z.infer<typeof transactionCreationEventSchema>
 
@@ -115,6 +142,8 @@ export const transactionPatchEventSchema =
         entries: true,
         vndrId: true,
         needsReview: true,
-    }).readonly()
+    })
+        .refine(postDateOnOrBeforeClearedDate, {error: postDateOnOrBeforeClearedDateMessage})
+        .readonly()
 
 export type TransactionPatchEvent = z.infer<typeof transactionPatchEventSchema>

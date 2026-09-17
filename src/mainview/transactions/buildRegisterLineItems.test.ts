@@ -34,6 +34,7 @@ function vendor(overrides: { name: string }): Vendor {
 
 function transaction(overrides: {
     postDate: string
+    clearedDate?: string
     description?: string
     vndrId?: VndrId
     needsReview?: boolean
@@ -194,5 +195,61 @@ describe('buildRegisterLineItems', () => {
 
         // Reversed for display, so "Second" (given later in input order for the same date) shows first.
         expect(items.map((i) => i.description as string)).toEqual(['Second', 'First'])
+    })
+
+    it('orders by transaction date (clearedDate when present, else postDate), not raw postDate', () => {
+        const checking = account({ name: 'Checking', acctType: 'ASSET' })
+        const other = account({ name: 'Other', acctType: 'EXPENSE' })
+        // Posted early but cleared later -- its transaction date (01-20) is after the other transaction's
+        // postDate-only transaction date (01-15).
+        const postedEarlyClearedLate = transaction({
+            postDate: '2026-01-05',
+            clearedDate: '2026-01-20',
+            description: 'Posted early, cleared late',
+            entries: [
+                { acctId: checking.id, debit: '$10.00', credit: '$0.00' },
+                { acctId: other.id, debit: '$0.00', credit: '$10.00' },
+            ],
+        })
+        const postedInBetween = transaction({
+            postDate: '2026-01-15',
+            description: 'Posted in between',
+            entries: [
+                { acctId: checking.id, debit: '$5.00', credit: '$0.00' },
+                { acctId: other.id, debit: '$0.00', credit: '$5.00' },
+            ],
+        })
+
+        const items = buildRegisterLineItems(
+            [postedEarlyClearedLate, postedInBetween],
+            [checking, other],
+            [],
+            checking.id,
+            'ASSET',
+        )
+
+        // Reversed for display: most recent transaction date first.
+        expect(items.map((i) => i.description as string)).toEqual(['Posted early, cleared late', 'Posted in between'])
+        expect(items[0]!.transactionDate as string).toBe('2026-01-20')
+        expect(items[0]!.balance as string).toBe('$15.00')
+        expect(items[1]!.transactionDate as string).toBe('2026-01-15')
+        expect(items[1]!.balance as string).toBe('$5.00')
+    })
+
+    it('exposes transactionDate as postDate when clearedDate is absent', () => {
+        const checking = account({ name: 'Checking', acctType: 'ASSET' })
+        const other = account({ name: 'Other', acctType: 'EXPENSE' })
+        const txn = transaction({
+            postDate: '2026-01-15',
+            description: 'No clearedDate',
+            entries: [
+                { acctId: checking.id, debit: '$10.00', credit: '$0.00' },
+                { acctId: other.id, debit: '$0.00', credit: '$10.00' },
+            ],
+        })
+
+        const [item] = buildRegisterLineItems([txn], [checking, other], [], checking.id, 'ASSET')
+
+        expect(item!.transactionDate as string).toBe('2026-01-15')
     })
 })

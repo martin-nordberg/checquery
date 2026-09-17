@@ -2,6 +2,7 @@ import { createMemo, createResource, createSignal, For, Show } from "solid-js";
 import type { AcctId } from "../../../shared/domain/accounts/AcctId";
 import type { AcctTypeStr } from "../../../shared/domain/accounts/AcctType";
 import type { TxnId } from "../../../shared/domain/transactions/TxnId";
+import type { AsrtId } from "../../../shared/domain/balanceAssertions/AsrtId";
 import { acctCtgRootName } from "../../../shared/domain/accountCategories/AcctCtgRoot";
 import TopNav from "../nav/TopNav";
 import Breadcrumb from "../nav/Breadcrumb";
@@ -11,13 +12,17 @@ import { accountsClient } from "../../accounts/accountsClient";
 import { accountCategoriesClient } from "../../accountCategories/accountCategoriesClient";
 import { vendorsClient } from "../../vendors/vendorsClient";
 import { transactionsClient } from "../../transactions/transactionsClient";
-import { buildRegisterLineItems } from "../../transactions/buildRegisterLineItems";
+import { balanceAssertionsClient } from "../../balanceAssertions/balanceAssertionsClient";
+import { buildRegisterLineItems, type RegisterLineItem } from "../../transactions/buildRegisterLineItems";
+import { buildRegisterRows } from "../../transactions/buildRegisterRows";
 import { accountCategoryPathLabel } from "../../accounts/accountFullPathLabel";
 import { sortAccountsForNav } from "../../accounts/sortAccountsForNav";
 import { accountDetailRoute } from "../../accounts/accountRoute";
 import TransactionRow from "./TransactionRow";
 import NewTransactionRow from "./NewTransactionRow";
 import EditableTransactionRow from "./EditableTransactionRow";
+import BalanceAssertionRow from "./BalanceAssertionRow";
+import BalanceAssertionEditDialog from "./BalanceAssertionEditDialog";
 import InlineCalculator from "./InlineCalculator";
 
 type TransactionLogProps = {
@@ -40,8 +45,10 @@ const manageableAcctTypes: AcctTypeStr[] = ["ASSET", "LIABILITY", "INCOME", "EXP
 export default function TransactionLog(props: TransactionLogProps) {
 	const showCode = () => props.showCode ?? false;
 	const showBalance = () => props.showBalance ?? false;
-	// "+"/pencil, Posted, Cleared, Category, Vendor, Description, Amount = 7, plus Number/Balance when shown.
-	const columnCount = createMemo(() => 7 + (showCode() ? 1 : 0) + (showBalance() ? 1 : 0));
+	// "+"/pencil, Date, Category, Vendor, Description, Amount = 6, plus Number when showCode, plus
+	// Balance+the balance-check column together when showBalance (Register only -- see
+	// balance-assertions-implementation-plan.md §0/§4a).
+	const columnCount = createMemo(() => 6 + (showCode() ? 1 : 0) + (showBalance() ? 2 : 0));
 
 	const [accounts, { refetch: refetchAccounts }] = createResource(() => accountsClient.findAccountsAll());
 	const [categories] = createResource(() => accountCategoriesClient.findAccountCategoriesAll());
@@ -49,6 +56,12 @@ export default function TransactionLog(props: TransactionLogProps) {
 	const [transactions, { refetch: refetchTransactions }] = createResource(
 		() => props.accountId,
 		(accountId) => transactionsClient.findTransactionsByAccount(accountId),
+	);
+	// Balance assertions are Register-only (§0) -- fetched only when showBalance, so Income Log/Expense Log
+	// never pay for a request they'd throw away.
+	const [balanceAssertions, { refetch: refetchBalanceAssertions }] = createResource(
+		() => (showBalance() ? props.accountId : undefined),
+		(accountId) => balanceAssertionsClient.findBalanceAssertionsByAccount(accountId),
 	);
 	const refetchAll = () => Promise.all([refetchAccounts(), refetchTransactions()]);
 
@@ -65,6 +78,8 @@ export default function TransactionLog(props: TransactionLogProps) {
 			acct.acctType,
 		);
 	});
+
+	const registerRows = createMemo(() => buildRegisterRows(lineItems(), showBalance() ? (balanceAssertions() ?? []) : []));
 
 	// Breadcrumb, segment 1: the account TYPE -- offers the other manageable types, each jumping to that
 	// type's default (primary-first) account, possibly landing on a different page entirely (Register vs.
@@ -149,6 +164,32 @@ export default function TransactionLog(props: TransactionLogProps) {
 
 	const editingTransaction = createMemo(() => (transactions() ?? []).find((t) => t.id === editingTxnId()));
 
+	// Balance-check column (Register only, §4d): tracks which date's checkbox is mid-flight (disables it,
+	// and guards against a double-click creating two assertions for the same date), and which assertion (if
+	// any) the pencil-edit dialog currently targets.
+	const [assertionCreatingDate, setAssertionCreatingDate] = createSignal<string | null>(null);
+	const [editingAssertionId, setEditingAssertionId] = createSignal<AsrtId | null>(null);
+	const editingAssertion = createMemo(() => (balanceAssertions() ?? []).find((a) => a.id === editingAssertionId()));
+
+	const handleCreateAssertion = async (item: RegisterLineItem) => {
+		setAssertionCreatingDate(item.transactionDate);
+		try {
+			await balanceAssertionsClient.createBalanceAssertion({
+				acctId: props.accountId,
+				assertionDate: item.transactionDate,
+				balance: item.balance,
+			});
+			await refetchBalanceAssertions();
+		} finally {
+			setAssertionCreatingDate(null);
+		}
+	};
+
+	const handleAssertionEditDone = () => {
+		setEditingAssertionId(null);
+		void refetchBalanceAssertions();
+	};
+
 	return (
 		<>
 			<div class="flex items-center justify-between pr-4">
@@ -194,7 +235,7 @@ export default function TransactionLog(props: TransactionLogProps) {
 											<button
 												type="button"
 												class="rounded p-1 text-green-600 hover:bg-gray-200 hover:text-green-800 disabled:opacity-50"
-												disabled={isAddingNew() || isDirty()}
+												disabled={isAddingNew() || isDirty() || editingAssertionId() !== null}
 												title="Add transaction"
 												aria-label="Add transaction"
 												onClick={handleAddNew}
@@ -204,8 +245,7 @@ export default function TransactionLog(props: TransactionLogProps) {
 												</svg>
 											</button>
 										</th>
-										<th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500">Posted</th>
-										<th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500">Cleared</th>
+										<th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500">Date</th>
 										<Show when={showCode()}>
 											<th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500">Number</th>
 										</Show>
@@ -215,6 +255,9 @@ export default function TransactionLog(props: TransactionLogProps) {
 										<th class="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-gray-500">Amount</th>
 										<Show when={showBalance()}>
 											<th class="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-gray-500">Balance</th>
+											<th class="px-2 py-3 text-center text-sm font-bold text-green-600" title="Balance check">
+												✓
+											</th>
 										</Show>
 									</tr>
 								</thead>
@@ -239,36 +282,60 @@ export default function TransactionLog(props: TransactionLogProps) {
 											onDirtyChange={setIsDirty}
 										/>
 									</Show>
-									<For each={lineItems()}>
-										{(lineItem) => (
+									<For each={registerRows()}>
+										{(row) => (
 											<Show
-												when={editingTxnId() === lineItem.txnId ? editingTransaction() : undefined}
+												when={row.kind === "assertion" ? row : undefined}
 												fallback={
-													<TransactionRow
-														lineItem={lineItem}
-														acctType={account()!.acctType}
-														showCode={showCode()}
-														showBalance={showBalance()}
-														editDisabled={isDirty() || isAddingNew()}
-														onStartEdit={() => handleStartEdit(lineItem.txnId)}
-													/>
+													<Show
+														when={
+															row.kind === "transaction" && editingTxnId() === row.item.txnId
+																? editingTransaction()
+																: undefined
+														}
+														fallback={
+															row.kind === "transaction" && (
+																<TransactionRow
+																	lineItem={row.item}
+																	acctType={account()!.acctType}
+																	showCode={showCode()}
+																	showBalance={showBalance()}
+																	editDisabled={isDirty() || isAddingNew() || editingAssertionId() !== null}
+																	onStartEdit={() => handleStartEdit(row.item.txnId)}
+																	isLastOfDate={row.isLastOfDate}
+																	hasAssertionForDate={row.hasAssertionForDate}
+																	creatingAssertion={assertionCreatingDate() === row.item.transactionDate}
+																	onCreateAssertion={() => void handleCreateAssertion(row.item)}
+																/>
+															)
+														}
+													>
+														{(transaction) => (
+															<EditableTransactionRow
+																transaction={transaction()}
+																accountId={props.accountId}
+																acctType={account()!.acctType}
+																showCode={showCode()}
+																accounts={accounts() ?? []}
+																categories={categories() ?? []}
+																vendors={vendors() ?? []}
+																refetchVendors={refetchVendors}
+																columnCount={columnCount()}
+																onCancel={handleCancelEdit}
+																onSaved={handleEditSaved}
+																onDeleted={handleDeleted}
+																onDirtyChange={setIsDirty}
+															/>
+														)}
+													</Show>
 												}
 											>
-												{(transaction) => (
-													<EditableTransactionRow
-														transaction={transaction()}
-														accountId={props.accountId}
-														acctType={account()!.acctType}
+												{(assertionRow) => (
+													<BalanceAssertionRow
+														row={assertionRow()}
 														showCode={showCode()}
-														accounts={accounts() ?? []}
-														categories={categories() ?? []}
-														vendors={vendors() ?? []}
-														refetchVendors={refetchVendors}
-														columnCount={columnCount()}
-														onCancel={handleCancelEdit}
-														onSaved={handleEditSaved}
-														onDeleted={handleDeleted}
-														onDirtyChange={setIsDirty}
+														editDisabled={isDirty() || isAddingNew()}
+														onEdit={() => setEditingAssertionId(assertionRow().assertion.id)}
 													/>
 												)}
 											</Show>
@@ -276,13 +343,23 @@ export default function TransactionLog(props: TransactionLogProps) {
 									</For>
 								</tbody>
 							</table>
-							<Show when={lineItems().length === 0 && !isAddingNew()}>
+							<Show when={registerRows().length === 0 && !isAddingNew()}>
 								<p class="p-4 text-center text-gray-500">No transactions found for this account.</p>
 							</Show>
 						</div>
 					</Show>
 				</Show>
 			</main>
+			<Show when={editingAssertion()}>
+				{(assertion) => (
+					<BalanceAssertionEditDialog
+						assertion={assertion()}
+						onCancel={() => setEditingAssertionId(null)}
+						onSaved={handleAssertionEditDone}
+						onDeleted={handleAssertionEditDone}
+					/>
+				)}
+			</Show>
 		</>
 	);
 }

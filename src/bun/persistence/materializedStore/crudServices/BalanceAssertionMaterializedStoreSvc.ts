@@ -106,6 +106,13 @@ export class BalanceAssertionMaterializedStoreSvc implements IBalanceAssertionSv
         return rows.map(rowToBalanceAssertion)
     }
 
+    async findBalanceAssertionsByAccount(accountId: AcctId): Promise<BalanceAssertion[]> {
+        const rows = this.db
+            .query(`SELECT * FROM balance_assertions WHERE acct_id = ? AND is_deleted = 0 ORDER BY assertion_date`)
+            .all(accountId) as BalanceAssertionRow[]
+        return rows.map(rowToBalanceAssertion)
+    }
+
     async countBalanceAssertionsAll(): Promise<number> {
         const row = this.db
             .query(`SELECT COUNT(*) as n FROM balance_assertions WHERE is_deleted = 0`)

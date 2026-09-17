@@ -7,6 +7,7 @@ import { genOrigId } from "../../../shared/domain/origins/OrigId";
 import type { AccountCategory } from "../../../shared/domain/accountCategories/AccountCategory";
 import type { Vendor } from "../../../shared/domain/vendors/Vendor";
 import type { Transaction } from "../../../shared/domain/transactions/Transaction";
+import type { BalanceAssertion } from "../../../shared/domain/balanceAssertions/BalanceAssertion";
 
 const checking = accountReadSchema.parse({
 	id: genAcctId(),
@@ -22,6 +23,11 @@ const findAccountsAllMock = mock(async (): Promise<Account[]> => [checking]);
 const findAccountCategoriesAllMock = mock(async (): Promise<AccountCategory[]> => []);
 const findVendorsAllMock = mock(async (): Promise<Vendor[]> => []);
 const findTransactionsByAccountMock = mock(async (): Promise<Transaction[]> => []);
+// Register (showBalance) fetches balance assertions too -- mocked here (empty, unused by this smoke test) so
+// this file doesn't depend on whichever other test file's mock.module call for the same path happened to run
+// last (mock.module leaks across files within one `bun test` process -- see
+// TransactionLog.balanceAssertions.test.tsx).
+const findBalanceAssertionsByAccountMock = mock(async (): Promise<BalanceAssertion[]> => []);
 
 mock.module("../../accounts/accountsClient", () => ({
 	accountsClient: { findAccountsAll: findAccountsAllMock },
@@ -35,6 +41,9 @@ mock.module("../../vendors/vendorsClient", () => ({
 mock.module("../../transactions/transactionsClient", () => ({
 	transactionsClient: { findTransactionsByAccount: findTransactionsByAccountMock },
 }));
+mock.module("../../balanceAssertions/balanceAssertionsClient", () => ({
+	balanceAssertionsClient: { findBalanceAssertionsByAccount: findBalanceAssertionsByAccountMock },
+}));
 
 const { default: RegisterPage } = await import("./RegisterPage");
 
@@ -43,6 +52,7 @@ beforeEach(() => {
 	findAccountCategoriesAllMock.mockClear();
 	findVendorsAllMock.mockClear();
 	findTransactionsByAccountMock.mockClear();
+	findBalanceAssertionsByAccountMock.mockClear();
 });
 
 describe("RegisterPage", () => {

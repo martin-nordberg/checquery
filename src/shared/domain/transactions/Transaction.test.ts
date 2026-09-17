@@ -4,7 +4,8 @@ import {
     transactionCreationEventSchema,
     transactionDeletionEventSchema,
     transactionReadSchema,
-    transactionPatchEventSchema
+    transactionPatchEventSchema,
+    transactionDate
 } from './Transaction'
 import {genTxnId} from './TxnId'
 import {genAcctId} from '../accounts/AcctId'
@@ -673,6 +674,52 @@ describe('transactionCreationEventSchema', () => {
             entries: [validEntries[0]]
         })).toThrow()
     })
+
+    it('rejects postDate after clearedDate', () => {
+        expect(() => transactionCreationEventSchema.parse({
+            id: genTxnId(),
+            origId: genOrigId(),
+            postDate: '2026-01-20',
+            clearedDate: '2026-01-15',
+            vndrId: genVndrId(),
+            entries: validEntries
+        })).toThrow('Posted date must be on or before cleared date.')
+    })
+
+    it('accepts equal postDate and clearedDate', () => {
+        const txn = transactionCreationEventSchema.parse({
+            id: genTxnId(),
+            origId: genOrigId(),
+            postDate: '2026-01-15',
+            clearedDate: '2026-01-15',
+            vndrId: genVndrId(),
+            entries: validEntries
+        })
+        expect(txn.clearedDate as string).toBe('2026-01-15')
+    })
+
+    it('accepts postDate before clearedDate', () => {
+        const txn = transactionCreationEventSchema.parse({
+            id: genTxnId(),
+            origId: genOrigId(),
+            postDate: '2026-01-15',
+            clearedDate: '2026-01-20',
+            vndrId: genVndrId(),
+            entries: validEntries
+        })
+        expect(txn.clearedDate as string).toBe('2026-01-20')
+    })
+
+    it('accepts a missing clearedDate regardless of postDate', () => {
+        const txn = transactionCreationEventSchema.parse({
+            id: genTxnId(),
+            origId: genOrigId(),
+            postDate: '2026-01-15',
+            vndrId: genVndrId(),
+            entries: validEntries
+        })
+        expect(txn.clearedDate).toBeUndefined()
+    })
 })
 
 describe('transactionDeletionEventSchema', () => {
@@ -814,6 +861,35 @@ describe('transactionPatchEventSchema', () => {
             unknownField: 'should fail'
         })).toThrow()
     })
+
+    it('rejects postDate after clearedDate when both are in the same patch', () => {
+        expect(() => transactionPatchEventSchema.parse({
+            id: genTxnId(),
+            origId: genOrigId(),
+            postDate: '2026-01-20',
+            clearedDate: '2026-01-15',
+        })).toThrow('Posted date must be on or before cleared date.')
+    })
+
+    it('accepts equal postDate and clearedDate', () => {
+        const txn = transactionPatchEventSchema.parse({
+            id: genTxnId(),
+            origId: genOrigId(),
+            postDate: '2026-01-15',
+            clearedDate: '2026-01-15',
+        })
+        expect(txn.clearedDate as string).toBe('2026-01-15')
+    })
+
+    it('does not check the constraint when only one of the two dates is in the patch', () => {
+        const txn = transactionPatchEventSchema.parse({
+            id: genTxnId(),
+            origId: genOrigId(),
+            clearedDate: '2026-01-15',
+        })
+        expect(txn.clearedDate as string).toBe('2026-01-15')
+        expect(txn.postDate).toBeUndefined()
+    })
 })
 
 describe('hlc field in transaction event schemas', () => {
@@ -883,4 +959,29 @@ describe('hlc field in transaction event schemas', () => {
         })
     })
 
+})
+
+describe('transactionDate', () => {
+    it('returns clearedDate when present', () => {
+        const txn = transactionCreationEventSchema.parse({
+            id: genTxnId(),
+            origId: genOrigId(),
+            postDate: '2026-01-15',
+            clearedDate: '2026-01-20',
+            vndrId: genVndrId(),
+            entries: validEntries
+        })
+        expect(transactionDate(txn) as string).toBe('2026-01-20')
+    })
+
+    it('falls back to postDate when clearedDate is absent', () => {
+        const txn = transactionCreationEventSchema.parse({
+            id: genTxnId(),
+            origId: genOrigId(),
+            postDate: '2026-01-15',
+            vndrId: genVndrId(),
+            entries: validEntries
+        })
+        expect(transactionDate(txn) as string).toBe('2026-01-15')
+    })
 })

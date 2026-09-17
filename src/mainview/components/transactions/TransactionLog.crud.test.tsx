@@ -12,6 +12,7 @@ import { genVndrId, type VndrId } from "../../../shared/domain/vendors/VndrId";
 import { transactionReadSchema, type Transaction } from "../../../shared/domain/transactions/Transaction";
 import { genTxnId } from "../../../shared/domain/transactions/TxnId";
 import { genOrigId } from "../../../shared/domain/origins/OrigId";
+import type { BalanceAssertion } from "../../../shared/domain/balanceAssertions/BalanceAssertion";
 
 function category(overrides: { id?: AcctCtgId; parentCtgId: AcctCtgId; acctType: AcctTypeStr; name: string }): AccountCategory {
 	return accountCategoryReadSchema.parse({
@@ -117,6 +118,10 @@ const findLatestTransactionForVendorAndAccountMock = mock(
 const createTransactionMock = mock(async (_params: unknown) => {});
 const patchTransactionMock = mock(async (_params: unknown) => {});
 const deleteTransactionMock = mock(async (_id: string) => {});
+// Register (showBalance) fetches balance assertions too -- mocked here (empty, unused by these tests) so this
+// file doesn't depend on whichever other test file's mock.module call for the same path happened to run last
+// (mock.module leaks across files within one `bun test` process -- see TransactionLog.balanceAssertions.test.tsx).
+const findBalanceAssertionsByAccountMock = mock(async (): Promise<BalanceAssertion[]> => []);
 
 mock.module("../../accounts/accountsClient", () => ({
 	accountsClient: { findAccountsAll: findAccountsAllMock },
@@ -136,6 +141,14 @@ mock.module("../../transactions/transactionsClient", () => ({
 		deleteTransaction: deleteTransactionMock,
 	},
 }));
+mock.module("../../balanceAssertions/balanceAssertionsClient", () => ({
+	balanceAssertionsClient: {
+		findBalanceAssertionsByAccount: findBalanceAssertionsByAccountMock,
+		createBalanceAssertion: mock(async () => {}),
+		patchBalanceAssertion: mock(async () => {}),
+		deleteBalanceAssertion: mock(async () => {}),
+	},
+}));
 
 const { default: TransactionLog } = await import("./TransactionLog");
 
@@ -149,6 +162,7 @@ beforeEach(() => {
 	createTransactionMock.mockReset();
 	patchTransactionMock.mockReset();
 	deleteTransactionMock.mockReset();
+	findBalanceAssertionsByAccountMock.mockReset();
 
 	findAccountsAllMock.mockResolvedValue([]);
 	findAccountCategoriesAllMock.mockResolvedValue([]);
@@ -159,6 +173,7 @@ beforeEach(() => {
 	createTransactionMock.mockResolvedValue(undefined);
 	patchTransactionMock.mockResolvedValue(undefined);
 	deleteTransactionMock.mockResolvedValue(undefined);
+	findBalanceAssertionsByAccountMock.mockResolvedValue([]);
 });
 
 function renderRegister(accountId: AcctId) {

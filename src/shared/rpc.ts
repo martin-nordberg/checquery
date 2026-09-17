@@ -5,6 +5,7 @@ import type { AccountCategory } from "./domain/accountCategories/AccountCategory
 import type { Vendor } from "./domain/vendors/Vendor";
 import type { Transaction } from "./domain/transactions/Transaction";
 import type { AccountBalance } from "./domain/transactions/AccountBalance";
+import type { BalanceAssertion } from "./domain/balanceAssertions/BalanceAssertion";
 import type { EncryptionMode } from "./encryptionMode";
 
 export type FileOpenedPayload = {
@@ -125,6 +126,22 @@ export type PatchTransactionParams = {
 	entries?: { acctId: string; debit?: string; credit?: string }[];
 };
 
+/** Params for the bun-side createBalanceAssertion request -- the register's checkbox flow (balance-
+ * assertions-implementation-plan.md §4d), which supplies every field itself with no dialog. id/origId/hlc are
+ * filled in bun-side. */
+export type CreateBalanceAssertionParams = {
+	acctId: string;
+	assertionDate: string;
+	balance: string;
+};
+
+/** Params for the bun-side patchBalanceAssertion request. Deliberately just `balance` -- the pencil-edit
+ * dialog never moves an assertion's account or date (see balance-assertions-implementation-plan.md §0). */
+export type PatchBalanceAssertionParams = {
+	id: string;
+	balance: string;
+};
+
 export type AppSchema = {
 	bun: RPCSchema<{
 		requests: {
@@ -159,6 +176,10 @@ export type AppSchema = {
 			findAccountBalancesAsOf: { params: { asOfDate: string }; response: AccountBalance[] };
 			findAccountBalancesForPeriod: { params: { startDate: string; endDate: string }; response: AccountBalance[] };
 			findTransactionsForPeriod: { params: { startDate: string; endDate: string }; response: Transaction[] };
+			findBalanceAssertionsByAccount: { params: { accountId: string }; response: BalanceAssertion[] };
+			createBalanceAssertion: { params: CreateBalanceAssertionParams; response: void };
+			patchBalanceAssertion: { params: PatchBalanceAssertionParams; response: void };
+			deleteBalanceAssertion: { params: { id: string }; response: void };
 		};
 	}>;
 	webview: RPCSchema<{

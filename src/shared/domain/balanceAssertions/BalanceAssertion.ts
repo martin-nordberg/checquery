@@ -11,9 +11,12 @@ import {origIdSchema} from "../origins/OrigId";
  * date, the sum of every entry posted to the account whose transaction has cleared by that date equals a
  * stated balance -- pinning the ledger to an external source of truth (typically a bank statement). It
  * doesn't reference or create any transactions itself; it's checked by comparing that sum against the
- * asserted balance (mismatches are flagged to the user via UI still to be designed). Uniqueness of the
- * (acctId, assertionDate) pair is an application-level concern -- it needs the full set of assertions for
- * an account and isn't checkable from a single assertion, so it isn't enforced here.
+ * asserted balance -- mismatches are flagged to the user as an orange "Out of Balance" row in the Register
+ * (see buildRegisterRows.ts and balance-assertions-implementation-plan.md). Uniqueness of the (acctId,
+ * assertionDate) pair is an application-level concern -- it needs the full set of assertions for an account
+ * and isn't checkable from a single assertion, so it isn't enforced here; in practice it can't be violated
+ * either, since the mainview only ever creates one via a per-date checkbox that disappears once an assertion
+ * exists, and never lets that date be changed afterward.
  */
 const balanceAssertionAttributesSchema =
     z.strictObject({

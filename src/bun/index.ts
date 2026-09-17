@@ -32,6 +32,12 @@ import {
 	handleFindTransactionsForPeriod,
 	handlePatchTransaction,
 } from "./transactionHandlers";
+import {
+	handleCreateBalanceAssertion,
+	handleDeleteBalanceAssertion,
+	handleFindBalanceAssertionsByAccount,
+	handlePatchBalanceAssertion,
+} from "./balanceAssertionHandlers";
 import { resolveEncryptionMode } from "./encryptionMode";
 
 // Fail fast, before any window or dialog exists, on a misconfigured CHECQUERY_ENCRYPTION_DISABLED --
@@ -109,6 +115,10 @@ const rpc: ReturnType<typeof BrowserView.defineRPC<AppSchema>> = BrowserView.def
 			findAccountBalancesAsOf: (params) => handleFindAccountBalancesAsOf(params),
 			findAccountBalancesForPeriod: (params) => handleFindAccountBalancesForPeriod(params),
 			findTransactionsForPeriod: (params) => handleFindTransactionsForPeriod(params),
+			findBalanceAssertionsByAccount: (params) => handleFindBalanceAssertionsByAccount(params),
+			createBalanceAssertion: (params) => handleCreateBalanceAssertion(params),
+			patchBalanceAssertion: (params) => handlePatchBalanceAssertion(params),
+			deleteBalanceAssertion: (params) => handleDeleteBalanceAssertion(params),
 		},
 		messages: {},
 	},

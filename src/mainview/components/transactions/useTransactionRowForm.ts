@@ -119,6 +119,10 @@ export default function useTransactionRowForm(options: UseTransactionRowFormOpti
 			setError("Posted date is required.");
 			return null;
 		}
+		if (postDate() && clearedDate() && postDate() > clearedDate()) {
+			setError("Posted date must be on or before cleared date.");
+			return null;
+		}
 
 		return { entries: finalEntries };
 	};

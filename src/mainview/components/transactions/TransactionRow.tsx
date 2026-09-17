@@ -10,6 +10,12 @@ type TransactionRowProps = {
 	showBalance: boolean;
 	editDisabled: boolean;
 	onStartEdit: () => void;
+	// Balance-check column (Register only -- see balance-assertions-implementation-plan.md §0/§4b). All three
+	// default to inert when omitted, so Income Log/Expense Log (showBalance false) never need to pass them.
+	isLastOfDate?: boolean;
+	hasAssertionForDate?: boolean;
+	creatingAssertion?: boolean;
+	onCreateAssertion?: () => void;
 };
 
 /** Display `<tr>` for one line item. The debit/credit-normal side (which side is "an increase" for this
@@ -40,8 +46,7 @@ export default function TransactionRow(props: TransactionRowProps) {
 					</svg>
 				</button>
 			</td>
-			<td class="whitespace-nowrap px-4 py-2 text-sm text-gray-900">{props.lineItem.postDate}</td>
-			<td class="whitespace-nowrap px-4 py-2 text-sm text-gray-500">{props.lineItem.clearedDate ?? ""}</td>
+			<td class="whitespace-nowrap px-4 py-2 text-sm text-gray-900">{props.lineItem.transactionDate}</td>
 			<Show when={props.showCode}>
 				<td class="whitespace-nowrap px-4 py-2 text-sm text-gray-500">{props.lineItem.code}</td>
 			</Show>
@@ -65,6 +70,18 @@ export default function TransactionRow(props: TransactionRowProps) {
 					class={`whitespace-nowrap px-4 py-2 text-right text-sm font-medium ${props.acctType === "LIABILITY" ? "text-red-600" : "text-gray-900"}`}
 				>
 					{props.lineItem.balance}
+				</td>
+				<td class="px-2 py-2 text-center">
+					<Show when={props.isLastOfDate && !props.hasAssertionForDate}>
+						<input
+							type="checkbox"
+							checked={false}
+							disabled={props.creatingAssertion}
+							title="Assert this as the cleared balance for this date"
+							aria-label={`Assert cleared balance for ${props.lineItem.transactionDate}`}
+							onChange={() => props.onCreateAssertion?.()}
+						/>
+					</Show>
 				</td>
 			</Show>
 		</tr>

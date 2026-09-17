@@ -6,6 +6,8 @@ import {
     transactionCreationEventSchema,
     transactionDeletionEventSchema,
     transactionPatchEventSchema,
+    type TransactionCreationEvent,
+    type TransactionPatchEvent,
 } from '../../../../shared/domain/transactions/Transaction'
 import { genTxnId } from '../../../../shared/domain/transactions/TxnId'
 import { genAcctId } from '../../../../shared/domain/accounts/AcctId'
@@ -77,6 +79,31 @@ describe('TransactionMaterializedStoreSvc', () => {
             const { svc } = makeSvc()
             expect(await svc.findTransactionById(genTxnId())).toBeNull()
         })
+
+        it('clamps clearedDate up to postDate when a raw (unvalidated) payload has clearedDate < postDate -- the replay case, since ActionLog.replayDispatch casts straight to TransactionCreationEvent with no schema.parse() in between', async () => {
+            const { svc } = makeSvc()
+            // Built as a plain object, not via transactionCreationEventSchema.parse(), which now rejects this
+            // combination -- this simulates what replay actually hands the materialized store for a historical
+            // action recorded before that constraint existed.
+            const event = {
+                id: genTxnId(),
+                origId: genOrigId(),
+                postDate: isoDateSchema.parse('2026-01-20'),
+                clearedDate: isoDateSchema.parse('2026-01-15'),
+                code: '',
+                description: 'Historical',
+                needsReview: false,
+                entries: [
+                    { acctId: acctA, debit: '$10.00', credit: '$0.00' },
+                    { acctId: acctB, debit: '$0.00', credit: '$10.00' },
+                ],
+            } as TransactionCreationEvent
+
+            await svc.createTransaction(event)
+            const found = await svc.findTransactionById(event.id)
+            expect(found!.postDate as string).toBe('2026-01-20')
+            expect(found!.clearedDate as string).toBe('2026-01-20')
+        })
     })
 
     describe('patchTransaction', () => {
@@ -135,6 +162,77 @@ describe('TransactionMaterializedStoreSvc', () => {
             const { svc } = makeSvc()
             const patch = transactionPatchEventSchema.parse({ id: genTxnId(), origId: genOrigId(), description: 'X' })
             await expect(svc.patchTransaction(patch)).rejects.toThrow()
+        })
+
+        it('clamps clearedDate up to postDate when a raw (unvalidated) patch sets both at once', async () => {
+            const { svc } = makeSvc()
+            const created = transactionCreationEventSchema.parse({
+                id: genTxnId(), origId: genOrigId(), postDate: '2026-01-10', description: 'Original',
+                entries: [
+                    { acctId: acctA, debit: '$10.00', credit: '$0.00' },
+                    { acctId: acctB, debit: '$0.00', credit: '$10.00' },
+                ],
+            })
+            await svc.createTransaction(created)
+
+            const patch = {
+                id: created.id,
+                origId: genOrigId(),
+                postDate: isoDateSchema.parse('2026-01-20'),
+                clearedDate: isoDateSchema.parse('2026-01-15'),
+            } as TransactionPatchEvent
+            await svc.patchTransaction(patch)
+
+            const found = await svc.findTransactionById(created.id)
+            expect(found!.postDate as string).toBe('2026-01-20')
+            expect(found!.clearedDate as string).toBe('2026-01-20')
+        })
+
+        it('clamps against the already-stored postDate when the patch only changes clearedDate', async () => {
+            const { svc } = makeSvc()
+            const created = transactionCreationEventSchema.parse({
+                id: genTxnId(), origId: genOrigId(), postDate: '2026-01-20', description: 'Original',
+                entries: [
+                    { acctId: acctA, debit: '$10.00', credit: '$0.00' },
+                    { acctId: acctB, debit: '$0.00', credit: '$10.00' },
+                ],
+            })
+            await svc.createTransaction(created)
+
+            const patch = {
+                id: created.id,
+                origId: genOrigId(),
+                clearedDate: isoDateSchema.parse('2026-01-15'),
+            } as TransactionPatchEvent
+            await svc.patchTransaction(patch)
+
+            const found = await svc.findTransactionById(created.id)
+            expect(found!.postDate as string).toBe('2026-01-20')
+            expect(found!.clearedDate as string).toBe('2026-01-20')
+        })
+
+        it('clamps against the incoming postDate when the patch only changes postDate past the stored clearedDate', async () => {
+            const { svc } = makeSvc()
+            const created = transactionCreationEventSchema.parse({
+                id: genTxnId(), origId: genOrigId(), postDate: '2026-01-10', clearedDate: '2026-01-12',
+                description: 'Original',
+                entries: [
+                    { acctId: acctA, debit: '$10.00', credit: '$0.00' },
+                    { acctId: acctB, debit: '$0.00', credit: '$10.00' },
+                ],
+            })
+            await svc.createTransaction(created)
+
+            const patch = transactionPatchEventSchema.parse({
+                id: created.id,
+                origId: genOrigId(),
+                postDate: '2026-01-20',
+            })
+            await svc.patchTransaction(patch)
+
+            const found = await svc.findTransactionById(created.id)
+            expect(found!.postDate as string).toBe('2026-01-20')
+            expect(found!.clearedDate as string).toBe('2026-01-20')
         })
     })
 
@@ -247,6 +345,34 @@ describe('TransactionMaterializedStoreSvc', () => {
         it('returns an empty array when the account has no transactions', async () => {
             const { svc } = makeSvc()
             expect(await svc.findTransactionsByAccount(genAcctId())).toEqual([])
+        })
+
+        it('orders by transaction date (clearedDate when present, else postDate), not raw postDate, breaking ties by insertion order', async () => {
+            const { svc } = makeSvc()
+
+            // Cleared on 2026-01-15 despite an earlier postDate -- its transaction date ties with sameDay's.
+            const clearedIntoTie = transactionCreationEventSchema.parse({
+                id: genTxnId(), origId: genOrigId(), postDate: '2026-01-05', clearedDate: '2026-01-15',
+                description: 'Cleared into the tie', entries: [
+                    { acctId: acctA, debit: '$5.00', credit: '$0.00' },
+                    { acctId: acctB, debit: '$0.00', credit: '$5.00' },
+                ],
+            })
+            const sameDay = transactionCreationEventSchema.parse({
+                id: genTxnId(), origId: genOrigId(), postDate: '2026-01-15',
+                description: 'Same transaction date', entries: [
+                    { acctId: acctA, debit: '$10.00', credit: '$0.00' },
+                    { acctId: acctB, debit: '$0.00', credit: '$10.00' },
+                ],
+            })
+
+            await svc.createTransaction(sameDay)
+            await svc.createTransaction(clearedIntoTie)
+
+            const found = await svc.findTransactionsByAccount(acctA)
+            // Both share transaction date 2026-01-15; entered order (sameDay, then clearedIntoTie) wins the tie
+            // even though clearedIntoTie's raw postDate (01-05) sorts earlier than sameDay's (01-15).
+            expect(found.map((t) => t.description as string)).toEqual(['Same transaction date', 'Cleared into the tie'])
         })
     })
 

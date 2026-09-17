@@ -64,6 +64,41 @@ describe('BalanceAssertionMaterializedStoreSvc', () => {
         })
     })
 
+    describe('findBalanceAssertionsByAccount', () => {
+        it('returns only non-deleted assertions for the given account, ordered by assertionDate', async () => {
+            const { svc } = makeSvc()
+            const acctA = genAcctId()
+            const acctB = genAcctId()
+
+            const later = balanceAssertionCreationEventSchema.parse({
+                id: genAsrtId(), origId: genOrigId(), acctId: acctA, assertionDate: '2026-02-28', balance: '$1.00',
+            })
+            const earlier = balanceAssertionCreationEventSchema.parse({
+                id: genAsrtId(), origId: genOrigId(), acctId: acctA, assertionDate: '2026-01-31', balance: '$1.00',
+            })
+            const otherAccount = balanceAssertionCreationEventSchema.parse({
+                id: genAsrtId(), origId: genOrigId(), acctId: acctB, assertionDate: '2026-01-15', balance: '$1.00',
+            })
+            await svc.createBalanceAssertion(later)
+            await svc.createBalanceAssertion(earlier)
+            await svc.createBalanceAssertion(otherAccount)
+
+            const deleted = balanceAssertionCreationEventSchema.parse({
+                id: genAsrtId(), origId: genOrigId(), acctId: acctA, assertionDate: '2026-03-31', balance: '$1.00',
+            })
+            await svc.createBalanceAssertion(deleted)
+            await svc.deleteBalanceAssertion(balanceAssertionDeletionEventSchema.parse({ id: deleted.id, origId: genOrigId() }))
+
+            const found = await svc.findBalanceAssertionsByAccount(acctA)
+            expect(found.map((a) => a.assertionDate as string)).toEqual(['2026-01-31', '2026-02-28'])
+        })
+
+        it('returns an empty array when the account has no assertions', async () => {
+            const { svc } = makeSvc()
+            expect(await svc.findBalanceAssertionsByAccount(genAcctId())).toEqual([])
+        })
+    })
+
     describe('patchBalanceAssertion', () => {
         it('updates only the fields present on the patch', async () => {
             const { svc } = makeSvc()
