@@ -2,12 +2,14 @@ import type { Database } from "bun:sqlite";
 import { getMetaValue, metaTableExists, setMetaValue } from "../meta";
 import { up as up0001 } from "./0001_meta";
 import { up as up0002 } from "./0002_actions";
+import { up as up0003 } from "./0003_drop_vendor_category_actions";
 
 type Migration = { version: number; up: (db: Database) => void }
 
 const migrations: Migration[] = [
     { version: 1, up: up0001 },
     { version: 2, up: up0002 },
+    { version: 3, up: up0003 },
 ]
 
 /** The highest schema_version this build knows how to run migrations up to. A file whose stored

@@ -19,7 +19,11 @@
 > fixed DDL shape) — see the commit fixing it for details; it doesn't change anything about this plan's Phase
 > 1/Phase 2 split, but is the reason `0002_actions.ts` still permanently lists the three vendor-category action
 > types in its `CHECK` constraint even after Phase 2's cleanup (§0's corrected bullet, unaffected by Phase 2 —
-> see §11's "what does not get touched").
+> see §11's "what does not get touched"). **Correction to that "what does not get touched" bullet and to §12's
+> `vendor_category_actions`-stays-forever conclusion**: the table itself (unlike the `CHECK` constraint) turned
+> out safe to drop via an ordinary forward migration after all — see `tasks/done/drop-vendor-category-actions-
+> table.md` for why that's different from tightening the `CHECK` and for the actual migration
+> (`0003_drop_vendor_category_actions.ts`, `schema_version` 3).
 >
 > Reverses `tasks/done/vendor-categories-implementation-plan.md` in full: vendor categories have proved to be a
 > mistake in practice and are being removed from the entire application — domain model, persistence, RPC, UI,
