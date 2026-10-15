@@ -5,9 +5,11 @@ services:
   checquery:
     build: .
     image: checquery:latest
-    # Localhost only: the server speaks plain HTTP (HTTPS is a planned follow-up). Change deliberately, e.g. to
-    # "3000:3000" on a trusted LAN or behind a TLS-terminating reverse proxy (then set CHECQUERY_TRUST_PROXY).
-    ports: ["127.0.0.1:${CHECQUERY_HOST_PORT:-3000}:3000"]
+    # Published on localhost only by default: the server speaks plain HTTP (HTTPS is a planned follow-up). To
+    # reach it from other computers on a trusted LAN, set CHECQUERY_BIND_ADDRESS in .env -- 0.0.0.0 for every
+    # interface, or one of the host's addresses. Behind a TLS-terminating reverse proxy, also set
+    # CHECQUERY_TRUST_PROXY.
+    ports: ["${CHECQUERY_BIND_ADDRESS:-127.0.0.1}:${CHECQUERY_HOST_PORT:-3000}:3000"]
     volumes:
       - checquery-data:/data
       # Bind-mount alternative (easier to back up, or to drop desktop files into; the host directory must be

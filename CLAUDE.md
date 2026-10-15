@@ -95,7 +95,8 @@ Package manager is **Bun** (`bun.lock` present; version pinned in `mise.toml`, w
 - `bun run hash-password` — prints a password hash (argon2id, base64-encoded so its `$`s survive `.env`/Compose
   substitution) for `CHECQUERY_USERn_PASSWORD_HASH`.
 - `docker compose up --build` (or `bun run docker:up`) — the production image, on http://127.0.0.1:3000 by
-  default (`CHECQUERY_HOST_PORT` to change), data in the `checquery-data` volume. Users come from `.env`.
+  default (`CHECQUERY_HOST_PORT` to change the port, `CHECQUERY_BIND_ADDRESS=0.0.0.0` to publish on the LAN),
+  data in the `checquery-data` volume. Users come from `.env`.
 
 There is no lint/format tooling configured (no ESLint/Prettier/Biome config in the repo).
 
