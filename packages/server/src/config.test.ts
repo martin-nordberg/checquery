@@ -74,6 +74,12 @@ describe('loadConfig', () => {
         fails({ ...base, CHECQUERY_USER1_NAME: 'two\nlines' }, 'not a valid name')
     })
 
+    it('accepts a base64-encoded hash (the $-free form hash-password prints)', () => {
+        const config = loadConfig({ ...base, CHECQUERY_USER1_PASSWORD_HASH: Buffer.from(hash).toString('base64') })
+        expect(config.users[0]!.passwordHash).toBe(hash)
+        fails({ ...base, CHECQUERY_USER1_PASSWORD_HASH: Buffer.from('not a hash').toString('base64') }, "doesn't look like a password hash")
+    })
+
     it('requires an existing data directory unless told not to check', () => {
         const env = { ...base, CHECQUERY_DATA_DIR: join(dataDir, 'missing') }
         fails(env, 'must be an existing, writable directory')

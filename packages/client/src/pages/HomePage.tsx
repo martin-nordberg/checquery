@@ -1,4 +1,4 @@
-import { A } from "@solidjs/router";
+import { A, useNavigate } from "@solidjs/router";
 import { createResource, For, Show } from "solid-js";
 import TopNav from "../components/nav/TopNav";
 import FileBreadcrumb from "../components/nav/FileBreadcrumb";
@@ -8,14 +8,14 @@ import {
 	requestFileInfo,
 	requestNewFile,
 	requestOpenFile,
-	requestQuitApp,
-} from "../rpc";
+	resetFileSession,
+} from "../api/fileSession";
+import { currentUser, logout } from "../api/authSession";
 import {
 	accountsIconPath,
 	balanceSheetIconPath,
 	budgetIconPath,
 	closeFileIconPath,
-	exitIconPath,
 	expenseLogIconPath,
 	fileInfoIconPath,
 	incomeLogIconPath,
@@ -78,13 +78,6 @@ function NoFileHub() {
 			</button>
 			<button type="button" class={buttonClass} onClick={() => void requestOpenFile()}>
 				<NavIcon path={openFileIconPath} /> Open an Existing File
-			</button>
-			{/* Blank row, same height as the button rows above/below, purely for vertical spacing. */}
-			<div class={`${buttonClass} col-span-2 invisible`} aria-hidden="true">
-				&nbsp;
-			</div>
-			<button type="button" class={buttonClass} onClick={() => void requestQuitApp()}>
-				<NavIcon path={exitIconPath} /> Exit the Program
 			</button>
 		</div>
 	);
@@ -173,6 +166,32 @@ function FileHub() {
 	);
 }
 
+/** "Signed in as …" plus Log Out. Logging out leaves the file open on the server for any other session. */
+function SignedInAs() {
+	const navigate = useNavigate();
+	const signOut = async () => {
+		try {
+			await logout();
+		} finally {
+			resetFileSession();
+			navigate("/login");
+		}
+	};
+
+	return (
+		<Show when={currentUser()}>
+			{(user) => (
+				<p class="mt-8 text-sm text-slate-500">
+					Signed in as <span class="font-medium text-slate-700">{user()}</span> ·{" "}
+					<button type="button" class="text-blue-700 hover:underline" onClick={() => void signOut()}>
+						Log out
+					</button>
+				</p>
+			)}
+		</Show>
+	);
+}
+
 export default function HomePage() {
 	return (
 		<>
@@ -183,6 +202,7 @@ export default function HomePage() {
 				<Show when={currentFile()} fallback={<NoFileHub />}>
 					<FileHub />
 				</Show>
+				<SignedInAs />
 			</main>
 		</>
 	);

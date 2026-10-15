@@ -7,7 +7,7 @@ import { accountReadSchema, type Account } from "@checquery/shared/domain/accoun
 import { genAcctId } from "@checquery/shared/domain/accounts/AcctId";
 import { genOrigId } from "@checquery/shared/domain/origins/OrigId";
 import { genAcctCtgId } from "@checquery/shared/domain/accountCategories/AcctCtgId";
-import { errorAlert, setErrorAlert } from "../../rpc";
+import { errorAlert, setErrorAlert } from "../../api/fileSession";
 
 function vendor(overrides: { name: string; isActive?: boolean; defaultAcctId?: ReturnType<typeof genAcctId> }): Vendor {
 	return vendorReadSchema.parse({

@@ -5,7 +5,7 @@ import type { Navigator } from "@solidjs/router";
  * Tracks the app's in-session navigation history so the top nav's Back/Forward buttons can step
  * through it, the same way a browser's own back/forward buttons do.
  *
- * `@solidjs/router`'s `HashRouter` is itself built on the real browser History API (`pushState` /
+ * `@solidjs/router`'s `Router` is built on the real browser History API (`pushState` /
  * `history.go`), and its `navigate(-1)` / `navigate(1)` calls map straight through to
  * `window.history.go(delta)`. So the actual stepping is native browser navigation -- what this
  * module adds is the bookkeeping the History API doesn't expose: whether there's anything to go

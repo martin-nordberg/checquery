@@ -3,7 +3,7 @@ import type { Account } from "@checquery/shared/domain/accounts/Account";
 import type { AcctCtgId } from "@checquery/shared/domain/accountCategories/AcctCtgId";
 import { accountsClient } from "../../accounts/accountsClient";
 import { hasSiblingNameConflict } from "../../accountCategories/siblingNameConflict";
-import { setErrorAlert } from "../../rpc";
+import { setErrorAlert } from "../../api/fileSession";
 import AccountParentPicker from "./AccountParentPicker";
 import ConfirmDialog from "../common/ConfirmDialog";
 import { useAccountTreeActions } from "./AccountTreeContext";

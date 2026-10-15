@@ -1,7 +1,8 @@
 import { describe, expect, it } from "bun:test";
 import { renderPage } from "../../test/renderPage";
 import HomePage from "./HomePage";
-import { setCurrentFile } from "../rpc";
+import { setCurrentFile } from "../api/fileSession";
+import { setCurrentUser } from "../api/authSession";
 
 describe("HomePage", () => {
 	it("shows the no-file hub when no file is open", () => {
@@ -11,8 +12,18 @@ describe("HomePage", () => {
 		expect(getByText("Checquery")).toBeTruthy();
 		expect(getByText("Create a New File")).toBeTruthy();
 		expect(getByText("Open an Existing File")).toBeTruthy();
-		expect(getByText("Exit the Program")).toBeTruthy();
+		expect(queryByText("Exit the Program")).toBeNull();
 		expect(queryByText("Close This File")).toBeNull();
+	});
+
+	it("shows who is signed in, with a Log out link", () => {
+		setCurrentFile(null);
+		setCurrentUser("alice");
+		const { getByText } = renderPage("/", "/", HomePage);
+
+		expect(getByText("alice")).toBeTruthy();
+		expect(getByText("Log out").tagName).toBe("BUTTON");
+		setCurrentUser(null);
 	});
 
 	it("shows the file hub, with the file name breadcrumb, once a file is open", () => {

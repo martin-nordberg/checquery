@@ -1,11 +1,13 @@
-import { rpc } from "../rpc";
+import { api, unwrap, unwrapVoid } from "../api/apiClient";
 import type { Vendor } from "@checquery/shared/domain/vendors/Vendor";
-import type { CreateVendorParams, PatchVendorParams } from "@checquery/shared/rpc";
+import type { CreateVendorParams, PatchVendorParams } from "@checquery/shared/api/vendorsApi";
 
 export const vendorsClient = {
-	findVendorsAll: (): Promise<Vendor[]> => rpc.request.findVendorsAll(),
-	createVendor: (params: CreateVendorParams): Promise<void> => rpc.request.createVendor(params),
-	patchVendor: (params: PatchVendorParams): Promise<void> => rpc.request.patchVendor(params),
-	deleteVendor: (id: string): Promise<void> => rpc.request.deleteVendor({ id }),
-	isVendorInUse: (id: string): Promise<boolean> => rpc.request.isVendorInUse({ id }),
+	findVendorsAll: async (): Promise<Vendor[]> => (await unwrap(await api.vendors.$get())) as unknown as Vendor[],
+	createVendor: async (params: CreateVendorParams): Promise<void> => unwrapVoid(await api.vendors.$post({ json: params })),
+	patchVendor: async ({ id, ...body }: PatchVendorParams): Promise<void> =>
+		unwrapVoid(await api.vendors[":id"].$patch({ param: { id }, json: body })),
+	deleteVendor: async (id: string): Promise<void> => unwrapVoid(await api.vendors[":id"].$delete({ param: { id } })),
+	isVendorInUse: async (id: string): Promise<boolean> =>
+		(await unwrap(await api.vendors[":id"]["in-use"].$get({ param: { id } }))).inUse,
 };

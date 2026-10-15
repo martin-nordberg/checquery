@@ -7,7 +7,7 @@ import { accountCategoryReadSchema, type AccountCategory } from "@checquery/shar
 import { genAcctCtgId, type AcctCtgId } from "@checquery/shared/domain/accountCategories/AcctCtgId";
 import { acctCtgIdAssets } from "@checquery/shared/domain/accountCategories/AcctCtgRoot";
 import { genOrigId } from "@checquery/shared/domain/origins/OrigId";
-import { errorAlert, setErrorAlert } from "../../rpc";
+import { errorAlert, setErrorAlert } from "../../api/fileSession";
 
 function category(overrides: { id?: AcctCtgId; name: string; parentCtgId?: AcctCtgId }): AccountCategory {
 	return accountCategoryReadSchema.parse({

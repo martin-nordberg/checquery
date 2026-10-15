@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { renderPage } from "../../../test/renderPage";
 import FileBreadcrumb from "./FileBreadcrumb";
-import { setCurrentFile } from "../../rpc";
+import { setCurrentFile } from "../../api/fileSession";
 
 describe("FileBreadcrumb", () => {
 	it("renders nothing when no file is open", () => {

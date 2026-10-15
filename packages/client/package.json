@@ -9,11 +9,12 @@
 	"dependencies": {
 		"@checquery/shared": "workspace:*",
 		"@solidjs/router": "^1.0.0",
-		"electrobun": "1.18.1",
+		"hono": "^4.13.13",
 		"solid-js": "^1.9.3"
 	},
 	"devDependencies": {
 		"@babel/core": "^7.23.3",
+		"@checquery/server": "workspace:*",
 		"@happy-dom/global-registrator": "^20.11.1",
 		"@solidjs/testing-library": "^0.8.10",
 		"@tailwindcss/vite": "^4.3.3",

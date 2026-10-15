@@ -37,6 +37,21 @@ export class ConfigError extends Error {
 /** A PHC-format password hash as produced by Bun.password.hash (argon2id by default; bcrypt also verifies). */
 const passwordHashRegex = /^\$(argon2(id|i|d)\$|2[aby]\$)/;
 
+/**
+ * A configured hash may be given raw (`$argon2id$...`) or base64-encoded. The base64 form (what
+ * `bun run hash-password` prints) has no `$` characters, so it survives .env files and Docker Compose
+ * unescaped -- Bun's .env loader expands `$name` even inside single quotes, and Compose wants `$$`, so no one
+ * escaping of the raw form works for both.
+ */
+function decodePasswordHash(value: string): string {
+	if (value.startsWith("$")) return value;
+	try {
+		return Buffer.from(value, "base64").toString("utf8");
+	} catch {
+		return value;
+	}
+}
+
 const boolString = (name: string) =>
 	z
 		.enum(["true", "false"], { message: `${name} must be "true" or "false".` })
@@ -86,12 +101,13 @@ function readUser(index: 1 | 2, rawName: string | undefined, rawHash: string | u
 	if (!nameSchema.safeParse(name).success) {
 		throw new ConfigError(`${nameVar} is not a valid name.`);
 	}
-	if (!passwordHashRegex.test(hash)) {
+	const passwordHash = decodePasswordHash(hash);
+	if (!passwordHashRegex.test(passwordHash)) {
 		throw new ConfigError(
-			`${hashVar} doesn't look like a password hash -- generate one with "bun run hash-password" (check that "$" characters weren't stripped by shell/compose variable substitution).`,
+			`${hashVar} doesn't look like a password hash -- generate one with "bun run hash-password". (A raw "$argon2id$..." hash gets mangled by .env/Compose variable substitution; use the base64 form the script prints.)`,
 		);
 	}
-	return { name, passwordHash: hash };
+	return { name, passwordHash };
 }
 
 /** The packaged client build, relative to this file: packages/server/src → packages/client/dist. */

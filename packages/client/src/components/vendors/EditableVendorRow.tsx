@@ -3,7 +3,7 @@ import type { Account } from "@checquery/shared/domain/accounts/Account";
 import type { Vendor } from "@checquery/shared/domain/vendors/Vendor";
 import { vendorsClient } from "../../vendors/vendorsClient";
 import { hasVendorNameConflict } from "../../vendors/vendorNameConflict";
-import { setErrorAlert } from "../../rpc";
+import { setErrorAlert } from "../../api/fileSession";
 import AccountPicker from "../accounts/AccountPicker";
 import ConfirmDialog from "../common/ConfirmDialog";
 

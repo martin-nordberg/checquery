@@ -1,5 +1,7 @@
 /**
- * Prints an argon2id hash for a password, to paste into CHECQUERY_USERn_PASSWORD_HASH. Reads the password
+ * Prints an argon2id hash for a password, base64-encoded, to paste into CHECQUERY_USERn_PASSWORD_HASH as-is.
+ * (Base64 because the raw `$argon2id$...` form's `$` characters get mangled by .env and Docker Compose variable
+ * substitution; the server accepts either form -- see decodePasswordHash in src/config.ts.) Reads the password
  * twice from the terminal without echoing it (or once from a pipe: `echo -n pw | bun run hash-password`).
  */
 
@@ -50,4 +52,5 @@ if (password.length < 8) {
 	process.exit(1);
 }
 
-console.log(await Bun.password.hash(password, { algorithm: "argon2id" }));
+const hash = await Bun.password.hash(password, { algorithm: "argon2id" });
+console.log(Buffer.from(hash).toString("base64"));

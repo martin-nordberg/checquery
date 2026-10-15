@@ -1,19 +1,24 @@
-import { rpc } from "../rpc";
+import { api, unwrap, unwrapVoid } from "../api/apiClient";
 import type { Account } from "@checquery/shared/domain/accounts/Account";
-import type { CreateAccountParams, PatchAccountParams } from "@checquery/shared/rpc";
+import type { CreateAccountParams, PatchAccountParams } from "@checquery/shared/api/accountsApi";
 
 /**
- * Thin wrapper around the bun-side account RPC requests. Its own module (rather than living in rpc.ts)
- * so it can be swapped out wholesale via `mock.module` in component tests without also having to stub out
- * rpc.ts's file-lifecycle signals/handlers -- see documentation/account-list-implementation-plan.md §1a.
+ * Thin wrapper around the server's account routes (`/api/accounts`). Its own module so it can be swapped out
+ * wholesale via `mock.module` in component tests without also having to stub out the file-session signals --
+ * see tasks/done/account-list-implementation-plan.md §1a.
  *
- * There's no push/live-update from bun (checquery is single-window, so there's no second tab to keep in
- * sync) -- callers refetch findAccountsAll() themselves after a mutation succeeds.
+ * There's no push/live-update from the server -- callers refetch findAccountsAll() themselves after a
+ * mutation succeeds. (Responses are plain JSON, so the Zod-branded domain types are restored by a cast at
+ * this boundary.)
  */
 export const accountsClient = {
-	findAccountsAll: (): Promise<Account[]> => rpc.request.findAccountsAll(),
-	createAccount: (params: CreateAccountParams): Promise<void> => rpc.request.createAccount(params),
-	patchAccount: (params: PatchAccountParams): Promise<void> => rpc.request.patchAccount(params),
-	deleteAccount: (id: string): Promise<void> => rpc.request.deleteAccount({ id }),
-	isAccountInUse: (id: string): Promise<boolean> => rpc.request.isAccountInUse({ id }),
+	findAccountsAll: async (): Promise<Account[]> =>
+		(await unwrap(await api.accounts.$get())) as unknown as Account[],
+	createAccount: async (params: CreateAccountParams): Promise<void> =>
+		unwrapVoid(await api.accounts.$post({ json: params })),
+	patchAccount: async ({ id, ...body }: PatchAccountParams): Promise<void> =>
+		unwrapVoid(await api.accounts[":id"].$patch({ param: { id }, json: body })),
+	deleteAccount: async (id: string): Promise<void> => unwrapVoid(await api.accounts[":id"].$delete({ param: { id } })),
+	isAccountInUse: async (id: string): Promise<boolean> =>
+		(await unwrap(await api.accounts[":id"]["in-use"].$get({ param: { id } }))).inUse,
 };

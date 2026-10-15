@@ -1,13 +1,19 @@
-import { rpc } from "../rpc";
+import { api, unwrap, unwrapVoid } from "../api/apiClient";
 import type { BalanceAssertion } from "@checquery/shared/domain/balanceAssertions/BalanceAssertion";
-import type { CreateBalanceAssertionParams, PatchBalanceAssertionParams } from "@checquery/shared/rpc";
+import type {
+	CreateBalanceAssertionParams,
+	PatchBalanceAssertionParams,
+} from "@checquery/shared/api/balanceAssertionsApi";
 
 export const balanceAssertionsClient = {
-	findBalanceAssertionsByAccount: (accountId: string): Promise<BalanceAssertion[]> =>
-		rpc.request.findBalanceAssertionsByAccount({ accountId }),
-	createBalanceAssertion: (params: CreateBalanceAssertionParams): Promise<void> =>
-		rpc.request.createBalanceAssertion(params),
-	patchBalanceAssertion: (params: PatchBalanceAssertionParams): Promise<void> =>
-		rpc.request.patchBalanceAssertion(params),
-	deleteBalanceAssertion: (id: string): Promise<void> => rpc.request.deleteBalanceAssertion({ id }),
+	findBalanceAssertionsByAccount: async (accountId: string): Promise<BalanceAssertion[]> =>
+		(await unwrap(
+			await api.accounts[":id"]["balance-assertions"].$get({ param: { id: accountId } }),
+		)) as unknown as BalanceAssertion[],
+	createBalanceAssertion: async (params: CreateBalanceAssertionParams): Promise<void> =>
+		unwrapVoid(await api["balance-assertions"].$post({ json: params })),
+	patchBalanceAssertion: async ({ id, ...body }: PatchBalanceAssertionParams): Promise<void> =>
+		unwrapVoid(await api["balance-assertions"][":id"].$patch({ param: { id }, json: body })),
+	deleteBalanceAssertion: async (id: string): Promise<void> =>
+		unwrapVoid(await api["balance-assertions"][":id"].$delete({ param: { id } })),
 };

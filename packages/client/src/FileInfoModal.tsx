@@ -1,17 +1,6 @@
 import { For, Show } from "solid-js";
-import { fileInfo, setFileInfo } from "./rpc";
-
-function formatBytes(bytes: number): string {
-	if (bytes < 1024) return `${bytes} B`;
-	const units = ["KB", "MB", "GB"];
-	let value = bytes / 1024;
-	let unitIndex = 0;
-	while (value >= 1024 && unitIndex < units.length - 1) {
-		value /= 1024;
-		unitIndex += 1;
-	}
-	return `${value.toFixed(1)} ${units[unitIndex]}`;
-}
+import { fileInfo, setFileInfo } from "./api/fileSession";
+import { formatBytes } from "./files/fileDisplay";
 
 export default function FileInfoModal() {
 	const close = () => setFileInfo(null);

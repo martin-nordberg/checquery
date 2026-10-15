@@ -4,7 +4,7 @@ import type { AcctCtgId } from "@checquery/shared/domain/accountCategories/AcctC
 import { acctCtgRootId } from "@checquery/shared/domain/accountCategories/AcctCtgRoot";
 import { accountCategoriesClient } from "../../accountCategories/accountCategoriesClient";
 import { hasSiblingNameConflict } from "../../accountCategories/siblingNameConflict";
-import { setErrorAlert } from "../../rpc";
+import { setErrorAlert } from "../../api/fileSession";
 import AccountCategoryParentPicker from "./AccountCategoryParentPicker";
 import ConfirmDialog from "../common/ConfirmDialog";
 import { useAccountTreeActions } from "./AccountTreeContext";

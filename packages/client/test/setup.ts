@@ -7,13 +7,6 @@ import { cleanup } from "@solidjs/testing-library";
 
 GlobalRegistrator.register();
 
-// electrobun/view's Electroview reaches for `window.__electrobun` unconditionally at construction time
-// (it's injected by Electrobun's real preload script in the actual app). Stub it so importing any module
-// that constructs an Electroview (mainview/rpc.ts, and anything that imports it) doesn't throw under
-// happy-dom. window.__electrobun{WebviewId,RpcSocketPort} are left undefined, which Electroview already
-// treats as "skip the native socket" -- no real IPC is attempted.
-(globalThis.window as unknown as { __electrobun: object }).__electrobun = {};
-
 // @solidjs/testing-library auto-registers this via a bare `afterEach` reference (relying on it being an
 // ambient global), which is fragile to depend on -- register explicitly instead so every test file gets a
 // clean DOM between tests regardless of how it imports things.

@@ -1,8 +1,9 @@
 import "./app.css";
 import { render } from "solid-js/web";
-import { HashRouter, Navigate, Route } from "@solidjs/router";
+import { Navigate, Route, Router } from "@solidjs/router";
 import App from "./App";
 import HomePage from "./pages/HomePage";
+import LoginPage from "./pages/LoginPage";
 import AccountListPage from "./pages/accounts/AccountListPage";
 import VendorListPage from "./pages/vendors/VendorListPage";
 import RegisterPage from "./pages/register/RegisterPage";
@@ -12,16 +13,20 @@ import BalanceSheetPage from "./pages/balancesheet/BalanceSheetPage";
 import IncomeStatementPage from "./pages/incomestatement/IncomeStatementPage";
 import AnnualBudgetPage from "./pages/budget/AnnualBudgetPage";
 import { isoDateToday } from "@checquery/shared/domain/core/IsoDate";
+import { registerSessionRecovery } from "./api/sessionRecovery";
 
 function currentMonthPeriod(): string {
 	const today = new Date();
 	return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
 }
 
+registerSessionRecovery();
+
 render(
 	() => (
-		<HashRouter root={App}>
+		<Router root={App}>
 			<Route path="/" component={HomePage} />
+			<Route path="/login" component={LoginPage} />
 			<Route path="/accounts/:acctType" component={AccountListPage} />
 			<Route path="/vendors" component={VendorListPage} />
 			<Route path="/register/:accountId" component={RegisterPage} />
@@ -39,7 +44,7 @@ render(
 			/>
 			<Route path="/incomestatement/:period/:view" component={IncomeStatementPage} />
 			<Route path="/budget" component={AnnualBudgetPage} />
-		</HashRouter>
+		</Router>
 	),
 	document.getElementById("app")!,
 );

@@ -4,7 +4,7 @@ import { accountReadSchema, type Account } from "@checquery/shared/domain/accoun
 import { genAcctId } from "@checquery/shared/domain/accounts/AcctId";
 import { genOrigId } from "@checquery/shared/domain/origins/OrigId";
 import { genAcctCtgId } from "@checquery/shared/domain/accountCategories/AcctCtgId";
-import { setCurrentFile } from "../rpc";
+import { setCurrentFile } from "../api/fileSession";
 
 function account(overrides: {
 	name: string;

@@ -1,5 +1,5 @@
 import { Show } from "solid-js";
-import { errorAlert, setErrorAlert } from "./rpc";
+import { errorAlert, setErrorAlert } from "./api/fileSession";
 
 export default function ErrorAlertModal() {
 	const close = () => setErrorAlert(null);
