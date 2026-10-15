@@ -1,139 +1,45 @@
-import { BrowserView, BrowserWindow, Updater } from "electrobun/bun";
-import type { AppSchema } from "@checquery/shared/rpc";
-import { handleCloseFile, handleFileInfo, handleNewFile, handleOpenFile } from "./fileLifecycle";
-import {
-	handleCreateAccount,
-	handleDeleteAccount,
-	handleFindAccountsAll,
-	handleIsAccountInUse,
-	handlePatchAccount,
-} from "./accountHandlers";
-import {
-	handleCreateAccountCategory,
-	handleDeleteAccountCategory,
-	handleFindAccountCategoriesAll,
-	handleIsAccountCategoryInUse,
-	handlePatchAccountCategory,
-} from "./accountCategoryHandlers";
-import {
-	handleCreateVendor,
-	handleDeleteVendor,
-	handleFindVendorsAll,
-	handleIsVendorInUse,
-	handlePatchVendor,
-} from "./vendorHandlers";
-import {
-	handleCreateTransaction,
-	handleDeleteTransaction,
-	handleFindAccountBalancesAsOf,
-	handleFindAccountBalancesForPeriod,
-	handleFindLatestTransactionForVendorAndAccount,
-	handleFindTransactionsByAccount,
-	handleFindTransactionsForPeriod,
-	handlePatchTransaction,
-} from "./transactionHandlers";
-import {
-	handleCreateBalanceAssertion,
-	handleDeleteBalanceAssertion,
-	handleFindBalanceAssertionsByAccount,
-	handlePatchBalanceAssertion,
-} from "./balanceAssertionHandlers";
-import { resolveEncryptionMode } from "./encryptionMode";
+import { ConfigError, loadConfig, type Config } from "./config";
+import { createApp } from "./app";
+import { closeWithBackup } from "./fileLifecycle";
+import { closeIfIdle } from "./idleClose";
 
-// Fail fast, before any window or dialog exists, on a misconfigured CHECQUERY_ENCRYPTION_DISABLED --
-// see documentation/test-mode.md.
-let encryptionMode;
+let config: Config;
 try {
-	encryptionMode = resolveEncryptionMode(process.env.CHECQUERY_ENCRYPTION_DISABLED);
+	config = loadConfig(process.env);
 } catch (err) {
-	console.error((err as Error).message);
+	console.error(err instanceof ConfigError ? err.message : err);
 	process.exit(1);
 }
 
-const DEV_SERVER_PORT = 5173;
-const DEV_SERVER_URL = `http://localhost:${DEV_SERVER_PORT}`;
+const { app, state } = createApp(config);
 
-// Check if Vite dev server is running for HMR
-async function getMainViewUrl(): Promise<string> {
-	const channel = await Updater.localInfo.channel();
-	if (channel === "dev") {
-		try {
-			await fetch(DEV_SERVER_URL, { method: "HEAD" });
-			console.log(`HMR enabled: Using Vite dev server at ${DEV_SERVER_URL}`);
-			return DEV_SERVER_URL;
-		} catch {
-			console.log(
-				"Vite dev server not running. Run 'bun run dev:hmr' for HMR support.",
-			);
-		}
-	}
-	return "views://mainview/index.html";
+const server = Bun.serve({
+	hostname: config.host,
+	port: config.port,
+	// Room for the largest allowed upload plus multipart overhead; bodyLimit gives the friendly 413.
+	maxRequestBodySize: config.maxUploadBytes + 1024 * 1024,
+	fetch: app.fetch,
+});
+
+console.log(
+	`Checquery listening on http://${server.hostname}:${server.port} ` +
+		`(data dir ${config.dataDir}, encryption ${config.encryptionMode}, ` +
+		`idle close ${config.idleCloseMinutes ? `${config.idleCloseMinutes} min` : "off"})`,
+);
+
+setInterval(() => void closeIfIdle(state), 60_000);
+
+let shuttingDown = false;
+for (const signal of ["SIGINT", "SIGTERM"] as const) {
+	process.on(signal, () => {
+		if (shuttingDown) return;
+		shuttingDown = true;
+		// Waits for any in-flight mutation, then closes + backs up the open file (D12).
+		void state.mutex
+			.run(() => closeWithBackup(state, `server shutdown (${signal})`))
+			.finally(() => {
+				void server.stop();
+				process.exit(0);
+			});
+	});
 }
-
-const url = await getMainViewUrl();
-
-// Assigned below, before the window loads -- request handlers only ever run in response to a user
-// action from within that window, so it's always set by the time one fires.
-let mainWindow: BrowserWindow<any>;
-
-const rpc: ReturnType<typeof BrowserView.defineRPC<AppSchema>> = BrowserView.defineRPC<AppSchema>({
-	// promptNewFileName blocks on user input in the New File modal, which can
-	// take far longer than Electrobun's 1000ms default RPC request timeout.
-	maxRequestTime: Infinity,
-	handlers: {
-		requests: {
-			startNewFile: () => handleNewFile(mainWindow, rpc, encryptionMode),
-			startOpenFile: () => handleOpenFile(mainWindow, rpc, encryptionMode),
-			getFileInfo: () => handleFileInfo(rpc),
-			closeFile: () => handleCloseFile(mainWindow, rpc),
-			quitApp: () => {
-				// Mirrors the OS window chrome's close control exactly: electrobun's BrowserWindow already
-				// quits the whole app once the last window closes (see its own "close" event handler), so a
-				// plain close() here needs no separate quit call.
-				mainWindow.close();
-			},
-			findAccountsAll: () => handleFindAccountsAll(),
-			createAccount: (params) => handleCreateAccount(params),
-			patchAccount: (params) => handlePatchAccount(params),
-			deleteAccount: (params) => handleDeleteAccount(params),
-			isAccountInUse: (params) => handleIsAccountInUse(params),
-			findAccountCategoriesAll: () => handleFindAccountCategoriesAll(),
-			createAccountCategory: (params) => handleCreateAccountCategory(params),
-			patchAccountCategory: (params) => handlePatchAccountCategory(params),
-			deleteAccountCategory: (params) => handleDeleteAccountCategory(params),
-			isAccountCategoryInUse: (params) => handleIsAccountCategoryInUse(params),
-			findVendorsAll: () => handleFindVendorsAll(),
-			createVendor: (params) => handleCreateVendor(params),
-			patchVendor: (params) => handlePatchVendor(params),
-			deleteVendor: (params) => handleDeleteVendor(params),
-			isVendorInUse: (params) => handleIsVendorInUse(params),
-			findTransactionsByAccount: (params) => handleFindTransactionsByAccount(params),
-			findLatestTransactionForVendorAndAccount: (params) => handleFindLatestTransactionForVendorAndAccount(params),
-			createTransaction: (params) => handleCreateTransaction(params),
-			patchTransaction: (params) => handlePatchTransaction(params),
-			deleteTransaction: (params) => handleDeleteTransaction(params),
-			findAccountBalancesAsOf: (params) => handleFindAccountBalancesAsOf(params),
-			findAccountBalancesForPeriod: (params) => handleFindAccountBalancesForPeriod(params),
-			findTransactionsForPeriod: (params) => handleFindTransactionsForPeriod(params),
-			findBalanceAssertionsByAccount: (params) => handleFindBalanceAssertionsByAccount(params),
-			createBalanceAssertion: (params) => handleCreateBalanceAssertion(params),
-			patchBalanceAssertion: (params) => handlePatchBalanceAssertion(params),
-			deleteBalanceAssertion: (params) => handleDeleteBalanceAssertion(params),
-		},
-		messages: {},
-	},
-});
-
-mainWindow = new BrowserWindow({
-	title: "Checquery",
-	url,
-	frame: {
-		width: 900,
-		height: 700,
-		x: 200,
-		y: 200,
-	},
-	rpc,
-});
-
-console.log("Checquery started!");

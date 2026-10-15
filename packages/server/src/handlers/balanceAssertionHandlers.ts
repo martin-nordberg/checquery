@@ -1,4 +1,4 @@
-import { requireCurrentSession } from "./currentSession";
+import type { HandlerSession } from "../session/currentSession";
 import {
 	balanceAssertionCreationEventSchema,
 	balanceAssertionDeletionEventSchema,
@@ -7,17 +7,17 @@ import {
 } from "@checquery/shared/domain/balanceAssertions/BalanceAssertion";
 import { genAsrtId, asrtIdSchema } from "@checquery/shared/domain/balanceAssertions/AsrtId";
 import { acctIdSchema } from "@checquery/shared/domain/accounts/AcctId";
-import type { CreateBalanceAssertionParams, PatchBalanceAssertionParams } from "@checquery/shared/rpc";
+import type { CreateBalanceAssertionParams, PatchBalanceAssertionParams } from "@checquery/shared/api/balanceAssertionsApi";
 
-export async function handleFindBalanceAssertionsByAccount(params: {
+export async function handleFindBalanceAssertionsByAccount(session: HandlerSession, params: {
 	accountId: string;
 }): Promise<BalanceAssertion[]> {
-	const { store } = requireCurrentSession();
+	const { store } = session;
 	return store.svcs.balanceAssertions.findBalanceAssertionsByAccount(acctIdSchema.parse(params.accountId));
 }
 
-export async function handleCreateBalanceAssertion(params: CreateBalanceAssertionParams): Promise<void> {
-	const { store, origId } = requireCurrentSession();
+export async function handleCreateBalanceAssertion(session: HandlerSession, params: CreateBalanceAssertionParams): Promise<void> {
+	const { store, origId } = session;
 	const event = balanceAssertionCreationEventSchema.parse({
 		id: genAsrtId(),
 		origId,
@@ -28,8 +28,8 @@ export async function handleCreateBalanceAssertion(params: CreateBalanceAssertio
 	await store.svcs.balanceAssertions.createBalanceAssertion(event);
 }
 
-export async function handlePatchBalanceAssertion(params: PatchBalanceAssertionParams): Promise<void> {
-	const { store, origId } = requireCurrentSession();
+export async function handlePatchBalanceAssertion(session: HandlerSession, params: PatchBalanceAssertionParams): Promise<void> {
+	const { store, origId } = session;
 	const event = balanceAssertionPatchEventSchema.parse({
 		id: asrtIdSchema.parse(params.id),
 		origId,
@@ -38,8 +38,8 @@ export async function handlePatchBalanceAssertion(params: PatchBalanceAssertionP
 	await store.svcs.balanceAssertions.patchBalanceAssertion(event);
 }
 
-export async function handleDeleteBalanceAssertion(params: { id: string }): Promise<void> {
-	const { store, origId } = requireCurrentSession();
+export async function handleDeleteBalanceAssertion(session: HandlerSession, params: { id: string }): Promise<void> {
+	const { store, origId } = session;
 	const event = balanceAssertionDeletionEventSchema.parse({
 		id: asrtIdSchema.parse(params.id),
 		origId,

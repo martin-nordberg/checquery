@@ -2,7 +2,8 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeEach, describe, expect, it } from 'bun:test'
-import { closeCurrentFile, createNewFile } from './persistence/db'
+import { closeCurrentFile, createNewFile } from '../persistence/db'
+import type { HandlerSession } from '../session/currentSession'
 import {
     handleCreateVendor,
     handleDeleteVendor,
@@ -23,16 +24,20 @@ afterAll(() => {
     rmSync(tmpDir, { recursive: true, force: true })
 })
 
+let session: HandlerSession
+
 beforeEach(async () => {
-    const result = await createNewFile(tmpDir, freshName(), undefined, 'disabled')
+    const result = await createNewFile(tmpDir, freshName(), undefined, 'disabled', { name: 'tester', ipAddress: '10.0.0.1' })
     expect(result.ok).toBe(true)
+    if (!result.ok) throw new Error(result.error)
+    session = { store: result.store, origId: result.origId }
 })
 
 describe('vendor RPC handlers, end to end against a real (temp) file', () => {
     it('createVendor + findVendorsAll round-trip, defaulting to active with no default account', async () => {
-        await handleCreateVendor({ name: 'Acme Supplies', description: 'Office stuff' })
+        await handleCreateVendor(session, { name: 'Acme Supplies', description: 'Office stuff' })
 
-        const vendors = await handleFindVendorsAll()
+        const vendors = await handleFindVendorsAll(session)
         expect(vendors).toHaveLength(1)
         expect(vendors[0]!.name as string).toBe('Acme Supplies')
         expect(vendors[0]!.description as string).toBe('Office stuff')
@@ -42,36 +47,29 @@ describe('vendor RPC handlers, end to end against a real (temp) file', () => {
     })
 
     it('patchVendor updates only the given fields', async () => {
-        await handleCreateVendor({ name: 'Original' })
-        const [created] = await handleFindVendorsAll()
+        await handleCreateVendor(session, { name: 'Original' })
+        const [created] = await handleFindVendorsAll(session)
 
-        await handlePatchVendor({ id: created!.id, name: 'Renamed', isActive: false })
+        await handlePatchVendor(session, { id: created!.id, name: 'Renamed', isActive: false })
 
-        const [patched] = await handleFindVendorsAll()
+        const [patched] = await handleFindVendorsAll(session)
         expect(patched!.name as string).toBe('Renamed')
         expect(patched!.isActive).toBe(false)
     })
 
     it('deleteVendor soft-deletes -- it no longer appears in findVendorsAll', async () => {
-        await handleCreateVendor({ name: 'Temp' })
-        const [created] = await handleFindVendorsAll()
+        await handleCreateVendor(session, { name: 'Temp' })
+        const [created] = await handleFindVendorsAll(session)
 
-        await handleDeleteVendor({ id: created!.id })
+        await handleDeleteVendor(session, { id: created!.id })
 
-        expect(await handleFindVendorsAll()).toHaveLength(0)
+        expect(await handleFindVendorsAll(session)).toHaveLength(0)
     })
 
     it('isVendorInUse is false for an unreferenced vendor', async () => {
-        await handleCreateVendor({ name: 'Unused' })
-        const [created] = await handleFindVendorsAll()
+        await handleCreateVendor(session, { name: 'Unused' })
+        const [created] = await handleFindVendorsAll(session)
 
-        expect(await handleIsVendorInUse({ id: created!.id })).toBe(false)
-    })
-
-    it('rejects every request when no file is open', async () => {
-        closeCurrentFile()
-
-        await expect(handleFindVendorsAll()).rejects.toThrow('No file open')
-        await expect(handleCreateVendor({ name: 'X' })).rejects.toThrow('No file open')
+        expect(await handleIsVendorInUse(session, { id: created!.id })).toBe(false)
     })
 })

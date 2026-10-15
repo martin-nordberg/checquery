@@ -1,156 +1,187 @@
-import { Utils, type BrowserWindow } from "electrobun/bun";
-import { basename } from "node:path";
-import { closeCurrentFile, createNewFile, getCurrentFile, getCurrentFileInfo, openExistingFile } from "./persistence/db";
+import { readdirSync, statSync, existsSync } from "node:fs";
+import { join, resolve, sep } from "node:path";
+import type {
+	CloseFilePayload,
+	CurrentFilePayload,
+	FileListEntry,
+	FileOpenedPayload,
+} from "@checquery/shared/api/fileApi";
+import {
+	bootstrapOrigin,
+	closeCurrentFile,
+	createNewFile,
+	getCurrentFile,
+	getCurrentFileId,
+	getCurrentLedgerStore,
+	openExistingFile,
+	verifyCurrentFilePassword,
+	type FileErrorCode,
+	type FileResult,
+	type OriginIdentity,
+} from "./persistence/db";
 import { backupFile } from "./persistence/backup";
 import { fileExtensionFor } from "./encryptionMode";
-import type { EncryptionMode } from "@checquery/shared/encryptionMode";
-import type {
-	PromptNewFileNameResult,
-	PromptPasswordResult,
-	FileOpenedPayload,
-	FileInfoPayload,
-	ErrorAlertPayload,
-} from "@checquery/shared/rpc";
+import { HttpError } from "./httpError";
+import { NoFileOpenError } from "./session/currentSession";
+import type { LoginSession } from "./auth/loginSessions";
+import type { ServerState } from "./serverState";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 
 /**
- * The native file/folder-picker dialogs run in their own top-level OS window; closing one doesn't
- * synchronously hand OS keyboard focus back to our window, so firing `window.activate()` and immediately
- * asking the webview to focus a field can lose that race and leave nothing focused (see the callers below).
- * Wait for the window's own "focus" event before proceeding, falling back to a short timeout in case the
- * window already had focus and the OS never re-fires the event.
+ * The file lifecycle over HTTP (replacing the Electrobun-era native-dialog flows): everything happens inside
+ * the one server-side data directory, addressed by bare, already-validated file names (fileNameSchema), never
+ * by paths from the client. Plain functions over ServerState -- no Hono types -- so they're testable directly;
+ * routes/fileRoutes.ts adapts them to HTTP. Callers run the mutating ones under state.mutex.
  */
-function reclaimWindowFocus(window: BrowserWindow<any>, timeoutMs = 500): Promise<void> {
-	return new Promise((resolve) => {
-		let settled = false;
-		const finish = () => {
-			if (settled) return;
-			settled = true;
-			resolve();
-		};
-		// electrobun's window event API has no "off" yet (see its own todo comment), so this listener
-		// outlives this call; that's harmless here since `finish` is idempotent and each open/new-file
-		// action is infrequent, user-initiated, single-window activity.
-		window.on("focus", finish);
-		window.activate();
-		setTimeout(finish, timeoutMs);
-	});
+
+/** The `.checquery` files (or `.checquery-test`, in test mode) directly inside the data directory, by name.
+ * Dot-files (in-progress uploads) and the backups/ folder are skipped. */
+export function listFiles(state: ServerState): FileListEntry[] {
+	const ext = `.${fileExtensionFor(state.config.encryptionMode)}`;
+	const entries: FileListEntry[] = [];
+	for (const name of readdirSync(state.config.dataDir)) {
+		if (name.startsWith(".") || !name.endsWith(ext)) continue;
+		const stats = statSync(join(state.config.dataDir, name));
+		if (!stats.isFile()) continue;
+		entries.push({ name, sizeBytes: stats.size, lastModifiedIso: stats.mtime.toISOString() });
+	}
+	return entries.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-type AppRpc = {
-	request: {
-		promptNewFileName: (params: {
-			suggestedFolder: string;
-			encryptionMode: EncryptionMode;
-		}) => Promise<PromptNewFileNameResult>;
-		promptPassword: (params: {
-			fileName: string;
-		}) => Promise<PromptPasswordResult>;
-	};
-	send: {
-		fileOpened: (payload: FileOpenedPayload) => void;
-		showFileInfo: (payload: FileInfoPayload) => void;
-		showError: (payload: ErrorAlertPayload) => void;
-	};
-};
-
-export async function handleNewFile(window: BrowserWindow<any>, rpc: AppRpc, encryptionMode: EncryptionMode) {
-	const folders = await Utils.openFileDialog({
-		canChooseFiles: false,
-		canChooseDirectory: true,
-		allowsMultipleSelection: false,
-	});
-	const folder = folders?.[0];
-	if (!folder) return;
-
-	await reclaimWindowFocus(window);
-
-	const promptResult = await rpc.request.promptNewFileName({
-		suggestedFolder: folder,
-		encryptionMode,
-	});
-	if (promptResult.cancelled) return;
-
-	const result = await createNewFile(folder, promptResult.name, promptResult.password, encryptionMode);
-	if (!result.ok) {
-		rpc.send.showError({ title: "Cannot Create File", message: result.error });
-		return;
+/** Absolute path of `<name>.<ext>` in the data directory -- re-checked to be a direct child of it, belt and
+ * braces on top of fileNameSchema. */
+export function dataFilePath(state: ServerState, name: string): string {
+	const dataDir = resolve(state.config.dataDir);
+	const path = resolve(dataDir, `${name}.${fileExtensionFor(state.config.encryptionMode)}`);
+	if (!path.startsWith(dataDir + sep) || path.slice(dataDir.length + 1).includes(sep)) {
+		throw new HttpError(400, "invalid-name", "Invalid file name.");
 	}
-
-	window.setTitle(result.name);
-	rpc.send.fileOpened({
-		path: result.path,
-		fileId: result.fileId,
-		name: result.name,
-	});
-}
-
-export async function handleFileInfo(rpc: AppRpc) {
-	const info = await getCurrentFileInfo();
-	if (!info) {
-		rpc.send.showError({ title: "No File Open", message: "Open or create a file first." });
-		return;
-	}
-
-	rpc.send.showFileInfo(info);
+	return path;
 }
 
 /**
- * In test mode (encryptionMode "disabled") there's no password dialog at all -- test-mode files are never
- * encrypted, so there's nothing to unlock (see documentation/test-mode.md). Only the normal, encryption-
- * enabled path prompts for one.
+ * The single close path (explicit Close, idle auto-close, shutdown): closes the open file, revokes every
+ * session's unlock, then backs the file up (after the close, so the copy sees a fully flushed file). A backup
+ * failure doesn't undo the close; it's returned for the caller to surface.
  */
-export async function handleOpenFile(window: BrowserWindow<any>, rpc: AppRpc, encryptionMode: EncryptionMode) {
-	const files = await Utils.openFileDialog({
-		canChooseFiles: true,
-		canChooseDirectory: false,
-		allowsMultipleSelection: false,
-		allowedFileTypes: fileExtensionFor(encryptionMode),
-	});
-	const path = files?.[0];
-	if (!path) return;
-
-	await reclaimWindowFocus(window);
-
-	let password: string | undefined;
-	if (encryptionMode === "enabled") {
-		const passwordResult = await rpc.request.promptPassword({
-			fileName: basename(path),
-		});
-		if (passwordResult.cancelled) return;
-		password = passwordResult.password;
-	}
-
-	const result = await openExistingFile(path, password);
-	if (!result.ok) {
-		rpc.send.showError({ title: "Cannot Open File", message: result.error });
-		return;
-	}
-
-	window.setTitle(result.name);
-	rpc.send.fileOpened({
-		path: result.path,
-		fileId: result.fileId,
-		name: result.name,
-	});
-}
-
-/**
- * Explicit "Close This File" only -- not fired when the app quits (via the window's "X" or the
- * no-file-open page's "Exit the Program") while a file happens to be open; see quitApp in bun/index.ts.
- * closeCurrentFile() flushes/closes the sqlite handle before backupFile() copies it, so the backup always
- * sees a consistent file, not a partially-written one.
- */
-export function handleCloseFile(window: BrowserWindow<any>, rpc: AppRpc): { closed: boolean } {
+export function closeWithBackup(state: ServerState, reason: string): CloseFilePayload {
 	const current = getCurrentFile();
 	closeCurrentFile();
-	window.setTitle("Checquery");
+	state.loginSessions.clearAllUnlocks();
+	if (!current) return { closed: false };
 
-	if (current) {
-		const result = backupFile(current.path);
-		if (!result.ok) {
-			rpc.send.showError({ title: "Backup Failed", message: result.error });
-		}
+	console.log(`Closed ${current.name} (${reason})`);
+	const backup = backupFile(current.path);
+	if (!backup.ok) {
+		console.error(`Backup of ${current.name} failed: ${backup.error}`);
+		return { closed: true, backupError: backup.error };
+	}
+	return { closed: true };
+}
+
+const statusForFileError: Record<FileErrorCode, ContentfulStatusCode> = {
+	"already-exists": 409,
+	"not-a-checquery-file": 422,
+	"wrong-password": 401,
+	"password-required": 400,
+	"unsupported-version": 422,
+	"io-error": 500,
+};
+
+/**
+ * Shared tail of new/open: on failure, maps the FileResult to an HttpError (the previously open file, if any,
+ * is untouched -- db.ts only swaps state on success). On success, backs up the file that was replaced (D17),
+ * revokes everyone's unlock for it, and unlocks the new file for this session only.
+ */
+function adoptOpenedFile(
+	state: ServerState,
+	login: LoginSession,
+	previous: { path: string; name: string } | null,
+	result: FileResult,
+): FileOpenedPayload {
+	if (!result.ok) {
+		throw new HttpError(statusForFileError[result.code], result.code, result.error);
 	}
 
-	return { closed: current !== null };
+	state.loginSessions.clearAllUnlocks();
+	login.unlock = { fileId: result.fileId, origId: result.origId };
+	state.lastActivityMs = state.now();
+
+	if (previous && previous.path !== result.path) {
+		console.log(`Closed ${previous.name} (replaced by ${result.name})`);
+		const backup = backupFile(previous.path);
+		if (!backup.ok) console.error(`Backup of ${previous.name} failed: ${backup.error}`);
+	}
+	console.log(`Opened ${result.name} for ${login.username}`);
+	return { path: result.path, fileId: result.fileId, name: result.name };
+}
+
+export async function newFile(
+	state: ServerState,
+	login: LoginSession,
+	body: { name: string; password?: string },
+	identity: OriginIdentity,
+): Promise<FileOpenedPayload> {
+	dataFilePath(state, body.name);
+	const previous = getCurrentFile();
+	const result = await createNewFile(
+		state.config.dataDir,
+		body.name,
+		body.password,
+		state.config.encryptionMode,
+		identity,
+	);
+	return adoptOpenedFile(state, login, previous, result);
+}
+
+export async function openFile(
+	state: ServerState,
+	login: LoginSession,
+	body: { name: string; password?: string },
+	identity: OriginIdentity,
+): Promise<FileOpenedPayload> {
+	const path = dataFilePath(state, body.name);
+	if (!existsSync(path)) {
+		throw new HttpError(404, "not-found", `There is no file named "${body.name}".`);
+	}
+	const previous = getCurrentFile();
+	// In test mode files are never encrypted, so there's nothing to unlock -- any password is ignored.
+	const password = state.config.encryptionMode === "enabled" ? body.password : undefined;
+	const result = await openExistingFile(path, password, identity);
+	return adoptOpenedFile(state, login, previous, result);
+}
+
+/** Lets a login session join the already-open file by proving it knows the file's password (D5.2). */
+export async function unlockFile(
+	state: ServerState,
+	login: LoginSession,
+	password: string | undefined,
+	identity: OriginIdentity,
+): Promise<FileOpenedPayload> {
+	const current = getCurrentFile();
+	const store = getCurrentLedgerStore();
+	const fileId = getCurrentFileId();
+	if (!current || !store || !fileId) throw new NoFileOpenError();
+
+	if (!verifyCurrentFilePassword(password)) {
+		throw new HttpError(401, "wrong-password", "Incorrect password.");
+	}
+	const origId = await bootstrapOrigin(store, identity);
+	login.unlock = { fileId, origId };
+	state.lastActivityMs = state.now();
+	console.log(`Unlocked ${current.name} for ${login.username}`);
+	return { path: current.path, fileId, name: current.name };
+}
+
+/** `GET /api/file`: the open file, and whether this session has it unlocked. */
+export function currentFilePayload(login: LoginSession): CurrentFilePayload | null {
+	const current = getCurrentFile();
+	const fileId = getCurrentFileId();
+	if (!current || !fileId) return null;
+	return {
+		path: current.path,
+		fileId,
+		name: current.name,
+		unlocked: login.unlock?.fileId === fileId,
+	};
 }

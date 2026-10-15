@@ -2,10 +2,19 @@
 	"name": "@checquery/server",
 	"private": true,
 	"type": "module",
+	"exports": {
+		"./appType": "./src/appType.ts"
+	},
+	"scripts": {
+		"start": "bun src/index.ts",
+		"dev": "bun --hot src/index.ts",
+		"hash-password": "bun scripts/hashPassword.ts"
+	},
 	"dependencies": {
 		"@checquery/shared": "workspace:*",
+		"@hono/zod-validator": "^0.9.1",
 		"@paralleldrive/cuid2": "^3.3.0",
-		"electrobun": "1.18.1",
+		"hono": "^4.13.13",
 		"zod": "^4.4.3"
 	},
 	"devDependencies": {

@@ -1,4 +1,4 @@
-import { requireCurrentSession } from "./currentSession";
+import type { HandlerSession } from "../session/currentSession";
 import {
 	transactionCreationEventSchema,
 	transactionDeletionEventSchema,
@@ -10,26 +10,26 @@ import { acctIdSchema } from "@checquery/shared/domain/accounts/AcctId";
 import { vndrIdSchema } from "@checquery/shared/domain/vendors/VndrId";
 import { isoDateSchema } from "@checquery/shared/domain/core/IsoDate";
 import type { AccountBalance } from "@checquery/shared/domain/transactions/AccountBalance";
-import type { CreateTransactionParams, PatchTransactionParams } from "@checquery/shared/rpc";
+import type { CreateTransactionParams, PatchTransactionParams } from "@checquery/shared/api/transactionsApi";
 
-export async function handleFindTransactionsByAccount(params: { accountId: string }): Promise<Transaction[]> {
-	const { store } = requireCurrentSession();
+export async function handleFindTransactionsByAccount(session: HandlerSession, params: { accountId: string }): Promise<Transaction[]> {
+	const { store } = session;
 	return store.svcs.transactions.findTransactionsByAccount(acctIdSchema.parse(params.accountId));
 }
 
-export async function handleFindLatestTransactionForVendorAndAccount(params: {
+export async function handleFindLatestTransactionForVendorAndAccount(session: HandlerSession, params: {
 	vndrId: string;
 	accountId: string;
 }): Promise<Transaction | null> {
-	const { store } = requireCurrentSession();
+	const { store } = session;
 	return store.svcs.transactions.findLatestTransactionForVendorAndAccount(
 		vndrIdSchema.parse(params.vndrId),
 		acctIdSchema.parse(params.accountId),
 	);
 }
 
-export async function handleCreateTransaction(params: CreateTransactionParams): Promise<void> {
-	const { store, origId } = requireCurrentSession();
+export async function handleCreateTransaction(session: HandlerSession, params: CreateTransactionParams): Promise<void> {
+	const { store, origId } = session;
 	const event = transactionCreationEventSchema.parse({
 		id: genTxnId(),
 		origId,
@@ -44,8 +44,8 @@ export async function handleCreateTransaction(params: CreateTransactionParams): 
 	await store.svcs.transactions.createTransaction(event);
 }
 
-export async function handlePatchTransaction(params: PatchTransactionParams): Promise<void> {
-	const { store, origId } = requireCurrentSession();
+export async function handlePatchTransaction(session: HandlerSession, params: PatchTransactionParams): Promise<void> {
+	const { store, origId } = session;
 	const event = transactionPatchEventSchema.parse({
 		id: txnIdSchema.parse(params.id),
 		origId,
@@ -60,8 +60,8 @@ export async function handlePatchTransaction(params: PatchTransactionParams): Pr
 	await store.svcs.transactions.patchTransaction(event);
 }
 
-export async function handleDeleteTransaction(params: { id: string }): Promise<void> {
-	const { store, origId } = requireCurrentSession();
+export async function handleDeleteTransaction(session: HandlerSession, params: { id: string }): Promise<void> {
+	const { store, origId } = session;
 	const event = transactionDeletionEventSchema.parse({
 		id: txnIdSchema.parse(params.id),
 		origId,
@@ -69,27 +69,27 @@ export async function handleDeleteTransaction(params: { id: string }): Promise<v
 	await store.svcs.transactions.deleteTransaction(event);
 }
 
-export async function handleFindAccountBalancesAsOf(params: { asOfDate: string }): Promise<AccountBalance[]> {
-	const { store } = requireCurrentSession();
+export async function handleFindAccountBalancesAsOf(session: HandlerSession, params: { asOfDate: string }): Promise<AccountBalance[]> {
+	const { store } = session;
 	return store.svcs.transactions.findAccountBalancesAsOf(isoDateSchema.parse(params.asOfDate));
 }
 
-export async function handleFindAccountBalancesForPeriod(params: {
+export async function handleFindAccountBalancesForPeriod(session: HandlerSession, params: {
 	startDate: string;
 	endDate: string;
 }): Promise<AccountBalance[]> {
-	const { store } = requireCurrentSession();
+	const { store } = session;
 	return store.svcs.transactions.findAccountBalancesForPeriod(
 		isoDateSchema.parse(params.startDate),
 		isoDateSchema.parse(params.endDate),
 	);
 }
 
-export async function handleFindTransactionsForPeriod(params: {
+export async function handleFindTransactionsForPeriod(session: HandlerSession, params: {
 	startDate: string;
 	endDate: string;
 }): Promise<Transaction[]> {
-	const { store } = requireCurrentSession();
+	const { store } = session;
 	return store.svcs.transactions.findTransactionsForPeriod(
 		isoDateSchema.parse(params.startDate),
 		isoDateSchema.parse(params.endDate),

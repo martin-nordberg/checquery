@@ -1,4 +1,4 @@
-import { requireCurrentSession } from "./currentSession";
+import type { HandlerSession } from "../session/currentSession";
 import {
 	accountCategoryCreationEventSchema,
 	accountCategoryDeletionEventSchema,
@@ -6,15 +6,15 @@ import {
 	type AccountCategory,
 } from "@checquery/shared/domain/accountCategories/AccountCategory";
 import { genAcctCtgId, acctCtgIdSchema } from "@checquery/shared/domain/accountCategories/AcctCtgId";
-import type { CreateAccountCategoryParams, PatchAccountCategoryParams } from "@checquery/shared/rpc";
+import type { CreateAccountCategoryParams, PatchAccountCategoryParams } from "@checquery/shared/api/accountCategoriesApi";
 
-export async function handleFindAccountCategoriesAll(): Promise<AccountCategory[]> {
-	const { store } = requireCurrentSession();
+export async function handleFindAccountCategoriesAll(session: HandlerSession): Promise<AccountCategory[]> {
+	const { store } = session;
 	return store.svcs.accountCategories.findAccountCategoriesAll();
 }
 
-export async function handleCreateAccountCategory(params: CreateAccountCategoryParams): Promise<void> {
-	const { store, origId } = requireCurrentSession();
+export async function handleCreateAccountCategory(session: HandlerSession, params: CreateAccountCategoryParams): Promise<void> {
+	const { store, origId } = session;
 	const event = accountCategoryCreationEventSchema.parse({
 		id: genAcctCtgId(),
 		origId,
@@ -26,8 +26,8 @@ export async function handleCreateAccountCategory(params: CreateAccountCategoryP
 	await store.svcs.accountCategories.createAccountCategory(event);
 }
 
-export async function handlePatchAccountCategory(params: PatchAccountCategoryParams): Promise<void> {
-	const { store, origId } = requireCurrentSession();
+export async function handlePatchAccountCategory(session: HandlerSession, params: PatchAccountCategoryParams): Promise<void> {
+	const { store, origId } = session;
 	const event = accountCategoryPatchEventSchema.parse({
 		id: acctCtgIdSchema.parse(params.id),
 		origId,
@@ -38,8 +38,8 @@ export async function handlePatchAccountCategory(params: PatchAccountCategoryPar
 	await store.svcs.accountCategories.patchAccountCategory(event);
 }
 
-export async function handleDeleteAccountCategory(params: { id: string }): Promise<void> {
-	const { store, origId } = requireCurrentSession();
+export async function handleDeleteAccountCategory(session: HandlerSession, params: { id: string }): Promise<void> {
+	const { store, origId } = session;
 	const event = accountCategoryDeletionEventSchema.parse({
 		id: acctCtgIdSchema.parse(params.id),
 		origId,
@@ -47,7 +47,7 @@ export async function handleDeleteAccountCategory(params: { id: string }): Promi
 	await store.svcs.accountCategories.deleteAccountCategory(event);
 }
 
-export async function handleIsAccountCategoryInUse(params: { id: string }): Promise<boolean> {
-	const { store } = requireCurrentSession();
+export async function handleIsAccountCategoryInUse(session: HandlerSession, params: { id: string }): Promise<boolean> {
+	const { store } = session;
 	return store.svcs.accountCategories.isAccountCategoryInUse(acctCtgIdSchema.parse(params.id));
 }

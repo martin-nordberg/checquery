@@ -3,7 +3,17 @@ import { existsSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'bun:test'
-import { closeCurrentFile, createNewFile, getCurrentFile, getCurrentFileInfo, getCurrentLedgerStore, getCurrentOrigId, openExistingFile } from './db'
+import {
+    bootstrapOrigin,
+    closeCurrentFile,
+    createNewFile,
+    getCurrentFile,
+    getCurrentFileId,
+    getCurrentFileInfo,
+    getCurrentLedgerStore,
+    openExistingFile,
+    verifyCurrentFilePassword,
+} from './db'
 import { setMetaValue } from './actionLog/meta'
 import { genOrigId } from '@checquery/shared/domain/origins/OrigId'
 import { accountCreationEventSchema } from '@checquery/shared/domain/accounts/Account'
@@ -12,6 +22,7 @@ import { genAcctCtgId } from '@checquery/shared/domain/accountCategories/AcctCtg
 import { originCreationEventSchema } from '@checquery/shared/domain/origins/Origin'
 
 const tmpDir = mkdtempSync(join(tmpdir(), 'checquery-db-test-'))
+const testIdentity = { name: 'tester', ipAddress: '10.0.0.1' }
 let counter = 0
 function freshName() {
     counter += 1
@@ -26,7 +37,7 @@ afterAll(() => {
 describe('createNewFile', () => {
     it('creates a file on disk and returns a working store', async () => {
         const name = freshName()
-        const result = await createNewFile(tmpDir, name, 'hunter2', 'enabled')
+        const result = await createNewFile(tmpDir, name, 'hunter2', 'enabled', testIdentity)
         expect(result.ok).toBe(true)
         if (!result.ok) return
 
@@ -39,10 +50,10 @@ describe('createNewFile', () => {
 
     it('fails with already-exists when the path is already taken', async () => {
         const name = freshName()
-        const first = await createNewFile(tmpDir, name, 'hunter2', 'enabled')
+        const first = await createNewFile(tmpDir, name, 'hunter2', 'enabled', testIdentity)
         expect(first.ok).toBe(true)
 
-        const second = await createNewFile(tmpDir, name, 'hunter2', 'enabled')
+        const second = await createNewFile(tmpDir, name, 'hunter2', 'enabled', testIdentity)
         expect(second.ok).toBe(false)
         if (second.ok) return
         expect(second.code).toBe('already-exists')
@@ -50,7 +61,7 @@ describe('createNewFile', () => {
 
     it('updates getCurrentFile/getCurrentLedgerStore', async () => {
         const name = freshName()
-        const result = await createNewFile(tmpDir, name, 'hunter2', 'enabled')
+        const result = await createNewFile(tmpDir, name, 'hunter2', 'enabled', testIdentity)
         expect(result.ok).toBe(true)
         if (!result.ok) return
 
@@ -60,7 +71,7 @@ describe('createNewFile', () => {
 
     it('names the file with a ".checquery" extension when encryption is enabled', async () => {
         const name = freshName()
-        const result = await createNewFile(tmpDir, name, 'hunter2', 'enabled')
+        const result = await createNewFile(tmpDir, name, 'hunter2', 'enabled', testIdentity)
         expect(result.ok).toBe(true)
         if (!result.ok) return
         expect(result.path.endsWith('.checquery')).toBe(true)
@@ -68,12 +79,11 @@ describe('createNewFile', () => {
 
     it('bootstraps a current origin for the session', async () => {
         const name = freshName()
-        const result = await createNewFile(tmpDir, name, 'hunter2', 'enabled')
+        const result = await createNewFile(tmpDir, name, 'hunter2', 'enabled', testIdentity)
         expect(result.ok).toBe(true)
         if (!result.ok) return
 
-        const origId = getCurrentOrigId()
-        expect(origId).not.toBeNull()
+        const origId = result.origId
 
         const origins = await result.store.svcs.origins.findOriginsAll()
         expect(origins).toHaveLength(1)
@@ -82,7 +92,7 @@ describe('createNewFile', () => {
 
     it('seeds the predefined Net Worth account', async () => {
         const name = freshName()
-        const result = await createNewFile(tmpDir, name, 'hunter2', 'enabled')
+        const result = await createNewFile(tmpDir, name, 'hunter2', 'enabled', testIdentity)
         expect(result.ok).toBe(true)
         if (!result.ok) return
 
@@ -95,7 +105,7 @@ describe('createNewFile', () => {
     describe('when encryption is enabled, a password is required (documentation/test-mode.md)', () => {
         it('fails with password-required when no password is given', async () => {
             const name = freshName()
-            const result = await createNewFile(tmpDir, name, undefined, 'enabled')
+            const result = await createNewFile(tmpDir, name, undefined, 'enabled', testIdentity)
             expect(result.ok).toBe(false)
             if (result.ok) return
             expect(result.code).toBe('password-required')
@@ -104,7 +114,7 @@ describe('createNewFile', () => {
 
         it('fails with password-required for an empty-string password too', async () => {
             const name = freshName()
-            const result = await createNewFile(tmpDir, name, '', 'enabled')
+            const result = await createNewFile(tmpDir, name, '', 'enabled', testIdentity)
             expect(result.ok).toBe(false)
             if (result.ok) return
             expect(result.code).toBe('password-required')
@@ -114,7 +124,7 @@ describe('createNewFile', () => {
     describe('when encryption is disabled (test mode)', () => {
         it('creates an unencrypted file with a ".checquery-test" extension, storing plaintext rows', async () => {
             const name = freshName()
-            const result = await createNewFile(tmpDir, name, undefined, 'disabled')
+            const result = await createNewFile(tmpDir, name, undefined, 'disabled', testIdentity)
             expect(result.ok).toBe(true)
             if (!result.ok) return
             expect(result.path.endsWith('.checquery-test')).toBe(true)
@@ -135,12 +145,12 @@ describe('createNewFile', () => {
 
         it('ignores a password even if one is passed in', async () => {
             const name = freshName()
-            const result = await createNewFile(tmpDir, name, 'some password', 'disabled')
+            const result = await createNewFile(tmpDir, name, 'some password', 'disabled', testIdentity)
             expect(result.ok).toBe(true)
             if (!result.ok) return
 
             // Unencrypted regardless -- opens back up with no password needed.
-            const reopened = await openExistingFile(result.path)
+            const reopened = await openExistingFile(result.path, undefined, testIdentity)
             expect(reopened.ok).toBe(true)
         })
     })
@@ -149,11 +159,11 @@ describe('createNewFile', () => {
 describe('openExistingFile', () => {
     it('opens an unencrypted (test-mode) file with no password', async () => {
         const name = freshName()
-        const created = await createNewFile(tmpDir, name, undefined, 'disabled')
+        const created = await createNewFile(tmpDir, name, undefined, 'disabled', testIdentity)
         expect(created.ok).toBe(true)
         if (!created.ok) return
 
-        const opened = await openExistingFile(created.path)
+        const opened = await openExistingFile(created.path, undefined, testIdentity)
         expect(opened.ok).toBe(true)
         if (!opened.ok) return
         expect(opened.fileId).toBe(created.fileId)
@@ -161,11 +171,11 @@ describe('openExistingFile', () => {
 
     it('does not re-seed Net Worth on reopen -- replay reconstructs the one from creation', async () => {
         const name = freshName()
-        const created = await createNewFile(tmpDir, name, undefined, 'disabled')
+        const created = await createNewFile(tmpDir, name, undefined, 'disabled', testIdentity)
         expect(created.ok).toBe(true)
         if (!created.ok) return
 
-        const opened = await openExistingFile(created.path)
+        const opened = await openExistingFile(created.path, undefined, testIdentity)
         expect(opened.ok).toBe(true)
         if (!opened.ok) return
 
@@ -175,37 +185,36 @@ describe('openExistingFile', () => {
 
     it('reuses the same origin on reopen instead of creating a second one for the same identity', async () => {
         const name = freshName()
-        const created = await createNewFile(tmpDir, name, undefined, 'disabled')
+        const created = await createNewFile(tmpDir, name, undefined, 'disabled', testIdentity)
         expect(created.ok).toBe(true)
         if (!created.ok) return
-        const origIdAfterCreate = getCurrentOrigId()
 
-        const opened = await openExistingFile(created.path)
+        const opened = await openExistingFile(created.path, undefined, testIdentity)
         expect(opened.ok).toBe(true)
         if (!opened.ok) return
 
-        expect(getCurrentOrigId()).toBe(origIdAfterCreate!)
+        expect(opened.origId).toBe(created.origId)
         const origins = await opened.store.svcs.origins.findOriginsAll()
         expect(origins).toHaveLength(1)
     })
 
     it('opens an unencrypted file even if a password is supplied (ignored)', async () => {
         const name = freshName()
-        const created = await createNewFile(tmpDir, name, undefined, 'disabled')
+        const created = await createNewFile(tmpDir, name, undefined, 'disabled', testIdentity)
         expect(created.ok).toBe(true)
         if (!created.ok) return
 
-        const opened = await openExistingFile(created.path, 'some password')
+        const opened = await openExistingFile(created.path, 'some password', testIdentity)
         expect(opened.ok).toBe(true)
     })
 
     it('opens a file created with createNewFile using the correct password', async () => {
         const name = freshName()
-        const created = await createNewFile(tmpDir, name, 'correct horse', 'enabled')
+        const created = await createNewFile(tmpDir, name, 'correct horse', 'enabled', testIdentity)
         expect(created.ok).toBe(true)
         if (!created.ok) return
 
-        const opened = await openExistingFile(created.path, 'correct horse')
+        const opened = await openExistingFile(created.path, 'correct horse', testIdentity)
         expect(opened.ok).toBe(true)
         if (!opened.ok) return
         expect(opened.fileId).toBe(created.fileId)
@@ -213,18 +222,18 @@ describe('openExistingFile', () => {
 
     it('fails with wrong-password for an incorrect password', async () => {
         const name = freshName()
-        const created = await createNewFile(tmpDir, name, 'correct horse', 'enabled')
+        const created = await createNewFile(tmpDir, name, 'correct horse', 'enabled', testIdentity)
         expect(created.ok).toBe(true)
         if (!created.ok) return
 
-        const opened = await openExistingFile(created.path, 'wrong password')
+        const opened = await openExistingFile(created.path, 'wrong password', testIdentity)
         expect(opened.ok).toBe(false)
         if (opened.ok) return
         expect(opened.code).toBe('wrong-password')
     })
 
     it('fails with io-error for a nonexistent path', async () => {
-        const result = await openExistingFile(join(tmpDir, 'does-not-exist.checquery'), 'anything')
+        const result = await openExistingFile(join(tmpDir, 'does-not-exist.checquery'), 'anything', testIdentity)
         expect(result.ok).toBe(false)
         if (result.ok) return
         expect(result.code).toBe('io-error')
@@ -236,7 +245,7 @@ describe('openExistingFile', () => {
         plainDb.run('CREATE TABLE unrelated (id INTEGER PRIMARY KEY)')
         plainDb.close()
 
-        const result = await openExistingFile(path, 'anything')
+        const result = await openExistingFile(path, 'anything', testIdentity)
         expect(result.ok).toBe(false)
         if (result.ok) return
         expect(result.code).toBe('not-a-checquery-file')
@@ -244,7 +253,7 @@ describe('openExistingFile', () => {
 
     it('fails with unsupported-version for a schema_version newer than this build knows', async () => {
         const name = freshName()
-        const created = await createNewFile(tmpDir, name, 'correct horse', 'enabled')
+        const created = await createNewFile(tmpDir, name, 'correct horse', 'enabled', testIdentity)
         expect(created.ok).toBe(true)
         if (!created.ok) return
 
@@ -252,7 +261,7 @@ describe('openExistingFile', () => {
         setMetaValue(db, 'schema_version', '9999')
         db.close()
 
-        const result = await openExistingFile(created.path, 'correct horse')
+        const result = await openExistingFile(created.path, 'correct horse', testIdentity)
         expect(result.ok).toBe(false)
         if (result.ok) return
         expect(result.code).toBe('unsupported-version')
@@ -268,7 +277,7 @@ describe('getCurrentFileInfo', () => {
 
     it('reports name, size, entity counts, action log count, and meta for a freshly created file', async () => {
         const name = freshName()
-        const created = await createNewFile(tmpDir, name, 'hunter2', 'enabled')
+        const created = await createNewFile(tmpDir, name, 'hunter2', 'enabled', testIdentity)
         expect(created.ok).toBe(true)
         if (!created.ok) return
 
@@ -296,7 +305,7 @@ describe('getCurrentFileInfo', () => {
 
     it('reflects writes made through the ledger store', async () => {
         const name = freshName()
-        const created = await createNewFile(tmpDir, name, undefined, 'disabled')
+        const created = await createNewFile(tmpDir, name, undefined, 'disabled', testIdentity)
         expect(created.ok).toBe(true)
         if (!created.ok) return
 
@@ -318,5 +327,53 @@ describe('getCurrentFileInfo', () => {
         expect(info!.entityCounts.accounts).toBe(2)
         expect(info!.entityCounts.origins).toBe(2)
         expect(info!.actionLogEntryCount).toBe(4)
+    })
+})
+
+describe('getCurrentFileId', () => {
+    it('tracks the open file and clears on close', async () => {
+        const created = await createNewFile(tmpDir, freshName(), undefined, 'disabled', testIdentity)
+        expect(created.ok).toBe(true)
+        if (!created.ok) return
+        expect(getCurrentFileId()).toBe(created.fileId)
+
+        closeCurrentFile()
+        expect(getCurrentFileId()).toBeNull()
+    })
+})
+
+describe('verifyCurrentFilePassword', () => {
+    it('is false when no file is open', () => {
+        closeCurrentFile()
+        expect(verifyCurrentFilePassword('anything')).toBe(false)
+    })
+
+    it('checks the password of an open encrypted file', async () => {
+        const created = await createNewFile(tmpDir, freshName(), 'correct horse', 'enabled', testIdentity)
+        expect(created.ok).toBe(true)
+        expect(verifyCurrentFilePassword('correct horse')).toBe(true)
+        expect(verifyCurrentFilePassword('wrong')).toBe(false)
+        expect(verifyCurrentFilePassword(undefined)).toBe(false)
+    })
+
+    it('accepts anything for an unencrypted (test-mode) file', async () => {
+        const created = await createNewFile(tmpDir, freshName(), undefined, 'disabled', testIdentity)
+        expect(created.ok).toBe(true)
+        expect(verifyCurrentFilePassword(undefined)).toBe(true)
+    })
+})
+
+describe('bootstrapOrigin', () => {
+    it('reuses an origin for the same identity and mints one per distinct identity', async () => {
+        const created = await createNewFile(tmpDir, freshName(), undefined, 'disabled', testIdentity)
+        expect(created.ok).toBe(true)
+        if (!created.ok) return
+
+        expect(await bootstrapOrigin(created.store, testIdentity)).toBe(created.origId)
+        const other = await bootstrapOrigin(created.store, { name: 'other', ipAddress: '10.0.0.2' })
+        expect(other).not.toBe(created.origId)
+
+        const origins = await created.store.svcs.origins.findOriginsAll()
+        expect(origins.map((o) => o.name as string).sort()).toEqual(['other', 'tester'])
     })
 })

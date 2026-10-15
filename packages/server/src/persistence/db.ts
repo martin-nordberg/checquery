@@ -1,9 +1,8 @@
 import { Database } from "bun:sqlite";
 import { createId } from "@paralleldrive/cuid2";
 import { existsSync, statSync } from "node:fs";
-import { networkInterfaces, userInfo } from "node:os";
 import { basename, join } from "node:path";
-import type { FileInfoPayload } from "@checquery/shared/rpc";
+import type { FileInfoPayload } from "@checquery/shared/api/fileApi";
 import { ActionLog } from "./actionLog/ActionLog";
 import { AesGcmCodec } from "./actionLog/encryption/AesGcmCodec";
 import { PlaintextCodec } from "./actionLog/encryption/PlaintextCodec";
@@ -24,7 +23,7 @@ import { fileExtensionFor } from "../encryptionMode";
 let currentDb: Database | null = null;
 let currentPath: string | null = null;
 let currentLedgerStore: LedgerStore | null = null;
-let currentOrigId: OrigId | null = null;
+let currentFileId: string | null = null;
 
 export function getCurrentFile(): { path: string; name: string } | null {
 	return currentPath ? { path: currentPath, name: basename(currentPath) } : null;
@@ -34,34 +33,27 @@ export function getCurrentLedgerStore(): LedgerStore | null {
 	return currentLedgerStore;
 }
 
-/** The Origin (who/where) to stamp on every mutation made during this session, bootstrapped by
- * bootstrapCurrentOrigin() when a file is opened or created. Null if no file is open. */
-export function getCurrentOrigId(): OrigId | null {
-	return currentOrigId;
+/** The open file's `file_id` meta value, or null if no file is open. Lets the HTTP layer tell whether a
+ * login session's unlock still refers to the file that's open now (see requireUnlockedFile.ts). */
+export function getCurrentFileId(): string | null {
+	return currentFileId;
 }
 
-/** The machine's actual LAN IPv4 address (e.g. "192.168.1.42"), not a loopback placeholder -- this is
- * what makes "where" in the audit trail meaningful if a .checquery file is ever opened from more than one
- * machine over a network share. Falls back to loopback only if no such interface exists at all. */
-function localIpAddress(): string {
-	for (const ifaceList of Object.values(networkInterfaces())) {
-		for (const iface of ifaceList ?? []) {
-			if (iface.family === "IPv4" && !iface.internal) {
-				return iface.address;
-			}
-		}
-	}
-	return "127.0.0.1";
-}
+/** Who/where a session is acting as: the logged-in user's name and the client's IPv4 address. */
+export type OriginIdentity = {
+	name: string;
+	ipAddress: string;
+};
 
 /**
- * Finds or creates the Origin representing this (user, machine) identity in the given store, reusing an
- * existing one whenever its (name, ipAddress) already matches rather than minting a new Origin every
- * session -- see documentation/account-list-implementation-plan.md §1b.
+ * Finds or creates the Origin representing the given (user, client address) identity in the given store,
+ * reusing an existing one whenever its (name, ipAddress) already matches rather than minting a new Origin every
+ * session -- see tasks/done/account-list-implementation-plan.md §1b. Called once per login session that creates,
+ * opens, or unlocks a file; the resulting OrigId is stamped on every mutation that session makes.
  */
-async function bootstrapCurrentOrigin(store: LedgerStore): Promise<OrigId> {
-	const name = nameSchema.parse(userInfo().username);
-	const ipAddress = ipAddressSchema.parse(localIpAddress());
+export async function bootstrapOrigin(store: LedgerStore, identity: OriginIdentity): Promise<OrigId> {
+	const name = nameSchema.parse(identity.name);
+	const ipAddress = ipAddressSchema.parse(identity.ipAddress);
 
 	const existing = await store.svcs.origins.findOriginsAll();
 	const match = existing.find((origin) => origin.name === name && origin.ipAddress === ipAddress);
@@ -73,6 +65,25 @@ async function bootstrapCurrentOrigin(store: LedgerStore): Promise<OrigId> {
 		originCreationEventSchema.parse({ id: genOrigId(), name, ipAddress }),
 	);
 	return created!.id;
+}
+
+/**
+ * Checks a password against the open file's stored verify material, the same way openExistingFile does
+ * (used to let a second login session unlock an already-open file). An unencrypted (test-mode) file accepts
+ * anything. False if no file is open.
+ */
+export function verifyCurrentFilePassword(password: string | undefined): boolean {
+	if (!currentDb) return false;
+	if (getMetaValue(currentDb, "encrypted") === "false") return true;
+
+	const kdfSalt = getMetaValue(currentDb, "kdf_salt");
+	const kdfParamsJson = getMetaValue(currentDb, "kdf_params");
+	const verifyIv = getMetaValue(currentDb, "verify_iv");
+	const verifyCiphertext = getMetaValue(currentDb, "verify_ciphertext");
+	if (!kdfSalt || !kdfParamsJson || !verifyIv || !verifyCiphertext) return false;
+
+	const kdfParams = JSON.parse(kdfParamsJson) as KdfParams;
+	return verifyPassword(password ?? "", { kdfSalt, kdfParams, verifyIv, verifyCiphertext }) !== null;
 }
 
 /**
@@ -137,7 +148,7 @@ function closeCurrent() {
 	currentDb = null;
 	currentPath = null;
 	currentLedgerStore = null;
-	currentOrigId = null;
+	currentFileId = null;
 }
 
 export type FileErrorCode =
@@ -162,6 +173,7 @@ export async function createNewFile(
 	rawName: string,
 	password: string | undefined,
 	encryptionMode: EncryptionMode,
+	identity: OriginIdentity,
 ): Promise<FileResult> {
 	if (encryptionMode === "enabled" && !password) {
 		return {
@@ -208,14 +220,14 @@ export async function createNewFile(
 
 		const actionLog = new ActionLog(db, codec, nodeId);
 		const store = await LedgerStore.open(actionLog);
-		const origId = await bootstrapCurrentOrigin(store);
+		const origId = await bootstrapOrigin(store, identity);
 		await bootstrapNetWorthAccount(store, origId);
 
 		closeCurrent();
 		currentDb = db;
 		currentPath = path;
 		currentLedgerStore = store;
-		currentOrigId = origId;
+		currentFileId = fileId;
 		return { ok: true, path, fileId, name: basename(path), store, origId };
 	} catch (err) {
 		db?.close();
@@ -229,7 +241,11 @@ export async function createNewFile(
 
 /** `password` is only consulted if the file turns out to be encrypted; an unencrypted file opens fine with
  * none, or with one supplied but ignored. */
-export async function openExistingFile(path: string, password?: string): Promise<FileResult> {
+export async function openExistingFile(
+	path: string,
+	password: string | undefined,
+	identity: OriginIdentity,
+): Promise<FileResult> {
 	let db: Database;
 	try {
 		db = new Database(path, { create: false, readwrite: true });
@@ -309,13 +325,13 @@ export async function openExistingFile(path: string, password?: string): Promise
 
 		const actionLog = new ActionLog(db, codec, nodeId);
 		const store = await LedgerStore.open(actionLog);
-		const origId = await bootstrapCurrentOrigin(store);
+		const origId = await bootstrapOrigin(store, identity);
 
 		closeCurrent();
 		currentDb = db;
 		currentPath = path;
 		currentLedgerStore = store;
-		currentOrigId = origId;
+		currentFileId = fileId;
 		return { ok: true, path, fileId, name: basename(path), store, origId };
 	} catch (err) {
 		db.close();
