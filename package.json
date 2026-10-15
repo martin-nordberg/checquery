@@ -1,35 +1,31 @@
 {
-	"name": "electrobun-solid",
-	"version": "1.0.0",
+	"name": "checquery",
+	"private": true,
 	"type": "module",
-	"description": "Electrobun app with SolidJS and Vite HMR",
+	"workspaces": [
+		"packages/*"
+	],
+	"trustedDependencies": [
+		"@tailwindcss/oxide"
+	],
 	"scripts": {
-		"start": "vite build && electrobun dev",
+		"start": "bun run --cwd packages/client build && electrobun dev",
 		"dev": "electrobun dev --watch",
-		"dev:hmr": "concurrently \"bun run hmr\" \"bun run start\"",
-		"hmr": "vite --port 5173",
-		"build:canary": "vite build && electrobun build --env=canary",
-		"test": "bun --conditions=browser test"
-	},
-	"dependencies": {
-		"@paralleldrive/cuid2": "^3.3.0",
-		"@solidjs/router": "^1.0.0",
-		"electrobun": "1.18.1",
-		"zod": "^4.4.3"
+		"build": "bun run --cwd packages/client build",
+		"test": "bun run test:shared && bun run test:server && bun run test:client",
+		"test:shared": "cd packages/shared && bun test",
+		"test:server": "cd packages/server && bun test",
+		"test:client": "cd packages/client && bun --conditions=browser test",
+		"typecheck": "tsc --noEmit -p packages/shared && tsc --noEmit -p packages/server && tsc --noEmit -p packages/client"
 	},
 	"devDependencies": {
-		"@babel/core": "^7.23.3",
-		"@happy-dom/global-registrator": "^20.11.1",
-		"@solidjs/testing-library": "^0.8.10",
-		"@tailwindcss/vite": "^4.3.3",
-		"@types/bun": "latest",
-		"babel-preset-solid": "^1.9.12",
-		"concurrently": "^9.1.0",
-		"happy-dom": "^20.11.1",
-		"solid-js": "^1.9.3",
-		"tailwindcss": "^4.3.3",
+		"@types/bun": "1.3.14",
 		"typescript": "^5.7.2",
-		"vite": "^6.0.3",
-		"vite-plugin-solid": "^2.11.0"
+		"concurrently": "^9.1.0",
+		"electrobun": "1.18.1"
+	},
+	"overrides": {
+		"@types/bun": "1.3.14",
+		"bun-types": "1.3.14"
 	}
 }

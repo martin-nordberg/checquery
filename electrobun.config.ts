@@ -7,11 +7,14 @@ export default {
 		version: "0.0.1",
 	},
 	build: {
-		copy: {
-			"dist/index.html": "views/mainview/index.html",
-			"dist/assets": "views/mainview/assets",
+		bun: {
+			entrypoint: "packages/server/src/index.ts",
 		},
-		watchIgnore: ["dist/**"],
+		copy: {
+			"packages/client/dist/index.html": "views/mainview/index.html",
+			"packages/client/dist/assets": "views/mainview/assets",
+		},
+		watchIgnore: ["packages/client/dist/**"],
 		mac: {
 			bundleCEF: false,
 		},

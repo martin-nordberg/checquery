@@ -1,0 +1,14 @@
+{
+	"name": "@checquery/server",
+	"private": true,
+	"type": "module",
+	"dependencies": {
+		"@checquery/shared": "workspace:*",
+		"@paralleldrive/cuid2": "^3.3.0",
+		"electrobun": "1.18.1",
+		"zod": "^4.4.3"
+	},
+	"devDependencies": {
+		"@types/bun": "1.3.14"
+	}
+}
