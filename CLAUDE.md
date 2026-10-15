@@ -22,15 +22,17 @@ time — `tasks/todo/` and `tasks/planned/` may each hold multiple files awaitin
 
 ## Project state
 
-Checquery is a single-user, single-window desktop personal-finance app (double-entry
-accounts/vendors/transactions, balance sheet, income statement) — built on the **Electrobun + SolidJS**
-starter template (`electrobun-solid`: a Bun-powered native shell hosting a SolidJS UI, built with Vite), now
-with substantial application-specific logic on top of that scaffold. It is a from-scratch rewrite of an
-earlier version of the same app (formerly kept alongside it in this repo under `zz-archive/`, since deleted
-— its domain model, code, and `documentation/functional-spec.md` are historical only, not authoritative).
+Checquery is a personal-finance web app for one household (double-entry accounts/vendors/transactions,
+balance sheet, income statement): a **Bun + Hono** server that keeps encrypted `.checquery` SQLite files in a
+data directory and serves a **SolidJS** client (built with Vite), deployed as one Docker image with the data
+directory on a volume. Up to two configured users sign in; one file is open at a time, server-wide. It began as
+an Electrobun desktop app and was converted to a web app in October 2026 (see
+`tasks/done/convert-to-web-app-implementation-plan.md`); it is itself a from-scratch rewrite of an earlier
+version of the same app (formerly kept in this repo under `zz-archive/`, since deleted — its domain model,
+code, and `documentation/functional-spec.md` are historical only, not authoritative).
 
-Built so far (see `tasks/done/` for the implementation plan behind each): file lifecycle (new/open/close an
-encrypted `.checquery` file), accounts + account categories (a tree, accounts as flat leaves), vendors +
+Built so far (see `tasks/done/` for the implementation plan behind each): sign-in, file lifecycle
+(new/open/unlock/close/upload an encrypted `.checquery` file in the server's data directory), accounts + account categories (a tree, accounts as flat leaves), vendors +
 vendor categories, transactions with double-entry entries and split support, balance assertions, the
 Register/Income Log/Expense Log pages, the inline calculator, and the Balance Sheet and Income Statement
 (Summary + Details) reports. Annual Budget is still a stub. Cash Flow Statement was cut entirely (not enough
@@ -73,84 +75,142 @@ Two reference documents live outside the `tasks/` pipeline:
 
 ## Commands
 
-Package manager is **Bun** (`bun.lock` present) — use `bun run <script>`, not npm/yarn.
+Package manager is **Bun** (`bun.lock` present; version pinned in `mise.toml`, which the Docker image follows)
+— use `bun run <script>`, not npm/yarn. The repo is a Bun workspace (isolated installs: each package has its own
+`node_modules`). Run these from the repo root:
 
-- `bun run start` — build the Vite frontend once, then launch the Electrobun app (no HMR).
-- `bun run dev` — run Electrobun in watch mode against the last build.
-- `bun run dev:hmr` — full dev loop: runs the Vite dev server (`bun run hmr`) and `bun run start` concurrently, giving hot module replacement in the desktop shell.
-- `bun run hmr` — Vite dev server alone, on a fixed port (5173).
-- `bun run build:canary` — production build via `vite build` followed by `electrobun build --env=canary`.
-- `bun run test` — the **only** correct way to run the suite; it's `bun --conditions=browser test` under the
-  hood. **Never run plain `bun test` directly** (e.g. to target a single file) — without `--conditions=browser`,
-  Bun resolves `solid-js` to its server/SSR build instead of the client build, and any test that imports
-  `@solidjs/router`'s `<A>` fails with "Client-only API called on the server side," which looks like a test
-  bug but is purely a module-resolution flag. To run a single file, append the path:
-  `bun --conditions=browser test path/to/File.test.ts`.
-
-Also useful, not wired into `package.json`:
-
-- `bunx tsc --noEmit` — typecheck. (Currently one pre-existing, unrelated error from `electrobun`'s own
-  `node_modules` — a missing `three` type declaration — is expected and not something this codebase can fix.)
+- `bun run dev` — the full dev loop: the API server with `--hot` (port `CHECQUERY_PORT`, default 3000) plus the
+  Vite dev server on http://localhost:5173, which proxies `/api` to it. Browse to :5173.
+- `bun run build` — Vite build of the client into `packages/client/dist`.
+- `bun run start` — the server alone, serving the last client build (same as production, minus Docker).
+- `bun run test` — the **only** correct way to run the whole suite: it runs each package's tests from that
+  package's directory (`test:shared`, `test:server`, `test:client`). Only the client needs
+  `--conditions=browser` — without it, Bun resolves `solid-js` to its server/SSR build and any test importing
+  `@solidjs/router`'s `<A>` fails with "Client-only API called on the server side," which looks like a test bug
+  but is purely a module-resolution flag. So for a single **client** test file:
+  `cd packages/client && bun --conditions=browser test src/path/File.test.tsx`. Server and shared files can use
+  plain `bun test <file>` from their own package directory (the client's happy-dom preload lives in
+  `packages/client/bunfig.toml`, so it only loads there).
+- `bun run typecheck` — `tsc --noEmit` per package. Clean (no known errors).
+- `bun run hash-password` — prints a password hash (argon2id, base64-encoded so its `$`s survive `.env`/Compose
+  substitution) for `CHECQUERY_USERn_PASSWORD_HASH`.
+- `docker compose up --build` (or `bun run docker:up`) — the production image, on http://127.0.0.1:3000 by
+  default (`CHECQUERY_HOST_PORT` to change), data in the `checquery-data` volume. Users come from `.env`.
 
 There is no lint/format tooling configured (no ESLint/Prettier/Biome config in the repo).
 
-**Test mode / encryption**: `CHECQUERY_ENCRYPTION_DISABLED` (checked once, fail-fast, before any window opens
-— see `src/bun/index.ts` and `src/bun/encryptionMode.ts`) — `"true"` skips password prompts entirely and uses
-the unencrypted `.checquery-test` extension (what the test suite's temp-file tests use); `"false"` or unset is
-normal encrypted `.checquery` behavior; any other value exits with an error. See `tasks/done/test-mode.md`.
+**Configuration** — environment variables, validated together at startup by `packages/server/src/config.ts`,
+which fails fast with a message naming the bad variable. Bun auto-loads a `.env` in the working directory (see
+`.env.example`); Compose reads the same file.
+
+| Variable | Default | |
+|---|---|---|
+| `CHECQUERY_USER1_NAME` / `CHECQUERY_USER1_PASSWORD_HASH` | required | user 2 likewise, optional |
+| `CHECQUERY_DATA_DIR` | `./data` (Docker: `/data`) | must exist and be writable |
+| `CHECQUERY_PORT` / `CHECQUERY_HOST` | `3000` / `127.0.0.1` (Docker: `0.0.0.0`) | |
+| `CHECQUERY_STATIC_DIR` | `packages/client/dist` (Docker: `/app/public`) | |
+| `CHECQUERY_IDLE_CLOSE_MINUTES` | `60` | close (+ back up) the open file after this long without requests; `0` = never |
+| `CHECQUERY_LOGIN_IDLE_MINUTES` | `480` | |
+| `CHECQUERY_TRUST_PROXY` | `false` | take the client IP from `X-Forwarded-For` |
+| `CHECQUERY_MAX_UPLOAD_MB` | `200` | |
+| `CHECQUERY_ENCRYPTION_DISABLED` | unset | test mode, below |
+| `CHECQUERY_ALLOW_TEST_MODE` | `false` | needed for test mode when `NODE_ENV=production` |
+
+**Test mode / encryption**: `CHECQUERY_ENCRYPTION_DISABLED` — `"true"` skips file passwords entirely and uses the
+unencrypted `.checquery-test` extension (what the test suite's temp-file tests use); `"false"` or unset is
+normal encrypted `.checquery` behavior; any other value is a startup error. Test mode is refused when
+`NODE_ENV=production` (as in the Docker image) unless `CHECQUERY_ALLOW_TEST_MODE=true`. See
+`tasks/done/test-mode.md`. Sign-in is required in both modes.
 
 ## Architecture
 
-Two separate runtime targets share one TypeScript project, compiled independently, plus a `shared/` layer
-used by both:
+A Bun workspace monorepo with three packages under `packages/`, each with its own `package.json` and
+`tsconfig.json` (extending `tsconfig.base.json`):
 
-- **`src/bun/index.ts`** — the Electrobun main process (runs under Bun). Creates the native `BrowserWindow`,
-  defines the RPC handler map (`AppSchema` from `src/shared/rpc.ts`), and contains dev-vs-production URL
-  resolution logic: it probes `http://localhost:5173` (the Vite dev server) and uses it when available
-  (channel `"dev"`), otherwise falls back to the bundled `views://mainview/index.html`.
-- **`src/mainview/`** — the SolidJS frontend (runs in the Electrobun webview), built by Vite. Entry point is
-  `main.tsx` → renders `App.tsx` into `#app` in `index.html`. Vite's `root` is `src/mainview` (see
-  `vite.config.ts`); build output goes to `dist/` at the repo root.
-- **`src/shared/`** — domain schemas (`shared/domain/`, one folder per entity — `accounts`, `accountCategories`,
-  `vendors`, `vendorCategories`, `transactions`, `balanceAssertions`, `origins`, plus `core/` for cross-cutting
-  types like `CurrencyAmt`, `IsoDate`, `Period`), the CRUD service interfaces (`shared/crudServices/`, one
-  `IXxxQrySvc`/`IXxxCmdSvc`/`XxxTeeSvc` per entity), and `rpc.ts` (the `AppSchema` RPC contract shared by both
-  runtime targets).
+- **`@checquery/shared`** (`packages/shared/src/`) — domain schemas (`domain/`, one folder per entity —
+  `accounts`, `accountCategories`, `vendors`, `transactions`, `balanceAssertions`, `origins`, plus `core/` for
+  cross-cutting types like `CurrencyAmt`, `IsoDate`, `Period`), the CRUD service interfaces (`crudServices/`,
+  one `IXxxQrySvc`/`IXxxCmdSvc`/`XxxTeeSvc` per entity), and `api/` — the HTTP contract: Zod schemas for each
+  request body/query (transport shape only; domain rules stay in the server handlers' `xxxEventSchema.parse`
+  calls), payload types, and `ApiErrorBody`/`ApiErrorCode`. No build step: its `package.json` `exports` map
+  points straight at the `.ts` sources, so the other packages import e.g.
+  `@checquery/shared/domain/accounts/Account`.
+- **`@checquery/server`** (`packages/server/src/`) — `index.ts` (load config → `createApp` → `Bun.serve`;
+  idle-close timer; SIGTERM/SIGINT close-and-backup), `app.ts` (the Hono app), `routes/` (thin HTTP adapters),
+  `handlers/` (one function per operation, taking an explicit `HandlerSession` = open store + this session's
+  Origin), `fileLifecycle.ts`/`fileUpload.ts`, `auth/` + `middleware/`, `static.ts`, and `persistence/`.
+  `scripts/hashPassword.ts`. HTTP-level tests live in `packages/server/test/` and drive the app in-process
+  with `app.request()` (see `test/support.ts`); everything else is tested next to its source.
+- **`@checquery/client`** (`packages/client/src/`) — the SolidJS SPA (entry `main.tsx` → `App.tsx`), built by
+  Vite into `packages/client/dist`, which the server serves as static files.
 
-**Build/copy flow** (`electrobun.config.ts`): Vite builds `src/mainview` → `dist/`, then Electrobun's `build.copy` maps `dist/index.html` and `dist/assets` into `views/mainview/...` inside the packaged app (`build/`). Always run the Vite build before an Electrobun build/dev step that needs fresh frontend assets — `bun run start` does this automatically; `bun run dev` does not.
+**Request flow**: a page calls a `xxxClient.ts` wrapper (`packages/client/src/<entity>/`, each swappable via
+`mock.module` in component tests — see any `*.crud.test.tsx` or page test for the pattern) → the typed Hono
+client `api` (`client/src/api/apiClient.ts`, `hc<AppType>` — `AppType` is a *type-only* import of the server's
+chained route definitions, so the client can't drift from the server) → `unwrap()` (throws `ApiError`, an
+`Error` with the server's message, so `e.message` UI works) → `/api/...` route → `requireLogin` /
+`requireUnlockedFile` middleware → `zxValidator` → `handleXxx(session, params)` → `LedgerStore.svcs` →
+`XxxTeeSvc`. Mutations return 204 and callers refetch; there's no push/live update between tabs or users.
+`middleware/errorHandler.ts` maps every failure to an `ApiErrorBody` (domain Zod errors keep Zod's message).
+All non-GET requests run one at a time through a mutex (`middleware/mutex.ts`), as do file close/idle-close/
+shutdown, so a close can never land mid-write.
 
-`tsconfig.json` targets `src/` only, with SolidJS's `jsxImportSource` configured for the `preserve` JSX transform — required for `.tsx` files under `src/mainview` to compile correctly.
+**Sessions** (in memory; a restart signs everyone out and closes the file): signing in (`/api/auth/login`,
+`Bun.password.verify` against the configured hashes) sets an HttpOnly, SameSite=Strict `checquery_session`
+cookie. Separately, each login session must *unlock* the open file — by creating or opening it, or, for a file
+another session opened, by entering its password (`/api/file/unlock`) — before any entity route works
+(`403 file-locked` otherwise). The unlock records that session's Origin (logged-in user name + client IPv4 —
+IPv6 clients are normalized or recorded as `0.0.0.0`, since `ipAddressSchema` is IPv4-only), which stamps its
+writes. Any close (explicit, opening another file, idle, shutdown) backs the file up into
+`<dataDir>/backups/` and revokes every unlock. Failed passwords (login, open, unlock) are rate-limited per IP.
+Hono's `csrf()` and `secureHeaders()` (with a CSP) apply to everything.
 
-**Styling**: Tailwind CSS v4 is wired in via the `@tailwindcss/vite` plugin in `vite.config.ts` (no separate `tailwind.config.js`/PostCSS config needed for v4). `src/mainview/app.css` starts with `@import "tailwindcss";` followed by the app's existing hand-written CSS.
+**Client session state** lives in `client/src/api/`: `authSession.ts` (`currentUser`), `fileSession.ts`
+(`currentFile` — the open file *this* session has unlocked — plus the dialog/alert signals and the
+new/open/unlock/close/upload calls), and `sessionRecovery.ts` (reacts to `unauthenticated` / `no-file-open` /
+`file-locked` from any call). `App.tsx` boots by asking the server who's signed in and what's open, and its
+guard routes a signed-out session to `/login?next=…` and a file-less one back to `/`.
+
+**Static serving**: `static.ts` serves `CHECQUERY_STATIC_DIR` with an SPA fallback (any non-API GET that isn't a
+file gets `index.html`), hashed `/assets/*` cached immutably, `index.html` uncached. In dev, Vite serves the
+client and proxies `/api` instead.
+
+**Styling**: Tailwind CSS v4 is wired in via the `@tailwindcss/vite` plugin in `packages/client/vite.config.ts`
+(no separate `tailwind.config.js`/PostCSS config needed for v4). `packages/client/src/app.css` starts with
+`@import "tailwindcss";` followed by the app's existing hand-written CSS.
+
+**Docker**: `Dockerfile` (multi-stage on `oven/bun:1.3-slim`; the runtime stage has only the server's
+production dependencies plus the built client, runs the TypeScript server directly as the non-root `bun` user,
+exec-form CMD so SIGTERM reaches Bun) and `docker-compose.yml` (named `checquery-data` volume at `/data`,
+localhost-only port by default — the server speaks plain HTTP; HTTPS is a pending follow-up).
 
 ### Persistence: `LedgerStore` = `ActionLog` + `MaterializedStore`
 
-One `LedgerStore` per open file (`src/bun/persistence/ledgerStore/`), combining two halves — full detail in
-`tasks/done/action-log.md`, `tasks/done/materialized-store.md`, and `tasks/done/ledger-store.md`:
+One `LedgerStore` per open file (`packages/server/src/persistence/ledgerStore/`), combining two halves — full
+detail in `tasks/done/action-log.md`, `tasks/done/materialized-store.md`, and `tasks/done/ledger-store.md`:
 
-- **`ActionLog`** (`src/bun/persistence/actionLog/`) — the durable, encrypted (unless test mode), append-only
-  event log actually persisted to the `.checquery` file; migrations live under `actionLog/migrations/`.
-- **`MaterializedStore`** (`src/bun/persistence/materializedStore/`) — an in-memory `bun:sqlite` database
-  holding only *current* entity state, rebuilt by replaying the `ActionLog` on file open; every `IXxxQrySvc`
-  read and report query (e.g. `findAccountBalancesAsOf`, `findAccountBalancesForPeriod`) is answered from
-  here, not the log.
+- **`ActionLog`** (`persistence/actionLog/`) — the durable, encrypted (unless test mode), append-only event log
+  actually persisted to the `.checquery` file; migrations live under `actionLog/migrations/`.
+- **`MaterializedStore`** (`persistence/materializedStore/`) — an in-memory `bun:sqlite` database holding only
+  *current* entity state, rebuilt by replaying the `ActionLog` on file open; every `IXxxQrySvc` read and report
+  query (e.g. `findAccountBalancesAsOf`, `findAccountBalancesForPeriod`) is answered from here, not the log.
 
-Each entity's `XxxTeeSvc` (`src/shared/crudServices/<entity>/`) fans a write out to both halves in order —
-log first (mints the id/HLC), then the materialized store — and is what `bun/index.ts`'s RPC handlers and
-`LedgerStore.svcs` actually call. The mainview never talks to either half directly; it goes through
-`src/mainview/<entity>/<entity>Client.ts` wrappers around `rpc.request.*` (each swappable via `mock.module` in
-component tests — see any `*.crud.test.tsx` or page test for the pattern).
+Each entity's `XxxTeeSvc` (`packages/shared/src/crudServices/<entity>/`) fans a write out to both halves in
+order — log first (mints the id/HLC), then the materialized store. `persistence/db.ts` owns the one open file
+(module state: database, path, `LedgerStore`, `file_id`) and creating/opening/closing it; the HTTP layer passes
+in the Origin identity. The client never touches persistence; it only sees the HTTP API.
 
-### Mainview page map
+### Client page map
 
-Routes are registered in `src/mainview/main.tsx` (`@solidjs/router`'s `HashRouter`, root `App`). `HomePage.tsx`
-(`src/mainview/pages/HomePage.tsx`) covers both the no-file-open and file-open states (info-architecture.md
-§3/§4); every other page lives one subfolder per feature under `src/mainview/pages/<feature>/` (`accounts`,
-`balancesheet`, `incomestatement`, `register`, `incomelog`, `expenselog`, `vendors` and `budget` — the last
-still a stub; there is no `cashflow` page — see Project state above). Shared, non-page-specific components
-live in `src/mainview/components/` (`nav/`
-for the breadcrumb system, `reports/` for `CategoryRollupTable` — shared by the balance sheet and income
-statement — and one folder per feature otherwise). Pure, unit-tested view-shaping logic (building a register's
-line items, a balance sheet's category rollup, etc.) lives in `src/mainview/<feature>/` *outside*
-`components/`, deliberately decoupled from rendering — see `tasks/done/info-architecture.md` and any
-`tasks/done/*-implementation-plan.md` §0 for the reasoning repeated across passes.
+Routes are registered in `packages/client/src/main.tsx` (`@solidjs/router`'s history-API `Router` — clean
+URLs like `/register/<accountId>`, root `App`). `LoginPage.tsx` is `/login`; `HomePage.tsx`
+(`src/pages/HomePage.tsx`) covers both the no-file-open and file-open states (info-architecture.md §3/§4);
+every other page lives one subfolder per feature under `src/pages/<feature>/` (`accounts`, `balancesheet`,
+`incomestatement`, `register`, `incomelog`, `expenselog`, `vendors` and `budget` — the last still a stub; there
+is no `cashflow` page — see Project state above). Shared, non-page-specific components live in
+`src/components/` (`nav/` for the breadcrumb system, `reports/` for `CategoryRollupTable` — shared by the
+balance sheet and income statement — `files/` for the Open File dialog and its password step, and one folder
+per feature otherwise). Pure, unit-tested view-shaping logic (building a register's line items, a balance
+sheet's category rollup, etc.) lives in `src/<feature>/` *outside* `components/`, deliberately decoupled from
+rendering — see `tasks/done/info-architecture.md` and any `tasks/done/*-implementation-plan.md` §0 for the
+reasoning repeated across passes.

@@ -33,7 +33,7 @@ beforeEach(async () => {
     session = { store: result.store, origId: result.origId }
 })
 
-describe('vendor RPC handlers, end to end against a real (temp) file', () => {
+describe('vendor handlers, end to end against a real (temp) file', () => {
     it('createVendor + findVendorsAll round-trip, defaulting to active with no default account', async () => {
         await handleCreateVendor(session, { name: 'Acme Supplies', description: 'Office stuff' })
 

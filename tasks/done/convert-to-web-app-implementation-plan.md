@@ -4,7 +4,9 @@ Branch: `feature/web-app`. All implementation commits land there; it merges to `
 below is green. After the merge there is one architecture only: the web app. The Electrobun desktop app is
 gone.
 
-Status: **planned.** The decisions in §2 were answered by the user on 2026-10-15, and the §2.1 choices were confirmed the same day. Where an answer changed
+Status: **implemented** (2026-10-15, branch `feature/web-app`, one commit per phase) -- as planned, except
+for the divergences listed in "Implementation notes" directly below. The decisions in §2 were answered by the
+user on 2026-10-15, and the §2.1 choices were confirmed the same day. Where an answer changed
 the original recommendation, the affected sections were redesigned. §2.1 lists the few smaller choices made
 while folding those answers in; they're easy to revisit during implementation.
 
@@ -23,6 +25,64 @@ while folding those answers in; they're easy to revisit during implementation.
 > - Create an implementation plan side by side with this task file.
 > - Make the plan very detailed for this significant refactoring
 > - Include open questions and decision points in the plan
+
+
+## Implementation notes (where the build diverged from the plan below)
+
+- **Server file layout.** The entity routes share one module, `routes/entityRoutes.ts`, rather than one file
+  per entity, and `/api/config` lives in `routes/fileRoutes.ts`. `requireLogin`, `requireUnlockedFile`,
+  `serializeMutations`, and the password rate-limit wrapper share `middleware/auth.ts`. Activity tracking for
+  idle-close is folded into `requireLogin`, so there's no `touchActivity.ts`. New small modules: `serverState.ts`
+  (per-process state), `httpError.ts`, `honoEnv.ts`, `idleClose.ts`, and `middleware/mutex.ts`.
+- **No `hono/bun` helpers.** Hono 4.13 deprecates `serveStatic`/`getConnInfo` from `hono/bun`, so `static.ts`
+  is a small `Bun.file` handler (with the SPA fallback) and `clientIp.ts` calls Bun's `server.requestIP`
+  directly.
+- **Password hashes may be base64-encoded, and `hash-password` prints that form.** §5.7/Phase 5 expected
+  escaping or quoting to work. In fact Bun's `.env` loader expands `$name` even inside single quotes, while
+  Compose wants `$$`, so no single escaping of a raw `$argon2id$...` hash works for both. The plan's fallback
+  was a separate `..._B64` variable; it ended up as the same variable, auto-detected: a value starting with `$`
+  is a raw hash, anything else is decoded as base64.
+- **`currentFile` didn't gain an `unlocked` field.** It keeps its old type and means "the open file *this*
+  session has unlocked". A file that's open but locked for this session shows up instead as the Open File
+  dialog's unlock step. That kept every existing test that sets `currentFile` unchanged.
+- **No `pendingRedirect` signal.** `sessionRecovery.ts` just clears the user/file signals, and `App.tsx`'s
+  guard effect, which already sends signed-out sessions to `/login?next=` and file-less ones home, does the
+  navigation. A separate redirect signal would have raced the `?next=` redirect.
+- **The Electrobun entry point was deleted in Phase 3, not renamed.** The handler signature change broke it
+  anyway (D16). Electrobun itself was removed in Phase 4 as planned.
+- **"No file open" moved out of the handler tests.** The handlers no longer read module state. The
+  `rejects ... when no file is open` handler tests became HTTP tests of `requireUnlockedFile` (409/403).
+- **`unwrapVoid`.** Body-less 204 responses infer as `unknown` through `hc`, so mutations use a small
+  `unwrapVoid` helper. Every entity *read* casts back to the branded domain type at the wrapper boundary (§4.2's
+  anticipated fallback).
+- **CSRF in practice.** Hono's `csrf()` checks `Sec-Fetch-Site`/`Origin` for form-like and body-less non-GET
+  requests. Browsers always pass; a non-browser client (e.g. `curl -X POST .../api/file/close`) must send
+  `Origin` or `Sec-Fetch-Site: same-origin`. A rejection is `403 forbidden`.
+- **Small additions:**
+  - `CHECQUERY_HOST_PORT` in compose (the host's port 3000 may be taken);
+  - a commented `TZ` in compose, since backup names use local time and the container defaults to UTC;
+  - the Vite dev proxy follows `CHECQUERY_PORT`;
+  - the Open File dialog's file list also offers "New file…";
+  - an unencrypted (test-mode) unlock is a one-click confirmation.
+- **Type-check cost (§5.1 concern).** `tsc -p packages/client` takes about 12s and 1.5M type instantiations,
+  against about 5s for the server. Swapping in `hc<any>` barely changes that, so the cost is the client program
+  also checking the server sources reachable from `AppType`, not `hc` inference itself. The documented
+  mitigation (pre-emitting `.d.ts` for `appType.ts`) wasn't applied; revisit if editor latency bothers.
+- **Verification.**
+  - Tests: 1089 → 1258 (shared 697, server 334, client 227), all passing; `bun run typecheck` clean.
+  - End-to-end: a headless-Chrome script (puppeteer-core, kept out of the repo) ran the Phase 4.5 flow twice,
+    against `bun run start` and against the Docker container. It covered:
+    - sign-in redirect and wrong-login error;
+    - create, then every page by clean URL, then refresh on a deep link;
+    - File Info;
+    - second-user unlock with a wrong and then the right password;
+    - close, after which the other session falls back home;
+    - reopen via the list and password;
+    - logout.
+  - Docker: `docker compose stop` produces the shutdown backup, data survives `down`/`up`, and the image is
+    about 262 MB.
+  - Not exercised: uploading a real *desktop* `.checquery` file (the UI and validation are covered with
+    generated files); try it with one of yours.
 
 ---
 

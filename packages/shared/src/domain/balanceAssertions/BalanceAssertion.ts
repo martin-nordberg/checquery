@@ -15,7 +15,7 @@ import {origIdSchema} from "../origins/OrigId";
  * (see buildRegisterRows.ts and balance-assertions-implementation-plan.md). Uniqueness of the (acctId,
  * assertionDate) pair is an application-level concern -- it needs the full set of assertions for an account
  * and isn't checkable from a single assertion, so it isn't enforced here; in practice it can't be violated
- * either, since the mainview only ever creates one via a per-date checkbox that disappears once an assertion
+ * either, since the client only ever creates one via a per-date checkbox that disappears once an assertion
  * exists, and never lets that date be changed afterward.
  */
 const balanceAssertionAttributesSchema =

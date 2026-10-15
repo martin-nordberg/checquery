@@ -15,7 +15,7 @@ export interface ITransactionQrySvc {
     countTransactionsAll(): Promise<number>
 
     /** Every non-deleted transaction with an entry against this account, ordered oldest-first (see
-     *  TransactionMaterializedStoreSvc for the tie-break) -- the mainview computes running balance/reversal. */
+     *  TransactionMaterializedStoreSvc for the tie-break) -- the client computes running balance/reversal. */
     findTransactionsByAccount(accountId: AcctId): Promise<Transaction[]>
 
     /** The most recent non-deleted transaction with an entry against this account whose vndrId matches, or
@@ -35,7 +35,7 @@ export interface ITransactionQrySvc {
     findAccountBalancesForPeriod(startDate: IsoDate, endDate: IsoDate): Promise<AccountBalance[]>
 
     /** Every non-deleted transaction whose postDate falls within [startDate, endDate] inclusive, oldest
-     *  first -- the Income Statement Details view's raw data; the mainview groups entries by account and
+     *  first -- the Income Statement Details view's raw data; the client groups entries by account and
      *  resolves vendor labels. Unscoped by which accounts a transaction touches (same reasoning as
      *  findTransactionsByAccount). */
     findTransactionsForPeriod(startDate: IsoDate, endDate: IsoDate): Promise<Transaction[]>

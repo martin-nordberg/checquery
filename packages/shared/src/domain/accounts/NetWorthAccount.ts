@@ -7,7 +7,7 @@ import {nameSchema, type NameStr} from "../core/Name";
  * category. Unlike the virtual root categories (never inserted as real rows), Net Worth must be a genuine,
  * insertable Account row: it's a real post-able account (e.g. an opening-balance entry might debit/credit
  * it directly), not just a structural placeholder. It is seeded once, when a new file is created -- see
- * bootstrapNetWorthAccount in src/bun/persistence/db.ts.
+ * bootstrapNetWorthAccount in packages/server/src/persistence/db.ts.
  */
 export const acctIdNetWorth: AcctId = acctIdSchema.parse("acctnetworth0000000000000000")
 

@@ -1,7 +1,7 @@
 import { printIconPath } from "../../nav/icons";
 
 /**
- * Prints the current page via the webview's native window.print(). The button carries `print:hidden` so it
+ * Prints the current page via the browser's window.print(). The button carries `print:hidden` so it
  * disappears from the printed output while the rest of the page (report tables, heading, etc.) prints as-is.
  */
 const PrintButton = () => (

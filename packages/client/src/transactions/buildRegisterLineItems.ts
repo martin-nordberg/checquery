@@ -30,7 +30,7 @@ const SPLIT_LABEL = "-- Split --";
 
 /**
  * Builds one line item per transaction touching accountId, in reverse-chronological (most-recent-first)
- * order with a running balance -- the mainview-side replacement for the old app's server-computed Register
+ * order with a running balance -- the client-side replacement for the old app's server-computed Register
  * DTO (see transactions-register-implementation-plan.md §0/§2a). Ordered (and the running balance
  * accumulated) by transaction date -- clearedDate when present, otherwise postDate; see Transaction.ts's
  * transactionDate() -- not raw postDate, per balance-assertions-implementation-plan.md §0/§3a. Stably sorts by

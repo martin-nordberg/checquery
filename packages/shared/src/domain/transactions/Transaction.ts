@@ -58,7 +58,7 @@ const hasVendorOrDescriptionMessage = "A transaction must have a vendor or a des
 
 /** Validates that, whenever both dates are present in the same payload, postDate is on or before clearedDate.
  * Only ever sees what's actually in this payload -- a patch that touches just one of the two dates can't be
- * fully checked here (the other value lives in whatever's already stored), but the mainview always submits
+ * fully checked here (the other value lives in whatever's already stored), but the client always submits
  * both together on save (see useTransactionRowForm.ts), so this covers the real save path. Historical actions
  * from before this constraint existed are fixed up at materialization time instead, not rejected here -- see
  * TransactionMaterializedStoreSvc's createTransaction/patchTransaction. */

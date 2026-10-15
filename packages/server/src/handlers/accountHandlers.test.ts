@@ -34,7 +34,7 @@ beforeEach(async () => {
     session = { store: result.store, origId: result.origId }
 })
 
-describe('account RPC handlers, end to end against a real (temp) file', () => {
+describe('account handlers, end to end against a real (temp) file', () => {
     it('createAccount + findAccountsAll round-trip, with type/origin/parent stamped correctly', async () => {
         const parentCtgId = genAcctCtgId()
         await handleCreateAccount(session, {

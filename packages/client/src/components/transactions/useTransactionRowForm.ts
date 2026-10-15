@@ -28,7 +28,7 @@ export type TransactionRowFormResult = ReturnType<typeof useTransactionRowForm>;
  * useTransactionForm.ts, adapted to key entries by acctId instead of an account name string (see
  * transactions-register-implementation-plan.md §3). postDate/clearedDate are kept as plain strings (an
  * `<input type="date">`'s value is already exactly ISO "YYYY-MM-DD", the same shape as IsoDate) so there's no
- * branding friction while the user is mid-edit; the row's save handler is what hands them to the RPC layer,
+ * branding friction while the user is mid-edit; the row's save handler is what hands them to the API client,
  * which validates the final shape.
  */
 export default function useTransactionRowForm(options: UseTransactionRowFormOptions) {

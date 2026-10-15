@@ -38,7 +38,7 @@ beforeEach(async () => {
     session = { store: result.store, origId: result.origId }
 })
 
-describe('transaction RPC handlers, end to end against a real (temp) file', () => {
+describe('transaction handlers, end to end against a real (temp) file', () => {
     it('createTransaction + findTransactionsByAccount round-trip, with entries and origin stamped correctly', async () => {
         const acctA = genAcctId()
         const acctB = genAcctId()
