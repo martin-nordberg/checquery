@@ -1,0 +1,13 @@
+**/node_modules
+**/dist
+build
+data
+.env
+.git
+.idea
+.claude
+tasks
+documentation
+**/*.test.ts
+**/*.test.tsx
+packages/*/test

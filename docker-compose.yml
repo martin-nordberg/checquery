@@ -1,0 +1,31 @@
+# Checquery in one container. Put CHECQUERY_USER1_NAME / CHECQUERY_USER1_PASSWORD_HASH (and optionally user 2)
+# in a .env file next to this one -- generate each hash with `bun run hash-password` (or, without Bun
+# installed: `docker compose run --rm checquery bun packages/server/scripts/hashPassword.ts`). See .env.example.
+services:
+  checquery:
+    build: .
+    image: checquery:latest
+    # Localhost only: the server speaks plain HTTP (HTTPS is a planned follow-up). Change deliberately, e.g. to
+    # "3000:3000" on a trusted LAN or behind a TLS-terminating reverse proxy (then set CHECQUERY_TRUST_PROXY).
+    ports: ["127.0.0.1:${CHECQUERY_HOST_PORT:-3000}:3000"]
+    volumes:
+      - checquery-data:/data
+      # Bind-mount alternative (easier to back up, or to drop desktop files into; the host directory must be
+      # writable by uid 1000):
+      # - ./data:/data
+    environment:
+      CHECQUERY_USER1_NAME: ${CHECQUERY_USER1_NAME:?set CHECQUERY_USER1_NAME in .env}
+      CHECQUERY_USER1_PASSWORD_HASH: ${CHECQUERY_USER1_PASSWORD_HASH:?set CHECQUERY_USER1_PASSWORD_HASH in .env}
+      CHECQUERY_USER2_NAME: ${CHECQUERY_USER2_NAME:-}
+      CHECQUERY_USER2_PASSWORD_HASH: ${CHECQUERY_USER2_PASSWORD_HASH:-}
+      CHECQUERY_IDLE_CLOSE_MINUTES: ${CHECQUERY_IDLE_CLOSE_MINUTES:-60}
+      # Backup file names use local time; the container defaults to UTC.
+      # TZ: America/New_York
+      # CHECQUERY_TRUST_PROXY: "true"
+      # CHECQUERY_MAX_UPLOAD_MB: "200"
+    restart: unless-stopped
+    # Time to close and back up the open file on `docker compose stop`.
+    stop_grace_period: 30s
+
+volumes:
+  checquery-data:
