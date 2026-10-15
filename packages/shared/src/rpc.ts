@@ -1,18 +1,26 @@
 import type { RPCSchema } from "electrobun/bun";
 import type { Account } from "./domain/accounts/Account";
-import type { AcctTypeStr } from "./domain/accounts/AcctType";
 import type { AccountCategory } from "./domain/accountCategories/AccountCategory";
 import type { Vendor } from "./domain/vendors/Vendor";
 import type { Transaction } from "./domain/transactions/Transaction";
 import type { AccountBalance } from "./domain/transactions/AccountBalance";
 import type { BalanceAssertion } from "./domain/balanceAssertions/BalanceAssertion";
 import type { EncryptionMode } from "./encryptionMode";
+import type { FileInfoPayload, FileOpenedPayload } from "./api/fileApi";
+import type { CreateAccountParams, PatchAccountParams } from "./api/accountsApi";
+import type { CreateAccountCategoryParams, PatchAccountCategoryParams } from "./api/accountCategoriesApi";
+import type { CreateVendorParams, PatchVendorParams } from "./api/vendorsApi";
+import type { CreateTransactionParams, PatchTransactionParams } from "./api/transactionsApi";
+import type { CreateBalanceAssertionParams, PatchBalanceAssertionParams } from "./api/balanceAssertionsApi";
 
-export type FileOpenedPayload = {
-	path: string;
-	fileId: string;
-	name: string;
-};
+// Transitional (web-app conversion Phase 2): the request/payload types now live in ./api/*; they're
+// re-exported here only so the remaining Electrobun code keeps compiling until it's deleted in Phase 4.
+export type { FileInfoPayload, FileOpenedPayload } from "./api/fileApi";
+export type { CreateAccountParams, PatchAccountParams } from "./api/accountsApi";
+export type { CreateAccountCategoryParams, PatchAccountCategoryParams } from "./api/accountCategoriesApi";
+export type { CreateVendorParams, PatchVendorParams } from "./api/vendorsApi";
+export type { CreateTransactionParams, PatchTransactionParams } from "./api/transactionsApi";
+export type { CreateBalanceAssertionParams, PatchBalanceAssertionParams } from "./api/balanceAssertionsApi";
 
 export type PromptNewFileNameResult =
 	| { cancelled: true }
@@ -25,121 +33,6 @@ export type PromptPasswordResult =
 export type ErrorAlertPayload = {
 	title: string;
 	message: string;
-};
-
-export type FileInfoPayload = {
-	name: string;
-	path: string;
-	sizeBytes: number;
-	lastModifiedIso: string;
-	entityCounts: {
-		origins: number;
-		accounts: number;
-		accountCategories: number;
-		vendors: number;
-		transactions: number;
-		balanceAssertions: number;
-	};
-	actionLogEntryCount: number;
-	meta: Array<{ key: string; value: string }>;
-};
-
-/** Params for the bun-side createAccount request. acctType and parentCtgId are always supplied by the page
- * (forced by the current account-list route / which category's "+ Add account" was clicked), never picked
- * by the user -- see documentation/account-categories-implementation-plan.md §0. id/origId/hlc are filled
- * in bun-side. */
-export type CreateAccountParams = {
-	acctType: AcctTypeStr;
-	parentCtgId: string;
-	name: string;
-	description?: string;
-	isPrimary?: boolean;
-};
-
-/** Params for the bun-side patchAccount request. Deliberately has no acctType field -- account type is
- * immutable after creation (accountPatchEventSchema omits it entirely; see Account.ts). */
-export type PatchAccountParams = {
-	id: string;
-	parentCtgId?: string;
-	name?: string;
-	description?: string;
-	isPrimary?: boolean;
-};
-
-/** Params for the bun-side createAccountCategory request. acctType and parentCtgId are always supplied by
- * the page (forced by the current account-list route / which category's "+ Add category" was clicked),
- * never picked by the user. id/origId/hlc are filled in bun-side. */
-export type CreateAccountCategoryParams = {
-	acctType: AcctTypeStr;
-	parentCtgId: string;
-	name: string;
-	description?: string;
-};
-
-/** Params for the bun-side patchAccountCategory request. Deliberately has no acctType field -- a category's
- * type is immutable after creation (accountCategoryPatchEventSchema omits it entirely). */
-export type PatchAccountCategoryParams = {
-	id: string;
-	parentCtgId?: string;
-	name?: string;
-	description?: string;
-};
-
-/** Params for the bun-side createVendor request. isActive is deliberately omitted -- new vendors are always
- * created active; see documentation/vendor-list-implementation-plan.md §0. */
-export type CreateVendorParams = {
-	name: string;
-	description?: string;
-	defaultAcctId?: string;
-};
-
-export type PatchVendorParams = {
-	id: string;
-	name?: string;
-	description?: string;
-	defaultAcctId?: string;
-	isActive?: boolean;
-};
-
-/** Params for the bun-side createTransaction request. id/origId/hlc are filled in bun-side. entries is
- * always the full entry list -- there's no per-entry id to patch incrementally. */
-export type CreateTransactionParams = {
-	postDate: string;
-	clearedDate?: string;
-	code?: string;
-	vndrId?: string;
-	description?: string;
-	needsReview?: boolean;
-	entries: { acctId: string; debit?: string; credit?: string }[];
-};
-
-/** Params for the bun-side patchTransaction request. entries, when present, fully replaces the transaction's
- * entries (see TransactionMaterializedStoreSvc.patchTransaction) -- never a partial per-entry merge. */
-export type PatchTransactionParams = {
-	id: string;
-	postDate?: string;
-	clearedDate?: string;
-	code?: string;
-	vndrId?: string;
-	description?: string;
-	needsReview?: boolean;
-	entries?: { acctId: string; debit?: string; credit?: string }[];
-};
-
-/** Params for the bun-side createBalanceAssertion request -- the register's checkbox flow (balance-
- * assertions-implementation-plan.md §4d), which supplies every field itself with no dialog. id/origId/hlc are
- * filled in bun-side. */
-export type CreateBalanceAssertionParams = {
-	acctId: string;
-	assertionDate: string;
-	balance: string;
-};
-
-/** Params for the bun-side patchBalanceAssertion request. Deliberately just `balance` -- the pencil-edit
- * dialog never moves an assertion's account or date (see balance-assertions-implementation-plan.md §0). */
-export type PatchBalanceAssertionParams = {
-	id: string;
-	balance: string;
 };
 
 export type AppSchema = {
