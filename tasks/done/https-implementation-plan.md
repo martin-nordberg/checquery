@@ -284,3 +284,45 @@ None blocking. To revisit later if wanted:
   names. Only the Caddyfile's `tls` line and the hostname change.
 - Move `utmimic-documentation` behind the same Caddy (hostname routing on 443) to consolidate certificates.
   That's out of scope here.
+
+---
+
+## Implementation notes (2026-10-16)
+
+Implemented in three commits, as phased in §8. Divergences from the plan above:
+
+- **Caddy image `caddy:2.11-alpine`**, the current 2.x when implemented, not 2.10.
+- **One certificate per host, not one covering all of them.** Caddy issues a separate certificate for each
+  name in `CHECQUERY_TLS_HOSTS` (§2.1 said one certificate). That's harmless.
+- **New `CHECQUERY_TLS_DEFAULT_SNI`** (Caddyfile global `default_sni`, default `localhost`). A client browsing
+  by IP address sends no TLS server name. Inside the container Caddy only sees its own Docker address, so it
+  couldn't pick the IP's certificate, and the handshake failed (`tlsv1 alert internal error`). Setting this to
+  the listed IP fixes it. It's documented in `.env.example` and `deploy/README.md`.
+- **`expectedOrigin(c, trustProxy)`** takes `trustProxy` explicitly, matching `clientIp`. It also normalizes
+  through `URL`, so a forwarded default port (`:443`) drops out the way a browser's `Origin` omits it.
+- **Client setup lives in `deploy/README.md`,** as planned. It also covers the configuration variables, a
+  `curl` check, and the HSTS note.
+
+Verification (§7):
+
+- `bun run test`: 1272 pass (shared 697, server 348, client 227). `bun run typecheck` is clean.
+- An isolated stack (project `checquery-httpstest`, port 8444, so the running deployment was untouched) was run
+  with `CHECQUERY_TLS_HOSTS=mnserver.internal, 10.168.168.160, localhost` and
+  `CHECQUERY_TLS_DEFAULT_SNI=10.168.168.160`.
+- **curl:**
+  - `curl --cacert` succeeded by name, by IP, and via localhost;
+  - without the CA, curl fails verification;
+  - a name that isn't listed fails the handshake;
+  - there's no HSTS header;
+  - the session cookie has `Secure`;
+  - a form POST with Origin `https://mnserver.internal:8444` passed CSRF, and `https://evil.example` got 403;
+  - client-sent `X-Forwarded-For: 1.2.3.4` / `X-Forwarded-Proto: http` were replaced by Caddy.
+- **Client IP:** recorded as `10.168.168.160` over the LAN address. Via `localhost` it's the bridge gateway
+  `172.19.0.1` (Docker's loopback proxy), as noted in the README.
+- **Root certificate:** its fingerprint was unchanged after the caddy container was recreated.
+- **Headless Chrome** (with `--ignore-certificate-errors`; `certutil` isn't installed here):
+  - `isSecureContext` is true and `navigator.clipboard` is present;
+  - sign-in works, and the cookie is `Secure`/`HttpOnly`/`Strict`;
+  - opening the encrypted file works;
+  - no page errors.
+- **Not done here:** step 4 from a second computer with the root installed, which is for the user.

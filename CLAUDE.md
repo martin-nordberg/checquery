@@ -25,7 +25,7 @@ time — `tasks/todo/` and `tasks/planned/` may each hold multiple files awaitin
 Checquery is a personal-finance web app for one household (double-entry accounts/vendors/transactions,
 balance sheet, income statement): a **Bun + Hono** server that keeps encrypted `.checquery` SQLite files in a
 data directory and serves a **SolidJS** client (built with Vite), deployed as one Docker image with the data
-directory on a volume. Up to two configured users sign in; one file is open at a time, server-wide. It began as
+directory on a volume, behind a Caddy reverse proxy for HTTPS. Up to two configured users sign in; one file is open at a time, server-wide. It began as
 an Electrobun desktop app and was converted to a web app in October 2026 (see
 `tasks/done/convert-to-web-app-implementation-plan.md`); it is itself a from-scratch rewrite of an earlier
 version of the same app (formerly kept in this repo under `zz-archive/`, since deleted — its domain model,
@@ -94,9 +94,11 @@ Package manager is **Bun** (`bun.lock` present; version pinned in `mise.toml`, w
 - `bun run typecheck` — `tsc --noEmit` per package. Clean (no known errors).
 - `bun run hash-password` — prints a password hash (argon2id, base64-encoded so its `$`s survive `.env`/Compose
   substitution) for `CHECQUERY_USERn_PASSWORD_HASH`.
-- `docker compose up --build` (or `bun run docker:up`) — the production image, on http://127.0.0.1:3000 by
-  default (`CHECQUERY_HOST_PORT` to change the port, `CHECQUERY_BIND_ADDRESS=0.0.0.0` to publish on the LAN),
-  data in the `checquery-data` volume. Users come from `.env`.
+- `docker compose up --build` (or `bun run docker:up`) — the production image behind a Caddy HTTPS front end,
+  on https://localhost:8443 by default (`CHECQUERY_TLS_HOSTS` for the names clients use,
+  `CHECQUERY_BIND_ADDRESS=0.0.0.0` to publish on the LAN, `CHECQUERY_HTTPS_PORT` to change the port), data in
+  the `checquery-data` volume. Users come from `.env`. Each client installs Caddy's root certificate once — see
+  `deploy/README.md`.
 
 There is no lint/format tooling configured (no ESLint/Prettier/Biome config in the repo).
 
@@ -112,7 +114,7 @@ which fails fast with a message naming the bad variable. Bun auto-loads a `.env`
 | `CHECQUERY_STATIC_DIR` | `packages/client/dist` (Docker: `/app/public`) | |
 | `CHECQUERY_IDLE_CLOSE_MINUTES` | `60` | close (+ back up) the open file after this long without requests; `0` = never |
 | `CHECQUERY_LOGIN_IDLE_MINUTES` | `480` | |
-| `CHECQUERY_TRUST_PROXY` | `false` | take the client IP from `X-Forwarded-For` |
+| `CHECQUERY_TRUST_PROXY` | `false` (Compose: `true`) | take the client IP and HTTPS-ness from `X-Forwarded-For`/`-Proto`/`-Host` |
 | `CHECQUERY_MAX_UPLOAD_MB` | `200` | |
 | `CHECQUERY_ENCRYPTION_DISABLED` | unset | test mode, below |
 | `CHECQUERY_ALLOW_TEST_MODE` | `false` | needed for test mode when `NODE_ENV=production` |
@@ -158,8 +160,9 @@ shutdown, so a close can never land mid-write.
 
 **Sessions** (in memory; a restart signs everyone out and closes the file): signing in (`/api/auth/login`,
 `Bun.password.verify` against the configured hashes) sets an HttpOnly, SameSite=Strict `checquery_session`
-cookie. Separately, each login session must *unlock* the open file — by creating or opening it, or, for a file
-another session opened, by entering its password (`/api/file/unlock`) — before any entity route works
+cookie (`Secure` when served over HTTPS). Separately, each login session must *unlock* the open file — by
+creating or opening it, or, for a file another session opened, by entering its password (`/api/file/unlock`) —
+before any entity route works
 (`403 file-locked` otherwise). The unlock records that session's Origin (logged-in user name + client IPv4 —
 IPv6 clients are normalized or recorded as `0.0.0.0`, since `ipAddressSchema` is IPv4-only), which stamps its
 writes. Any close (explicit, opening another file, idle, shutdown) backs the file up into
@@ -182,8 +185,14 @@ client and proxies `/api` instead.
 
 **Docker**: `Dockerfile` (multi-stage on `oven/bun:1.3-slim`; the runtime stage has only the server's
 production dependencies plus the built client, runs the TypeScript server directly as the non-root `bun` user,
-exec-form CMD so SIGTERM reaches Bun) and `docker-compose.yml` (named `checquery-data` volume at `/data`,
-localhost-only port by default — the server speaks plain HTTP; HTTPS is a pending follow-up).
+exec-form CMD so SIGTERM reaches Bun) and `docker-compose.yml` (named `checquery-data` volume at `/data`). The
+server itself speaks plain HTTP and publishes no port; the compose file's `caddy` service (`deploy/Caddyfile`)
+is the only published port (localhost:8443 by default) and terminates TLS with certificates from Caddy's own
+local CA (`tls internal`), whose root lives in the `caddy-data` volume — keep it, or every client has to
+re-install a new root. `deploy/README.md` has the client root-certificate setup and the CA notes. The server
+detects HTTPS per request (`requestProtocol.ts`, honoring `X-Forwarded-Proto` only under `trustProxy`) to mark
+the session cookie `Secure` and to check CSRF Origins; HSTS is deliberately off (it would cover every port of
+the hostname).
 
 ### Persistence: `LedgerStore` = `ActionLog` + `MaterializedStore`
 
