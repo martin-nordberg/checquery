@@ -15,7 +15,9 @@ import { requireLogin, requireUnlockedFile, withPasswordRateLimit } from "../mid
 import { zxValidator } from "../middleware/zxValidator";
 import { closeWithBackup, currentFilePayload, listFiles, newFile, openFile, unlockFile } from "../fileLifecycle";
 import { uploadFile } from "../fileUpload";
-import { getCurrentFileInfo } from "../persistence/db";
+import { NoFileOpenError } from "../session/currentSession";
+import { downloadFileName } from "../persistence/backup";
+import { getCurrentFileInfo, readCurrentFileBytes } from "../persistence/db";
 import type { OriginIdentity } from "../persistence/db";
 import type { ServerState } from "../serverState";
 import type { Context } from "hono";
@@ -79,5 +81,18 @@ export const fileRoutes = (state: ServerState) =>
 		.get("/info", requireUnlockedFile, async (c) => {
 			const info: FileInfoPayload | null = await getCurrentFileInfo();
 			return c.json(info!, 200);
+		})
+		// An emergency off-server backup: the open file's exact bytes, restorable on a fresh server by upload.
+		// GETs skip serializeMutations, so take the mutex here -- the read never lands mid-write.
+		.get("/download", requireUnlockedFile, async (c) => {
+			const file = await state.mutex.run(() => readCurrentFileBytes());
+			if (!file) throw new NoFileOpenError();
+			const name = downloadFileName(file.name, new Date());
+			console.log(`${c.var.login.username} downloaded ${file.name} as ${name}`);
+			return c.body(file.bytes, 200, {
+				"Content-Type": "application/octet-stream",
+				"Content-Disposition": `attachment; filename="${name}"`,
+				"Cache-Control": "no-store",
+			});
 		})
 		.post("/close", requireUnlockedFile, (c) => c.json(closeWithBackup(state, `closed by ${c.var.login.username}`), 200));

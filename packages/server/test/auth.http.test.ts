@@ -17,6 +17,7 @@ const protectedRoutes: [string, string][] = [
     ['POST', '/api/file/open'],
     ['POST', '/api/file/unlock'],
     ['GET', '/api/file/info'],
+    ['GET', '/api/file/download'],
     ['POST', '/api/file/close'],
     ['GET', '/api/accounts'],
     ['POST', '/api/accounts'],

@@ -8,7 +8,7 @@ function pad2(n: number): string {
 }
 
 /** YYYY-MM-DD_hh-mm in local system time/timezone -- hh is 24-hour. */
-function timestampFor(date: Date): string {
+export function timestampFor(date: Date): string {
 	return (
 		`${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}` +
 		`_${pad2(date.getHours())}-${pad2(date.getMinutes())}`
@@ -55,4 +55,19 @@ export function backupFile(path: string): BackupResult {
 	} catch (err) {
 		return { ok: false, error: `Failed to create backup:\n${(err as Error).message}` };
 	}
+}
+
+/** fileNameSchema's limit on a name without its extension. */
+const maxBaseNameLength = 100;
+
+/**
+ * The name a downloaded backup of `fileName` is saved under: `<base>-YYYY-MM-DD_hh-mm<ext>`, the same stamp as
+ * backupFile's, so repeated downloads don't collide and the result can be uploaded as-is. A base name too long
+ * to fit fileNameSchema's limit once stamped is truncated.
+ */
+export function downloadFileName(fileName: string, date: Date): string {
+	const ext = extname(fileName);
+	const suffix = `-${timestampFor(date)}`;
+	const base = basename(fileName, ext).slice(0, maxBaseNameLength - suffix.length);
+	return `${base}${suffix}${ext}`;
 }

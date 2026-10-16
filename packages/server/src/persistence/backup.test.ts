@@ -2,7 +2,8 @@ import { describe, expect, it } from "bun:test";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { backupFile } from "./backup";
+import { fileNameSchema } from "@checquery/shared/api/fileApi";
+import { backupFile, downloadFileName } from "./backup";
 
 function freshDir(): string {
 	return mkdtempSync(join(tmpdir(), "checquery-backup-test-"));
@@ -79,5 +80,20 @@ describe("backupFile", () => {
 		expect(result.ok).toBe(false);
 
 		rmSync(dir, { recursive: true, force: true });
+	});
+});
+
+describe("downloadFileName", () => {
+	const at = new Date(2026, 9, 16, 9, 5); // local time, like the stamp
+
+	it("stamps the name before its extension", () => {
+		expect(downloadFileName("Household.checquery", at)).toBe("Household-2026-10-16_09-05.checquery");
+		expect(downloadFileName("Household.checquery-test", at)).toBe("Household-2026-10-16_09-05.checquery-test");
+	});
+
+	it("truncates a long base so the stamped name still fits fileNameSchema", () => {
+		const name = downloadFileName(`${"a".repeat(100)}.checquery`, at);
+		expect(name).toBe(`${"a".repeat(83)}-2026-10-16_09-05.checquery`);
+		expect(fileNameSchema.safeParse(name).success).toBe(true);
 	});
 });

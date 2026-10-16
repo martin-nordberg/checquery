@@ -132,6 +132,18 @@ export async function getCurrentFileInfo(): Promise<FileInfoPayload | null> {
 	};
 }
 
+/**
+ * The open file's bytes exactly as on disk -- still encrypted, since encryption is per action-log payload.
+ * The caller must hold the ServerState mutex, so no write is mid-flight: with SQLite's default rollback
+ * journal and no transaction held between requests, the main file is then complete and consistent (the same
+ * precondition backupFile's byte copy relies on). Deliberately not Database.serialize(): the download is meant
+ * to be an exact copy of the file.
+ */
+export async function readCurrentFileBytes(): Promise<{ name: string; bytes: Uint8Array<ArrayBuffer> } | null> {
+	if (!currentPath) return null;
+	return { name: basename(currentPath), bytes: new Uint8Array(await Bun.file(currentPath).arrayBuffer()) };
+}
+
 export function closeCurrentFile(): void {
 	closeCurrent();
 }

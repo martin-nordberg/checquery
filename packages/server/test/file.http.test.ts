@@ -205,3 +205,100 @@ describe('upload', () => {
         expect(res.body.code).toBe('too-large')
     })
 })
+
+describe('download', () => {
+    const stampedName = (base: string, ext: string) => new RegExp(`^attachment; filename="${base}-\\d{4}-\\d\\d-\\d\\d_\\d\\d-\\d\\d\\.${ext}"$`)
+
+    async function download(browser: { request: (m: string, p: string) => Promise<Response> }) {
+        const res = await browser.request('GET', '/api/file/download')
+        return { res, bytes: new Uint8Array(await res.arrayBuffer()) }
+    }
+
+    function uploadForm(bytes: Uint8Array, name: string): FormData {
+        const fd = new FormData()
+        fd.append('file', new File([bytes as BlobPart], name))
+        return fd
+    }
+
+    it('sends the open file byte-for-byte, as an uncached attachment with a stamped name', async () => {
+        const browser = await server.browser().login()
+        await browser.json('POST', '/api/file/new', { name: 'Household' })
+        expect((await browser.json('POST', '/api/vendors', { name: 'Grocer' })).status).toBe(204)
+
+        const { res, bytes } = await download(browser)
+        expect(res.status).toBe(200)
+        expect(res.headers.get('content-type')).toBe('application/octet-stream')
+        expect(res.headers.get('cache-control')).toBe('no-store')
+        expect(res.headers.get('content-disposition')).toMatch(stampedName('Household', 'checquery-test'))
+        const onDisk = new Uint8Array(await Bun.file(join(server.dataDir, 'Household.checquery-test')).arrayBuffer())
+        expect(Buffer.compare(bytes, onDisk)).toBe(0)
+    })
+
+    it('needs an unlocked file', async () => {
+        const a = await server.browser().login(alice)
+        expect((await a.json('GET', '/api/file/download')).body.code).toBe('no-file-open')
+        await a.json('POST', '/api/file/new', { name: 'Household' })
+        const b = await server.browser('192.168.1.20').login(bob)
+        expect((await b.json('GET', '/api/file/download')).body.code).toBe('file-locked')
+    })
+
+    it('waits for an in-flight mutation before reading', async () => {
+        const browser = await server.browser().login()
+        await browser.json('POST', '/api/file/new', { name: 'Household' })
+        let release!: () => void
+        void server.state.mutex.run(() => new Promise<void>((resolve) => { release = resolve }))
+        let done = false
+        const pending = download(browser).then((r) => { done = true; return r })
+        await Bun.sleep(20)
+        expect(done).toBe(false)
+        release()
+        expect((await pending).res.status).toBe(200)
+    })
+
+    it('can be uploaded to a fresh server and opened (restore from scratch)', async () => {
+        const browser = await server.browser().login()
+        await browser.json('POST', '/api/file/new', { name: 'Household' })
+        await browser.json('POST', '/api/vendors', { name: 'Grocer' })
+        const { res, bytes } = await download(browser)
+        const name = /filename="([^"]+)"/.exec(res.headers.get('content-disposition')!)![1]!
+
+        // While the original is still on this server, the copy is refused (two diverging copies of one file).
+        const dup = await browser.json('POST', '/api/files', uploadForm(bytes, name))
+        expect(dup.body.code).toBe('duplicate-file-id')
+
+        const fresh = await startTestServer()
+        try {
+            const other = await fresh.browser().login()
+            const uploaded = await other.json('POST', '/api/files', uploadForm(bytes, name))
+            expect(uploaded.status).toBe(201)
+            expect((await other.json('POST', '/api/file/open', { name })).status).toBe(200)
+            expect((await other.json('GET', '/api/vendors')).body.map((v: { name: string }) => v.name)).toEqual(['Grocer'])
+        } finally {
+            // db.ts holds one open file per process, so opening here closed the first server's file; nothing
+            // below depends on it.
+            fresh.close()
+        }
+    })
+
+    it('round-trips an encrypted file, password and all', async () => {
+        server.close()
+        server = await startTestServer({ encrypted: true })
+        const browser = await server.browser().login()
+        await browser.json('POST', '/api/file/new', { name: 'Vault', password: 'pw' })
+        await browser.json('POST', '/api/vendors', { name: 'Grocer' })
+        const { res, bytes } = await download(browser)
+        expect(res.headers.get('content-disposition')).toMatch(stampedName('Vault', 'checquery'))
+        const name = /filename="([^"]+)"/.exec(res.headers.get('content-disposition')!)![1]!
+
+        const fresh = await startTestServer({ encrypted: true })
+        try {
+            const other = await fresh.browser().login()
+            expect((await other.json('POST', '/api/files', uploadForm(bytes, name))).status).toBe(201)
+            expect((await other.json('POST', '/api/file/open', { name, password: 'nope' })).body.code).toBe('wrong-password')
+            expect((await other.json('POST', '/api/file/open', { name, password: 'pw' })).status).toBe(200)
+            expect((await other.json('GET', '/api/vendors')).body.map((v: { name: string }) => v.name)).toEqual(['Grocer'])
+        } finally {
+            fresh.close()
+        }
+    })
+})
