@@ -4,7 +4,9 @@ import TopNav from "../components/nav/TopNav";
 import FileBreadcrumb from "../components/nav/FileBreadcrumb";
 import {
 	currentFile,
+	downloadingBackup,
 	requestCloseFile,
+	requestDownloadBackup,
 	requestFileInfo,
 	requestNewFile,
 	requestOpenFile,
@@ -16,6 +18,7 @@ import {
 	balanceSheetIconPath,
 	budgetIconPath,
 	closeFileIconPath,
+	downloadBackupIconPath,
 	expenseLogIconPath,
 	fileInfoIconPath,
 	incomeLogIconPath,
@@ -92,6 +95,14 @@ function FileHub() {
 			<div class="flex gap-3">
 				<button type="button" class={buttonClass} onClick={() => void requestFileInfo()}>
 					<NavIcon path={fileInfoIconPath} /> File Info
+				</button>
+				<button
+					type="button"
+					class={buttonClass}
+					disabled={downloadingBackup()}
+					onClick={() => void requestDownloadBackup()}
+				>
+					<NavIcon path={downloadBackupIconPath} /> Download Backup
 				</button>
 				<button type="button" class={buttonClass} onClick={() => void requestCloseFile()}>
 					<NavIcon path={closeFileIconPath} /> Close This File

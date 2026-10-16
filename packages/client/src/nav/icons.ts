@@ -40,5 +40,8 @@ export const openFileIconPath = "M3 7a2 2 0 012-2h4l2 2h6a2 2 0 012 2v8a2 2 0 01
 /** Circled "i" glyph for HomePage's "File Info" button. */
 export const fileInfoIconPath = "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z";
 
+/** Arrow down into a tray, for HomePage's "Download Backup" button. */
+export const downloadBackupIconPath = "M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4";
+
 /** Circled "x" glyph for HomePage's "Close This File" button. */
 export const closeFileIconPath = "M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z";

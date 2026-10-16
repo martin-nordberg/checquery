@@ -32,8 +32,9 @@ version of the same app (formerly kept in this repo under `zz-archive/`, since d
 code, and `documentation/functional-spec.md` are historical only, not authoritative).
 
 Built so far (see `tasks/done/` for the implementation plan behind each): sign-in, file lifecycle
-(new/open/unlock/close/upload an encrypted `.checquery` file in the server's data directory), accounts + account categories (a tree, accounts as flat leaves), vendors +
-vendor categories, transactions with double-entry entries and split support, balance assertions, the
+(new/open/unlock/close/upload an encrypted `.checquery` file in the server's data directory, and download the open
+one as an emergency backup), accounts + account categories (a tree, accounts as flat leaves), vendors + vendor
+categories, transactions with double-entry entries and split support, balance assertions, the
 Register/Income Log/Expense Log pages, the inline calculator, and the Balance Sheet and Income Statement
 (Summary + Details) reports. Annual Budget is still a stub. Cash Flow Statement was cut entirely (not enough
 distinct value for a personal-finance app over the Balance Sheet/Income Statement) — if it resurfaces in
@@ -166,12 +167,14 @@ before any entity route works
 (`403 file-locked` otherwise). The unlock records that session's Origin (logged-in user name + client IPv4 —
 IPv6 clients are normalized or recorded as `0.0.0.0`, since `ipAddressSchema` is IPv4-only), which stamps its
 writes. Any close (explicit, opening another file, idle, shutdown) backs the file up into
-`<dataDir>/backups/` and revokes every unlock. Failed passwords (login, open, unlock) are rate-limited per IP.
+`<dataDir>/backups/` and revokes every unlock. "Download Backup" (`GET /api/file/download`) sends the open file's
+exact, still-encrypted bytes, read under the mutex, as `<name>-YYYY-MM-DD_hh-mm.checquery`: an off-server copy for
+restoring from scratch by upload (upload still refuses a copy of a file already on the server). Failed passwords (login, open, unlock) are rate-limited per IP.
 Hono's `csrf()` and `secureHeaders()` (with a CSP) apply to everything.
 
 **Client session state** lives in `client/src/api/`: `authSession.ts` (`currentUser`), `fileSession.ts`
 (`currentFile` — the open file *this* session has unlocked — plus the dialog/alert signals and the
-new/open/unlock/close/upload calls), and `sessionRecovery.ts` (reacts to `unauthenticated` / `no-file-open` /
+new/open/unlock/close/upload/download calls), and `sessionRecovery.ts` (reacts to `unauthenticated` / `no-file-open` /
 `file-locked` from any call). `App.tsx` boots by asking the server who's signed in and what's open, and its
 guard routes a signed-out session to `/login?next=…` and a file-less one back to `/`.
 

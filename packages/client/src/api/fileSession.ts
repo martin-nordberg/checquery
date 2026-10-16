@@ -44,6 +44,44 @@ export async function requestFileInfo(): Promise<void> {
 	}
 }
 
+/** True while a Download Backup request is in flight (disables the button against double clicks). */
+export const [downloadingBackup, setDownloadingBackup] = createSignal(false);
+
+/**
+ * Downloads the open file's exact (still encrypted) bytes as an emergency backup -- restorable from scratch by
+ * uploading it in the Open File dialog. Fetched as a blob rather than via a plain download link so a failure
+ * (signed out, file locked or closed) gets the usual alert and session recovery instead of a JSON "download".
+ */
+export async function requestDownloadBackup(): Promise<void> {
+	setDownloadingBackup(true);
+	try {
+		const res = await api.file.download.$get();
+		if (!res.ok) await unwrap(res);
+		const name = /filename="([^"]+)"/.exec(res.headers.get("content-disposition") ?? "")?.[1] ?? currentFile()?.name;
+		saveBlob(await res.blob(), name ?? "backup.checquery");
+	} catch (e) {
+		setErrorAlert({ title: "Cannot Download Backup", message: errorMessage(e) });
+	} finally {
+		setDownloadingBackup(false);
+	}
+}
+
+/** Hands a blob to the browser as a file download. */
+function saveBlob(blob: Blob, name: string): void {
+	const url = URL.createObjectURL(blob);
+	const link = document.createElement("a");
+	link.href = url;
+	link.download = name;
+	link.style.display = "none";
+	document.body.append(link);
+	try {
+		link.click();
+	} finally {
+		link.remove();
+		URL.revokeObjectURL(url);
+	}
+}
+
 export async function requestCloseFile(): Promise<void> {
 	try {
 		const { backupError } = await unwrap(await api.file.close.$post());

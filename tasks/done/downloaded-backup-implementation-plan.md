@@ -231,3 +231,31 @@ alternative is limiting downloads to the user who opened the file.
 - Any export format other than the raw file. `tasks/todo/export-import.md` covers JSON export of
   accounts/vendors separately.
 - Scheduled or automatic off-server backups.
+
+---
+
+## Implementation notes (2026-10-16)
+
+Implemented as planned, in two commits, with the recommended answers to Q1–Q4. Small differences:
+
+- **`readCurrentFileBytes()`** returns `{ name, bytes } | null`. The route turns `null` into `no-file-open`
+  rather than the function throwing.
+- **`downloadFileName(fileName, date)`** lives in `persistence/backup.ts`, next to the now-exported
+  `timestampFor`. It truncates the base to 83 characters, so the stamped name stays within `fileNameSchema`'s
+  100-character limit.
+- **The button** is disabled while a download is in flight, via the `downloadingBackup` signal.
+
+Verification:
+
+- `bun run test`: 1282 pass (shared 697, server 356, client 229). `bun run typecheck` is clean.
+- The server tests cover:
+  - a byte-identical body and the attachment/no-store headers;
+  - `no-file-open` and `file-locked`;
+  - waiting for the mutex;
+  - the `duplicate-file-id` refusal next to the original;
+  - restore onto a fresh server, in test mode and encrypted, with a wrong password rejected.
+- Headless Chrome against two `bun run start`-style servers with empty encrypted data directories:
+  - the buttons read File Info | Download Backup | Close This File;
+  - clicking downloaded `Household-2026-10-16_09-20.checquery`, byte-identical to the data-directory file;
+  - uploading it to the second server, opening it with the file password, and listing vendors all worked;
+  - there were no page or CSP errors.

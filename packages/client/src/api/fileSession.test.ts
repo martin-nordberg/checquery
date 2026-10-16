@@ -7,6 +7,7 @@ import {
 	openFileDialog,
 	refreshFileSession,
 	requestCloseFile,
+	requestDownloadBackup,
 	resetFileSession,
 	setCurrentFile,
 	setErrorAlert,
@@ -71,6 +72,44 @@ describe("requestCloseFile", () => {
 		await requestCloseFile();
 		expect(currentFile()).toBeNull();
 		expect(errorAlert()).toEqual({ title: "Backup Failed", message: "Disk full" });
+	});
+});
+
+describe("requestDownloadBackup", () => {
+	it("saves the response as a download under the server's file name", async () => {
+		const realFetch = globalThis.fetch;
+		const clicked: { href: string; download: string }[] = [];
+		const realClick = HTMLAnchorElement.prototype.click;
+		const realCreate = URL.createObjectURL;
+		const realRevoke = URL.revokeObjectURL;
+		const revoked: string[] = [];
+		globalThis.fetch = (async () =>
+			new Response(new Uint8Array([1, 2, 3]), {
+				headers: { "content-disposition": 'attachment; filename="Home-2026-10-16_09-05.checquery"' },
+			})) as unknown as typeof fetch;
+		URL.createObjectURL = () => "blob:backup";
+		URL.revokeObjectURL = (url: string) => void revoked.push(url);
+		HTMLAnchorElement.prototype.click = function (this: HTMLAnchorElement) {
+			clicked.push({ href: this.href, download: this.download });
+		};
+		try {
+			await requestDownloadBackup();
+		} finally {
+			globalThis.fetch = realFetch;
+			HTMLAnchorElement.prototype.click = realClick;
+			URL.createObjectURL = realCreate;
+			URL.revokeObjectURL = realRevoke;
+		}
+		expect(clicked).toEqual([{ href: "blob:backup", download: "Home-2026-10-16_09-05.checquery" }]);
+		expect(revoked).toEqual(["blob:backup"]);
+		expect(document.querySelector("a[download]")).toBeNull();
+		expect(errorAlert()).toBeNull();
+	});
+
+	it("alerts with the server's message on failure", async () => {
+		mockFetch(() => ({ status: 403, body: { error: "Enter the file's password to continue.", code: "file-locked" } }));
+		await requestDownloadBackup();
+		expect(errorAlert()).toEqual({ title: "Cannot Download Backup", message: "Enter the file's password to continue." });
 	});
 });
 

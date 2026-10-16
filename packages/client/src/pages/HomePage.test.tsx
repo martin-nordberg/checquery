@@ -32,8 +32,8 @@ describe("HomePage", () => {
 
 		expect(getByText("test")).toBeTruthy();
 		expect(queryByText("test.checquery")).toBeNull();
-		expect(getByText("File Info")).toBeTruthy();
-		expect(getByText("Close This File")).toBeTruthy();
+		const hubButtons = [...getByText("File Info").parentElement!.querySelectorAll("button")].map((b) => b.textContent?.trim());
+		expect(hubButtons).toEqual(["File Info", "Download Backup", "Close This File"]);
 		expect(getByText("Edit the List of Asset Accounts")).toBeTruthy();
 		expect(getByText("Edit the List of Liability Accounts")).toBeTruthy();
 		expect(getByText("Edit the List of Income Accounts")).toBeTruthy();
