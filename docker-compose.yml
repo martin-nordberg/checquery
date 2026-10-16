@@ -1,15 +1,16 @@
-# Checquery in one container. Put CHECQUERY_USER1_NAME / CHECQUERY_USER1_PASSWORD_HASH (and optionally user 2)
-# in a .env file next to this one -- generate each hash with `bun run hash-password` (or, without Bun
-# installed: `docker compose run --rm checquery bun packages/server/scripts/hashPassword.ts`). See .env.example.
+# Checquery behind a Caddy HTTPS front end. Put CHECQUERY_USER1_NAME / CHECQUERY_USER1_PASSWORD_HASH (and
+# optionally user 2) in a .env file next to this one -- generate each hash with `bun run hash-password` (or,
+# without Bun installed: `docker compose run --rm checquery bun packages/server/scripts/hashPassword.ts`). See
+# .env.example.
+#
+# Browse to https://<host>:8443. Certificates come from Caddy's local certificate authority; install its root
+# certificate on each client once (see deploy/README.md), exported with:
+#   docker compose cp caddy:/data/caddy/pki/authorities/local/root.crt ./checquery-root.crt
 services:
   checquery:
     build: .
     image: checquery:latest
-    # Published on localhost only by default: the server speaks plain HTTP (HTTPS is a planned follow-up). To
-    # reach it from other computers on a trusted LAN, set CHECQUERY_BIND_ADDRESS in .env -- 0.0.0.0 for every
-    # interface, or one of the host's addresses. Behind a TLS-terminating reverse proxy, also set
-    # CHECQUERY_TRUST_PROXY.
-    ports: ["${CHECQUERY_BIND_ADDRESS:-127.0.0.1}:${CHECQUERY_HOST_PORT:-3000}:3000"]
+    # No published ports: the server speaks plain HTTP, reachable only through caddy on the compose network.
     volumes:
       - checquery-data:/data
       # Bind-mount alternative (easier to back up, or to drop desktop files into; the host directory must be
@@ -21,13 +22,36 @@ services:
       CHECQUERY_USER2_NAME: ${CHECQUERY_USER2_NAME:-}
       CHECQUERY_USER2_PASSWORD_HASH: ${CHECQUERY_USER2_PASSWORD_HASH:-}
       CHECQUERY_IDLE_CLOSE_MINUTES: ${CHECQUERY_IDLE_CLOSE_MINUTES:-60}
+      # Every request comes through caddy, so its X-Forwarded-For/-Proto/-Host are the client's IP and HTTPS.
+      CHECQUERY_TRUST_PROXY: "true"
       # Backup file names use local time; the container defaults to UTC.
       # TZ: America/New_York
-      # CHECQUERY_TRUST_PROXY: "true"
       # CHECQUERY_MAX_UPLOAD_MB: "200"
     restart: unless-stopped
     # Time to close and back up the open file on `docker compose stop`.
     stop_grace_period: 30s
 
+  caddy:
+    image: caddy:2.11-alpine
+    # Localhost only by default. To reach Checquery from other computers on the LAN, set CHECQUERY_BIND_ADDRESS
+    # in .env -- 0.0.0.0 for every interface, or one of the host's addresses -- and list the names clients use
+    # in CHECQUERY_TLS_HOSTS.
+    ports: ["${CHECQUERY_BIND_ADDRESS:-127.0.0.1}:${CHECQUERY_HTTPS_PORT:-8443}:8443"]
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Holds the local CA's root key and certificate. Keep it: removing it (e.g. `docker compose down -v`)
+      # creates a new root, which every client then has to install again.
+      - caddy-data:/data
+      - caddy-config:/config
+    environment:
+      CHECQUERY_TLS_HOSTS: ${CHECQUERY_TLS_HOSTS:-localhost}
+      CHECQUERY_TLS_DEFAULT_SNI: ${CHECQUERY_TLS_DEFAULT_SNI:-localhost}
+    depends_on:
+      checquery:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   checquery-data:
+  caddy-data:
+  caddy-config:
