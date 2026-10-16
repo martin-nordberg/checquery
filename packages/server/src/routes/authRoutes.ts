@@ -5,6 +5,7 @@ import type { AppEnv } from "../honoEnv";
 import { sessionCookieName } from "../honoEnv";
 import { verifyCredentials } from "../auth/users";
 import { clientIp } from "../clientIp";
+import { requestIsHttps } from "../requestProtocol";
 import { HttpError } from "../httpError";
 import { requireLogin, withPasswordRateLimit } from "../middleware/auth";
 import { zxValidator } from "../middleware/zxValidator";
@@ -24,14 +25,19 @@ export const authRoutes = (state: ServerState) =>
 			// Rotate: any session this browser already had is dropped rather than reused.
 			state.loginSessions.delete(getCookie(c, sessionCookieName));
 			const token = state.loginSessions.create(name);
-			setCookie(c, sessionCookieName, token, { httpOnly: true, sameSite: "Strict", path: "/" });
+			setCookie(c, sessionCookieName, token, {
+				httpOnly: true,
+				sameSite: "Strict",
+				path: "/",
+				secure: requestIsHttps(c, state.config.trustProxy),
+			});
 			console.log(`${name} signed in from ${ip}`);
 			const me: MePayload = { username: name };
 			return c.json(me, 200);
 		})
 		.post("/logout", requireLogin(state), (c) => {
 			state.loginSessions.delete(c.var.loginToken);
-			deleteCookie(c, sessionCookieName, { path: "/" });
+			deleteCookie(c, sessionCookieName, { path: "/", secure: requestIsHttps(c, state.config.trustProxy) });
 			return c.body(null, 204);
 		})
 		.get("/me", (c) => {

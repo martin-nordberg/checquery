@@ -82,6 +82,31 @@ describe('authentication', () => {
         expect(cookie).toContain('Path=/')
     })
 
+    it('omits Secure on a plain-HTTP login', async () => {
+        const res = await server.browser().request('POST', '/api/auth/login', alice)
+        expect(res.headers.get('set-cookie')).not.toContain('Secure')
+    })
+
+    it('sets and clears a Secure cookie when the trusted proxy says HTTPS', async () => {
+        const browser = server.browser()
+        const login = await browser.request('POST', '/api/auth/login', alice, { 'x-forwarded-proto': 'https' })
+        expect(login.headers.get('set-cookie')).toContain('Secure')
+        const logout = await browser.request('POST', '/api/auth/logout', undefined, { 'x-forwarded-proto': 'https' })
+        expect(logout.status).toBe(204)
+        expect(logout.headers.get('set-cookie')).toContain('Secure')
+    })
+
+    it('ignores X-Forwarded-Proto when not trusting a proxy', async () => {
+        const untrusting = await startTestServer({ env: { CHECQUERY_TRUST_PROXY: 'false' } })
+        try {
+            const res = await untrusting.browser().request('POST', '/api/auth/login', alice, { 'x-forwarded-proto': 'https' })
+            expect(res.status).toBe(200)
+            expect(res.headers.get('set-cookie')).not.toContain('Secure')
+        } finally {
+            untrusting.close()
+        }
+    })
+
     it('rejects a wrong password and an unknown user identically', async () => {
         const wrong = await server.browser().json('POST', '/api/auth/login', { username: 'alice', password: 'nope' })
         const unknown = await server.browser().json('POST', '/api/auth/login', { username: 'mallory', password: 'x' })
@@ -127,5 +152,32 @@ describe('authentication', () => {
             'content-type': 'application/x-www-form-urlencoded',
         })
         expect(res.status).toBe(403)
+    })
+
+    describe('CSRF Origin fallback (no Sec-Fetch-Site) behind the proxy', () => {
+        const formPost = async (cookie: string, origin: string) =>
+            server.app.request('http://mnserver.internal:8443/api/file/close', {
+                method: 'POST',
+                headers: {
+                    cookie,
+                    origin,
+                    'content-type': 'application/x-www-form-urlencoded',
+                    'x-forwarded-for': '192.168.1.10',
+                    'x-forwarded-proto': 'https',
+                    'x-forwarded-host': 'mnserver.internal:8443',
+                },
+            })
+
+        it('accepts the forwarded https origin', async () => {
+            const browser = await server.browser().login()
+            const res = await formPost(browser.cookie!, 'https://mnserver.internal:8443')
+            expect(res.status).not.toBe(403)
+        })
+
+        it('still rejects a mismatched origin', async () => {
+            const browser = await server.browser().login()
+            expect((await formPost(browser.cookie!, 'https://evil.example')).status).toBe(403)
+            expect((await formPost(browser.cookie!, 'http://mnserver.internal:8443')).status).toBe(403)
+        })
     })
 })

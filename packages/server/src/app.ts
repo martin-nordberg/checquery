@@ -17,6 +17,7 @@ import {
 	transactionRoutes,
 	vendorRoutes,
 } from "./routes/entityRoutes";
+import { expectedOrigin } from "./requestProtocol";
 import { registerStatic } from "./static";
 
 /**
@@ -28,6 +29,10 @@ export const buildApiApp = (state: ServerState) =>
 		.use(
 			"*",
 			secureHeaders({
+				// No HSTS: it applies to the whole hostname on every port, so once served over HTTPS (Docker, via
+				// Caddy on :8443) browsers would force HTTPS onto every other plain-HTTP service on the same host
+				// (the dev server included) for months. If ever wanted, set it in Caddy, deliberately scoped.
+				strictTransportSecurity: false,
 				contentSecurityPolicy: {
 					defaultSrc: ["'self'"],
 					scriptSrc: ["'self'"],
@@ -42,7 +47,8 @@ export const buildApiApp = (state: ServerState) =>
 				},
 			}),
 		)
-		.use("/api/*", csrf())
+		// Behind Caddy the request URL is http://, so the Origin fallback compares against the forwarded origin.
+		.use("/api/*", csrf({ origin: (origin, c) => origin === expectedOrigin(c, state.config.trustProxy) }))
 		.use("/api/*", serializeMutations(state))
 		.get("/api/health", (c) => c.json({ ok: true }, 200))
 		.route("/api/auth", authRoutes(state))

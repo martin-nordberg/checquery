@@ -32,5 +32,7 @@ describe('static client', () => {
         const res = await server.app.request('http://localhost/')
         expect(res.headers.get('content-security-policy')).toContain("default-src 'self'")
         expect(res.headers.get('x-content-type-options')).toBe('nosniff')
+        // No HSTS: it would force HTTPS onto every other service on the same hostname.
+        expect(res.headers.get('strict-transport-security')).toBeNull()
     })
 })
